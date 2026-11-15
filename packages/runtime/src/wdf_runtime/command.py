@@ -18,7 +18,7 @@ OUTPUT = STAGING["directories"]["output"]
 INPUT_FILE = STAGING["input_file"]
 # The fresh directory under the scratch directory that holds the copy of input.json the guest sees.
 GUEST_INPUT = "guest-input"
-NOOP = {"args": {}, "seed": 0, "workload": "noop"}
+NOOP = {"args": {"heartbeat_every": 1}, "seed": 0, "workload": "noop"}
 # -W timeout compiles epoch checks into the code, so it is part of the module cache key. Every run
 # passes one, so the warm-up's cache entry serves every task, and a run without a deadline gets one
 # that never fires in practice.

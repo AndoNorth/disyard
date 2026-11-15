@@ -54,5 +54,5 @@ def test_warm_up_shares_the_task_flags_that_enter_the_cache_key(tmp_path):
     ]
     assert len(task) == len(warm) + 2
     assert (tmp_path / "w/guest-input/input.json").read_text() == (
-        '{"args":{},"seed":0,"workload":"noop"}\n'
+        '{"args":{"heartbeat_every":1},"seed":0,"workload":"noop"}\n'
     )
