@@ -19,7 +19,7 @@ from wdf_runtime.classify import Facts, classify, read_error_file
 from wdf_runtime.command import GUEST_INPUT, INPUT_FILE, MIB, OUTPUT, PAGE, command
 from wdf_runtime.contract import canonical
 from wdf_runtime.pins import GUEST_MIN_PAGES, GUEST_OVERHEAD_MIB
-from wdf_runtime.run import warm
+from wdf_runtime.run import warm, warmed
 from wdf_workloads import bundle
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -90,6 +90,7 @@ def warm_cache(component, tmp_path_factory) -> Path:
     """A module cache that the warm-up of the runtime library has filled for the component."""
     cache = tmp_path_factory.mktemp("cache")
     warm(component, cache)
+    assert warmed(component, cache)
     assert len(entries(cache)) == 1
     return cache
 
