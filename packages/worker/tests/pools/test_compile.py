@@ -94,6 +94,7 @@ def test_workload_bundle_builds_with_its_cache_key(given, context, pool_store):
     tail = admin.get_bytes(result.log_tail, result.log_tail.size).decode()
     assert f"cache_key: {given.succeeds.cache_key}" in tail
     assert result.log_tail.producer.attempt == "r0a1"
+    assert not (context.scratch / compile.TASK).exists()
 
 
 def test_missing_entry_compile_failed_not_retried(given, context):

@@ -2,6 +2,7 @@
 component offline, and collect the component and its build info."""
 
 import asyncio
+import shutil
 import signal
 import sys
 import time
@@ -30,6 +31,8 @@ STUBBED = ()
 UPLOAD_RESERVE_S = 30.0
 # How long a step may run past the deadline it was given before the runner stops it.
 LATE_S = 5.0
+# The task's own directory of the scratch root, emptied around each task.
+TASK = "task"
 WHEELS = "wheels"
 
 
@@ -41,8 +44,8 @@ class _Failed(Exception):
 
 
 async def run(task: TaskInput, context: Context) -> TaskResult:
-    started_at = format_time(datetime.now(UTC))
     info = activity.info()
+    started_at = format_time(info.started_time)
     left = (info.started_time + info.start_to_close_timeout - datetime.now(UTC)).total_seconds()
     end = time.monotonic() + left
     deadline = end - UPLOAD_RESERVE_S
@@ -53,47 +56,51 @@ async def run(task: TaskInput, context: Context) -> TaskResult:
         attempt=attempt_identity(task.task_attempt, task.resume_counter),
     )
     where = (producer, request.tenant, task.batch_id, task.seed)
-    scratch = context.scratch
     source = task.params.source
     tail = b""
+    work = context.scratch / TASK
+    shutil.rmtree(work, ignore_errors=True)
     try:
-        staged = await asyncio.to_thread(
-            stage_inputs, context.store, [source], scratch, _left(deadline)
-        )
-        bundle = staged.paths[source.name]
-        wheels = scratch / WHEELS
-        fetch = ["-m", "wdf_compile.limits", "fetch", "--bundle", str(bundle)]
-        fetch += ["--find-links", context.mirror, "--out", str(wheels)]
-        build = ["-m", "wdf_compile", "build", "--bundle", str(bundle)]
-        build += ["--entry", task.params.entry, "--out", str(scratch / "output")]
-        build += ["--find-links", str(wheels)]
-        for step in (fetch, build):
-            ended, step_tail = await _step([sys.executable, *step], scratch, deadline)
-            tail += step_tail
-            if ended is None or ended.code != 0:
-                raise _failure(" ".join(step[1:3]), ended, step_tail)
-        collected = await asyncio.to_thread(
-            collect_outputs, context.store, scratch, "compile", *where, deadline=_left(end)
-        )
-    except (_Failed, ArtifactError) as failure:
-        cls = failure.cls if isinstance(failure, _Failed) else failure.code
-        deterministic = failure_classes()[cls].deterministic is True
         try:
-            log_tail = await _upload_tail(context, tail, where, end)
-        except ArtifactError:
-            log_tail = None
-        details = FailureDetails(
-            deterministic=deterministic,
-            reason=failure.reason,
-            started_at=started_at,
-            checkpoint=None,
-            log_tail=log_tail,
-        )
-        raise ApplicationError(
-            details.reason, details, type=cls, non_retryable=deterministic
-        ) from failure
-    log_tail = await _upload_tail(context, tail, where, end, collected.undeclared)
-    return TaskResult(outputs=collected.references, log_tail=log_tail, started_at=started_at)
+            staged = await asyncio.to_thread(
+                stage_inputs, context.store, [source], work, _left(deadline)
+            )
+            bundle = staged.paths[source.name]
+            wheels = work / WHEELS
+            fetch = ["-m", "wdf_compile.limits", "fetch", "--bundle", str(bundle)]
+            fetch += ["--find-links", context.mirror, "--out", str(wheels)]
+            build = ["-m", "wdf_compile", "build", "--bundle", str(bundle)]
+            build += ["--entry", task.params.entry, "--out", str(work / "output")]
+            build += ["--find-links", str(wheels)]
+            for step in (fetch, build):
+                ended, step_tail = await _step([sys.executable, *step], work, deadline)
+                tail += step_tail
+                if ended is None or ended.code != 0:
+                    raise _failure(" ".join(step[1:3]), ended, step_tail)
+            collected = await asyncio.to_thread(
+                collect_outputs, context.store, work, "compile", *where, deadline=_left(end)
+            )
+        except (_Failed, ArtifactError) as failure:
+            cls = failure.cls if isinstance(failure, _Failed) else failure.code
+            deterministic = failure_classes()[cls].deterministic is True
+            try:
+                log_tail = await _upload_tail(context, tail, where, end)
+            except ArtifactError:
+                log_tail = None
+            details = FailureDetails(
+                deterministic=deterministic,
+                reason=failure.reason,
+                started_at=started_at,
+                checkpoint=None,
+                log_tail=log_tail,
+            )
+            raise ApplicationError(
+                details.reason, details, type=cls, non_retryable=deterministic
+            ) from failure
+        log_tail = await _upload_tail(context, tail, where, end, collected.undeclared)
+        return TaskResult(outputs=collected.references, log_tail=log_tail, started_at=started_at)
+    finally:
+        shutil.rmtree(work, ignore_errors=True)
 
 
 async def _step(argv: list[str], cwd: Path, deadline: float) -> tuple[Exit | None, bytes]:
