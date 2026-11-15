@@ -23,10 +23,9 @@ When a domain closes, the note and the epic are refined with what was learned.
 | Pinned contracts | `contracts/<name>/` | schema files, tables, test vectors, a loader test, `README.md` |
 | Spike results | `docs/delivery/spikes/S<n>/<slug>.md`, throwaway code in `docs/delivery/spikes/S<n>/code/` | repo files |
 | Work units | GitHub issues labelled `lane:<x>` and `epic:<n>`, sub-issues of the epic | issue from the lane issue template |
-| Verifiers (domains that need end to end driving) | skill in `.claude/skills/verify-<domain>/`, scripts in `scripts/verify/<domain>/` | agent skill plus scripts |
 
 Filed as GitHub issues: epics, lane issues (after approval) and spikes (label `spike`, timeboxed).
-Kept as files: breakdown specs, contracts, spike results, architecture notes and verifiers.
+Kept as files: breakdown specs, contracts, spike results and architecture notes.
 A breakdown spec is not a design spec, so it does not use the `spec-template` skill.
 That skill stays for design decisions inside an architecture note.
 Epic text and notes link to contracts and never copy them.
@@ -43,7 +42,7 @@ The lane issue template is a markdown template, not an issue form, because worke
 
 ### Prepare
 
-1. The author reads the epic, its neighbours' Interfaces tables, `contracts/`, the architecture note and the verifier for the domain if one exists.
+1. The author reads the epic, its neighbours' Interfaces tables, `contracts/` and the architecture note.
 2. The author writes `docs/delivery/epics/NN-<slug>.md` from the template.
    The questions the captain must answer are the first section, at most five.
 3. Before review, the read-only spec agents run and their findings are fixed: `spec-coherence`, `spec-citation-verifier`, `spec-ticket-coverage`, `spec-adversary`.
@@ -54,7 +53,7 @@ The lane issue template is a markdown template, not an issue form, because worke
 ### Build
 
 1. Lane 0 merges first, alone.
-   It carries the pinned contracts, stubs for every cross-lane dependency, the justfile module for the domain and, where the domain has a verifier, the verifier skeleton.
+   It carries the pinned contracts, stubs for every cross-lane dependency and the justfile module for the domain.
    Lane 0 is the only barrier, and every other lane runs in parallel after it.
 2. Each worker uses its own worktree and branch `epic-NN/<lane>/<issue>`, with one PR per issue, squash merged to `main`.
 3. Spikes that gate lanes run before those lanes are filed.
@@ -63,16 +62,15 @@ The lane issue template is a markdown template, not an issue form, because worke
 
 ### Verify
 
-1. Per issue, the worker runs the issue's verifier (a named test, or `just verify <domain> <feature>` where the domain has a verifier), updates the feature file where one exists and pastes evidence in the PR.
-2. Per epic, a different worker runs the exit test on a clean export of `main` and records the run in the spec's Closure section.
-   Where the epic has no verifier, the exit test is the epic's stated checklist, run by a worker who did not write the lanes.
+1. Per issue, the worker runs the tests and commands the issue names and pastes their output in the PR.
+2. Per epic, a worker who did not write the lanes runs the exit test, the epic's stated checklist, on a clean export of `main` and records the run in the spec's Closure section.
 
 ### Close
 
 1. The definition of done below is fully ticked.
 2. The architecture note is refined with what was learned.
    The epic issue gets a closing comment covering what was built, what moved and what was deferred to which epic, and is closed.
-3. The next epic's breakdown inputs are updated: contract versions, verifier features now `scripted` where a verifier exists, changed estimates.
+3. The next epic's breakdown inputs are updated: contract versions and changed estimates.
 
 ## Lane isolation and merging
 
@@ -92,7 +90,7 @@ The lane issue template is a markdown template, not an issue form, because worke
    There is no long-lived integration branch, and a lane that falls more than a day behind rebases.
    Within a lane, issues merge in order when the issue says `needs`, and across lanes any order works.
 5. Containers use a worker slot: project name `wdf-<slot>`, host ports `127.0.0.1:<base+slot*10+k>`, label `wdf.dev/verify-run=<run id>`.
-   The kind cluster is single-owner: every recipe that touches it takes `flock /tmp/wdf-cluster.lock`, and a verifier refuses to drive a cluster it did not start.
+   The kind cluster is single-owner: every recipe that touches it takes `flock /tmp/wdf-cluster.lock`, and a recipe refuses to drive a cluster it did not start.
 6. An out-of-lane edit is a review rejection, not a merge conflict to resolve.
    The worker comments on the issue and the spec author fixes the lane table.
 
@@ -111,14 +109,12 @@ Spikes that need a runtime but change no product file are the only work allowed 
 
 1. Every lane issue is closed with acceptance criteria ticked and evidence linked, as pasted output per the PR evidence section below.
 2. The exit test (spec section 7) passed from a clean export of `main`, run by a worker who did not write the lanes.
-   Where the domain has a verifier, evidence is kept at `.verify-evidence/<domain>/<run id>/` and summarised in the spec's Closure.
-   Where it has none, the command output is kept in the PR and summarised in Closure.
+   The command output is kept in the PR and summarised in Closure.
 3. `just ci` is green on `main`, and when the epic added a CI job, one green run on `main` is linked in Closure.
-4. Where the domain has a verifier, every feature the epic delivered is `scripted` and passed in step 2, and remaining features are `planned` with owner epic and reason.
-5. Contracts produced are pinned at a version, and every consumer epic's spec links the version.
-6. The architecture note is refined, and diagrams are re-exported if touched (`scripts/export-diagrams.sh --check` clean).
-7. The epic issue carries a closing comment and is closed.
-8. No `TODO` without an issue, and no stub left that a later epic does not own by name.
+4. Contracts produced are pinned at a version, and every consumer epic's spec links the version.
+5. The architecture note is refined, and diagrams are re-exported if touched (`scripts/export-diagrams.sh --check` clean).
+6. The epic issue carries a closing comment and is closed.
+7. No `TODO` without an issue, and no stub left that a later epic does not own by name.
 
 ## PR evidence
 
@@ -141,7 +137,7 @@ The child issue:
 
 - links the later epic or lane that exposed the gap
 - lists the consumer epics affected
-- names the verifier feature it touches
+- names the check or test it touches
 - blocks the later lane until it is merged
 
 A change to a pinned contract is not a revisit issue by itself.
@@ -152,85 +148,10 @@ The later epic's breakdown spec lists the child issue under Consumes.
 
 ## The verifier convention
 
-Domains that must be driven end to end have a project-local skill `verify-<domain>` modelled on the cursor [create-verification-skill](https://github.com/cursor/plugins/blob/main/pstack/skills/create-verification-skill/SKILL.md).
-Skills are created with the epic that first needs them, as part of its lane 0.
-None exist yet.
-The dev environment (#1) is the deliberate exception.
-Its surface is a shell, a command table and a host preflight, and `just doctor` with its fault-injection self-test, the lint fixtures, the recipe checks, the CI check that runs `just ci` and `docs/dev-setup.md` prove it without a driven journey.
-Verifier scripts live under `scripts/verify/<domain>/` and the skill under `.claude/skills/verify-<domain>/`.
-
-### Shape
-
-- Path: `.claude/skills/verify-<domain>/` with `SKILL.md`, `features/README.md` and `features/<feature>.md`, and the scripts in `scripts/verify/<domain>/`.
-- `<domain>` names a system area a user or an agent touches, not an epic number.
-- One executable entry: `just verify <domain> [feature]` runs `scripts/verify/<domain>/run.sh`.
-  The skill text and the script say the same thing: the script is what a worker runs, the skill is what a cold agent reads.
-- Evidence goes to `.verify-evidence/<domain>/<run id>/` (gitignored), with `<run id>` = `<UTC timestamp>-<slot>`.
-  Cleanup never removes evidence.
-  A `summary.json` (run id, commit sha, tier, feature results, skip reasons) is pasted into the PR or the spec's Closure.
-
-### Required content of `SKILL.md`, in order
-
-1. Frontmatter: `name`, `description`.
-2. Surface and tiers.
-   - T0 fixtures: no runtime, covering schema validation, golden vectors, CLI exit codes and `nix flake check`.
-   - T1 containers: real Postgres, RabbitMQ, Temporal dev server and S3 endpoint by `docker run` at the digests in `deploy/versions.yaml`, slot-isolated, plus real `wasmtime` and `componentize-py`.
-   - T2 cluster: `just up` on preset `ci`.
-   - Each feature declares its lowest tier, and proof means exercising the real deliverable at that tier, never a mock of it.
-3. Isolation: slot, ports bound to 127.0.0.1, lock file, whether two runs can coexist, and the refusal rule that a run never drives an instance it did not start.
-4. Launch, 5. Doctor, 6. Drive, 7. Evidence, 8. Cleanup, 9. Helpers, as in the cursor skill.
-   Cleanup removes only resources carrying this run's label or recorded PID, and never uses `docker rm` or `kill` by name, `nix-collect-garbage`, or removes evidence.
-10. Feature status table: every row has `Tier`, `Epic` and `Status` in `{scripted, manual, planned}`, and `planned` rows state the unmet precondition.
-
-Each feature file has exactly four H2 sections as in the cursor feature map (`Sub-features`, `How to get to it (user POV)`, `Driving it with <harness>`, `Gotchas`), with the metadata as a line under the H1.
-
-### Creating one when little exists
-
-The verifier skeleton is part of lane 0, so it exists before the other lanes start.
-
-1. Write the skill text for what exists today.
-   If nothing runs yet, Launch says nothing starts and a clean tree is exported, which is a valid complete section.
-2. Doctor checks only what is true on day one: tool present, lock free, scratch directory writable, host prerequisites.
-3. Seed the feature map from the epic's feature list (3 to 8 features), every row `planned` except one.
-4. Make that one feature `scripted` and prove the whole loop on it: launch, doctor, drive, evidence, cleanup, evidence still present.
-5. Prove features in this order: fixtures with known answers, real tools in a scratch export, real dependencies in containers, then the cluster.
-6. A lane that needs a counterpart that does not exist yet uses the lane-0 stub and marks the feature `planned: needs <epic>`.
-   A journey is never weakened to pass.
-
-### Keeping it honest
-
-- Every issue carries a verifier delta where the domain has a verifier: a PR that changes behaviour without touching a feature file, or saying why not, is sent back.
-- Map lint (`just verify-lint`, part of `just ci`) checks that every feature file has the four H2 sections, every `scripted` feature points to an executable script, and every recipe and every contract file is referenced by a feature or listed in `verify-allowlist.txt` with a reason.
-- Where the domain has a verifier, epic close runs the whole verifier from a clean export, by a worker who did not write the lanes.
-  The closing worker also reads the feature map against merged code and fixes drift.
-- A failing journey is fixed, or recorded in Gotchas and set `planned` with a reason, in the same PR that notices it.
-
-### What a worker runs before reporting done
-
-1. `nix develop -c just ci`.
-2. `just doctor`, and the domain verifier's doctor where the domain has a verifier, both ok.
-3. `just verify <domain> <feature>` for every feature named in the issue's Verifier field, or the named test where the issue names one.
-4. Where the domain has a verifier, `just verify-clean <domain>`, which lists any resource still carrying the run label (must be empty) and confirms the evidence directory exists.
-5. Report the commit sha, evidence path where there is one, per-feature result, and explicitly what was not run and why.
-   A report that claims done without step 3 is not done.
-
-### The 9 verifiers
-
-| Verifier | Epics | Created at | Tiers when created | Can verify now | Cannot yet |
-| --- | --- | --- | --- | --- | --- |
-| `verify-job-model` | #4, #5 | E3 | T0 | Yes (pure libraries, fixtures, CLI) | Nothing blocking |
-| `verify-storage` | #3, #12 | E5 | T1 | Yes (TimescaleDB and S3 containers) | Compile cache and reaper timing until #11 and #10 exist |
-| `verify-workloads` | #11 | E7 | T0, T1 | Yes (real `componentize-py`, `wasmtime`, kernel golden vectors) | Pause and resume workloads until #18 |
-| `verify-dispatch` | #24, #7, #8 | E10 (broker first) | T1, then T2 | Broker and API at T1, admission with a Temporal dev server | Full submit to workflow start through the cluster until the gate |
-| `verify-execution` | #6, #9, #10 | E8 | T1, then T2 | Workflow, placement, runner at T1 | Pool behaviour, OOM 137, node placement, rollout (T2) |
-| `verify-observability` | #13 | E15 | T2 | No | All of it until the gate |
-| `verify-load` | #14, #16 | E18 | T0 (stub API), then T2 | #14 scenario validation and ledger at T0 | #16 baselines and soak |
-| `verify-resilience` | #15, #18 | E16 | T2 | No | All of it until #6, #8, #10, #12 exist, injector library alone at T1 |
-| `verify-system` | #17 | gate | T2 | No: it is the smoke and e2e suite, assembled from the others | Until the first smoke at the gate |
-
-One verifier covers each surface a user or agent drives, except the dev environment, which has none for the reason given in the convention above, and the cluster, whose acceptance is direct commands with pasted output.
-The broker and admission sit behind the dispatch API, so they merge with it.
-`verify-system` is not a separate implementation: its Drive section calls the other verifiers' features in the order the acceptance flow in #17 gives.
+Retired on 2026-11-15 with the `verify` and `verify-clean` recipes (https://github.com/AndoNorth/wasm-dag-forge/issues/366), because no epic built a verifier.
+Each issue names its tests or commands, and each epic's exit test is a command checklist, run by a worker who did not write the lanes.
+Before reporting done, a worker runs `nix develop -c just ci`, `just doctor` and every test or command the issue names, and reports the commit sha, each result, and what was not run and why.
+`just verify-lint`, part of `just ci`, still checks any `verify-<domain>` skill that exists, and passes when none does.
 
 ## Epic order
 
@@ -238,29 +159,29 @@ Order follows the needs-first arrows between epics, with one risk-first adjustme
 An epic is opened only when everything it consumes is closed or stubbed in lane 0.
 Where owners and consumers form a cycle (#10 with #11, #3 with #12), a lane-0 stub breaks it.
 
-| Pos | Epic | Verifier | Contracts pinned in its lane 0 | Spikes |
-| --- | --- | --- | --- | --- |
-| E1 | #1 Dev environment | none, covered by `just doctor`, CI and `docs/dev-setup.md` | `versions.yaml` schema, `just` recipe table | none |
-| E2 | #2 Cluster and Tilt | none, direct acceptance commands and the exit test | preset schema, module contract, pool label and taint, namespaces | S2 footprint (#2-13), gate G1 |
-| E2.5 | spike block | none | none | S3 Temporal with Python (owner #6), S4 AMQP 1.0 client (#7), S5 object store (#3-8) |
-| E3 | #4 Envelope | `verify-job-model` | tranche A: events and keys, status, artifact reference and bucket layout, instrumentation contract (#13-1) | none |
-| E4 | #5 Validator | `verify-job-model` | job document and plan JSON Schema, limits profile | none |
-| E5 | #3 State and storage | `verify-storage` | accepted-jobs row DDL, event hypertable, store contract | S5 result applied |
-| E6 | #12 Artifacts | `verify-storage` | aggregate index format, failure taxonomy | none |
-| E7 | #11 Toolchain, guest contract, workloads, aggregate | `verify-workloads` | WIT and guest contract, `build-info.json`, cache entry | S1b heavy compile (#11-15), S6 cold-start storm (#11-9) |
-| E8 | #6 Workflow engine | `verify-execution` | activity contract, failure class table, Temporal naming, static pool table v0 | S3 result applied |
-| E9 | #9 Placement | `verify-execution` | pool table (real values), timeout formulas | none |
-| E10 | #7 Broker | `verify-dispatch` | tenant, class and cap config format, DLQ reason taxonomy | S4 result applied |
-| E11 | #10 Workers | `verify-execution` | none new | none |
-| E12 | #8 Admission | `verify-dispatch` | none new | none |
-| E13 | #24 Dispatch and control API | `verify-dispatch` | API routes, error body, reason codes, status response | S7 100k submit (optional lane) |
-| Gate | #17 pass 1: smoke | `verify-system` | smoke recipe | none |
-| E15 | #13 Observability | `verify-observability` | catalogue (already pinned in E3) | none |
-| E16 | #17 pass 2: e2e | `verify-system` | acceptance fixtures | none |
-| E17 | #18 Checkpoint and resume | `verify-resilience` | checkpoint contract v1 | none |
-| E18 | #15 Failure scenarios | `verify-resilience` | none | none |
-| E19 | #14 Load CLI | `verify-load` | scenario schema | none |
-| E20 | #16 Characterization and soak | `verify-load` | baseline report format | none |
+| Pos | Epic | Contracts pinned in its lane 0 | Spikes |
+| --- | --- | --- | --- |
+| E1 | #1 Dev environment | `versions.yaml` schema, `just` recipe table | none |
+| E2 | #2 Cluster and Tilt | preset schema, module contract, pool label and taint, namespaces | S2 footprint (#2-13), gate G1 |
+| E2.5 | spike block | none | S3 Temporal with Python (owner #6), S4 AMQP 1.0 client (#7), S5 object store (#3-8) |
+| E3 | #4 Envelope | tranche A: events and keys, status, artifact reference and bucket layout, instrumentation contract (#13-1) | none |
+| E4 | #5 Validator | job document and plan JSON Schema, limits profile | none |
+| E5 | #3 State and storage | accepted-jobs row DDL, event hypertable, store contract | S5 result applied |
+| E6 | #12 Artifacts | aggregate index format, failure taxonomy | none |
+| E7 | #11 Toolchain, guest contract, workloads, aggregate | WIT and guest contract, `build-info.json`, cache entry | S1b heavy compile (#11-15), S6 cold-start storm (#11-9) |
+| E8 | #6 Workflow engine | activity contract, failure class table, Temporal naming, static pool table v0 | S3 result applied |
+| E9 | #9 Placement | pool table (real values), timeout formulas | none |
+| E10 | #7 Broker | tenant, class and cap config format, DLQ reason taxonomy | S4 result applied |
+| E11 | #10 Workers | none new | none |
+| E12 | #8 Admission | none new | none |
+| E13 | #24 Dispatch and control API | API routes, error body, reason codes, status response | S7 100k submit (optional lane) |
+| Gate | #17 pass 1: smoke | smoke recipe | none |
+| E15 | #13 Observability | catalogue (already pinned in E3) | none |
+| E16 | #17 pass 2: e2e | acceptance fixtures | none |
+| E17 | #18 Checkpoint and resume | checkpoint contract v1 | none |
+| E18 | #15 Failure scenarios | none | none |
+| E19 | #14 Load CLI | scenario schema | none |
+| E20 | #16 Characterization and soak | baseline report format | none |
 
 The E numbers are positions, not epic numbers: E14 is the smoke gate and E2.5 is a block.
 The gate is `just smoke`, one level 0 job from #24 through #8, #6, #9, #10 and #12 to a stored result, with ten consecutive passes before the next epic opens.
@@ -279,7 +200,7 @@ Where each epic sits, in one line each:
 
 | Item | Goes to | When |
 | --- | --- | --- |
-| S1b heavy compile | #11 issue 15, in `verify-workloads` | E7, first lane |
+| S1b heavy compile | #11 issue 15 | E7, first lane |
 | S2 footprint | #2 issue 13 | E2, exit |
 | S3 Temporal with Python | #6 issue 1 plus a new spike issue | spike block, result applied in E8 |
 | S4 AMQP 1.0 client | #7 issue 3 | spike block, result applied in E10 |

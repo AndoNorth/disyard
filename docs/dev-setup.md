@@ -59,12 +59,10 @@ No logic lives in the justfile, and each real recipe calls `scripts/<name>.sh`.
 | `verify-lint` | real | - | checks each `verify-<domain>` skill has a `SKILL.md` named after its directory, passes when none exist |
 | `pre-push` | real | - | the fast gate that the pre-push hook runs, see [Git hooks](#git-hooks) |
 | `hooks-status` | real | - | prints whether the git hooks are installed for this checkout |
-| `verify` | stub | cluster | end-to-end verifier run |
-| `verify-clean` | stub | cluster | removes verifier evidence |
 | `up` | real | - | brings up the kind cluster `wdf` and its local registry for `WDF_PRESET` (default `ci`) |
 | `down` | real | - | stops the node containers and keeps the cluster, the registry and the host data directory |
 | `nuke` | real | - | destroys the cluster, its registry and the host data directory of the preset that started it |
-| `cluster-verify` | stub | cluster | cluster acceptance checks |
+| `cluster-verify` | real | - | read-only checks that the cluster `wdf` matches `WDF_PRESET` (default `ci`): preset, pod slots, module budget, nodes, node limits, quotas, module readiness, live requests, pressure and loopback ports, one `ok` or `FAIL` line each |
 | `smoke` | stub | acceptance | end-to-end smoke run |
 | `e2e` | stub | acceptance | end-to-end run |
 | `load-test` | stub | load | load generation |

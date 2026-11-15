@@ -271,3 +271,4 @@ Follow-ups left:
 Closure addenda, one dated line each, are added after close when a `revisit` child issue is filed against this epic (see [docs/delivery/method.md](../method.md#revisiting-a-closed-epic)).
 
 - 2026-10-28: recipe table v2 and the `deploy/presets/` lint exclusion, see https://github.com/AndoNorth/wasm-dag-forge/issues/49.
+- 2026-11-15: recipe table v3, with `verify` and `verify-clean` removed and `cluster-verify` real, see https://github.com/AndoNorth/wasm-dag-forge/issues/366.
