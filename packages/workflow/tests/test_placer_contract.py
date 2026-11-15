@@ -17,7 +17,7 @@ from wdf_workflow.placement import (
 )
 from wdf_workflow.testing import placer_contract
 
-SIMULATE = PlacementRequest(task_type="simulate", cpu_milli=250, memory_mib=384, run_timeout_s=900)
+SIMULATE = PlacementRequest(task_type="simulate", cpu_milli=250, memory_mib=512, run_timeout_s=900)
 
 
 def test_static_placer_passes_placer_contract():
@@ -27,7 +27,7 @@ def test_static_placer_passes_placer_contract():
 def test_static_placer_places_on_the_pool_queue_with_v0_timeouts():
     assert StaticPlacer().place(SIMULATE) == Placement(
         queue="wdf-simulate",
-        memory_class="384Mi",
+        memory_class="512Mi",
         escalated=False,
         schedule_to_start_s=1800,
         start_to_close_s=1020,
@@ -39,7 +39,7 @@ def test_static_placer_places_on_the_pool_queue_with_v0_timeouts():
 @pytest.mark.parametrize(
     ("change", "failure"),
     [
-        ({"memory_mib": 385}, "insufficient_memory"),
+        ({"memory_mib": 513}, "insufficient_memory"),
         ({"cpu_milli": 251}, "insufficient_cpu"),
         ({"task_type": "render"}, "no_matching_pool"),
     ],

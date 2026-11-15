@@ -2,7 +2,7 @@
 level 0 vector, one warm-up per component, and each failure class it reports.
 
 Every task runs in the 512 MiB slot that spike S11 passed, whose guest cap after the worker's
-reserve is 128 MiB. The 384 MiB slot of the ci preset leaves no guest cap at all.
+reserve is 128 MiB, the slot of the ci preset. A 384 MiB slot leaves no guest cap at all.
 """
 
 import asyncio
@@ -26,8 +26,8 @@ from wdf_workflow.models import FailureDetails, TaskInput, TaskResult
 pytestmark = pytest.mark.integration
 
 SLOT_MIB = 512
-# The slot of the ci preset today, below the worker's reserve and the guest's overhead.
-CI_SLOT_MIB = 384
+# A slot below the worker's reserve and the guest's overhead.
+SMALL_SLOT_MIB = 384
 START_TO_CLOSE_S = 300
 # Far more work than any test waits for, beating often.
 BURN = {"workload": "cpu_burn", "seed": 7, "args": {"units": 10**9, "heartbeat_every": 1000}}
@@ -127,7 +127,7 @@ def test_first_run_warms_then_runs_warm(given, store, tmp_path, starts):
     "slot, params",
     [
         (SLOT_MIB, {"workload": "fault", "seed": 1, "args": {"mode": "memory_cap"}}),
-        (CI_SLOT_MIB, BURN),
+        (SMALL_SLOT_MIB, BURN),
     ],
     ids=["guest-grows-past-cap", "cap-refused"],
 )
@@ -251,7 +251,7 @@ def test_every_failure_type_is_a_table_row(
     # Each class, with the task, the store and the PATH that provoke it, and run options.
     cases = {
         "guest_failed": (given.fails, store, None, {}),
-        "guest_memory_cap": (given.succeeds, store, None, {"slot": CI_SLOT_MIB}),
+        "guest_memory_cap": (given.succeeds, store, None, {"slot": SMALL_SLOT_MIB}),
         "timeout": (
             with_params(given.succeeds, BURN),
             store,
