@@ -1,0 +1,104 @@
+"""The activity outside Temporal: the failure class of an error the task path lets through, the
+scratch it empties, the heartbeat details of a beat, and the worker stage it reads through."""
+
+import asyncio
+
+import pytest
+from temporalio.exceptions import ApplicationError
+from temporalio.testing import ActivityEnvironment
+from wdf_artifactclient.errors import ArtifactNotFound, StoreUnavailable
+from wdf_stages import Facts, run_stage_contract
+from wdf_worker.activity import heartbeat_details, path_of, run_task
+
+STARTED = "2026-11-15T00:00:00.000000Z"
+
+
+def run(task):
+    return asyncio.run(ActivityEnvironment().run(run_task, task))
+
+
+@pytest.mark.parametrize(
+    ("error", "deterministic"),
+    [(StoreUnavailable("down"), False), (ArtifactNotFound("gone"), True)],
+)
+def test_artifact_error_is_its_code(context, task, path, error, deterministic):
+    async def fails(task, context):
+        raise error
+
+    path(fails)
+    with pytest.raises(ApplicationError) as raised:
+        run(task)
+    assert raised.value.type == error.code
+    assert raised.value.non_retryable is deterministic
+    [details] = raised.value.details
+    assert details.reason == error.reason
+    assert details.deterministic is deterministic
+    assert details.log_tail is not None
+
+
+def test_failure_class_of_the_path_passes_through(context, task, path):
+    failure = ApplicationError("guest_failed: scripted", type="guest_failed", non_retryable=True)
+
+    async def fails(task, context):
+        raise failure
+
+    path(fails)
+    with pytest.raises(ApplicationError) as raised:
+        run(task)
+    assert raised.value is failure
+
+
+def test_scratch_and_tmp_emptied_at_start_and_scratch_after(context, task, path, succeed, tmp_path):
+    for directory in (context.scratch, tmp_path / "tmp"):
+        directory.mkdir(parents=True)
+        (directory / "left").write_text("by a stopped child")
+    seen = {}
+
+    async def runs(task, given):
+        seen["scratch"] = list(given.scratch.iterdir())
+        seen["tmp"] = list((tmp_path / "tmp").iterdir())
+        (given.scratch / "staged").write_text("input")
+        return succeed(task, given)
+
+    path(runs)
+    run(task)
+    assert seen == {"scratch": [], "tmp": []}
+    assert list(context.scratch.iterdir()) == []
+
+
+def test_each_task_starts_with_no_beat(context, task, path, succeed):
+    beats = []
+
+    async def runs(task, context):
+        beats.append(context.beat)
+        context.beat = {"progress": 0.5, "step": 1, "steps": 2}
+        return succeed(task, context)
+
+    path(runs)
+    run(task)
+    run(task)
+    assert beats == [None, None]
+
+
+@pytest.mark.parametrize(
+    ("beat", "progress"),
+    [
+        (None, None),
+        ({"progress": 0.5, "step": 1, "steps": 2}, 0.5),
+        ({"progress": 0.5}, None),
+        ({"progress": 2.0, "step": 1, "steps": 2}, None),
+    ],
+)
+def test_heartbeat_details_of_a_beat(beat, progress):
+    details = heartbeat_details(beat, STARTED)
+    assert details.progress == progress
+    assert details.checkpoint is None
+    assert details.started_at == STARTED
+
+
+def test_stage_contract_through_dispatch():
+    def stage(inbound, facts: Facts) -> list:
+        path_of(inbound)
+        return []
+
+    run_stage_contract("worker", stage)
