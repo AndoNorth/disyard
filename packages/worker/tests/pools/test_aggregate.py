@@ -156,4 +156,7 @@ def test_progress_lines_reach_heartbeat_state(task, context, echo):
     steps = [(beat["step"], beat["steps"]) for beat in context.beats]
     assert steps[0] == (1, 2)
     assert steps[-1] == (2, 2)
-    assert context.beat == {"progress": 1.0, "step": 2, "steps": 2}
+    assert context.beats[-1] == {"progress": 1.0, "step": 2, "steps": 2}
+    # The aggregate has ended, so the upload that follows beats with no progress.
+    assert context.beat is None
+    assert not (context.scratch / aggregate.TASK).exists()

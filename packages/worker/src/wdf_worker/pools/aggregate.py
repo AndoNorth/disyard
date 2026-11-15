@@ -4,6 +4,7 @@ its summary."""
 import asyncio
 import json
 import os
+import shutil
 import signal
 import sys
 import time
@@ -32,6 +33,8 @@ UPLOAD_RESERVE_S = 30.0
 # The store role of the pool, the one identity its credentials file holds.
 ROLE = "aggregate"
 REASON = "reason: "
+# The task's own directory of the scratch root, emptied around each task.
+TASK = "task"
 CLASSES = {code: cls for cls, code in EXIT_CODES.items()}
 
 
@@ -43,8 +46,8 @@ class _Failed(Exception):
 
 
 async def run(task: TaskInput, context: Context) -> TaskResult:
-    started_at = format_time(datetime.now(UTC))
     info = activity.info()
+    started_at = format_time(info.started_time)
     left = (info.started_time + info.start_to_close_timeout - datetime.now(UTC)).total_seconds()
     end = time.monotonic() + left
     deadline = end - UPLOAD_RESERVE_S
@@ -55,55 +58,63 @@ async def run(task: TaskInput, context: Context) -> TaskResult:
         attempt=attempt_identity(task.task_attempt, task.resume_counter),
     )
     where = (producer, request.tenant, task.batch_id, task.seed)
-    scratch = context.scratch
-    scratch.mkdir(parents=True, exist_ok=True)
     [index] = [reference for reference in request.inputs if reference["kind"] == "index"]
-    index_file = scratch / "index.json"
-    index_file.write_text(json.dumps(index))
-    argv = [sys.executable, "-m", "wdf_aggregate", "run", "--index", str(index_file)]
-    argv += ["--tenant", request.tenant, "--aggregation", task.params.aggregation]
-    argv += ["--args", json.dumps(task.params.args.model_dump(exclude_none=True))]
-    argv += ["--out", str(scratch / "output")]
-    # The pod's own store identity, which the service reads from the same variables.
-    argv += ["--endpoint", os.environ[ENV["store_endpoint"]]]
-    argv += ["--credentials", os.environ[ENV["store_credentials"]], "--role", ROLE]
-    child = await Child.start(argv, scratch)
+    work = context.scratch / TASK
+    shutil.rmtree(work, ignore_errors=True)
+    work.mkdir(parents=True)
     try:
+        index_file = work / "index.json"
+        index_file.write_text(json.dumps(index))
+        argv = [sys.executable, "-m", "wdf_aggregate", "run", "--index", str(index_file)]
+        argv += ["--tenant", request.tenant, "--aggregation", task.params.aggregation]
+        argv += ["--args", json.dumps(task.params.args.model_dump(exclude_none=True))]
+        argv += ["--out", str(work / "output")]
+        # The pod's own store identity, which the service reads from the same variables.
+        argv += ["--endpoint", os.environ[ENV["store_endpoint"]]]
+        argv += ["--credentials", os.environ[ENV["store_credentials"]], "--role", ROLE]
+        child = await Child.start(argv, work)
         try:
-            async with asyncio.timeout(_left(deadline)):
-                async for _ in child.lines():
-                    context.beat = child.beat
-        except TimeoutError:
-            await child.stop()
-            raise _Failed("aggregate_timeout", "aggregate_timeout: ran past the deadline") from None
-        except BaseException:
-            await child.stop()
-            raise
-        ended = await child.wait()
-        if ended.code != 0:
-            raise _failure(ended, child.tail)
-        collected = await asyncio.to_thread(
-            collect_outputs, context.store, scratch, "aggregate", *where, deadline=_left(end)
-        )
-    except (_Failed, ArtifactError) as failure:
-        cls = failure.cls if isinstance(failure, _Failed) else failure.code
-        deterministic = failure_classes()[cls].deterministic is True
-        try:
-            log_tail = await _upload_tail(context, child.tail, where, end)
-        except ArtifactError:
-            log_tail = None
-        details = FailureDetails(
-            deterministic=deterministic,
-            reason=failure.reason,
-            started_at=started_at,
-            checkpoint=None,
-            log_tail=log_tail,
-        )
-        raise ApplicationError(
-            details.reason, details, type=cls, non_retryable=deterministic
-        ) from failure
-    log_tail = await _upload_tail(context, child.tail, where, end, collected.undeclared)
-    return TaskResult(outputs=collected.references, log_tail=log_tail, started_at=started_at)
+            try:
+                async with asyncio.timeout(_left(deadline)):
+                    async for _ in child.lines():
+                        context.beat = child.beat
+            except TimeoutError:
+                await child.stop()
+                raise _Failed(
+                    "aggregate_timeout", "aggregate_timeout: ran past the deadline"
+                ) from None
+            except BaseException:
+                await child.stop()
+                raise
+            finally:
+                context.beat = None
+            ended = await child.wait()
+            if ended.code != 0:
+                raise _failure(ended, child.tail)
+            collected = await asyncio.to_thread(
+                collect_outputs, context.store, work, "aggregate", *where, deadline=_left(end)
+            )
+        except (_Failed, ArtifactError) as failure:
+            cls = failure.cls if isinstance(failure, _Failed) else failure.code
+            deterministic = failure_classes()[cls].deterministic is True
+            try:
+                log_tail = await _upload_tail(context, child.tail, where, end)
+            except ArtifactError:
+                log_tail = None
+            details = FailureDetails(
+                deterministic=deterministic,
+                reason=failure.reason,
+                started_at=started_at,
+                checkpoint=None,
+                log_tail=log_tail,
+            )
+            raise ApplicationError(
+                details.reason, details, type=cls, non_retryable=deterministic
+            ) from failure
+        log_tail = await _upload_tail(context, child.tail, where, end, collected.undeclared)
+        return TaskResult(outputs=collected.references, log_tail=log_tail, started_at=started_at)
+    finally:
+        shutil.rmtree(work, ignore_errors=True)
 
 
 def _failure(ended, tail: bytes) -> _Failed:
