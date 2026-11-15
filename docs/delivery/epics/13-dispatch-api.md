@@ -1,0 +1,724 @@
+# Epic #24: Dispatch and control API - breakdown
+
+Status: draft
+Epic: https://github.com/AndoNorth/wasm-dag-forge/issues/24
+Architecture note: docs/architecture/04-intake-dedup-and-dead-letter.drawio and docs/architecture/10-intake-and-admission.drawio today, and the submit and control path diagram `docs/architecture/NN-dispatch-and-control.drawio` that 0.2 (issue) draws, where `NN` is the next free number when it merges, because the admission spec also proposes 17
+Verifier: none, per decision 1.
+Depends on (closed epics): Dev environment (#1), Fixed-resource cluster (#2), Job event envelope (#4), DAG configuration schema and validator (#5), Durable state and artifact storage (#3), Artifact passing (#12), Workload toolchain (#11), Workflow engine (#6)
+Consumes open work through lane 0 stubs: Broker (#7), Admission (#8), and the `ci` capacity revisit [#366](https://github.com/AndoNorth/wasm-dag-forge/issues/366) for lane D only.
+
+Evidence marks: `[read]` means read on `main` at `6439283` on 2026-11-15 while preparing this spec, and nothing was executed beyond read-only commands.
+The epic issue body and its comment were read on 2026-11-15, and the body is treated as stale where merged work or a recorded decision overtook it, which section 1 lists.
+Where the epic body and landed code or a pinned contract disagree, the landed code and the contract win, and this spec says so in the row that applies.
+"The realignment" means the alignment review of the open epics after #6 and the decisions taken on it on 2026-11-13, which this spec carries in 0.1.
+Method: [docs/delivery/method.md](../method.md).
+Model: [docs/delivery/epics/08-workflow-engine.md](08-workflow-engine.md), whose structure this spec follows.
+Tiers: T0 is host Python with no runtime, T1 is containers started through `wdf_itest` (Postgres, SeaweedFS, the Temporal dev server of the pinned CLI image, and RabbitMQ once the broker epic pins it, at most two containers in one pytest session), and T2 is the cluster from `just up` on preset `ci`.
+A test that needs a container carries the `integration` marker, a test that needs two containers at once also carries `pair`, because the `t1` fixture sizes its session by that marker, and both run in `just itest` and in every lane's `just ci`.
+Command prefixes `nix develop -c` are omitted from every command of this spec and every command takes them, and every Python command also takes `uv run --frozen`.
+T2 commands run under `flock /tmp/wdf-cluster.lock env WDF_CLUSTER_LOCK_HELD=1 ...` as the cluster epic says.
+Every number marked as an estimate is a proposal that a test or the characterization epic (#16) replaces.
+
+## 0. Decisions
+
+Section 0.1 lists what is already decided and carried, 0.2 the open questions, 0.3 the defaults that the lanes build on, and 0.4 the proposals that lane 0 and the issues pin.
+A change to a recorded decision changes only what its Applied in column names, and a change to a default only what its Changes column names, where an entry is an issue, a section of this spec or another decision or default.
+"0.1 (issue)" and "0.2 (issue)" name the lane 0 issues of section 4, and a bare 0.1 to 0.4 names a part of this section.
+
+### 0.1 Recorded decisions
+
+Everything in the epic body stands except where merged work or the realignment has overtaken it, which this table and section 1 list.
+
+| # | Decision | Source | Applied in |
+| --- | --- | --- | --- |
+| 1 | No verifier skill, no feature files and no verify recipes for this epic, and the `verify-dispatch` row of the method is dropped for #24. Every issue names its tests and the exit test is a command checklist | the standing rule of every executed epic (`08-workflow-engine.md:32`), and the realignment retires `verify` and `verify-clean` through #366 | sections 3, 4, 6, 7 |
+| 2 | Python models are the source of anything with a schema, and the exported JSON Schemas are checked in with a drift test | envelope epic decision 5, carried by every later epic (`08-workflow-engine.md:33`) | 0.1 (issue), 0.4 |
+| 3 | Runtime libraries read contract files through package data and never by repository path, and every package has a wheel test | state epic decision 11, carried (`08-workflow-engine.md:34`) | 0.1 (issue), 0.2 (issue), every package issue |
+| 4 | The API sends only `cancel`, `terminate` and `pause` to a workflow, and never `resume`. Admission sends `resume` with the row's `control_seq` and pending patch while the row's `requested_action` is `resume`. This replaces the epic body's control signal for resume | `08-workflow-engine.md:39` (decision 8), `:86` (D19), `:298-299` (rules rows for #8 and #24) [read] | C.1, C.2, C.3 |
+| 5 | The real `SourceResolver` and the run of `resolver_contract` against it belong to this epic, built on `wdf_compile.bundle.info(path) -> BundleInfo`. This replaces the epic body's credit of bundle resolution to #5 | `04-validator.md:111`, `:276`, `07-workload-toolchain.md:41`, `:112`, `packages/jobcheck/src/wdf_jobcheck/resolver.py:41,88`, `packages/compile/src/wdf_compile/bundle.py:25` [read] | B.1 |
+| 6 | The `submit` store identity gains `get` and `list` on `wdf-sources` through an early lane, because the API reads that bucket to resolve uploaded bundles and to load the base manifest of a patch, and today it holds only `put` and `multipart` | the realignment, decision D7, `contracts/store/roles.yaml:11-12` [read] | E.1, B.1, C.3 |
+| 7 | The `jobclass` attribute of an event follows the validator classes `short` and `long`, decided as an early lane with a contract-change PR on the events contract. How strict the check is stays open as Q1 | #216 and the epic comment of 2026-11-03, `contracts/job/limits.yaml:22` [read] | E.2, Q1 |
+| 8 | `INVALID_DAG` is dropped from the dead-letter reasons. `UNKNOWN_TENANT` is a rejection at the API edge only, an API reason code that never becomes a dead letter, so the pinned `job.dead.lettered` reasons (`MALFORMED`, `UNSUPPORTED_VERSION`) stay as they are. A broker delivery-limit dead letter needs a recoverable signal, which the broker and admission epics own, and the reconciler of this epic never republishes a row that holds a receipt | the realignment, decision D6, `contracts/events/schemas/job.dead.lettered/1.0.json:13-14` [read] | B.2, B.3, Q2 |
+| 9 | The priority class stays `standard` for the proof of concept, and the API accepts only the classes of the broker epic's configuration | the realignment, decision D5 | B.2, D17 |
+| 10 | Admission re-admits a job that was resumed before it started and a row stuck at `admitted`. The control stage moves such a resumed row back to `accepted` with the row-only `job.resumed`, publishes nothing, and leaves the re-admission to admission | the realignment, decision D8, `contracts/status/status.yaml:39-41,72` [read] | C.1, C.2 |
+| 11 | The end-to-end suite drops the two-compile-node check and splits into a core pass and a later pass. The API cases of the core pass (submit, the same key twice, cancel before start, status) are the e2e epic's (#17), and the pause of a running paced job and a patched resume from a checkpoint move to its later pass after #18 | the realignment, decision D3, the #17 body (`#24` Interfaces row) [read] | section 7 |
+| 12 | The epic's done criteria are rewritten as what this epic can prove: the T0 and T1 suites, the T2 rows of the exit test, and a clean `just ci`. The `reconcile` command of the load epic (#14) and the level 4 cases of #17 are no longer done criteria of this epic | the epic body's own "Done means" depends on #14 and #17, which follow this epic in the method's order (`docs/delivery/method.md:256-266`) [read] | sections 6, 7 |
+| 13 | Open question 3 is answered: a requested action beside the status, never a status per transition, with `pausing` and `cancelling` as views | `05-state-storage.md:73`, `contracts/status/status.yaml:20-27` [read] | P.1, R.1 |
+| 14 | Open question 5 is answered: the submitter declares the job class, the default is `short`, and the submit path writes one value to the row's `job_class` and to the accepted event's `jobclass`. The row has no `class_override` column, so an entry's own class is written into `job_class` and admission passes `class_override` null | `05-state-storage.md:34` (decision 8), `contracts/state/README.md:51-52` [read] | B.2 |
+| 15 | Open question 11 is answered: per-job events only, and no batch event. A batch summary is read from the rows | `03-envelope.md:65` [read] | R.1 |
+| 16 | One template manifest per batch, stored by hash before any row, with each job's seed, parameters, job class and fingerprint on its row and never in an event | `03-envelope.md:131-141` (the batch manifest interface) [read] | B.2 |
+| 17 | The manifest, each source bundle and submitter supplied aggregate index that the template names, and the patched manifest of a resume are indexed and linked to each job that names them before the job row is inserted, except the patched manifest, which is linked after the row exists and before `pending_patch_ref` is set. The index and link rows go through a second connection that logs in as a member of `wdf_artifacts` | `06-artifact-passing.md:61-63,229`, `contracts/state/README.md:165` [read] | B.2, C.3 |
+| 18 | The two host ports that the cluster epic reserved are used as they are: `control-api` on `127.0.0.1:18080` (NodePort 30080) and `dispatch-api` on `127.0.0.1:18081` (NodePort 30081). The epic body's single port is replaced | `deploy/host/ports.yaml:5-10` [read] | D.2, D16 |
+| 19 | A job that never started has no workflow, so the control stage records `job.paused`, `job.resumed`, `job.cancelled` and `job.terminated` for it itself, and it alone emits the four requested events and `job.published` is the dispatch stage's | `contracts/stages/stages.yaml:6-25` [read] | B.3, C.1 |
+| 20 | Each write runs under its writer's group role: the submit sequence under `wdf_dispatch` (`insert_accepted`, `insert_events`, `mark_published`), and control under `wdf_control` (`lock_job`, `request_action`, `mark_delivered`, `set_pending_patch`, `transition(..., row_only=True)`, the first and fourth added by E.3). `request_action` checks no status, so the transition table of P.1 decides before it is called | `contracts/state/README.md:156-157`, `packages/stateops/src/wdf_stateops/migrations/R__roles.sql:39-48`, `packages/jobstate/src/wdf_jobstate/jobs.py:189-209` [read] | P.1, B.2, C.1 |
+| 21 | The epic body is refreshed after this spec is approved, from sections 0.1 and 1, as each breakdown starts | the realignment, decision D10 | none in this pass |
+
+### 0.2 Questions
+
+None of these blocks lane 0, the early lanes or lane P.
+Each has a default that the lanes build on when there is no answer, the default changes no pinned contract beyond the events change that decision 7 already makes, and an answer that differs from the default changes only the issues named in the last column.
+
+| # | Question | Options | Recommendation | Default if no answer | Changes |
+| --- | --- | --- | --- | --- | --- |
+| Q1 | How strict is the job class check of #216? Every event decoded through `wdf_events.from_bytes` is checked against the profile schema (`packages/events/src/wdf_events/codec.py:66`), and `JobWorkflow` builds its own events with `wdf_events.build_event` from the accepted event's `jobclass` (`packages/workflow/src/wdf_workflow/job.py:70,85`), also while it replays. The recorded histories of `packages/workflow/corpus/v1/` and of `packages/temporal` carry `jobclass: simulate`, so a check in the profile, the model or `build_event` fails those replays | (a) refuse a class outside `classes` at the only producer of the accepted event: the dispatch API answers `UNKNOWN_JOB_CLASS` and never builds one, every later event copies the class from it, the events contract states the vocabulary, its 111 vectors are rewritten from `simulate` to `short`, and the profile, the model and `build_event` keep accepting any class name, so recorded histories and stored rows still decode and replay; (b) refuse it everywhere: the profile schema takes the enum, the model takes a literal, `build_event` raises, and both replay corpora and every test fixture are re-recorded | (a). It gives the guarantee #216 asks for at the one place a class enters the system and keeps the determinism gates of #4 and #6 as recorded. The departure from the literal wording of the epic comment ("make the model reject") is that the check lives in the API and not in `wdf_events` | (a). With (b) E.2 becomes a `revisit` child of #4 that also owns the two corpora, their `owners.yaml` and the fixtures, and the re-recording is a change to two closed epics' gates | E.2, section 3 |
+| Q2 | How does a dead-lettered job show in the API? A job whose intake message was dead-lettered keeps its row at `accepted` (`contracts/status/status.yaml:49-50`), so a status read shows a job that looks queued | (a) the status read adds `dead_letter: {dlq_reason, detail, time}` from the latest `job.dead.lettered` event of the job, read through the reader login of D13, and `null` otherwise, with nothing for a broker delivery-limit dead letter or an admission failure that the broker epic dead-letters without an event, until its recoverable signal exists; (b) nothing in the API, and dead letters are seen only through the broker's tooling | (a). A clear reason next to the job is what recovery needs, it costs one indexed read, and it adds nothing to a pinned contract because the status response is this epic's own | (a). With (b) R.1 drops one field | R.1, 0.1 (issue) |
+| Q3 | Are `terminate` and a patched `resume` operator-only? The epic leaves it open (open question 4) and decides no authentication for v1 | (a) no distinction in v1: any caller on 127.0.0.1 may call every route of its tenant, as for every other call; (b) a static operator token per tenant from a Secret, required on `terminate` and on a resume with a patch | (a). The tenant is self-asserted on loopback, so a token on two routes protects nothing that the other routes leave open | (a). With (b) D.2 adds a Secret, 0.1 (issue) a reason code, and C.1 and C.3 a header check with the reason `OPERATOR_TOKEN_REQUIRED` | C.1, C.3, D.2, 0.1 (issue) |
+| Q4 | Does the API cap the pending jobs of a tenant? The epic leaves it open (open question 6) | (a) no cap at the API: admission's quotas bound what runs, the bounded intake queue bounds what is published, and the rest waits in Postgres; (b) a static per-tenant cap on rows at `accepted`, rejecting further entries with `TENANT_PENDING_CAP` | (a). The design keeps a large backlog in Postgres on purpose (the epic's key decision on unbounded dispatch), and a cap needs a number that only #16 can measure | (a). With (b) B.2 adds a count per chunk and 0.1 (issue) a reason code | B.2, 0.1 (issue) |
+| Q5 | Which batch size does this epic prove? The limit stays 100,000 entries per call | (a) the exit test proves one call of 10,000 jobs at T1 and a resend of it, and the optional spike S7 measures one call of 100,000 jobs at T1 and hands its numbers to #16; (b) the exit test proves 100,000 jobs per call at T1 | (a). 10,000 already crosses ten chunks and every crash window, S7 measures the full size without making the exit test depend on host speed, and #16 fixes the numbers either way | (a). With (b) row 7 of the exit test takes 100,000, which is at least 2.5 minutes of T1 time on this host for the rows and their events alone by the state epic's baseline of 979 rows and 1,980 events per second (`05-state-storage.md:490`), before links and publishes (an estimate) | section 7, S7 |
+
+### 0.3 Defaults the lanes build on
+
+These carry the remaining open questions of the epic and the choices found while reconciling it.
+Numbers marked as estimates are fixed by a test named in the row or by #16.
+
+| # | Topic | Default | Reason, and the alternative | Changes |
+| --- | --- | --- | --- | --- |
+| D1 | Service shape for the two ports | One Deployment `dispatch-api` with one replica and the `Recreate` strategy, running one process `python -m wdf_dispatchapi.service` with two HTTP listeners: `dispatch-api` (container port 8081, NodePort 30081) serves uploads, batch submit and batch reads, and `control-api` (container port 8080, NodePort 30080) serves control and the job status read. The reconciler (D7) and the control retrier (D6) are loops in the same process, answering open question 9 | The cluster budget holds one dispatch reserve of 256 MiB (#366), the submit path and control race on the same row, and the epic's key decision is one API. The alternative is two Deployments, one per port, which needs a second reserve row of 256 MiB that the 6,144 MiB infra node does not hold beside the other reserves | D.1, D.2 |
+| D2 | HTTP server | The standard library's `http.server.ThreadingHTTPServer`, one per listener, with at most 16 requests in flight per process (an estimate), a request body read as a stream from `rfile`, and an NDJSON answer written with chunked transfer encoding. No route table library and no OpenAPI document: the route table, the models and their generated schemas in `contracts/api/` are the description | No HTTP server package is locked in `uv.lock` today [read], and a stream of lines needs nothing more than the standard library. The alternative is Starlette and Uvicorn, two new locked dependencies and an event loop for every handler | D.1 |
+| D3 | Temporal client | One `temporalio` client on one asyncio loop in a dedicated thread, connected with `wdf_temporal.converter.event_data_converter` and `wdf_temporal.trace.tracing_interceptor()` as the workflow service does, and called from handler threads through `asyncio.run_coroutine_threadsafe` behind a `WorkflowGateway` port (0.4) | The SDK client is asynchronous and the handlers of D2 are threads. `packages/workflow/src/wdf_workflow/service/__init__.py:159-164`, `packages/temporal/src/wdf_temporal/converter.py:63`, `packages/temporal/src/wdf_temporal/trace.py:39` [read] | D.1, C.2, R.1 |
+| D4 | Has the job a workflow? | A row at `accepted` has never had a workflow, because a row leaves `accepted` only by admission's claim and comes back only by the row-only move from `resume-pending`. For a row at `paused` or `resume-pending`, the control stage asks the gateway whether `workflow_id(job_id)` exists, and the answer is stable while the row stays there, because admission claims only `accepted` rows. A row at `admitted` or `running` is treated as having a workflow, and a signal that finds none is retried (D6). When Temporal does not answer for a row at `paused` or `resume-pending`, a `cancel` or `terminate` is recorded with outcome `requested` and D6 finishes it, and a `resume` is refused `TEMPORAL_UNAVAILABLE` | `wdf_control` has no grant on the event payloads that would show a `job.admitted` (`R__roles.sql:53`), and Temporal's answer is the fact the signal path depends on. The alternative is a state contract change granting `wdf_control` the event columns `type` and `jobid` | C.1, C.2 |
+| D5 | Event ids of the control stage | Every event of the control stage, the four requested events and the four row-only events of a job that never started, takes `sequence` equal to the request's `control_seq`, and its id is `wdf_keys.cloudevent_id(job_id, "", "", <type>, control_seq)` through `wdf_events.build_event`. The accepted and published events take sequence 0 | One request writes each event type at most once, and a new request takes the next sequence, so the ids are unique within `/wdf/control`. The stored key is `<source>#<id>` with `event_time` (`contracts/state/README.md:58,62`), so a control event never meets a workflow event of the same type, whose sequence is the resume counter (`packages/workflow/src/wdf_workflow/job.py:251-252,376-378`), even though the id formula has no source input (`packages/events/src/wdf_events/build.py:50`). The alternative, an offset for the row-only events, guards against a collision the store cannot have | P.1, C.1 |
+| D6 | Control retrier | A loop every 1 s (an estimate) selects up to 100 rows (an estimate) whose `requested_action` is `cancel`, `terminate` or `pause`, whose `control_delivered_at` is null and whose status is `admitted`, `running`, `paused` or `resume-pending`, sends the signal of `naming.yaml` with `ControlSignal(control_seq, reason)`, and calls `mark_delivered(job_id, control_seq)` once the server accepted the signal. The `reason` is read from the stored requested event through the reader login of D13, because `wdf_control` cannot read event payloads. A signal that finds no workflow, or a Temporal outage, backs off per row from 1 s doubling to 60 s (estimates) and never gives up while the action is outstanding and the row is not terminal. For a row at `paused` or `resume-pending` with no workflow, it finishes the request itself under `lock_job`: a `cancel` or `terminate` by the row-only move to the terminal status with its event, and a `resume` by the row-only move to `accepted` with `job.resumed`. `resume` is never signalled (decision 4) | The row write and the signal cannot share a transaction, and a cancel lost during an outage would leave a job running. The workflow applies a repeat as a no-op (D19 of the workflow epic), so a signal sent twice after a crash before `mark_delivered` is harmless | C.2 |
+| D7 | Reconciler | A loop every 5 s (an estimate) selects rows at `accepted` with `published_at` null whose `created_at` is older than 30 s (an estimate, so it never races a submit in flight), oldest first, up to 200 rows per second (an estimate), reads each row's stored `job.accepted` event through the reader login and publishes those bytes, or, when the event history has already dropped it (14 days, `contracts/state/retention.yaml:6`), rebuilds it from the row with `time` equal to `created_at` and publishes and stores that. Only the `mark_published` call that sets the receipt records `job.published`, with the receipt time (E.3), so a reconciler racing a slow submit publishes a message twice at most, which admission's compare-and-set claim absorbs, and records one event. A row with a receipt is never republished, and a row moved off `accepted` before its publish is published when it comes back to `accepted`, by the row-only resume | The state contract's partial index covers `published_at is null` (`05-state-storage.md:71`). Republishing the stored bytes keeps one event per id, while an event rebuilt from the row would carry another `time`. The alternative is rebuilding the event from the row with the time of `created_at`, which needs the submit path to use the database clock | B.3 |
+| D8 | Submit sequence per chunk | For each chunk of entries, in order: validate each entry and derive its key, job id and fingerprint; then, on the artifacts connection, `index_reference` each content object the batch names once per call, `link_use` it for each job of the chunk, and commit; then, on the dispatch connection, `insert_accepted` the rows and `insert_events` one `job.accepted` per inserted row, and commit; then write one answer line per entry; then publish each inserted row and, for each `ACCEPTED` outcome, call `mark_published` and, only when it returns a time, insert `job.published` with that time, in one short transaction. A `link_use` that answers `RowPurged` for an object uploaded before the call stops the call with `OBJECT_MISSING` before any row of the chunk, and for the batch manifest the API stores it again and retries once. A crash after the links and before the rows leaves links for jobs with no row, which the reaper's grace rule covers | The links must exist before the row (decision 17), the two connections cannot share a transaction, and publishing after the answer lines keeps the answer bounded by Postgres and not by the broker (the epic's key decision) | B.2, B.3 |
+| D9 | Keys and fingerprint | The batch key is required. The job key is the entry's `submission_key`, else `<batch key>/<index>`, and no key is ever generated. The batch id is `wdf_keys.batch_id(tenant, batch_key)` and the job id `wdf_keys.job_id(tenant, key)`. The fingerprint is the lower-case hex SHA-256 of the UTF-8 bytes of the canonical JSON (sorted keys, no whitespace, no ASCII escaping) of `{"job_class", "manifest_sha256", "parameters", "priority_class", "seed"}`, pinned with vectors in `contracts/api/` | A generated key is not repeatable, so a resend would create new jobs, which the epic itself records as a hazard. No fingerprint function exists on `main` [read], and the row only requires 64 hex characters (`contracts/state/README.md:42`) | P.2, B.2, 0.1 (issue) |
+| D10 | Batch limits (open question 6) | 100,000 entries per call with a typed rejection above it; 2 KiB per entry line; a header line of at most 1,052,672 bytes (the 1 MiB `max_document_bytes` of the template plus 4 KiB); 2 submit calls in flight per tenant and 4 per process; a 60 s idle timeout on reads and a 60 s timeout on each answer write, and no total limit; 1,000 entries per chunk. The contract states that a client reads the answer lines while it sends, because the server answers each chunk before it reads the next, and a client that sends the whole body first is stopped by the write timeout with every answered entry durable. All are estimates that #16 fixes | The epic's proposals, kept. An invalid header rejects the call before any row, and anything else is a per-entry result | P.2, B.2 |
+| D11 | Upload of content objects | `PUT /v1/tenants/{tenant}/objects/{kind}/{sha256}` for kind `source` or `index`, streamed into `wdf-sources` with `put_content(source, kind, name)` and no connection, at most 2 uploads at a time per process because `put_content` spools a stream to a temporary file (`packages/artifactclient/src/wdf_artifactclient/client.py:161`), the hash and the kind cap of the staging contract (`source` 64 MiB, `index` 128 MiB, `contracts/artifact/staging.yaml:20-23`) checked on receipt, and a source bundle refused unless `wdf_compile.bundle.info` reads it. The object is indexed and linked to each job only when a submit names it (D8). An object never named stays unindexed in `wdf-sources` | `put_content` takes a connection only together with a `job_id` (`packages/artifactclient/src/wdf_artifactclient/client.py:301-302`), and no job exists at upload time, which is the gap the realignment found between the epic body and #12. Sources have no age rule (`contracts/state/README.md:181`), so an unused upload is a leak, which the epic's risk list already accepts | B.1 |
+| D12 | Template and manifest | The batch header carries the template document inline. The API validates it once per call with `wdf_jobcheck.validate(data, profile, resolver)`, compiles it with `wdf_plan.compile_plan`, stores `wdf_plan.canonical_bytes(plan)` as kind `manifest` with `put_content` before the first chunk, and indexes and links it per job as in D8. Each entry is checked with `wdf_plan.check_job_params(plan, params, profile)` under the `ci` limits profile | One shared template per batch is decided (decision 16), and an inline document needs no second upload for the common case | B.2 |
+| D13 | Database logins | Four service logins created by the module, as the workflow module does with its logins: one in `wdf_dispatch` for the submit sequence, one in `wdf_control` for control, one in `wdf_artifacts` for index and link rows, and one in `wdf_reader` for reads of event payloads (status results, the dead-letter field of Q2 and the reconciler's stored events) | The group roles cannot log in (`R__roles.sql:5`), and `wdf_dispatch` and `wdf_control` read only `event_id` and `event_time` of `event` (`R__roles.sql:53`), while `wdf_reader` reads every table (`R__roles.sql:74-75`) | D.1, D.2 |
+| D14 | Status read | The row, the view derived from `requested_action` as `contracts/status/status.yaml:20-27` says, the result references of the job from its `task.result.ready` events, and for a row at `admitted`, `running`, `paused` or `resume-pending` the workflow's `status` query with a 2 s timeout (an estimate). A query that fails or times out leaves `detail: null` with `detail_error: unavailable`, and a missing workflow gives `detail_error: no-workflow`. The read never fails because Temporal is down | The epic's "row first, plus a workflow query" | R.1 |
+| D15 | Metrics | The service exposes Prometheus metrics on a container port 9090 that has no NodePort, named under the instrumentation contract: `wdf_dispatch_jobs_total` by `outcome` and `reason`, `wdf_dispatch_submit_seconds`, `wdf_dispatch_unpublished_jobs`, `wdf_dispatch_unpublished_oldest_seconds`, `wdf_control_requests_total` by `action` and `outcome`, `wdf_control_outbox_jobs` and `wdf_control_outbox_oldest_seconds`. No label holds a job, batch or tenant id. The observability epic adds them to `metrics.yaml` and owns the alerts | The #13 body lists exactly these for #24, with the backlog gauge requested [read]. Adding to `metrics.yaml` here would take over a file that #13 is about to own | D.1 |
+| D16 | Module | `deploy/dispatchapi/`, module name `dispatch-api` in `wdf-control`, group `control`, pin `python`, requests 100m and 256 MiB, limits 500m and 256 MiB (estimates equal to the dispatch reserve of #366), two NodePort Services on 30081 and 30080, the four logins of D13, the `submit` store identity from the state directory, the `dispatch` broker user's Secret of #7, a proton build stage in the image as #7 says, a read-only root with a disk-backed `/tmp` emptyDir of 512 Mi (two spooled `index` uploads of 128 MiB with room to spare, where the workflow module's 64 Mi would evict the pod, `deploy/workflow/Tiltfile.module:101`), and readiness on the Deployment. It depends on `infra/appdb-migrate`, `infra/objectstore-bootstrap`, `infra/temporal-bootstrap` and the broker module | The workflow worker's module is the pattern (`deploy/workflow/module.yaml`) [read]. The budget check of #366 ignores a reserve row once a module of that name exists, so the names must agree (section 2) | D.2 |
+| D17 | Tenant and class check | The API loads the broker epic's tenant and priority-class configuration once at start, through `wdf_broker.tenancy.load` with the profile named by the environment variable `WDF_TENANCY_PROFILE` (`ci` on preset `ci`), refuses a tenant outside it with `UNKNOWN_TENANT` before reading a body, and refuses a priority class outside it per entry with `UNKNOWN_PRIORITY_CLASS`. Until that configuration exists, 0.2 (issue) ships a fixture with tenant `acme` and class `standard` behind the same loader shape | Decisions 8 and 9. The tenant scopes every route through the path, so a read or a control call names its tenant and never sees another tenant's job | 0.2 (issue), B.2, C.1, R.1 |
+| D18 | Resume with a patch | A resume without a patch clears `pending_patch_ref`, so the workflow keeps the plan in force (`ResumeSignal.manifest` null, `packages/workflow/src/wdf_workflow/job.py:258`) and a patch the workflow refused is never sent again. The body carries the full patched template document. For a job with a workflow, the API validates it as in D12, loads the base plan from the row's `pending_patch_ref` when set and else from `manifest_ref` (reading `wdf-sources` under decision 6), takes the completed tasks (`succeeded` or `skipped`) from the status query, runs `wdf_jobpatch.patch_check(old, new, completed)` as a pre-check, the workflow's own check when it loads the patch being the one that decides, stores the patched manifest with `put_content(..., conn, job_id)` on the artifacts connection, and then, in one control transaction, requests `resume`, moves `paused` to `resume-pending`, sets `pending_patch_ref` through the writer of E.3 and inserts `job.resume.requested`. A job that never started takes no patch and is refused with `PATCH_NOT_STARTED`, because its start uses the batch template and `manifest_ref` is not the control role's to change. Without Temporal a resume with a patch is refused with `TEMPORAL_UNAVAILABLE` and writes nothing | `wdf_control` may update `pending_patch_ref` (`R__roles.sql:48`), but no library call writes it [read], which is why E.3 exists. The alternative for a job that never started is to have admission start it with the pending patch, which changes the start contract of #8 and #6 | C.3, E.3 |
+| D19 | Batch scope of control | `POST .../batches/{batch_key}/{action}` applies the single-job rule of P.1 to every job of the batch in chunks of 1,000 (an estimate), and answers one NDJSON line per job and a summary line | #15 cancels the running jobs of a batch, and one rule for both scopes keeps one tested function | C.1 |
+| D20 | Package | `packages/dispatchapi/`, import `wdf_dispatchapi` | `wdf_dispatch` is already the name of a database group role, and two meanings for one name would confuse every grant review | 0.2 (issue) |
+
+### 0.4 Proposals the lanes pin
+
+After lane 0 merges, `contracts/api/README.md` and its files are the source and this section is only a pointer.
+The tables after this one give every route, model, reason code and control cell that 0.1 (issue) pins.
+
+| Item | Proposal | Epic item |
+| --- | --- | --- |
+| Contract directory | One contract, `contracts/api/` (contract 6 of the method, API half), owner #24, version 1, with `VERSION`, `README.md`, `check.sh`, `routes.yaml`, `reasons.yaml`, `control.yaml`, `vectors/fingerprint.json`, the generated schemas and vectors under `vectors/<name>/{valid,invalid/<reason>}/`. Models live in `wdf_dispatchapi.models`. Loader `python -m wdf_dispatchapi.contract --check FILE [--as NAME]` (exit 0 valid, 1 with `reason: <code>: <detail>` on stderr, 2 usage), generator `python -m wdf_dispatchapi.gen [--check]`. The tenant and class configuration is the other half of contract 6 and stays the broker epic's | method contract 6, detail issue 1 |
+| Routes | `routes.yaml`, the table below, each route on exactly one listener | detail issues 1, 2, 4 (upload), 6, 10 |
+| Bodies | NDJSON in and out for batch submit and batch control (`application/x-ndjson`), JSON for every other route, and raw bytes for an upload. HTTP bodies are never CloudEvents | the epic's key decision on bodies |
+| Reason codes and error body | `reasons.yaml`: one row per code with its scopes (`call` for a batch submit call, `entry`, `upload`, `control`, `read`, or `any` for every route) and HTTP status. Every error answer is `{code, message, trace_id}` | detail issue 1 |
+| Control table | `control.yaml`: one cell per (state, action), with the outcome, the row writes and the events, and the overlay rules for an outstanding action, as below. P.1 implements it as a pure function and a test holds the function equal to the file | detail issue 6, open question 3 |
+| Fingerprint | the formula of D9, with input and output vectors | detail issue 3 |
+| Trace context | each job gets its own `traceparent` with a fresh trace id, stored on the row and in its accepted event, and returned as `trace_id` in its answer line. A call has one root span whose links name the jobs of its first chunk | the epic's "root trace context per job" |
+| Stubs and conformance tests | `wdf_dispatchapi.testing`: `FakePublisher` and `publisher_contract(publisher)`, `FakeGateway` and `gateway_contract(gateway)`, and `StaticTenants` with `tenant_config_contract(config)`, as section 5 states | stubs for #7, Temporal and the tenant configuration |
+
+#### Routes
+
+All paths start with `/v1/tenants/{tenant}`, which is shortened to `T` below, and a tenant outside the configuration answers 404 `UNKNOWN_TENANT` before any body is read.
+
+| Listener | Method and path | Request | Answer | Success |
+| --- | --- | --- | --- | --- |
+| dispatch-api | `PUT T/objects/{kind}/{sha256}` | raw bytes of a `source` bundle or an `index` object | `ObjectAnswer` `{reference, created}` | 201 created, 200 already present |
+| dispatch-api | `POST T/batches` | NDJSON: one `BatchHeader` line, then `BatchEntry` lines | NDJSON: one `EntryAnswer` per entry in request order, then one `SummaryLine`, or an `ErrorLine` last when the call stops | 200 |
+| dispatch-api | `GET T/batches/{batch_key}` | none | `BatchSummary` `{batch_id, total, counts}`, `counts` keyed by status | 200 |
+| dispatch-api | `GET T/batches/{batch_key}/jobs?status=&after=&limit=` | none | `JobPage` `{jobs: [{job_id, submission_key, status, view}], next}`, ordered by job id, `limit` from 1 to 1,000 | 200 |
+| dispatch-api | `GET T/depth` | none | `Depth` `{depth}`, the rows at `accepted` keyed by priority class then job class | 200 |
+| control-api | `GET T/jobs/{job_id}` | none | `JobStatus` | 200 |
+| control-api | `POST T/jobs/{job_id}/{action}` with `action` in `cancel`, `terminate`, `pause`, `resume` | `ControlRequest` `{reason, template}`, `template` allowed only on `resume` | `ControlAnswer` `{job_id, action, outcome, status, view, control_seq}` | 200 |
+| control-api | `POST T/batches/{batch_key}/{action}` | `ControlRequest` without `template` | NDJSON: one `ControlAnswer` or `EntryError` per job, then one `SummaryLine` | 200 |
+| both | `GET /healthz`, `GET /readyz` | none | `{status}`; ready means the database logins connect, the store answers a `head`, and the Temporal client is connected | 200, or 503 when not ready |
+
+Models:
+
+| Model | Fields and rules |
+| --- | --- |
+| `BatchHeader` | `batch_key` (1 to 200 characters, so `<batch key>/<index>` fits the 256 of `submission_key`), `template` (an object of at most `max_document_bytes`), `priority_class` (default `standard`), `job_class` (default `short`) |
+| `BatchEntry` | `index` (0 to 99,999, unique within the call), `submission_key` (1 to 256 characters, optional), `seed` (0 to 2^53 - 1), `parameters` (an object), `priority_class` and `job_class` (optional overrides of the header) |
+| `EntryAnswer` | `index`, `outcome` (`accepted`, `duplicate`, `rejected`), `job_id` (absent only when the entry could not be parsed far enough to derive it), `status` (on `duplicate`, the existing row's status), `reason` (on `rejected`), `issues` (on `INVALID_PARAMS`, at most 10 validator issues with `path` and `code`), `trace_id` |
+| `SummaryLine` | `summary: {batch_id, accepted, duplicate, rejected}` for submit, and `summary: {applied, requested, noop, refused}` for batch control |
+| `ErrorLine` | `error: {code, message, trace_id}`, written as the last line when a call stops after it began answering. Every entry answered before it is durable, and a resend of the whole call is safe |
+| `EntryError` | `job_id`, `submission_key`, `code`, `message`, one line of a batch control answer for a job whose action was refused |
+| `ControlAnswer` | `outcome` is `applied` when the row reached the target, `requested` when the request waits for the workflow or admission, `noop` when nothing changed |
+| `JobStatus` | `job_id`, `tenant`, `batch_id`, `submission_key`, `status`, `view` (`pausing`, `cancelling` or null), `requested_action`, `control_seq`, `control_delivered`, `priority_class`, `job_class`, `published`, `created_at`, `updated_at`, `terminal_at`, `trace_id`, `detail` (a `StatusQuery` of the temporal contract or null), `detail_error` (`unavailable`, `no-workflow` or null), `results` (the result references of the job's `task.result.ready` events, in task id order), `dead_letter` (Q2) |
+
+#### Reason codes
+
+| Code | Scope | HTTP | When |
+| --- | --- | --- | --- |
+| `UNKNOWN_TENANT` | any | 404 | the tenant of the path is not in the configuration (decision 8) |
+| `INVALID_HEADER` | call | 400 | the header line does not parse or breaks `BatchHeader` |
+| `HEADER_TOO_LARGE` | call | 413 | the header line is above its limit (D10) |
+| `INVALID_TEMPLATE` | call | 400 | the validator refuses the template, with its issues in `message` |
+| `TOO_MANY_ENTRIES` | call | 413 | an entry line beyond the limit arrives; every entry before it is answered |
+| `TOO_MANY_CALLS` | any | 429 | the tenant or the process already has its limit of submit calls in flight, or the process has its limit of requests |
+| `IDLE_TIMEOUT` | call | as an `ErrorLine` | no byte arrived for the idle timeout, or an answer write did not finish in its timeout, when the line may not reach the client |
+| `MALFORMED_LINE` | entry | in its answer line | an entry line is not a JSON object or breaks `BatchEntry` |
+| `ENTRY_TOO_LARGE` | entry | in its answer line | an entry line is above its limit |
+| `DUPLICATE_INDEX` | entry | in its answer line | the index was used earlier in the call |
+| `UNKNOWN_PRIORITY_CLASS` | entry | in its answer line | the class is not in the configuration |
+| `UNKNOWN_JOB_CLASS` | entry | in its answer line | the class is not in `classes` of the limits profile |
+| `INVALID_PARAMS` | entry | in its answer line | `check_job_params` reports issues |
+| `KEY_CONFLICT` | entry | in its answer line | the key exists with another fingerprint, and nothing changed |
+| `BAD_KIND` | upload | 400 | the kind is not `source` or `index` |
+| `HASH_MISMATCH` | upload | 422 | the received bytes hash to another value than the path |
+| `OBJECT_TOO_LARGE` | upload | 413 | the bytes pass the kind cap of the staging contract |
+| `UNREADABLE_BUNDLE` | upload | 422 | `wdf_compile.bundle.info` refuses a source bundle |
+| `OBJECT_MISSING` | call | 409 | an object the template names was purged after its upload, and must be uploaded again |
+| `JOB_NOT_FOUND`, `BATCH_NOT_FOUND` | control, read | 404 | no row of this tenant has the id or the batch key |
+| `INVALID_QUERY` | read | 400 | a query parameter of a read is out of its range or not a known value |
+| `TEMPLATE_NOT_ALLOWED` | control | 400 | a `template` sent with an action other than `resume`, or on a batch control call |
+| `NOT_PAUSED` | control | 409 | a resume of a job that is not paused |
+| `STOPPING` | control | 409 | a pause or resume while a cancel or terminate is outstanding |
+| `PAUSE_IN_PROGRESS` | control | 409 | a resume while a pause is outstanding |
+| `RESUME_PENDING` | control | 409 | a pause of a job at `resume-pending` |
+| `ALREADY_ENDED` | control | 409 | a pause or resume of a job in a terminal status |
+| `PATCH_PENDING` | control | 409 | a resume whose patch differs from the pending one |
+| `PATCH_NOT_STARTED` | control | 409 | a resume with a patch of a job that never started (D18) |
+| `PATCH_INVALID` | control | 400 | the validator refuses the patched template |
+| `PATCH_INCOMPATIBLE` | control | 422 | `patch_check` refuses the patch, with its issues in `message` |
+| `DATABASE_UNAVAILABLE`, `STORE_UNAVAILABLE`, `TEMPORAL_UNAVAILABLE` | any | 503 | a dependency the route needs did not answer, and nothing was written |
+
+#### Control table
+
+The state is the row's status, split by whether the job has a workflow (D4).
+Every control call opens one transaction, reads the row with `lock_job` of E.3, decides on the locked row and writes in the same transaction, so admission's claim either committed before the lock and the row is at `admitted`, or waits and then loses its compare-and-set.
+"Request" is `request_action(job_id, action)`, every event is built by D5's rule and inserted in the same transaction as the row writes, and the retrier of D6 delivers every `requested` outcome except a resume, which admission delivers.
+
+| State | `cancel` | `terminate` | `pause` | `resume` |
+| --- | --- | --- | --- | --- |
+| `accepted` | applied: request, row-only move to `cancelled`, events `job.cancel.requested` and `job.cancelled` | as `cancel`, with `terminated` and `job.terminate.requested` | applied: request, row-only move to `paused`, events `job.pause.requested` and `job.paused` | refused `NOT_PAUSED` |
+| `admitted` or `running` | requested: request, event `job.cancel.requested`, view `cancelling` | requested, as `cancel` | requested: request, event `job.pause.requested`, view `pausing` | refused `NOT_PAUSED` |
+| `paused`, no workflow | applied: request, move to `cancelled`, events `job.cancel.requested` and `job.cancelled` | applied, as `cancel` | noop | applied: request, move to `resume-pending`, row-only move to `accepted`, events `job.resume.requested` and `job.resumed`. With a patch: refused `PATCH_NOT_STARTED` |
+| `paused`, workflow | requested, as for `running` | requested | noop | requested: request, move to `resume-pending`, `pending_patch_ref` set to the patch when one is sent and cleared otherwise (D18), event `job.resume.requested` |
+| `resume-pending`, no workflow | applied: request, move to `cancelled`, events as above | applied | refused `RESUME_PENDING` | noop without a patch, refused `PATCH_NOT_STARTED` with one. The retrier finishes the row-only move to `accepted` |
+| `resume-pending`, workflow | requested | requested | refused `RESUME_PENDING` | noop without a patch or with a patch whose manifest hash equals the pending one, else refused `PATCH_PENDING` |
+| terminal | noop | noop | refused `ALREADY_ENDED` | refused `ALREADY_ENDED` |
+
+An action is outstanding while `requested_action` is not null, as the state contract defines it (`05-state-storage.md:73`): the move into `paused` clears a pause, the move from `resume-pending` to `running` or the row-only move to `accepted` clears a resume, and a move into a terminal status clears whatever remains.
+So every applied cell ends with the move that clears its own request, and leaves nothing outstanding.
+
+Overlay rules for an outstanding `requested_action`, applied before the table:
+
+- The same action again is a noop that returns the outstanding `control_seq`, which is what `request_action` already does, except a `resume` whose patch differs from the pending one, which the `resume-pending` cells decide.
+- `terminate` outstanding: `cancel` is a noop, and `pause` and `resume` are refused `STOPPING`.
+- `cancel` outstanding: `terminate` takes over with the next sequence, and `pause` and `resume` are refused `STOPPING`.
+- `pause` outstanding: `cancel` and `terminate` take over, and `resume` is refused `PAUSE_IN_PROGRESS`.
+- `resume` outstanding: the row is at `resume-pending`, and the table applies.
+
+Every move above is in `contracts/status/status.yaml:51-74`, every row-only move is one that the status contract marks `row_only`, and every event is one that `contracts/stages/stages.yaml:13-25` gives to the control stage.
+
+Contract loader reasons, in check order: `schema-violation`, `too-large`, `unknown-reason` (an answer or error names a code outside `reasons.yaml`), `reason-scope` (a code used outside its scope), `transition-not-allowed` (a cell names a move outside the status contract, or a row-only move for a state with a workflow), `event-not-of-stage` (a cell names an event that the control stage does not emit), `control-cell-missing` (a (state, action) pair has no cell) and `fingerprint-mismatch` (a vector whose output differs from the formula).
+Each schema has two valid files and at least one invalid file under every reason that applies to it.
+
+### Rules agreed with epics that do not exist yet
+
+These are stated so the owner epic confirms them in its own spec.
+
+| Epic | Rule |
+| --- | --- |
+| #7 Broker | Ships a client library whose `publish(routing_key, body)` takes the bytes of `wdf_events.to_bytes` or of a stored event and returns the settlement outcome `ACCEPTED` (the confirm), `REJECTED` (a full queue) or `UNROUTABLE`, and raises `TopologyError` on a refused link attach and `BrokerUnavailable` on a lost connection, as check 1 and finding 6 of the S4 spike say (`docs/delivery/spikes/broker-client.md:36,58`). Provides `broker_container` for the T1 tests of #8 and #24. Pins one tenant and priority-class configuration in its lane 0 with a loader that #7, #8 and #24 read from package data, with `standard` the only class for the proof of concept. Owns the recoverable signal for a delivery-limit dead letter, which must not rely on #24 republishing a row that holds a receipt |
+| #8 Admission | Claims a row by `transition(accepted, admitted)` committed before the start, claims only a row at `accepted` whose `requested_action` is null and treats a `Lost` answer as a skip, re-admits a row at `accepted` with `control_seq` above 0 and no `requested_action` and a row at `admitted` with no workflow, sends `resume` with the row's `control_seq` and `pending_patch_ref` while `requested_action` is `resume`, and is the only sender of `resume`. Reads `seed`, `parameters` and `job_class` from the row as submit wrote it and passes `class_override` null |
+| #13 Observability | Adds the metric names of D15 to `metrics.yaml` and owns the alerts `ReconcilerBacklogOld` and `ControlOutboxOld` that its body names |
+| #14 Load CLI | Is a pure client of `contracts/api/`, and owns `reconcile` |
+| #15 Failure scenarios | Drives the API for a kill during a batch, a Temporal outage during cancel and pause, a batch cancel of running jobs and a pause racing the last task |
+| #16 Characterization | Replaces the estimates of D10, D6 and D7 and the module figures of D16 with measured values, using S7's numbers as the first data point |
+| #17 Test ladder | Uses submit, status, cancel, pause and resume through this API in its core pass, and owns the canonical end-to-end cases (decision 11) |
+| #18 Checkpoint | Proves a patched resume from a checkpoint end to end through `pending_patch_ref` as this epic writes it |
+| #2 capacity revisit #366 | Lands the 6,144 MiB infra node and a dispatch reserve row of 100m and 256 MiB whose name is the module name `dispatch-api`, so the budget check stops counting the reserve once D.2 lands the module |
+
+## 1. Goal and non-goals
+
+Goal: the front door of the platform, for submission and for operation.
+A submitter sends a batch of up to 100,000 jobs in one call and gets a per-job answer, and every accepted row is durable when the answer ends.
+An operator cancels, pauses, resumes (with an optional patch) or terminates a job, including a job that has not started.
+The API writes the job row first and holds no job state of its own: Postgres owns the control record and Temporal owns lifecycle.
+Every call is safe to repeat: the same key gives the same job, and the same control request has its effect once.
+
+### Breakdown inputs updated for what earlier epics landed
+
+The epic body was written on 2026-10-27 and touched last on 2026-11-03, before the state, artifacts, toolchain and workflow epics closed, and these changes apply.
+
+| Epic body item | Now | Source |
+| --- | --- | --- |
+| Contract versions | events v3, job v2, artifact v3, store v3, state v2, status v1, stages v1, temporal v1, instrumentation v1, preset v1, module v1, and after the early lanes store v4, events v4 and state v3 | the `VERSION` files [read] |
+| One service on one NodePort | Two reserved ports, `control-api` and `dispatch-api`, served by one process with two listeners | decision 18, D1 |
+| The API signals `resume` | Admission signals `resume`, and the API sends `cancel`, `terminate` and `pause` only | decision 4 |
+| Bundle resolution credited to #5 | The real `SourceResolver` is this epic's | decision 5 |
+| Upload by hash with no job id | Upload stores the object unindexed, and submit indexes and links it to each job (D11), because `put_content` with a connection needs a job id | D11, `packages/artifactclient/src/wdf_artifactclient/client.py:301-302` [read] |
+| The `submit` store identity reads `wdf-sources` | It can only write there today, and E.1 grants `get` and `list` | decision 6 |
+| Events to emit: accepted and the cancel, pause and resume requested events | Also `job.published`, `job.terminate.requested` and the row-only `job.paused`, `job.resumed`, `job.cancelled` and `job.terminated` of a job that never started | decision 19 |
+| The control transition table "owned by #3" | `wdf_jobstate` guards moves but `request_action` checks no status and no call writes `pending_patch_ref`, so this epic owns the control table (P.1) and E.3 adds the patch writer to the state library | decision 20, `packages/jobstate/src/wdf_jobstate/jobs.py:189-229` [read] |
+| Dead-letter reasons `MALFORMED`, `INVALID_DAG`, `UNKNOWN_TENANT`, `UNSUPPORTED_VERSION` | `INVALID_DAG` dropped, `UNKNOWN_TENANT` an API reason only | decision 8 |
+| Priority classes `high`, `normal`, `low` in neighbouring bodies | `standard` only for the proof of concept | decision 9 |
+| A generated key when no key is given | No generated key: the batch key is required | D9 |
+| Manual pause of a running task, steps 1 to 5 | Built by the workflow epic (decision 7 of `08-workflow-engine.md:38`), and the API only requests the pause and signals it | decision 4, `08-workflow-engine.md:38` [read] |
+| Open questions 3, 5, 9, 11 | Decided | decisions 13 to 15, D1 |
+| Open question 4 (operator-only terminate and patch), 6 (numbers and a pending cap), 7 (unknown tenant), 8 (resume order of a job paused before start), 10 (admission depth) | Q3; D10 and Q4; decision 8; decision 10 makes it admission's; `GET T/depth` counts rows at `accepted` | 0.2, 0.3 |
+| Done means levels 1 to 4 green and `reconcile` of #14 | Rewritten as what this epic can prove | decision 12 |
+| The intake diagram as the epic's diagram | Kept, and the submit and control paths are drawn in 0.2 (issue) as the epic's detail issue 14 asks | 0.2 (issue) |
+
+### Delivered already, and what is left
+
+| Epic body item | State on `main` | Where it is, or what is left |
+| --- | --- | --- |
+| The job row, the unique key, the control columns, the guarded move and the grants | Delivered by #3 | `contracts/state/`, `packages/jobstate/`, `R__roles.sql` |
+| Event models, ids, `build_event`, key formulas, the stage table | Delivered by #4 | `packages/events/`, `packages/keys/`, `contracts/stages/` |
+| Validation, plan compile, job params check, patch check | Delivered by #5 | `packages/jobcheck/`, `packages/plan/`, `packages/jobpatch/` |
+| Content storage, index and link | Delivered by #12 | `packages/artifactclient/`, `packages/artifactindex/` |
+| Bundle reader | Delivered by #11 | `wdf_compile.bundle.info` |
+| Signal and query models, the workflow's handling of every control signal | Delivered by #6 | `contracts/temporal/`, `wdf_workflow.models`, `JobWorkflow` |
+| Store role change, job class vocabulary, patch writer | Left, as early lanes | E.1, E.2, E.3 |
+| API contract, package, stubs | Left | 0.1 (issue), 0.2 (issue) |
+| Submit, uploads, resolver, publish, reconciler | Left | P.2, B.1, B.2, B.3 |
+| Control, retrier, patch, reads | Left | P.1, C.1, C.2, C.3, R.1 |
+| Service and deployment | Left | D.1, D.2 |
+
+Non-goals for this pass:
+
+- everything the epic lists under "Does not own": the job table and its guarded move (#3), intake queues, the dead-letter queue and its tooling (#7), the admission policy, the start call and the resume signal (#8), validation and patch rules (#5), event schemas (#4), the artifact client and store (#12, #3), signal handlers, drain and the paused state (#6), the worker side of an interrupt (#10), the checkpoint contract (#18), the load client (#14), dashboards and alerts (#13), the suites above integration level (#17), an authentication product, a web UI, per-tenant rate limits and several replicas
+- the tenant and priority-class configuration, which the broker epic pins (D17)
+- the recoverable signal for a broker delivery-limit dead letter (decision 8)
+- an OpenAPI document (D2)
+- measuring the API at 100,000 jobs per call against the cluster, which is #16's run, with S7 as this epic's T1 data point
+
+## 2. Interfaces
+
+### Consumes (each pinned to a version)
+
+| From | What | Pinned at | Stub used until it exists |
+| --- | --- | --- | --- |
+| Dev environment | Dev shell, `just test`, `just itest`, `just ci`, `just up`, `just down`, `just nuke`, `wdf_itest` | `flake.lock`, `uv.lock` | none, exists [read] |
+| Cluster | Preset `ci`, module contract, namespaces, host ports `control-api` and `dispatch-api`, cluster lock | preset v1, module v1, `deploy/host/ports.yaml` | none, exists |
+| Capacity revisit [#366](https://github.com/AndoNorth/wasm-dag-forge/issues/366) | The 6,144 MiB `ci` infra node and the dispatch reserve row of 256 MiB | open | none: D.2 waits for it, and every other lane runs before it |
+| Envelope | Event models, `build_event`, `to_bytes`, `wdf_keys`, status table, stage table and `run_stage_contract`, `wdf_temporal` converter and tracing interceptor | events v3 (v4 after E.2), keys v1, status v1, stages v1 | none, exists |
+| Instrumentation | Metric, label and log rules | instrumentation v1 | none, exists |
+| Validator | `wdf_jobcheck.validate`, `SourceResolver`, `BundleInfo`, `BundleNotFound`, `resolver_contract`, `wdf_plan.compile_plan`, `canonical_bytes`, `check_job_params`, `read_plan`, `wdf_jobpatch.patch_check`, the `ci` limits profile | job v2, validator v1 | none, exists |
+| State | `insert_accepted`, `get_job`, `transition`, `request_action`, `mark_published`, `mark_delivered`, `insert_events`, `events_for_job`, and after E.3 `lock_job`, `set_pending_patch` and the receipt time from `mark_published`, the roles `wdf_dispatch`, `wdf_control`, `wdf_artifacts` and `wdf_reader` | state v2 (v3 after E.3), store v3 (v4 after E.1) | none, exists |
+| Artifacts | `put_content`, `get`, `head`, `index_reference`, `link_use`, the staging kind caps and the layout kinds | artifact v3 | none, exists |
+| Toolchain | `wdf_compile.bundle.info` | compile v1 | none, exists |
+| Workflow | `ControlSignal`, `StatusQuery`, signal and query names of `naming.yaml`, `workflow_id`, and for tests `JobWorkflow`, `FakePool` and `FakeControl` | temporal v1, workflow v1 | none, exists |
+| Broker (#7) | The client library's publish with its outcome, the tenant and priority-class configuration, the RabbitMQ pin for T1 and the `rabbitmq` module for T2 | not built (E10) | `FakePublisher` and `StaticTenants` of 0.2 (issue) |
+| Admission (#8) | The claim, the re-admission scan, the resume signal, and the `admission` module for T2 | not built (E12) | tests claim with `transition(accepted, admitted)` and send `resume` themselves, as the workflow harness does |
+
+No `revisit` child issue of an earlier epic blocks this epic today except #366, which blocks D.2 only.
+This spec adds one: E.3, a child of #3 that adds the patch writer, the row lock and the receipt winner to the state library.
+E.1 and E.2 are contract-change PRs on the store and events contracts and need no child issue.
+The names below were checked free on `main` [read: no `packages/dispatchapi/`, no `contracts/api/`, no `deploy/dispatchapi/`, no `docs/architecture/*dispatch-and-control*`, no `docs/delivery/spikes/S7/`].
+
+### Produces (each pinned precisely)
+
+| To | What | Where it lives (path) | Shape | Version |
+| --- | --- | --- | --- | --- |
+| #14, #17, #15, #16 | API contract | `contracts/api/` | `routes.yaml`, `reasons.yaml`, `control.yaml`, the model schemas, `vectors/fingerprint.json`, loader and reasons as 0.4 | api v1 |
+| #8, #6 | Accepted rows, accepted and published events, intake messages, control requests and their signals | the `accepted_job` and `event` tables, the intake queues | the state contract, events v4, `ControlSignal` of temporal v1 | state v3, events v4 |
+| #8, #6, #18 | `pending_patch_ref` | the job row | a `ManifestReference` or null, written by `set_pending_patch` of E.3 | state v3 |
+| every epic that uploads or reads `wdf-sources` | Store role `submit` with `get` and `list` | `contracts/store/roles.yaml` | E.1 | store v4 |
+| every event producer and reader | Job class vocabulary on the event attribute | `contracts/events/` | E.2, checked at the API per Q1 | events v4 |
+| #17, #14, #15, #16 | The service and its module | `packages/dispatchapi/` (`wdf_dispatchapi`), `deploy/dispatchapi/` | `python -m wdf_dispatchapi.service`, module `dispatch-api` in `wdf-control`, NodePorts 30081 and 30080 | dispatchapi v1 |
+| #13 | Metrics | the service's port 9090 | the names of D15 | dispatchapi v1 |
+| #16 | Spike result | `docs/delivery/spikes/S7/batch-submit.md` | pass or fail, numbers, decision | none |
+
+### Assumptions about epics drafted at the same time
+
+The breakdown specs of #7, #8 and #10 are drafted beside this one, and these are the assumptions this spec makes about them, for the review to check.
+
+| # | Epic | Assumption | Where this spec depends on it |
+| --- | --- | --- | --- |
+| A1 | #7 | `wdf_broker.client.Connection.publish(routing_key, body)` takes event bytes and returns `Outcome.ACCEPTED`, `REJECTED` or `UNROUTABLE`, raises `TopologyError` on a refused link attach, which stops publishing and is never retried, and `BrokerUnavailable` on a lost connection, with no reconnect inside the library. The `dispatch` broker user and its Secret come from #7, and the image builds proton as #7 says | B.3, D16, `publisher_contract` |
+| A2 | #7 | The API publishes to the direct exchange `wdf.intake` with routing key `intake.<tenant>.<priority_class>`, the queue's own name, so it formats the key itself and needs no routing table | B.3 |
+| A3 | #7 | Lane 0 of #7 pins `contracts/tenancy/tenancy.yaml` with one profile per preset and the loader `wdf_broker.tenancy.load(profile)` in package data, and the `ci` profile holds tenant `acme` with the class list `standard` only | D17, `tenant_config_contract` |
+| A4 | #7 | The broker module is named `rabbitmq` and the T1 image is pinned in `deploy/versions.yaml` by #7 | B.3 T1 rows, D16, section 7 |
+| A5 | #7, #8 | The recoverable signal for a delivery-limit dead letter needs nothing from this epic, and the reconciler's rule of D7 (never republish a row with a receipt) holds | D7 |
+| A6 | #8 | Admission commits `admitted` before the start, re-admits rows at `accepted` with a receipt and rows at `admitted` with no workflow, and alone sends `resume`, as the rules table says | D4, D6, C.1, C.2 |
+| A7 | #8 | The admission module is named `admission` and is deployed before this epic's exit test | section 7 |
+| A8 | #10 | Real pool workers are deployed before this epic's exit test, which the agreed order of #10 before #8 and #24 gives. If not, rows 12 and 13 of the exit test move to the smoke pass of #17 | section 7 |
+| A9 | #9 | Placement changes nothing this epic calls | none |
+| A10 | #2 | #366 names the dispatch reserve row `dispatch-api`, or the module name of D16 follows whatever name #366 uses | D16, D.2 |
+
+## 3. Lanes
+
+Package and module names are proposals.
+Lane 0 owns every file it creates until the owning lane takes over the glob, except the contract modules of `wdf_dispatchapi`, `wdf_dispatchapi.ports` and `wdf_dispatchapi.testing`, which stay lane 0's.
+`wdf_dispatchapi` below stands for `packages/dispatchapi/src/wdf_dispatchapi` and `tests/` for `packages/dispatchapi/tests`.
+
+Departures from the method, stated so the review approves them knowingly:
+
+- Lane E runs beside lane 0, because its three issues change closed epics' contracts and libraries and touch no file of lane 0.
+  E.1 and E.2 are contract-change PRs on the store and events contracts alone.
+  E.3 is filed as a `revisit` child of #3, and lands as two PRs: first a contract-change PR that touches `contracts/` only, then the code.
+- Spike S7 runs beside lane 0, because it writes only under `docs/delivery/spikes/` and gates nothing.
+- Lane 0 carries no `just/*.just` module and adds no recipe: tests run through `just test`, `just itest` and `just ci`, and the service and the smoke driver are `python -m` commands, as the toolchain and workflow epics recorded.
+- Lane Needs run across lanes where a test over a stub would prove only the stub: the uploads and the resolver need the store role (B.1 after E.1), the submit path needs the class vocabulary (B.2 after E.2), the publisher needs the receipt winner (B.3 after E.3), control needs the row lock (C.1 after E.3), the patched resume needs the patch writer and the resolver (C.3 after E.3 and B.1), the service wires every route (D.1 after B.3, C.2, C.3 and R.1), and the deployment needs the capacity revisit and the broker and admission modules (D.2 after #366 and the modules of #7 and #8).
+- `docs/delivery/method.md` is not edited by this spec; its verifier table still lists `verify-dispatch`, a follow-up the earlier specs record the same way.
+
+| Lane | Workers | Owns (exclusive) | Issues | Needs |
+| --- | --- | --- | --- | --- |
+| E Early changes to closed epics | 3 (one per issue) | E.1: `contracts/store/{roles.yaml,VERSION,README.md}`. E.2: `contracts/events/{README.md,VERSION}`, every file under `contracts/events/vectors/` whose `jobclass` is `simulate`, and `contracts/events/vectors/golden/MANIFEST.sha256`. E.3: `contracts/state/{README.md,VERSION}`, `packages/jobstate/src/wdf_jobstate/{__init__,jobs}.py`, `packages/jobstate/tests/test_{pending_patch,lock_job,mark_published}.py` | E.1, E.2, E.3 | nothing, beside lane 0 |
+| 0 Contract and skeleton | 1 | `contracts/api/**`, `packages/dispatchapi/{pyproject.toml,README.md}`, `wdf_dispatchapi/{__init__,models,contract,gen,ports,tenants}.py`, the package data under `wdf_dispatchapi/contract/**`, `wdf_dispatchapi/testing/**`, `tests/{conftest,test_loader,test_drift,test_fingerprint_vectors,test_stub_contracts,test_wheel}.py`, the two `wdf-dispatchapi` lines of the root `pyproject.toml`, the `wdf-dispatchapi` entry of `uv.lock`, the `api` row of `docs/contracts.md`, `docs/architecture/15-contracts.drawio` and its svg, `docs/architecture/NN-dispatch-and-control.drawio` and its svg | 0.1, 0.2 | nothing (barrier, merged alone) |
+| S Spike | 1 | `docs/delivery/spikes/S7/**`, the S7 row of `docs/delivery/spikes/README.md` | S7 | nothing, beside lane 0 |
+| P Pure rules | 2 (one per issue) | `wdf_dispatchapi/{control_table,keys,ndjson,limits}.py`, `tests/test_{control_table,keys,ndjson,limits}.py` | P.1, P.2 | lane 0 |
+| B Submit path | 1 | `wdf_dispatchapi/{objects,resolver,submit,publish,reconciler}.py`, `tests/{objects,submit,publish}/**` | B.1, B.2, B.3 | lane 0, E.1 for B.1, E.2, B.1 and P.2 for B.2, B.2 and E.3 for B.3 |
+| C Control | 1 | `wdf_dispatchapi/{control,retrier,gateway,patch}.py`, `tests/control/**` | C.1, C.2, C.3 | lane 0, P.1 and E.3 for C.1, C.1 for C.2, C.2, E.3 and B.1 for C.3 |
+| R Reads | 1 | `wdf_dispatchapi/reads.py`, `tests/reads/**` | R.1 | lane 0 |
+| D Service and deployment | 1 | `wdf_dispatchapi/{service,smoke}/**`, `tests/service/**`, `deploy/dispatchapi/**` (module `dispatch-api`, its image, the login job of D13 and the store Secret), the `deploy/dispatchapi` entry of `TREES` in `packages/migrate/tests/test_credentials.py` | D.1, D.2 | B.3, C.2, C.3 and R.1 for D.1, D.1, #366 and the modules of #7 and #8 for D.2 |
+
+Shared-file rules:
+
+- `uv.lock` is the one hotspot, and lane 0 changes it by the `wdf-dispatchapi` entry.
+  Lane 0 declares in `packages/dispatchapi/pyproject.toml` every dependency the lanes need (the workspace packages of the Consumes table, the locked `temporalio`, `psycopg`, `pydantic`, `pyyaml` and `boto3`, and `wdf-broker` once #7 ships it, added by a one-line change of B.3 if #7 lands after lane 0), so no other lane edits it, except that one line of B.3.
+  A lock conflict is never resolved by hand, and `uv lock` is rerun after rebase.
+- The root `pyproject.toml` changes only in 0.1 (issue), by one `wdf-dispatchapi` line in `[tool.uv.sources]` and one in the dev dependency group.
+- `routes.yaml` names the handler of each route as a dotted path into the lane that owns it, so no lane edits a shared router, and D.1 resolves every handler at start and fails on one that is missing.
+- `wdf_dispatchapi/__init__.py` and `tests/conftest.py` are lane 0's, and a lane imports by module path.
+  Lane 0's conftest holds the fixtures that several lanes share (Postgres, SeaweedFS and the Temporal dev server through `wdf_itest`, the tenant fixture, and the four logins of D13 created on the test database), and a lane keeps its own fixtures in a `conftest.py` inside its own test directory.
+- No pytest session holds more than two containers, and a test that needs two at once carries `pair`, because the `t1` fixture of `wdf_itest` sizes its session by that marker.
+  Lane B and the store tests of C.3 hold Postgres with SeaweedFS, lane C and D.1 hold Postgres with the Temporal dev server, lane R holds Postgres alone, and the B.3 RabbitMQ tests hold Postgres with RabbitMQ through `wdf_broker.testing.broker_container`.
+- `contracts/api/README.md` is lane 0's, and after lane 0 merges a pinned file changes only through a contract-change PR.
+- `docs/architecture/NN-dispatch-and-control.drawio` and its svg are drawn by 0.2 (issue) before any other lane starts, and the exit-test worker re-checks them at closure.
+- `docs/delivery/spikes/README.md` gets one appended row for S7.
+- `packages/migrate/tests/test_credentials.py` changes only in D.2, by adding `deploy/dispatchapi` to `TREES`.
+- `justfile`, `just/*.just`, `.github/**`, `nix/**`, `scripts/**`, `docs/dev-setup.md`, `deploy/host/ports.yaml`, `deploy/versions.yaml`, `contracts/instrumentation/**`, `packages/workflow/corpus/**`, every other package except the edits of lane E and the one `TREES` edit, and every other `deploy/` directory are not touched.
+  The image pins `python` as the workflow module does, so `deploy/versions.yaml` needs no entry.
+- Generated schemas are committed, regenerated by `python -m wdf_dispatchapi.gen`, and never hand edited.
+- No tracked file holds a credential: passwords and store credentials come from the state directory, as the workflow module does.
+
+## 4. Issues
+
+One block per issue, in the [lane issue template](../../../.github/ISSUE_TEMPLATE/lane-issue.md), replaced by `#NNN` links after filing.
+Done means, for every issue: `just ci` is green on the branch, the output of the named tests is pasted in the PR, and nothing outside Owns and the shared files changed.
+An issue that names a T2 command runs it under the cluster lock and pastes its output.
+
+### Mapping from the epic's detail issues
+
+The epic numbers its list with two 4s and two 5s, so the second of each is named by its subject.
+
+| Epic detail issue | Delivered by |
+| --- | --- |
+| 1 API skeleton and contract | 0.1 (issue) (routes, error body, reason codes), 0.2 (issue) (tenant check over `StaticTenants`), D.1 (configuration and health), the OpenAPI document dropped (D2) |
+| 2 Batch submit stream | P.2, B.2 |
+| 3 Idempotency | P.2 (keys and fingerprint), B.2 (the duplicate and `KEY_CONFLICT` matrix), B.3 (crash and resend) |
+| 4 Submit sequence | B.2, B.3 |
+| 5 Reconciler | B.3 |
+| 4 (second) Manifest and bundle upload | B.1, B.2 (the inline manifest of D12) |
+| 5 (second) Accepted and control events | B.2, C.1 (ids by D5) |
+| 6 Control endpoints | P.1, C.1 |
+| 7 Control outbox and retrier | C.2 |
+| 8 Resume with patch | E.3, C.3 |
+| 9 Manual pause | C.1 and C.2 (request and signal only, decision 4), the rest built by #6 |
+| 10 Status and batch reads | R.1 |
+| 11 Metrics, traces and alerts | D.1 (metrics and traces), the alerts to #13 (D15) |
+| 12 Deployment | D.2 |
+| 13 Contract tests for #14 and acceptance cases for #17 | 0.1 (issue) (the contract and its vectors), the acceptance cases to #17 (decision 11) |
+| 14 Diagram of the submit and control paths | 0.2 (issue) |
+| Not in the list: the real `SourceResolver`, the store role, the job class vocabulary | B.1, E.1, E.2 |
+
+### E.1 The submit identity reads `wdf-sources`
+
+Lane E, tier T0, and T1 for the role matrix. Needs: nothing. Blocks: B.1.
+
+- Scope: the contract-change PR of decision 6, labelled `contract-change`, with a comment listing #24, #12 and #17 as consumers.
+- Owns: `contracts/store/{roles.yaml,VERSION,README.md}`.
+- Consumes / produces: store v3.
+  Produces store v4, where `submit` holds `get`, `list`, `put` and `multipart` on `wdf-sources` and nothing elsewhere.
+- Acceptance criteria:
+  - [ ] `contracts/store/check.sh contracts/store/roles.yaml` exits 0, and `pytest packages/storecheck -v -k "roles or loader or provision"` passes unchanged.
+  - [ ] `pytest packages/storecheck -v -k role_matrix_equals_the_contract` passes against SeaweedFS, showing `submit` reading and listing `wdf-sources` and still refused a write to `wdf-results`.
+  - [ ] `pytest packages/storecheck -v -k only_the_reaper_deletes` passes, so `submit` gained no delete.
+- Verifier: `packages/storecheck/tests/test_roles.py`, `test_store.py`.
+
+### E.2 Job class vocabulary on events
+
+Lane E, tier T0. Needs: nothing. Blocks: B.2.
+
+- Scope: decision 7 under the answer to Q1, as one contract-change PR touching `contracts/events/` only, with a comment listing every epic that builds events.
+  The README states that `jobclass` takes a class of `classes` in `contracts/job/limits.yaml`, checked by the dispatch API where the class enters, and that readers accept any class name so recorded histories keep decoding.
+  Every vector whose `jobclass` is `simulate` takes `short`, the golden files and `MANIFEST.sha256` are regenerated by `python -m wdf_compat.vectors`, and `VERSION` is 4.
+  `wdf_events`, its profile and every recorded corpus are unchanged.
+- Owns: lane E's E.2 globs.
+- Consumes / produces: events v3, job v2.
+  Produces events v4.
+- Acceptance criteria:
+  - [ ] `python -m wdf_compat.vectors --check` and `python -m wdf_events.schemagen --check` exit 0, and `git grep -lE '"jobclass": *"simulate"' contracts/events` prints nothing.
+  - [ ] `pytest packages/compat packages/events -q -rs` passes with no `SKIPPED` line.
+  - [ ] `pytest packages/temporal packages/workflow -v -k replay` passes with `packages/workflow/corpus/v1/` byte-unchanged.
+- Verifier: `packages/compat/tests/test_golden.py`, `packages/events/tests/test_contract_vectors.py`, the replay tests.
+
+### E.3 State library additions for control and publish
+
+Lane E, tier T1. Needs: nothing. Blocks: C.1, C.3, B.3.
+
+- Scope: filed as a `revisit` child of #3.
+  The contract-change PR documents three calls in `contracts/state/README.md` and bumps `VERSION` to 3, and the code PR adds them to `wdf_jobstate`.
+  `set_pending_patch(conn, job_id, control_seq, ref)`, under `wdf_control`, is a compare-and-set that writes `pending_patch_ref`, or clears it when `ref` is null, only while `requested_action` is `resume` and `control_seq` equals the given sequence, and returns `Lost` otherwise.
+  `lock_job(conn, job_id) -> JobRow | None`, under `wdf_control`, reads the row `FOR UPDATE` inside the caller's transaction, so a control decision and its writes cannot interleave with admission's claim or with another control request.
+  `mark_published` returns the receipt time when this call set it and `None` when a receipt was already there, so only the winner records `job.published`.
+- Owns: lane E's E.3 globs.
+- Consumes / produces: state v2.
+  Produces state v3.
+- Acceptance criteria:
+  - [ ] `pytest packages/jobstate -v -k "pending_patch or lock_job or mark_published"` passes against Postgres: the patch write lands under the outstanding resume, clears with null, loses to a newer sequence and to a cleared action, and is refused as a member of `wdf_dispatch`; a claim by `transition(accepted, admitted)` waits for a held `lock_job` and then sees the committed status; and of two concurrent `mark_published` calls exactly one returns a time.
+  - [ ] `pytest packages/jobstate -q -rs` passes with no `SKIPPED` line, so every existing caller of `mark_published` still passes.
+  - [ ] `python -m wdf_jobstate.gen --check` exits 0.
+- Verifier: `packages/jobstate/tests/test_pending_patch.py`, `test_lock_job.py`, `test_mark_published.py`.
+
+### 0.1 API contract
+
+Lane 0, tier T0. Needs: nothing. Blocks: every other issue but lane E and S7.
+
+- Scope: the contract of 0.4 with its models, loader, generator, vectors and README, the `api` row of `docs/contracts.md`, and the contracts diagram.
+- Owns: `contracts/api/**`, the `api` row of `docs/contracts.md`, `docs/architecture/15-contracts.drawio` and its svg, `packages/dispatchapi/{pyproject.toml,README.md}`, `wdf_dispatchapi/{__init__,models,contract,gen}.py`, the package data under `wdf_dispatchapi/contract/`, `tests/{conftest,test_loader,test_drift,test_fingerprint_vectors}.py`, the root `pyproject.toml` lines and the `uv.lock` entry.
+- Consumes / produces: status v1, stages v1, temporal v1, job v2, read through package data.
+  Produces api v1.
+- Acceptance criteria:
+  - [ ] `contracts/api/check.sh` exits 0 for every `vectors/*/valid/*` file and for `routes.yaml`, `reasons.yaml` and `control.yaml`, and 1 with the `reason:` of its directory for every `invalid` one, shown by `pytest packages/dispatchapi -v -k loader`.
+  - [ ] `test_control_cells_are_status_moves` passes on the pinned `control.yaml` and fails on the vectors under `invalid/transition-not-allowed/` and `invalid/event-not-of-stage/`.
+  - [ ] `test_fingerprint_vectors` passes, and fails after one input key is reordered in the formula.
+  - [ ] `python -m wdf_dispatchapi.gen --check` exits 0, and exits 1 after a model field is renamed.
+  - [ ] `scripts/check-contracts-map.sh` and `scripts/export-diagrams.sh --check` exit 0.
+- Verifier: `tests/test_loader.py`, `test_drift.py`, `test_fingerprint_vectors.py`.
+
+### 0.2 Package skeleton, ports and stubs
+
+Lane 0, tier T0. Needs: 0.1 (issue). Blocks: every code issue.
+
+- Scope: the `Publisher` and `WorkflowGateway` ports and the tenant configuration loader in `wdf_dispatchapi.ports` and `wdf_dispatchapi.tenants`, the stubs and conformance tests of section 5, the wheel test, the shared fixtures, and the submit and control path diagram.
+- Owns: the rest of lane 0's globs.
+- Consumes / produces: the temporal contract's signal and query models.
+  Produces the stubs of section 5.
+- Acceptance criteria:
+  - [ ] `pytest packages/dispatchapi -v -k "publisher_contract or gateway_contract or tenant_config_contract"` passes against `FakePublisher`, `FakeGateway` and `StaticTenants`, and fails against a publisher that returns a value outside `Outcome`, a gateway that sends `resume`, and a configuration that accepts a class outside its list.
+  - [ ] `pytest packages/dispatchapi -v -k wheel` builds the wheel and loads the contract and the tenant fixture from package data outside the repository.
+  - [ ] `scripts/export-diagrams.sh --check` exits 0, and the new diagram shows the two listeners, the submit sequence of D8, the reconciler, the control table, the retrier and the hand-off of `resume` to admission.
+- Verifier: `tests/test_stub_contracts.py`, `test_wheel.py`.
+
+### S7 One call of 100,000 jobs at T1
+
+Lane S, spike, timebox 1.5 days, tier T1, throwaway code in `docs/delivery/spikes/S7/code/`. Needs: nothing. Blocks: nothing, and its numbers feed D10 and #16.
+
+- Question: how long does the submit sequence of D8 take for 100,000 jobs on this host, with `wdf_jobstate.insert_accepted`, `wdf_eventstore.insert_events`, `index_reference` once and `link_use` per job, in chunks of 500, 1,000 and 2,000, against the `wdf_itest` Postgres?
+- Pass line: one chunk size finishes 100,000 rows, events and links with no chunk transaction longer than 5 s, and with a per-call memory peak, above the process baseline, of at most 24 MiB, so the 4 calls per process of D10 add at most 96 MiB to the service baseline that D.1 measures under the 256 MiB of D16.
+- The result records rows per second, events per second, links per second, the longest chunk transaction and the peak memory per chunk size, and names the chunk size that D10 takes.
+- On fail: D10 takes the chunk size with the shortest longest transaction, and the limit of 100,000 entries per call is raised with #16 as a risk to measure on the cluster.
+- Result: `docs/delivery/spikes/S7/batch-submit.md`.
+
+### P.1 Control table as a function
+
+Lane P, tier T0. Needs: lane 0. Blocks: C.1.
+
+- Scope: `decide(state, has_workflow, requested_action, action, patch) -> Decision`, the cells and overlay rules of 0.4 as a pure function, and the view derivation of decision 13.
+- Owns: `wdf_dispatchapi/control_table.py`, `tests/test_control_table.py`.
+- Consumes / produces: `control.yaml`, `contracts/status/status.yaml`.
+  Produces the decision function for C.1.
+- Acceptance criteria:
+  - [ ] `pytest packages/dispatchapi -v -k control_table` passes, including `test_function_equals_control_yaml` over every (state, workflow, outstanding action, action) combination, `test_nothing_leaves_a_terminal_status`, `test_repeat_is_a_noop` and `test_row_only_only_without_a_workflow`, each a property test over the full product.
+  - [ ] `test_function_equals_control_yaml` fails after one cell of `control.yaml` is changed in a copy.
+- Verifier: `tests/test_control_table.py`.
+
+### P.2 Keys, fingerprint, stream reader and limits
+
+Lane P, tier T0. Needs: lane 0. Blocks: B.2.
+
+- Scope: the keys and fingerprint of D9, the NDJSON reader and writer, and the limits of D10 as configuration with the defaults.
+- Owns: `wdf_dispatchapi/{keys,ndjson,limits}.py`, `tests/test_{keys,ndjson,limits}.py`.
+- Consumes / produces: `wdf_keys`, `vectors/fingerprint.json`.
+  Produces the reader and the key functions for B.2.
+- Acceptance criteria:
+  - [ ] `pytest packages/dispatchapi -v -k "keys or ndjson or limits"` passes, including `test_fingerprint_matches_vectors`, `test_job_key_defaults_to_batch_key_and_index`, `test_header_too_large`, `test_entry_too_large_is_an_entry_result`, `test_truncated_last_line_is_malformed`, `test_too_many_entries_answers_every_earlier_entry` and `test_idle_timeout`.
+  - [ ] A property test shows the reader returns every line of a stream split at arbitrary byte boundaries.
+- Verifier: `tests/test_keys.py`, `test_ndjson.py`, `test_limits.py`.
+
+### B.1 Uploads and the real resolver
+
+Lane B, tier T1 (SeaweedFS through `wdf_itest`). Needs: lane 0, E.1. Blocks: B.2, C.3.
+
+- Scope: the upload route of D11, and `StoreSourceResolver`, a `SourceResolver` over `wdf-sources` that reads a bundle with `wdf_compile.bundle.info` under the `submit` identity (decision 5).
+- Owns: `wdf_dispatchapi/{objects,resolver}.py`, `tests/objects/**`.
+- Consumes / produces: artifact v3, store v4, `resolver_contract`.
+  Produces the upload handler and the resolver for B.2 and C.3.
+- Acceptance criteria:
+  - [ ] `pytest packages/dispatchapi -v -k resolver_contract` passes against `StoreSourceResolver` over SeaweedFS, as `wdf_jobcheck.resolver.resolver_contract` defines it.
+  - [ ] `pytest packages/dispatchapi -v -k objects` passes, including `test_upload_twice_is_200_and_one_object`, `test_hash_mismatch_writes_nothing`, `test_object_too_large_per_kind`, `test_unreadable_bundle_refused` and `test_bad_kind`.
+- Verifier: `tests/objects/`.
+
+### B.2 Batch submit
+
+Lane B, tier T1 (Postgres and SeaweedFS, marked `pair`). Needs: B.1, P.2, E.2. Blocks: B.3.
+
+- Scope: the submit route over the sequence of D8 up to the answer line, with the template of D12, the class rule of decision 14 and the tenant and class check of D17, and one `job.accepted` per inserted row under D5's ids.
+- Owns: `wdf_dispatchapi/submit.py`, `tests/submit/**`.
+- Consumes / produces: state v3, events v4, job v2, artifact v3.
+  Produces accepted rows and events with links.
+- Acceptance criteria:
+  - [ ] `pytest packages/dispatchapi -v -k submit` passes, including `test_entry_outcomes_matrix` (new, same fingerprint, other fingerprint, duplicate index, unknown class, invalid parameters), `test_links_exist_before_rows`, `test_job_class_written_once`, `test_unknown_tenant_reads_no_body`, `test_one_template_manifest_per_batch`, `test_purged_object_stops_the_call` and `test_tenant_scoping`.
+  - [ ] `pytest packages/dispatchapi -m slow -v -k submit_10000` passes: one call of 10,000 entries leaves 10,000 rows and 10,000 `job.accepted` events, and the same call resent answers `duplicate` for each and changes no count.
+- Verifier: `tests/submit/`.
+
+### B.3 Publish and reconciler
+
+Lane B, tier T1 (Postgres with `FakePublisher`, and Postgres with RabbitMQ from `wdf_broker.testing.broker_container`, marked `pair`, once #7 ships it). Needs: B.2, E.3. Blocks: D.1.
+
+- Scope: publishing after the answer lines with the receipt and `job.published` (D8), the reconciler of D7, and the crash-window tests of the epic's level 2.
+- Owns: `wdf_dispatchapi/{publish,reconciler}.py`, `tests/publish/**`, and only if #7 ships its client after lane 0 merges, the `wdf-broker` line of `packages/dispatchapi/pyproject.toml` and the `wdf-dispatchapi` entry of `uv.lock`.
+- Consumes / produces: the publisher port, A1 to A3 of section 2.
+  Produces published rows.
+- Acceptance criteria:
+  - [ ] `pytest packages/dispatchapi -v -k publish` passes, including `test_crash_at_each_step_then_resend` (after the links, after the rows, after the answer, after the publish, after the receipt, each followed by a resend and a reconciler pass, with no row, event or message lost or doubled), `test_rejected_and_unroutable_leave_no_receipt`, `test_reconciler_publishes_stored_bytes`, `test_reconciler_rebuilds_a_dropped_event`, `test_one_published_event_when_reconciler_races_submit`, `test_reconciler_skips_a_row_with_a_receipt` and `test_reconciler_waits_out_the_grace`.
+  - [ ] `pytest packages/dispatchapi -v -k publisher_contract` passes against the adapter over the broker client, once #7 has shipped it.
+  - [ ] `test_topology_error_stops_publishing` passes: a `TopologyError` stops the publisher and the reconciler with an error log and no retry, and the rows keep no receipt.
+  - [ ] Once #7 has shipped its client, `pytest packages/dispatchapi -v -k publish_rabbitmq` passes with the broker client against the pinned image, and until then it is marked `xfail(strict=True)` with the reason "broker client not pinned", which this issue's PR states.
+- Verifier: `tests/publish/`.
+
+### C.1 Control routes
+
+Lane C, tier T1 (Postgres with `FakeGateway`). Needs: P.1, E.3. Blocks: C.2.
+
+- Scope: the single-job and batch control routes over P.1's function, the row writes and events of each cell in one transaction, the row-only events of decision 19 and the requested events, and the tenant check.
+- Owns: `wdf_dispatchapi/control.py`, `tests/control/test_routes.py`.
+- Consumes / produces: state v3, events v4.
+  Produces control requests for C.2.
+- Acceptance criteria:
+  - [ ] `pytest packages/dispatchapi -v -k "control and routes"` passes, including `test_cancel_and_pause_before_start_are_row_only`, `test_cancel_racing_the_claim_still_cancels` (a claim committed before the lock gives outcome `requested`, and a claim that waits on the lock loses with `Lost('cancelled')`), `test_pause_and_cancel_racing_on_one_row`, `test_event_ids_follow_d5`, `test_batch_scope_answers_every_job` and `test_another_tenants_job_is_not_found`.
+  - [ ] `run_stage_contract` passes for the control stage over the events the tests wrote.
+- Verifier: `tests/control/test_routes.py`.
+
+### C.2 Gateway and control retrier
+
+Lane C, tier T1 (Postgres with the Temporal dev server, marked `pair`, and `JobWorkflow` with `FakePool` and `FakeControl`). Needs: C.1. Blocks: C.3, D.1.
+
+- Scope: `TemporalGateway` (D3), the retrier of D6 and the existence test of D4.
+- Owns: `wdf_dispatchapi/{gateway,retrier}.py`, `tests/control/test_{gateway,retrier}.py`.
+- Consumes / produces: temporal v1, `wdf_workflow.testing`.
+  Produces delivered signals.
+- Acceptance criteria:
+  - [ ] `pytest packages/dispatchapi -v -k gateway_contract` passes against `TemporalGateway` on the dev server.
+  - [ ] `pytest packages/dispatchapi -v -k retrier` passes, including `test_request_during_outage_delivered_after` (the dev server stopped, a cancel and a pause requested, the server started, both delivered and `control_delivered_at` set), `test_signal_twice_after_crash_is_harmless`, `test_resume_is_never_signalled` and `test_resume_pending_without_workflow_returns_to_accepted`.
+- Verifier: `tests/control/test_gateway.py`, `test_retrier.py`.
+
+### C.3 Resume with a patch
+
+Lane C, tier T1 (Postgres with the dev server for the resume, and Postgres with SeaweedFS for the stored manifest, in separate tests marked `pair`, with the gateway faked where the store is real). Needs: C.2, E.3, B.1. Blocks: D.1.
+
+- Scope: the patch flow of D18.
+- Owns: `wdf_dispatchapi/patch.py`, `tests/control/test_patch.py`.
+- Consumes / produces: `wdf_jobpatch.patch_check`, `set_pending_patch`, artifact v3.
+  Produces `pending_patch_ref` for admission.
+- Acceptance criteria:
+  - [ ] `pytest packages/dispatchapi -v -k patch` passes, including `test_compatible_patch_sets_pending_ref`, `test_incompatible_patch_changes_nothing`, `test_invalid_patch_template`, `test_patch_not_started`, `test_second_patch_differs_is_pending`, `test_same_patch_again_is_noop`, `test_plain_resume_clears_the_pending_patch` and `test_patch_without_temporal_writes_nothing`.
+- Verifier: `tests/control/test_patch.py`.
+
+### R.1 Status and batch reads
+
+Lane R, tier T1 (Postgres with `FakeGateway`). Needs: lane 0. Blocks: D.1.
+
+- Scope: the job status, batch summary, job page and depth routes of 0.4, with D14 and Q2.
+- Owns: `wdf_dispatchapi/reads.py`, `tests/reads/**`.
+- Consumes / produces: state v3, the reader login, the status query.
+  Produces the read handlers.
+- Acceptance criteria:
+  - [ ] `pytest packages/dispatchapi -v -k reads` passes, including `test_view_from_requested_action`, `test_detail_unavailable_when_query_fails`, `test_results_in_task_order`, `test_dead_letter_field`, `test_page_is_ordered_and_bounded`, `test_depth_counts_accepted_by_class` and `test_reads_are_tenant_scoped`.
+- Verifier: `tests/reads/`.
+
+### D.1 Service
+
+Lane D, tier T1 (Postgres and the dev server, marked `pair`, with the store and the broker faked). Needs: B.3, C.2, C.3, R.1. Blocks: D.2.
+
+- Scope: `python -m wdf_dispatchapi.service` with the two listeners of D1 and D2, the handler resolution of `routes.yaml`, the loops of D6 and D7, the health and readiness of 0.4, the metrics of D15, the traces of 0.4, and a graceful stop that finishes the chunk in flight and then answers `ErrorLine`.
+- Owns: `wdf_dispatchapi/service/**`, `tests/service/**`.
+- Consumes / produces: every lane's handlers.
+  Produces the service.
+- Acceptance criteria:
+  - [ ] `pytest packages/dispatchapi -v -k service` passes, including `test_memory_with_four_calls_and_two_uploads` (the resident peak stays under 230 MiB), `test_every_route_on_its_listener_only`, `test_every_handler_resolves`, `test_ready_only_when_dependencies_answer`, `test_metrics_names_and_no_id_labels`, `test_sigterm_mid_call_then_resend` and `test_sixteen_in_flight_then_too_many_calls`.
+  - [ ] `pytest packages/dispatchapi -v -k tenant_config_contract` passes against the loader over #7's `contracts/tenancy/tenancy.yaml`, once #7 has pinned it.
+- Verifier: `tests/service/`.
+
+### D.2 Image and deployment
+
+Lane D, tier T2. Needs: D.1, #366, the `rabbitmq` module of #7 and the `admission` module of #8. Blocks: the exit test.
+
+- Scope: module `dispatch-api` as D16, its image on the `python` pin, the login job for the four logins of D13 following `deploy/workflow/logins.py`, the store Secret of the `submit` identity, two NodePort Services, readiness, the render tests, and the smoke driver `python -m wdf_dispatchapi.smoke` with the scenarios `upload`, `submit`, `cancel-before-start`, `run`, `pause-resume`, `cancel-running` and `restart`, each printing the lines that section 7 expects.
+- Owns: `deploy/dispatchapi/**`, `wdf_dispatchapi/smoke/**`, the `TREES` entry.
+- Consumes / produces: module v1, preset v1, the capacity revisit.
+  Produces the deployed service.
+- Acceptance criteria:
+  - [ ] `pytest deploy/dispatchapi -v` passes: the render shows one replica with `Recreate`, NodePorts 30081 and 30080, requests and limits as D16, no credential in any manifest, and the four logins.
+  - [ ] Under the cluster lock, `just up` and `scripts/tilt/run.sh ci` bring `dispatch-api` to ready, and `curl -s http://127.0.0.1:18081/readyz` and `curl -s http://127.0.0.1:18080/readyz` print `{"status":"ready"}`.
+  - [ ] `python -m wdf_dispatchapi.smoke --scenario submit --jobs 3` prints `accepted: 3`, `duplicate_on_resend: 3` and `unknown_tenant: 404`.
+  - [ ] `pytest packages/migrate -v -k credentials` passes with the new tree.
+- Verifier: `deploy/dispatchapi/test_render.py`, the smoke driver.
+
+## 5. Order, stubs and spikes
+
+- First, in parallel: 0.1 (issue), E.1, E.2, E.3 and S7.
+  Then 0.2 (issue).
+  Lane 0 (0.1 and 0.2) merges alone, with an estimate of four days.
+- After lane 0: P.1, P.2, R.1, and B.1 once E.1 has merged.
+- After P.1 and E.3: C.1, then C.2.
+  After P.2, B.1 and E.2: B.2, then B.3 once E.3 has merged.
+  After C.2, E.3 and B.1: C.3.
+  After B.3, C.2, C.3 and R.1: D.1.
+  After D.1, #366 and the broker and admission modules: D.2.
+- DAG: (0.1 ‖ E.1 ‖ E.2 ‖ E.3 ‖ S7), then 0.2, then (P.1 ‖ P.2 ‖ R.1 ‖ B.1), then (C.1 ‖ B.2), then (C.2 ‖ B.3), then C.3, then D.1, then D.2, then the exit test.
+- Cluster work: D.2 and the exit test, each under the cluster lock, one at a time.
+
+Stubs:
+
+| Stub | What it fakes | How its conformance test runs against the real thing |
+| --- | --- | --- |
+| `FakePublisher` | the broker client of #7 | B.3 runs `publisher_contract` against an adapter over the broker client once #7 ships it, and #7 may run it in its own suite |
+| `StaticTenants` with the fixture tenant `acme` and class `standard` | the tenant and priority-class configuration of #7 | D17's loader reads #7's file once it exists, and `tenant_config_contract` runs against it in D.1 |
+| `FakeGateway` | Temporal | C.2 runs `gateway_contract` against `TemporalGateway` on the dev server |
+| Claims and `resume` signals sent by tests | admission (#8) | #8 claims by the guarded move and sends `resume` by decision 4, and the T2 rows of the exit test run with the real admission module |
+
+Spikes: S7, as its block in section 4 states, runs beside lane 0 and gates nothing.
+
+## 6. Verifier delta
+
+None, per decision 1: no skill, no feature file, no verify recipe.
+Each issue names its tests in section 4, and the exit test in section 7 proves the epic from a clean export.
+
+## 7. Exit test
+
+Run by a worker who did not write the lanes, on a clean `git archive` export of `main` taken outside any git repository, on the 20 GiB WSL2 host with Docker running for the whole run.
+Containers other than the ones the run starts are never touched.
+Each command runs from the export root, its real output is pasted in the PR that records the run, and it is summarised in Closure.
+Every command takes `nix develop -c`, and every Python command takes `uv run --frozen`.
+Rows 9 to 16 take the cluster lock for their whole sequence (`flock /tmp/wdf-cluster.lock env WDF_CLUSTER_LOCK_HELD=1 bash -c '<commands>'`), and rows 17 and 18 run outside it.
+`S` stands for `python -m wdf_dispatchapi.smoke --dispatch http://127.0.0.1:18081 --control http://127.0.0.1:18080 --kube-context kind-wdf`.
+Rows 12 and 13 depend on the real pool workers of #10 (assumption A8).
+
+| # | Command | Expected |
+| --- | --- | --- |
+| 0 | `grep -E '^(MemTotal\|MemAvailable):' /proc/meminfo` and `docker ps --format '{{.Names}}'`, repeated just before row 9 | `MemAvailable` at least the `ci` preset total after #366, as `just doctor` prints it, plus 1,048,576 kB for the smoke driver and the port-forwards, else the run stops and records the figure without touching other containers |
+| 1 | `uv sync --frozen` then `uv lock --check` | exit 0 for both, lock unchanged |
+| 2 | `for m in wdf_dispatchapi.gen wdf_workflow.gen wdf_events.schemagen wdf_jobstate.gen wdf_storecheck.gen wdf_compat.vectors; do python -m $m --check \|\| echo "DRIFT $m"; done` | no output |
+| 3 | `for f in contracts/api/vectors/*/valid/*; do contracts/api/check.sh "$f"; done`, the same over every file under `contracts/api/vectors/*/invalid/` | exit 0 for each valid file, exit 1 with the `reason:` of its directory for each invalid one |
+| 4 | `scripts/check-contracts-map.sh`, `scripts/export-diagrams.sh --check`, `just versions --check`, then the new diagram opened | exit 0 for each, and the diagram shows what 0.2 (issue) lists, checked by eye because an export gives every file one time |
+| 5 | `pytest packages/dispatchapi packages/events packages/jobstate packages/storecheck -q -rs` | all pass with no `SKIPPED` line and no `XFAIL` line |
+| 6 | `pytest packages/dispatchapi -v -k "function_equals_control_yaml or entry_outcomes_matrix or links_exist_before_rows or crash_at_each_step_then_resend or reconciler_skips_a_row_with_a_receipt or cancel_racing_the_claim_still_cancels or request_during_outage_delivered_after or resume_is_never_signalled or incompatible_patch_changes_nothing or patch_not_started or detail_unavailable_when_query_fails or sigterm_mid_call_then_resend or resolver_contract or gateway_contract or publisher_contract"` | each named test is listed `PASSED` |
+| 7 | `pytest packages/dispatchapi -m slow -v -k submit_10000` | `PASSED` |
+| 8 | `pytest deploy/dispatchapi -v` | the render tests pass |
+| 9 | `just up`, `scripts/tilt/run.sh ci`, `kubectl --context kind-wdf -n wdf-infra get pods`, `kubectl --context kind-wdf -n wdf-control get pods`, `curl -s http://127.0.0.1:18081/readyz`, `curl -s http://127.0.0.1:18080/readyz` | exit 0 with `rabbitmq` ready in `wdf-infra` and `admission`, `workflow-worker` and `dispatch-api` ready in `wdf-control`, and both probes print `{"status":"ready"}` |
+| 10 | `S --scenario upload`, then `S --scenario submit --jobs 3` | `created: 1`, `already_present: 1`, then `accepted: 3`, `duplicate_on_resend: 3`, `unknown_tenant: 404` |
+| 11 | `S --scenario cancel-before-start` | `row_only: 1`, `status: cancelled`, `workflow: none` |
+| 12 | `S --scenario run --jobs 1` | `status: succeeded`, `results:` at least 1 |
+| 13 | `S --scenario pause-resume` (one long `cpu_burn` job, whose running task goes back to `ready` with no checkpoint until #18, as the workers epic says, so this is not the checkpointed pause that decision 11 moves to the later pass of #17) | `seen: pausing,paused,resume-pending,running,succeeded` in that order |
+| 14 | `S --scenario cancel-running` | `seen: cancelling,cancelled` |
+| 15 | `S --scenario restart --jobs 2000` (the `dispatch-api` pod deleted mid-call, then the call resent) | `rows: 2000`, `accepted_events: 2000`, `lost: 0`, `doubled: 0`, and `unpublished: 0` within 60 s |
+| 16 | `just down`, then `just nuke` twice | exit 0 for each, and `just nuke` leaves nothing and repeats cleanly |
+| 17 | `just ci` | exit 0, on the full path |
+| 18 | the `ci` and `state-modules` workflows on `main` | one green run of each, the URLs recorded in Closure |
+
+Not provable by this epic: the `reconcile` command and 100,000 jobs per call on the cluster (#14, #16), the canonical end-to-end cases and the later pass with a patched resume from a checkpoint (#17, #18), a broker delivery-limit dead letter and its recoverable signal (#7, #8), the re-admission scan (#8), kills and outages beyond the service pod (#15), dashboards and alerts (#13), several replicas, and a tenant that is not self-asserted.
+
+## 8. Parallelism and cost
+
+- Maximum parallel workers: 5 in the first phase (0.1, E.1, E.2, E.3, S7), 1 for 0.2 beside the remaining lane E work, then 4 (P.1, P.2, R.1, B.1), then 2 (C.1 and B.2, then C.2 and B.3), then 1 for C.3, D.1, D.2 and the exit test.
+- Host constraints: each T1 session holds at most two containers, so four lanes at once hold at most eight small containers.
+  The cluster is single-owner, so D.2 and the exit test queue for the lock, behind the T2 work of #7, #8 and #10.
+- CI cost, estimates: no new workflow, and `just itest` gains about two minutes for the new T1 sessions and the slow 10,000-job test.
+- Estimates, not measurements, in worker-days: lane 0 (4: 0.1 2.5, 0.2 1.5), E.1 (0.5), E.2 (1), E.3 (2), S7 (1.5), P.1 (1.5), P.2 (1.5), B.1 (2), B.2 (4), B.3 (2.5), C.1 (3), C.2 (2.5), C.3 (2.5), R.1 (1.5), D.1 (2.5), D.2 (3), exit test (2).
+  That is about 38 worker-days of effort and about 21 days elapsed along lane 0, P.1, C.1, C.2, C.3, D.1, D.2 and the exit test (4 + 1.5 + 3 + 2.5 + 2.5 + 2.5 + 3 + 2), with the broker client and its configuration landing late, #366, the cluster lock behind #7, #8 and #10, and the Temporal client on a thread as the main sources of slip.
+
+## 9. Closure (filled at close)
+
+Closure addenda, one dated line each, added after close when a `revisit` child issue is filed against this epic:
+
+- none yet
