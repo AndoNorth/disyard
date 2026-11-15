@@ -31,7 +31,7 @@ A criterion that cannot run yet says which tier it waits for, and the issue is b
 
 ## Verifier
 
-<named test file or `just verify <domain> <feature>`; the feature file that must change>
+<named test file or command>
 
 ## Needs / blocks
 
@@ -40,6 +40,5 @@ A criterion that cannot run yet says which tier it waits for, and the issue is b
 ## Done means
 
 - [ ] `just ci` green on the branch
-- [ ] verifier ran, and its real output (not a description of it) is pasted in the PR with the evidence path or CI run url
-- [ ] feature file updated (planned -> scripted) or reason written
+- [ ] the named tests or commands ran, and their real output (not a description of it) is pasted in the PR or linked as a CI run url
 - [ ] nothing outside "Owns" changed

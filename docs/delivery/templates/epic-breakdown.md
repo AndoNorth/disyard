@@ -3,7 +3,6 @@
 Status: draft | approved <date> | closed <date>
 Epic: <issue url>
 Architecture note: docs/architecture/<file>
-Verifier: .claude/skills/verify-<domain>/
 Depends on (closed epics): #a, #b
 
 ## 0. Decisions for the captain (max 5)
@@ -45,9 +44,9 @@ Replaced by `#NNN` links after filing.
 <barrier lane, DAG of lanes, each stub: what it fakes, how its conformance test runs against the real thing>
 <spikes: id, question, pass line, what it blocks>
 
-## 6. Verifier delta
+## 6. Test delta
 
-<features added or flipped planned -> scripted by this epic, tier for each, new helper scripts, what stays planned and why>
+<tests and commands added by this epic, the tier of each, new helper scripts, what stays untested and why>
 
 ## 7. Exit test
 
@@ -59,7 +58,7 @@ Replaced by `#NNN` links after filing.
 
 ## 9. Closure (filled at close)
 
-<commit sha, verify run id, evidence path or CI run url, what was learned, what moved>
+<commit sha, CI run url, what was learned, what moved>
 
 Closure addenda, one dated line each, added after close when a `revisit` child issue is filed against this epic:
 

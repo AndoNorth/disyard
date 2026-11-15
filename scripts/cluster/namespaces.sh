@@ -3,6 +3,8 @@
 # A quota is the allocatable of the pool nodes its namespace runs on plus 5 percent, so it guards against runaway
 # creation while the scheduler's own accounting stays binding. Allocatable is node size minus the reservation rule of
 # contracts/preset/README.md and the cpu reservation of render.sh, so the numbers come from the preset and are never typed.
+# A quota has no limits.cpu line: cpu limits throttle and never evict, so the infra pool may hold limits above its
+# allocatable while the scheduler places pods on their requests.
 #   apply  create or update the namespaces, LimitRanges and quotas (default)
 #   render print the quotas without touching the cluster
 #   check  print each quota next to the live pool allocatable, then admit a pod without resources and reject one above the quota
@@ -57,7 +59,6 @@ spec:
   hard:
     requests.cpu: ${cpu}m
     requests.memory: ${mem}Mi
-    limits.cpu: ${cpu}m
     limits.memory: ${mem}Mi
 QUOTA
     done
