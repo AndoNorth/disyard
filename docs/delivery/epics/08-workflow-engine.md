@@ -638,4 +638,4 @@ Follow-ups found, none filed by this run:
 
 Closure addenda, one dated line each, added after close when a `revisit` child issue is filed against this epic:
 
-- none yet
+- 2026-11-15: [#374](https://github.com/AndoNorth/wasm-dag-forge/issues/374) adds `--pools real` and `--queue-prefix` to the harness and the memo key `wdf_pool_queue_prefix`, which `wdf_workflow.taskpath` applies to each placement, and records that the workers spec (`11-workers.md`, decision 7) drops the worker's re-check of the cache key at task start that the breakdown inputs table above keeps, because the pool workers hold no database access and the workflow's own lookup and `cache_record` already cover it.

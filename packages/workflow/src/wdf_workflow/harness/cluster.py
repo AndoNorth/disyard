@@ -4,7 +4,8 @@
 The deployed workflow worker runs the real control activities, so the harness seeds what they read
 as the dispatch API would: each job's row, claimed from `accepted` to `admitted`, and its manifest
 and source in the store under the `submit` identity, indexed and linked to the job. The FakePool
-of each pool holds the store identity of that pool, as the pool workers will.
+of each pool holds the store identity of that pool, as the pool workers do. A run on the real
+pools reads the results the jobs committed through the index and the `workflow` identity.
 """
 
 import asyncio
@@ -39,17 +40,21 @@ from ..models import ControlSignal, ResumeSignal, StatusQuery, TaskInput
 from . import (
     DEADLINE_S,
     PARAMS,
+    POOL_WORKERS,
+    SIMULATE_TASKS,
     WORKFLOW_WORKER,
     Job,
     Pool,
     Refused,
     Scripts,
     _until,
+    matches_echo,
     search_attributes,
 )
 
 INFRA = "wdf-infra"
 CONTROL = versioning.KUBE_NAMESPACE
+WORKERS = "wdf-workers"
 # Each forward: the namespace, the resource and the port behind it.
 FORWARDS = {
     "temporal": (INFRA, "svc/temporal-frontend", 7233),
@@ -158,7 +163,9 @@ class Cluster:
         self.db: psycopg.Connection | None = None
         self._watch: asyncio.Task | None = None
 
-    def refuse(self, command: str, scenario: str | None, targets: list[str]) -> None:
+    def refuse(
+        self, command: str, scenario: str | None, targets: list[str], pools: str = "fake"
+    ) -> None:
         if command == "rollout" and not BUILD.is_file():
             raise Refused(f"rollout builds the image with {BUILD}; run it from the tree's root")
 
@@ -270,19 +277,55 @@ class Cluster:
         return {"search_attributes": search_attributes(job.event)}
 
     @asynccontextmanager
-    async def running(self, scripts: Scripts, hold: dict[str, float]) -> AsyncIterator[dict]:
+    async def running(
+        self, scripts: Scripts, hold: dict[str, float], prefix: str = ""
+    ) -> AsyncIterator[dict]:
         async with AsyncExitStack() as stack:
             fakes = {}
             for pool, script in scripts.items():
                 store = ArtifactClient(self.endpoint, self.credentials[pool])
                 fakes[pool] = await stack.enter_async_context(
-                    Pool(self.client, pool, script, store=store, hold_s=hold.get(pool, 0.0))
+                    Pool(
+                        self.client,
+                        pool,
+                        script,
+                        store=store,
+                        queue=prefix + naming().pools[pool],
+                        hold_s=hold.get(pool, 0.0),
+                    )
                 )
             yield fakes
 
+    def _verified(self, jobs: list[Job]) -> int:
+        """The jobs whose every simulate result, as the index holds it, has the expected values of
+        the level 0 `echo` vector."""
+        reader = ArtifactClient(self.endpoint, self.credentials["workflow"])
+        rows = self.db.execute(
+            "SELECT producer_job::text, producer_task, producer_attempt, uri, sha256, size, name"
+            " FROM artifact WHERE kind = 'result' AND deleted_at IS NULL"
+            " AND producer_job::text = ANY(%s)",
+            ([job.job_id for job in jobs],),
+        ).fetchall()
+        matched: dict[str, int] = {}
+        for job, task, attempt, uri, sha256, size, name in rows:
+            reference = {
+                "uri": uri,
+                "sha256": sha256,
+                "size": size,
+                "name": name,
+                "kind": "result",
+                "producer": {"job": job, "task": task, "attempt": attempt},
+            }
+            if matches_echo(reader.get_bytes(reference, size)):
+                matched[job] = matched.get(job, 0) + 1
+        return sum(matched.get(job.job_id) == SIMULATE_TASKS for job in jobs)
+
+    async def verified(self, jobs: list[Job]) -> int:
+        return await asyncio.to_thread(self._verified, jobs)
+
     def _pods(self, target: str) -> tuple[str, list[str]]:
         """The namespace of a target and the names of its pods: the workflow worker's by label,
-        a Temporal service's by the name of its Deployment."""
+        a pool worker's or a Temporal service's by the name of its Deployment."""
         if target == WORKFLOW_WORKER:
             names = kubectl(
                 self.context,
@@ -295,8 +338,9 @@ class Cluster:
                 "jsonpath={.items[*].metadata.name}",
             ).split()
             return CONTROL, names
+        namespace = WORKERS if target in POOL_WORKERS else INFRA
         pods = json.loads(
-            kubectl(self.context, f"--namespace={INFRA}", "get", "pods", "-o", "json")
+            kubectl(self.context, f"--namespace={namespace}", "get", "pods", "-o", "json")
         )
         names = [
             pod["metadata"]["name"]
@@ -304,7 +348,7 @@ class Cluster:
             if pod["metadata"]["name"].startswith(f"{target}-")
             and pod["status"].get("phase") != "Succeeded"
         ]
-        return INFRA, names
+        return namespace, names
 
     def _ready_again(self, target: str, gone: set[str]) -> bool:
         namespace, names = self._pods(target)
@@ -324,14 +368,17 @@ class Cluster:
             if not names:
                 raise Refused(f"no pod of {target} in the cluster of {self.context}")
             deleted[target] = (namespace, set(names))
-        # Every target goes down at once, while the tasks of the jobs are in flight.
-        for namespace, names in deleted.values():
+        # Every target goes down at once, while the tasks of the jobs are in flight. A pool worker
+        # goes with no grace, so its drain cannot finish the task it runs.
+        for target, (namespace, names) in deleted.items():
+            force = ["--grace-period=0", "--force"] if target in POOL_WORKERS else []
             kubectl(
                 self.context,
                 f"--namespace={namespace}",
                 "delete",
                 "pod",
                 "--wait=false",
+                *force,
                 *sorted(names),
             )
         deadline = time.monotonic() + UP_S

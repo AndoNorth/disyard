@@ -47,6 +47,9 @@ CONTROL_START_TO_CLOSE = timedelta(minutes=5)
 LOCAL_START_TO_CLOSE = timedelta(seconds=30)
 # Above this backoff a local activity retry waits on a workflow timer, not inside the task.
 LOCAL_RETRY_THRESHOLD = timedelta(seconds=60)
+# The memo key of a job's start that names a prefix of its pool queues, so a run can hold its own
+# queues beside the deployed pool workers. A job started without it runs on the contract names.
+QUEUE_PREFIX_MEMO = "wdf_pool_queue_prefix"
 TIMEOUT_CLASSES = {
     "HEARTBEAT": "heartbeat_timeout",
     "START_TO_CLOSE": "start_to_close_timeout",
@@ -216,6 +219,11 @@ def halt(job) -> None:
         raise asyncio.CancelledError("the job is stopping")
 
 
+def queue_prefix() -> str:
+    """The prefix of the job's pool queues, from the memo of its start, empty when it has none."""
+    return workflow.memo_value(QUEUE_PREFIX_MEMO, "", type_hint=str)
+
+
 def _request(task) -> PlacementRequest:
     return PlacementRequest(
         task_type=task.type,
@@ -233,6 +241,9 @@ async def run(job, task, attempt: int, after: Next) -> TaskResult:
         raise TaskFailed(placed.failure, placed.reason)
     if after.schedule_to_start_s is not None:
         placed = placed.model_copy(update={"schedule_to_start_s": after.schedule_to_start_s})
+    # The placer answers with the contract names, so an escalated placement takes the prefix too.
+    if prefix := queue_prefix():
+        placed = placed.model_copy(update={"queue": prefix + placed.queue})
     job.placements[task.id] += 1
     placement = job.placements[task.id]
     await job.emit(

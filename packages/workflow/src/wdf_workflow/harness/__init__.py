@@ -6,6 +6,11 @@ job reuses one source, so its compile hits the cache once a first one recorded i
 does what admission would: it gives each job a row claimed from `accepted` to `admitted` and
 starts its workflow with the start options of the naming contract.
 
+The pools are FakePools by default, on queues behind a prefix of their own that each job's start
+names in its memo, so a fake run never shares a queue with the deployed pool workers. With real
+pools the harness starts no FakePool, and its jobs build the workload library bundle and run a
+level 0 `echo` on the deployed workers, whose results it checks against the golden vector.
+
 Two tiers run it. `Local` (T1) is a dev server, where the harness runs the build's workflow worker
 itself and FakeControl serves the control activities, so nothing is seeded. `Cluster` (T2, in
 `wdf_workflow.harness.cluster`) is the deployed workflow worker with the real control activities,
@@ -15,7 +20,10 @@ for which the harness seeds rows, manifests and sources.
 import asyncio
 import hashlib
 import inspect
+import io
+import json
 import os
+import re
 import tempfile
 import uuid
 from collections.abc import AsyncIterator, Callable
@@ -50,6 +58,8 @@ from wdf_compile import bundle
 from wdf_events import Event, build_event
 from wdf_events.models import ContentReference, JobParams
 from wdf_jobdoc.plan_models import Plan
+from wdf_kernel.format import FormatError
+from wdf_kernel.reader import read, same_blocks
 from wdf_keys import workflow_id
 from wdf_plan import bind, canonical_bytes, manifest_reference, read_plan
 from wdf_runtime.models import BuildInfo
@@ -58,10 +68,12 @@ from wdf_runtime.pins import COMPONENTIZE_PY_VERSION, WIT_VERSION
 from .. import versioning
 from ..activities.plan import limits
 from ..budgets import INFRA_RETRIES
-from ..contract import naming, pools
-from ..models import StatusQuery, TaskInput, TaskResult
+from ..contract import naming
+from ..contract import pools as pools_table
+from ..models import QUEUE, StatusQuery, TaskInput, TaskResult
 from ..placement import StaticPlacer, place_activity
 from ..service import control_queue
+from ..taskpath import QUEUE_PREFIX_MEMO
 from ..testing import Die, FakeControl, FakePool, Succeed, Zombie
 from ..testing.control import Emit, Emitted, LoadedPlan
 from ..testing.pool import Outcome
@@ -70,6 +82,16 @@ PROFILE = "ci"
 TENANT = "harness"
 PARAMS = JobParams(seed=7, parameters={})
 ENTRY = "sim"
+# The entry module of the workload library bundle, which a job on the real pools builds.
+REAL_ENTRY = "wdf_workloads.main"
+# The level 0 vector whose params every simulate task of a real smoke job runs, and whose expected
+# values each of its results must hold.
+ECHO = Path(__file__).resolve().parents[5] / "contracts/workload/vectors/level0/echo"
+# What every simulate task of a real restart runs: a level 1 workload long enough to outlast the
+# restart of its pod, at about 170 units a second in the 250m simulate slot (an estimate from the
+# calibrated host rate).
+BURN = {"workload": "cpu_burn", "args": {"units": 2000, "heartbeat_every": 100}, "seed": 7}
+POOLS = ("fake", "real")
 LOCKFILE = b"version = 1\n"
 SIMULATE_TASKS = 4
 # The slot of each pool in pool table v0, which a task may not exceed.
@@ -97,6 +119,8 @@ QUERY_TIMEOUTS = (
 # The build of the workflow worker that a T1 run starts, when WDF_BUILD_ID names none.
 LOCAL_BUILD = "harness"
 WORKFLOW_WORKER = "workflow-worker"
+# The Deployments of the pool workers, which a restart deletes with no grace.
+POOL_WORKERS = ("compile-worker", "simulate-worker", "aggregate-worker")
 SCENARIOS = ("pause-resume", "zombie", "worker-death")
 # What a T1 run refuses: both read the job row or the index, which a T1 run does not have.
 ROW_SCENARIOS = ("pause-resume", "zombie")
@@ -136,9 +160,10 @@ def content(body: bytes, kind: str, name: str) -> ContentReference:
     return ContentReference(uri=uri, sha256=sha256, size=len(body), name=name, kind=kind)
 
 
-def smoke_plan(source: ContentReference) -> Plan:
-    """The plan of a smoke job over a source: a compile, four simulate tasks over its component
-    and an aggregate over their results, with no placeholder, so it binds to any params."""
+def smoke_plan(source: ContentReference, entry: str = ENTRY, simulate: dict | None = None) -> Plan:
+    """The plan of a smoke job over a source: a compile of `entry`, four simulate tasks over its
+    component, each with the params `simulate`, and an aggregate over their results, with no
+    placeholder, so it binds to any params."""
     sims = [f"sim-{n}" for n in range(1, SIMULATE_TASKS + 1)]
 
     def task(tid: str, kind: str, deps: list[str], output: str | None, params: dict) -> dict:
@@ -156,8 +181,8 @@ def smoke_plan(source: ContentReference) -> Plan:
             "params": params,
         }
 
-    compile_params = {"source": source.model_dump(mode="json"), "entry": ENTRY}
-    simulate_params = {"workload": "pi", "args": {"n": 1000}, "seed": PARAMS.seed}
+    compile_params = {"source": source.model_dump(mode="json"), "entry": entry}
+    simulate_params = simulate or {"workload": "pi", "args": {"n": 1000}, "seed": PARAMS.seed}
     return Plan.model_validate(
         {
             "plan_version": 1,
@@ -192,30 +217,73 @@ class Job:
         return LoadedPlan(plan=plan, max_history_events=profile.max_history_events)
 
 
+def _job(source: bytes, plan: Plan) -> Job:
+    event = build_event(
+        "job.accepted",
+        source="/wdf/dispatch",
+        tenant=TENANT,
+        jobid=str(uuid.uuid4()),
+        priorityclass="standard",
+        jobclass="short",
+        traceparent=f"00-{uuid.uuid4().hex}-{uuid.uuid4().hex[:16]}-01",
+        time=datetime.now(UTC),
+        data={
+            "manifest": manifest_reference(plan),
+            "batch_id": str(uuid.uuid4()),
+            "submission_key": f"harness-{uuid.uuid4()}",
+        },
+    )
+    return Job(event, canonical_bytes(plan), source)
+
+
 def smoke_jobs(count: int) -> list[Job]:
     """`count` smoke jobs, the even ones sharing one source and each odd one with its own."""
     shared = source_bundle("shared")
     jobs = []
     for n in range(count):
         source = shared if n % 2 == 0 else source_bundle(f"job-{n}")
-        plan = smoke_plan(content(source, "source", "bundle.tar"))
-        event = build_event(
-            "job.accepted",
-            source="/wdf/dispatch",
-            tenant=TENANT,
-            jobid=str(uuid.uuid4()),
-            priorityclass="standard",
-            jobclass="short",
-            traceparent=f"00-{uuid.uuid4().hex}-{uuid.uuid4().hex[:16]}-01",
-            time=datetime.now(UTC),
-            data={
-                "manifest": manifest_reference(plan),
-                "batch_id": str(uuid.uuid4()),
-                "submission_key": f"harness-{uuid.uuid4()}",
-            },
-        )
-        jobs.append(Job(event, canonical_bytes(plan), source))
+        jobs.append(_job(source, smoke_plan(content(source, "source", "bundle.tar"))))
     return jobs
+
+
+def echo_params() -> dict:
+    return json.loads((ECHO / "input.json").read_text())
+
+
+def real_jobs(count: int, simulate: dict) -> list[Job]:
+    """`count` jobs over the workload library bundle, built from its entry module, whose simulate
+    tasks each run `simulate`. They share the one source, so a compile hits the cache once a first
+    one recorded it."""
+    # The workload library is a package of the workspace's dev group, not of the workflow image.
+    from wdf_workloads import bundle as workloads
+
+    with tempfile.TemporaryDirectory(prefix="wdf-harness-") as work:
+        source = workloads.write(Path(work)).read_bytes()
+    plan = smoke_plan(content(source, "source", "bundle.tar"), REAL_ENTRY, simulate)
+    return [_job(source, plan) for _ in range(count)]
+
+
+def matches_echo(result: bytes) -> bool:
+    """Whether a results.xml holds the expected values of the level 0 `echo` vector."""
+    expected = json.loads((ECHO / "expected.json").read_text())
+    try:
+        document = read(io.BytesIO(result))
+    except FormatError:
+        return False
+    return (document["schema"], document["seed"]) == (
+        expected["schema"],
+        expected["seed"],
+    ) and same_blocks(expected["blocks"], document["blocks"]) is None
+
+
+def fresh_prefix() -> str:
+    """A queue prefix of its own for a run on fake pools."""
+    return f"h-{uuid.uuid4().hex[:8]}-"
+
+
+def valid_prefix(prefix: str) -> bool:
+    """Whether every pool queue behind the prefix is a queue name of the activity contract."""
+    return all(re.fullmatch(QUEUE, prefix + queue) for queue in naming().pools.values())
 
 
 def search_attributes(event: Event) -> TypedSearchAttributes:
@@ -334,7 +402,14 @@ class Local:
         self.client: Client | None = None
         self._workflow: tuple[Worker, asyncio.Task] | None = None
 
-    def refuse(self, command: str, scenario: str | None, targets: list[str]) -> None:
+    def refuse(
+        self, command: str, scenario: str | None, targets: list[str], pools: str = "fake"
+    ) -> None:
+        if pools == "real":
+            raise Refused(
+                "real pools read the store and the index, which a T1 run does not have; "
+                "run it with --kube-context"
+            )
         if scenario in ROW_SCENARIOS:
             raise Refused(
                 f"{scenario} reads the job row or the index, which a T1 run does not seed; "
@@ -386,7 +461,9 @@ class Local:
         await run
 
     @asynccontextmanager
-    async def running(self, scripts: Scripts, hold: dict[str, float]) -> AsyncIterator[dict]:
+    async def running(
+        self, scripts: Scripts, hold: dict[str, float], prefix: str = ""
+    ) -> AsyncIterator[dict]:
         async with AsyncExitStack() as stack:
             control = Worker(
                 self.client,
@@ -395,7 +472,13 @@ class Local:
             )
             await stack.enter_async_context(control)
             fakes = {
-                pool: Pool(self.client, pool, script, hold_s=hold.get(pool, 0.0))
+                pool: Pool(
+                    self.client,
+                    pool,
+                    script,
+                    queue=prefix + naming().pools[pool],
+                    hold_s=hold.get(pool, 0.0),
+                )
                 for pool, script in scripts.items()
             }
             for fake in fakes.values():
@@ -433,6 +516,7 @@ class Counters:
             and "status_unanswered" not in self.extra
             and self.extra.get("zombie_commits", 0) == 0
             and self.extra.get("paused_resumed", jobs) == jobs
+            and self.extra.get("verified", jobs) == jobs
         )
 
     def lines(self) -> list[str]:
@@ -507,7 +591,7 @@ async def _until(check: Callable[[], Any], timeout_s: float, what: str, every_s:
         await asyncio.sleep(every_s)
 
 
-async def start(client: Client, tier, job: Job) -> WorkflowHandle:
+async def start(client: Client, tier, job: Job, prefix: str = "") -> WorkflowHandle:
     return await client.start_workflow(
         naming().workflow.type,
         args=[job.event, PARAMS],
@@ -515,16 +599,19 @@ async def start(client: Client, tier, job: Job) -> WorkflowHandle:
         task_queue=naming().workflow.queue,
         id_reuse_policy=WorkflowIDReusePolicy[naming().workflow.id_reuse_policy],
         result_type=str,
+        memo={QUEUE_PREFIX_MEMO: prefix} if prefix else None,
         **tier.start_options(job),
     )
 
 
-async def start_all(client: Client, tier, jobs: list[Job]) -> list[WorkflowHandle]:
+async def start_all(
+    client: Client, tier, jobs: list[Job], prefix: str = ""
+) -> list[WorkflowHandle]:
     gate = asyncio.Semaphore(WAITERS)
 
     async def one(job: Job) -> WorkflowHandle:
         async with gate:
-            return await start(client, tier, job)
+            return await start(client, tier, job, prefix)
 
     return await asyncio.gather(*(one(job) for job in jobs))
 
@@ -572,18 +659,23 @@ async def status(client: Client, job_id: str, end: float) -> StatusQuery:
 
 
 async def infra_retries(
-    counters: Counters, client: Client, fakes: dict[str, FakePool], retry_s: float = QUERY_RETRY_S
+    counters: Counters,
+    client: Client,
+    fakes: dict[str, FakePool],
+    retry_s: float = QUERY_RETRY_S,
+    jobs: list[Job] | None = None,
 ) -> None:
     """Counts the infrastructure budget the jobs spent, read from the status query of each job in
-    which a pool saw a task run more than once, since only those can have spent any. The queries
-    share `retry_s`, and a job whose query has not answered by then is counted under
-    `status_unanswered`, so the run still prints."""
+    which a pool saw a task run more than once, since only those can have spent any, or of every
+    one of `jobs` when the pools are real and show nothing. The queries share `retry_s`, and a job
+    whose query has not answered by then is counted under `status_unanswered`, so the run still
+    prints."""
     retried = {
         task.request.jobid
         for fake in fakes.values()
         for task in fake.calls
         if task.task_attempt > 1
-    }
+    } | {job.job_id for job in jobs or []}
     end = asyncio.get_running_loop().time() + retry_s
     unanswered = 0
     for job_id in sorted(retried):
@@ -616,23 +708,40 @@ def _paused_supported() -> bool:
 
 
 async def run_jobs(
-    tier, command: str, count: int, scenario: str | None, deaths: int, targets: list[str]
+    tier,
+    command: str,
+    count: int,
+    scenario: str | None,
+    deaths: int,
+    targets: list[str],
+    pools: str = "fake",
+    prefix: str = "",
 ) -> Counters:
-    """Runs `count` smoke jobs to their end under the scenario, restarting `targets` once tasks
-    are in flight for `restart`, and counts how they ended."""
+    """Runs `count` smoke jobs to their end under the scenario, on fake pools or the deployed
+    ones, with their pool queues behind `prefix`, restarting `targets` once tasks are in flight
+    for `restart`, and counts how they ended."""
     if scenario == "pause-resume" and not _paused_supported():
         raise Refused(
             "pause-resume is planned: the job workflow has no pause and resume signals yet"
         )
+    real = pools == "real"
+    if real and scenario:
+        raise Refused(f"{scenario} scripts the fake pools, and a run on real pools starts none")
     client = tier.client
-    zombie_s = pools().pools["simulate"].heartbeat_s * 1.25
+    zombie_s = pools_table().pools["simulate"].heartbeat_s * 1.25
     restart = command == "restart"
     hold = {"simulate": HOLD_S} if restart or scenario == "pause-resume" else {}
-    jobs = smoke_jobs(count)
+    if real:
+        jobs = real_jobs(count, BURN if restart else echo_params())
+    else:
+        jobs = smoke_jobs(count)
     await tier.seed(jobs)
     counters = Counters()
-    async with tier.running(_script(scenario, deaths, zombie_s), hold) as fakes:
-        handles = await start_all(client, tier, jobs)
+    if prefix:
+        counters.extra["queue_prefix"] = prefix
+    scripts = {} if real else _script(scenario, deaths, zombie_s)
+    async with tier.running(scripts, hold, prefix) as fakes:
+        handles = await start_all(client, tier, jobs, prefix)
         drivers = []
         if scenario == "pause-resume":
             drivers = [
@@ -640,8 +749,15 @@ async def run_jobs(
                 for h, j in zip(handles, jobs, strict=True)
             ]
         if restart:
-            await _until(lambda: fakes["simulate"].running, DEADLINE_S, "simulate task in flight")
-            counters.extra["in_flight"] = fakes["simulate"].running
+            if real:
+                in_flight = await _until(
+                    lambda: simulating(client, handles), DEADLINE_S, "simulate task in flight"
+                )
+            else:
+                in_flight = await _until(
+                    lambda: fakes["simulate"].running, DEADLINE_S, "simulate task in flight"
+                )
+            counters.extra["in_flight"] = in_flight
             await tier.restart(targets)
             counters.extra["restarted"] = ",".join(targets)
         statuses = await ended(handles)
@@ -654,7 +770,9 @@ async def run_jobs(
                 lambda: len(fakes["simulate"].zombies) >= count, zombie_s * 4, "zombie completion"
             )
             counters.extra["zombie_commits"] = await tier.zombie_commits(fakes["simulate"].zombies)
-        await infra_retries(counters, client, fakes)
+        if real and not restart:
+            counters.extra["verified"] = await tier.verified(jobs)
+        await infra_retries(counters, client, fakes, jobs=jobs if real else None)
     return counters
 
 
@@ -667,10 +785,16 @@ async def _simulating(client: Client, handle: WorkflowHandle) -> bool:
     return any(t.state == "running" and t.id.startswith("sim-") for t in status.tasks)
 
 
-async def rollout(tier, count: int, new: str) -> Counters:
+async def simulating(client: Client, handles: list[WorkflowHandle]) -> int:
+    """How many of the jobs have a simulate task running."""
+    return sum(await asyncio.gather(*(_simulating(client, h) for h in handles)))
+
+
+async def rollout(tier, count: int, new: str, prefix: str = "") -> Counters:
     """Runs `count` jobs on the current build until their simulate tasks wait, deploys build
     `new` beside it and makes it current, runs `count` more jobs, then lets every job finish and
-    deletes the old build's Deployment once no open job is pinned to it."""
+    deletes the old build's Deployment once no open job is pinned to it. The fake pools and the
+    jobs' pool queues sit behind `prefix`."""
     client = tier.client
     old = await versioning.current(client)
     if old is None or old == new:
@@ -680,14 +804,14 @@ async def rollout(tier, count: int, new: str) -> Counters:
     scripts = _script(None, 0, 0)
     counters = Counters()
     serving = {pool: script for pool, script in scripts.items() if pool != "simulate"}
-    async with tier.running(serving, {}) as fakes:
-        open_handles = await start_all(client, tier, opened)
+    async with tier.running(serving, {}, prefix) as fakes:
+        open_handles = await start_all(client, tier, opened, prefix)
         for handle in open_handles:
             await _until(lambda h=handle: _simulating(client, h), DEADLINE_S, "simulate task")
         await tier.deploy(old, new)
         await versioning.set_current(client, new)
-        later_handles = await start_all(client, tier, later)
-        async with tier.running({"simulate": scripts["simulate"]}, {}) as simulate:
+        later_handles = await start_all(client, tier, later, prefix)
+        async with tier.running({"simulate": scripts["simulate"]}, {}, prefix) as simulate:
             statuses = await ended(open_handles + later_handles)
             counters.finished = statuses.count("succeeded")
             counters.failed = len(statuses) - counters.finished
