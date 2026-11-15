@@ -1,0 +1,124 @@
+<mxfile host="drawio">
+  <diagram id="admission-cycle" name="admission cycle">
+    <mxGraphModel dx="1400" dy="900" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="1400" pageHeight="900" math="0" shadow="0" adaptiveColors="auto">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="title" value="&lt;b&gt;Admission cycle&lt;/b&gt;: layer 1 releases a job by claiming its row and starting its workflow, and counts live jobs from the rows" style="text;html=1;align=left;verticalAlign=middle;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="20" y="10" width="1200" height="30" as="geometry"/>
+        </mxCell>
+        <mxCell id="disp" value="&lt;b&gt;Dispatch API&lt;/b&gt; (#24)&lt;br&gt;one transaction: row at &lt;i&gt;accepted&lt;/i&gt; + its event,&lt;br&gt;then publish, then mark_published&lt;br&gt;&lt;i&gt;until #24 exists: the driver&lt;/i&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;align=left;spacingLeft=8;" vertex="1" parent="1">
+          <mxGeometry x="20" y="70" width="280" height="90" as="geometry"/>
+        </mxCell>
+        <mxCell id="ctl" value="&lt;b&gt;Control API&lt;/b&gt; (#24)&lt;br&gt;writes appdb; a job that never started:&lt;br&gt;request and row-only move together,&lt;br&gt;resumed before start goes back to &lt;i&gt;accepted&lt;/i&gt;&lt;br&gt;a started job: cancel, terminate, pause by signal" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;align=left;spacingLeft=8;" vertex="1" parent="1">
+          <mxGeometry x="20" y="190" width="280" height="90" as="geometry"/>
+        </mxCell>
+        <mxCell id="mq" value="&lt;b&gt;RabbitMQ&lt;/b&gt; (#7)&lt;br&gt;quorum queues intake.&amp;lt;tenant&amp;gt;.&amp;lt;priority class&amp;gt;&lt;br&gt;delivery limit 5 by policy wdf-intake&lt;br&gt;class &lt;i&gt;standard&lt;/i&gt; only&lt;br&gt;dead letters to intake.dlq" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;align=left;spacingLeft=8;" vertex="1" parent="1">
+          <mxGeometry x="20" y="330" width="280" height="100" as="geometry"/>
+        </mxCell>
+        <mxCell id="dlq" value="&lt;b&gt;intake.dlq&lt;/b&gt;&lt;br&gt;MALFORMED, UNSUPPORTED_VERSION&lt;br&gt;ADMISSION_FAILED on the last allowed delivery (Q1)&lt;br&gt;row stays &lt;i&gt;accepted&lt;/i&gt;, so a replay admits it" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;align=left;spacingLeft=8;" vertex="1" parent="1">
+          <mxGeometry x="20" y="470" width="280" height="90" as="geometry"/>
+        </mxCell>
+        <mxCell id="adm" value="admission, one replica in wdf-control (Recreate, 128 MiB), login in wdf_admission" style="swimlane;startSize=26;rounded=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="360" y="60" width="560" height="560" as="geometry"/>
+        </mxCell>
+        <mxCell id="snap" value="&lt;b&gt;1 Snapshot from the rows&lt;/b&gt; (every cycle, one REPEATABLE READ transaction)&lt;br&gt;live = &lt;i&gt;admitted&lt;/i&gt; + &lt;i&gt;running&lt;/i&gt; + granted resumes; open adds &lt;i&gt;paused&lt;/i&gt; and &lt;i&gt;resume-pending&lt;/i&gt;&lt;br&gt;waiting resumes: &lt;i&gt;resume-pending&lt;/i&gt; with requested_action resume&lt;br&gt;every 10th cycle, the scans: &lt;i&gt;accepted&lt;/i&gt; with control_seq &amp;gt; 0 and no action,&lt;br&gt;and &lt;i&gt;admitted&lt;/i&gt; older than 60 s with no workflow (at most 50 describes)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#6c8ebf;align=left;spacingLeft=8;" vertex="1" parent="adm">
+          <mxGeometry x="20" y="40" width="520" height="90" as="geometry"/>
+        </mxCell>
+        <mxCell id="plan" value="&lt;b&gt;2 Plan&lt;/b&gt; (pure policy)&lt;br&gt;strict class order, every 5th grant to the lowest waiting class&lt;br&gt;inside a class: resumes and re-admissions first, then tenants round-robin&lt;br&gt;never past the global cap, a tenant quota or a job class cap,&lt;br&gt;and no queue grant past the open-workflow cap" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#6c8ebf;align=left;spacingLeft=8;" vertex="1" parent="adm">
+          <mxGeometry x="20" y="145" width="520" height="100" as="geometry"/>
+        </mxCell>
+        <mxCell id="pull" value="&lt;b&gt;3a Queue grant&lt;/b&gt;&lt;br&gt;drain credit 1&lt;br&gt;decode; check type, pair and queue&lt;br&gt;row check: &lt;i&gt;accepted&lt;/i&gt; and no action" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;align=left;spacingLeft=8;" vertex="1" parent="adm">
+          <mxGeometry x="20" y="270" width="160" height="100" as="geometry"/>
+        </mxCell>
+        <mxCell id="readm" value="&lt;b&gt;3b Re-admission&lt;/b&gt;&lt;br&gt;resumed before start: claim&lt;br&gt;stuck &lt;i&gt;admitted&lt;/i&gt;: start only" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;align=left;spacingLeft=8;" vertex="1" parent="adm">
+          <mxGeometry x="200" y="270" width="160" height="100" as="geometry"/>
+        </mxCell>
+        <mxCell id="res" value="&lt;b&gt;3c Resume grant&lt;/b&gt;&lt;br&gt;resume signal with the row's control_seq and pending patch,&lt;br&gt;resent only while its status query shows it unapplied" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;align=left;spacingLeft=8;" vertex="1" parent="adm">
+          <mxGeometry x="380" y="270" width="160" height="100" as="geometry"/>
+        </mxCell>
+        <mxCell id="claim" value="&lt;b&gt;4 Claim, committed first&lt;/b&gt;&lt;br&gt;transition(accepted, admitted) + job.admitted in one transaction&lt;br&gt;Lost = skip" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;align=left;spacingLeft=8;" vertex="1" parent="adm">
+          <mxGeometry x="20" y="400" width="340" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="start" value="&lt;b&gt;5 Start, then settle&lt;/b&gt;&lt;br&gt;accepted event rebuilt from the row + JobParams, workflow_id(job_id), REJECT_DUPLICATE,&lt;br&gt;five search attributes; already started = duplicate; then ack the message" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;align=left;spacingLeft=8;" vertex="1" parent="adm">
+          <mxGeometry x="20" y="480" width="520" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="pg" value="&lt;b&gt;appdb&lt;/b&gt; (Postgres)&lt;br&gt;accepted_job: status, requested_action, control_seq, pending_patch_ref&lt;br&gt;event: job.admitted, job.dead.lettered from /wdf/admission" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;align=left;spacingLeft=8;" vertex="1" parent="1">
+          <mxGeometry x="980" y="90" width="300" height="100" as="geometry"/>
+        </mxCell>
+        <mxCell id="tmp" value="&lt;b&gt;Temporal&lt;/b&gt;, namespace wdf&lt;br&gt;JobWorkflow on wdf-workflow&lt;br&gt;projects &lt;i&gt;running&lt;/i&gt;, &lt;i&gt;paused&lt;/i&gt; and the terminal statuses onto the row" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;align=left;spacingLeft=8;" vertex="1" parent="1">
+          <mxGeometry x="980" y="450" width="300" height="100" as="geometry"/>
+        </mxCell>
+        <mxCell id="brk" value="&lt;b&gt;Breaker&lt;/b&gt; per dependency (Temporal, database, broker) and for a repeated internal error&lt;br&gt;releases the message uncounted, stops pulling and probes with backoff; a row left &lt;i&gt;admitted&lt;/i&gt; is started by the scan" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;align=left;spacingLeft=8;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="980" y="250" width="300" height="100" as="geometry"/>
+        </mxCell>
+        <mxCell id="e1" value="row + event" style="endArrow=classic;html=1;fontSize=10;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="disp" target="pg">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="160" y="50"/>
+              <mxPoint x="1130" y="50"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e2" value="publish" style="endArrow=classic;html=1;fontSize=10;edgeStyle=orthogonalEdgeStyle;exitX=0;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="disp" target="mq">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="10" y="115"/>
+              <mxPoint x="10" y="375"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e3" value="pull on credit" style="endArrow=classic;html=1;fontSize=10;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="mq" target="pull">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e4" value="dead letter" style="endArrow=classic;html=1;fontSize=10;" edge="1" parent="1" source="mq" target="dlq">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e5" style="endArrow=classic;html=1;" edge="1" parent="adm" source="snap" target="plan">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e6" style="endArrow=classic;html=1;" edge="1" parent="adm" source="plan" target="pull">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e7" style="endArrow=classic;html=1;" edge="1" parent="adm" source="plan" target="readm">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e8" style="endArrow=classic;html=1;" edge="1" parent="adm" source="plan" target="res">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e9" style="endArrow=classic;html=1;" edge="1" parent="adm" source="pull" target="claim">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e10" style="endArrow=classic;html=1;" edge="1" parent="adm" source="readm" target="claim">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e11" style="endArrow=classic;html=1;" edge="1" parent="adm" source="claim" target="start">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e12" style="endArrow=classic;html=1;dashed=1;" edge="1" parent="1" source="pg" target="snap">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e13" value="start_workflow" style="endArrow=classic;html=1;fontSize=10;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="start" target="tmp">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e14" value="signal resume" style="endArrow=classic;html=1;fontSize=10;edgeStyle=orthogonalEdgeStyle;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" edge="1" parent="1" source="res" target="tmp">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="820" y="445"/>
+              <mxPoint x="950" y="445"/>
+              <mxPoint x="950" y="480"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e15" value="projects status" style="endArrow=classic;html=1;fontSize=10;dashed=1;edgeStyle=orthogonalEdgeStyle;exitX=1;exitY=0.5;entryX=1;entryY=0.5;" edge="1" parent="1" source="tmp" target="pg">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1310" y="500"/>
+              <mxPoint x="1310" y="140"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
