@@ -6,8 +6,8 @@ pools:
     requests: {cpu: "1", memory: 1Gi}
     limits: {cpu: "1", memory: 1Gi}
   simulate:
-    requests: {cpu: 250m, memory: 384Mi}
-    limits: {cpu: 250m, memory: 384Mi}
+    requests: {cpu: 250m, memory: 512Mi}
+    limits: {cpu: 250m, memory: 512Mi}
   aggregate:
     requests: {cpu: "1", memory: 1Gi}
     limits: {cpu: "1", memory: 1Gi}

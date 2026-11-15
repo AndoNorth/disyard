@@ -1,7 +1,7 @@
 # Temporal contract
 
 Owner epic: #6 (workflow engine on Temporal).
-Version: 1, in [VERSION](VERSION).
+Version: 2, in [VERSION](VERSION).
 The [Consumers](#consumers) section names who reads each part.
 
 Temporal owns the state of every job.
@@ -37,7 +37,7 @@ The placement epic replaces it with real values and timeout formulas by a contra
 | Pool | `cpu_milli` | `memory_mib` | `schedule_to_start_s` | `heartbeat_s` | `start_to_close_margin_s` |
 | --- | --- | --- | --- | --- | --- |
 | `compile` | 1000 | 1024 | 1800 | 60 | 120 |
-| `simulate` | 250 | 384 | 1800 | 60 | 120 |
+| `simulate` | 250 | 512 | 1800 | 60 | 120 |
 | `aggregate` | 1000 | 1024 | 1800 | 60 | 120 |
 
 The slots equal `deploy/presets/slots/ci.yaml`, and `packages/workflow/tests/test_pools.py` holds them equal.

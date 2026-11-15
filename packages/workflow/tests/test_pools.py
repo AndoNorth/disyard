@@ -34,7 +34,7 @@ def test_pools_match_ci_slots():
     slots = yaml.safe_load(SLOTS.read_text())
     table = yaml.safe_load(POOLS.read_text())
     assert slot_mismatches(table, slots) == []
-    table["pools"]["simulate"]["memory_mib"] = 512
+    table["pools"]["simulate"]["memory_mib"] = 640
     assert slot_mismatches(table, slots) == ["simulate"]
 
 
