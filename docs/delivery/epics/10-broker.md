@@ -1,6 +1,6 @@
 # Epic #7: Broker (RabbitMQ) - breakdown
 
-Status: draft
+Status: closed 2026-11-16
 Epic: https://github.com/AndoNorth/wasm-dag-forge/issues/7
 Architecture note: docs/architecture/10-intake-and-admission.drawio, docs/architecture/04-intake-dedup-and-dead-letter.drawio, and a new broker intake and dead-letter diagram that 0.2 (issue) adds and numbers
 Depends on (closed epics): Dev environment (#1), Fixed-resource cluster (#2), Job event envelope (#4), Durable state and artifact storage (#3), Workflow engine (#6)
@@ -654,10 +654,78 @@ Not provable by this epic: publishing from the real submit sequence and reconcil
 - Estimates, not measurements, in worker-days: lane 0 (3.5: 0.1 (issue) 2, 0.2 (issue) 1.5), S4b (1.5), T.1 (2), C.1 (3), C.2 (2.5), D.1 (2), M.1 (3), exit test (1.5).
   That is about 19 worker-days of effort and about 12.5 days elapsed along 0.1 (issue), 0.2 (issue), T.1, C.1, C.2 and the exit test (2 + 1.5 + 2 + 3 + 2.5 + 1.5), with the proton build on Python 3.13 (Q2), the memory figure of S4b check 10 and cluster lock contention as the main sources of slip.
 
-## 9. Closure (filled at close)
+## 9. Closure
 
-Not run yet.
-At close this section records the commit sha, the exit-test evidence and the CI run URLs, what was learned, and what moved to which epic.
+Run on 2026-11-16 against `d0dfedc9ca9455ab1158ebfe340e1243b512ab7b`, the merge of D.1, from a `git archive` of that commit extracted into a scratch directory with no enclosing git repository, recorded by [#420](https://github.com/AndoNorth/wasm-dag-forge/issues/420).
+Every row passes.
+The pasted output of every row is in the pull request that records this run.
+
+Method of the run:
+
+- The worker that ran it wrote none of the lanes.
+- The host is the 20 GiB WSL2 VM with Docker running for the whole run, and the one container not started by the run, `open-webui`, was left untouched.
+- Row 0's gate is computed from the `ci` preset on `main`, whose `memory_mib` is 12,032 after the simulate slot resize of [#380](https://github.com/AndoNorth/wasm-dag-forge/issues/380), so the gate is 13,056 MiB (13,369,344 kB) and not the 12,928 MiB that row 0 states.
+- Rows 0 to 8 ran first in order, row 0 was repeated just before row 9, rows 9 to 15 ran in one sequence under the cluster lock, held by one `flock` process with `WDF_CLUSTER_LOCK_HELD=1` on each command, and rows 16 and 17 ran after the lock was released.
+- A stopped `wdf` cluster of preset `ci`, left by an earlier run with no lock holder, was removed with `just nuke` under the lock before row 9, so row 9 started from no cluster.
+- The export has no git checkout, so row 9 runs `scripts/tilt/run.sh ci` with `WDF_BUILD_ID=exit-b`, which the workflow module requires outside one (`deploy/workflow/README.md`).
+- The forwards of rows 10 to 15 listen on 127.0.0.1:35672 for AMQP and 127.0.0.1:35692 for the Prometheus endpoint, and were reopened after the pod restart of row 11.
+- Row 4's three diagrams were rendered to PNG with ImageMagick and read by eye.
+
+Results:
+
+| # | Result | Evidence |
+| --- | --- | --- |
+| 0 | pass | `MemAvailable` 18,503,212 kB at the start and 18,498,268 kB before row 9, both above 13,369,344 kB |
+| 1 | pass | `uv sync --frozen` exit 0 with `python-qpid-proton==0.40.0` installed, `uv lock --check` exit 0 with 72 packages resolved, the `uv.lock` SHA-256 `9a908f77…` unchanged |
+| 2 | pass | no output |
+| 3 | pass | exit 0 for the 4 valid vectors and the 3 pinned files, and exit 1 with the `reason:` of its directory for each of the 39 invalid vectors |
+| 4 | pass | exit 0 for the three commands, and diagrams 10, 04 and 19 show `standard` as the only class, the claim from `accepted` to `admitted` in place of "workflow id exists", and the four reasons `MALFORMED`, `UNSUPPORTED_VERSION`, `ADMISSION_FAILED` and `delivery_limit` |
+| 5 | pass | 155 passed and no `SKIPPED` line, then 2 passed under `-m isolated`, `test_restart_keeps_messages` and `test_held_delivery_across_restart` |
+| 6 | pass | 45 passed, every one of the 37 named tests listed `PASSED` |
+| 7 | pass | 11 passed |
+| 8 | pass | `wdf.intake`, `wdf.dlx`, `intake.acme.standard`, `intake.dlq`, their two bindings and the policies `wdf-intake` and `wdf-dlq`, and no user |
+| 9 | pass | `cluster wdf ready: preset ci, 6 nodes`, `SUCCESS. All workloads are healthy.`, `rabbitmq-0` `Running` in `wdf-infra`, `intake.acme.standard` (`wdf-intake`) and `intake.dlq` (`wdf-dlq`) both `quorum` with 0 messages, and `list_users` lists exactly `admission`, `dispatch` and `operator` |
+| 10 | pass | admission's module is not on `main` (no `deploy/admission/`, no admission pod), `S check` prints `assertions: 381/381 passed` and exits 0, and `S count` shows both queues at 0 ready and 0 unacked |
+| 11 | pass | `published 20 of 20`, `rabbitmq-0` deleted and ready again, `count` shows `intake.acme.standard ready=20`, and `drain` prints 20 deliveries, each `delivery_count=0` and matching `job.accepted/1.0.json` |
+| 12 | pass | four lines, `MALFORMED malformed-json` with `-` for the job, `UNSUPPORTED_VERSION unsupported-major` and `ADMISSION_FAILED no-row` with job `3a9617fa-…`, `delivery_limit` with `-` for the detail and the same job, then one count line per reason |
+| 13 | pass | `--limit 1` prints one message line and one count line, `show` prints a message of the job with its annotations, the `delivery_limit` replay replays one, the `MALFORMED` replay refuses with exit 1, the purge removes one, the drain receives the replayed event matching `job.accepted/1.0.json`, and the last list shows the `UNSUPPORTED_VERSION` and `ADMISSION_FAILED` lines only |
+| 14 | pass | `rabbitmq_detailed_queue_messages_ready` at 0 for `intake.acme.standard` and 2 for `intake.dlq` |
+| 15 | pass | both purges and the forwards closed, exit 0 for `just doctor`, `just down` and both `just nuke`, and after the second `kind get clusters` prints `No kind clusters found.` |
+| 16 | pass | `just ci --full` exit 0 in the export, with `--full` because the export has no `origin/main` to pick the path from, 2,769 passed in `just test` and 591 passed in `just itest`, then `all checks passed!` from `nix flake check` |
+| 17 | pass | the `ci` run [43859682113](https://github.com/AndoNorth/wasm-dag-forge/actions/runs/43859682113) and the `state-modules` run [43859682107](https://github.com/AndoNorth/wasm-dag-forge/actions/runs/43859682107), success on `d0dfedc` on `main`; no run on `main` holds this record yet, since it is the pull request that adds it |
+
+Row 13 note: `S deadletter` dead-letters the same golden job for three of its four reasons, so `Q show --job <id>` prints the first message of that job in the queue, the `UNSUPPORTED_VERSION` one, as `show` is documented to do.
+`Q show --job <id> --reason ADMISSION_FAILED`, run as a supplement, prints the `ADMISSION_FAILED` message with its detail `no-row: regression suite`, delivery count 6 and its annotations.
+
+Memory figures:
+
+- Host: `MemTotal` 20,482,272 kB, and `MemAvailable` at 18.5 GB before both phases, about 5.1 GB above the gate.
+- Broker pod, read after row 14 inside `rabbitmq-0`, which row 11 replaced: `memory.current` 108.1 MiB, `memory.peak` 133.6 MiB with page cache, `anon` 76.9 MiB, of a `memory.max` of 320 MiB, and `rabbitmq-diagnostics alarms` reports no alarm.
+- The `ci` infra node: `scripts/cluster/budget.sh ci` prints 5,002 MiB of 5,504 MiB requested, 502 MiB free, with the real `rabbitmq` module at 320 MiB in place of the reserve row.
+
+What was learned:
+
+- The broker holds 20 events across a pod restart on its PersistentVolumeClaim, and the full exchange, queue, policy and user set comes back from the definitions import at boot with no step by hand.
+- S4b changed three defaults, all applied by 0.2 (issue) to the broker contract, which is the source: D14 moved to a limit and request of 320 MiB with the watermark at 192 MiB, D6's delayed retry is on (`delayed-retry-type` `failed`, 1 s to 30 s), and D15's consumer count is family `queue_consumer_count`.
+  The text of D6, D14 and D15 above keeps the figures the lanes were planned on.
+- The 320 MiB step took 64 MiB of section 8's 566 MiB free on the `ci` infra node, which is now 502 MiB, and `02-cluster.md` still quotes 566 MiB.
+- Proton 0.40.0 builds from its sdist with the host C compiler, because the dev shell has none of its own (S4b), and the build is cached by `uv`, so row 1 installed it without rebuilding.
+
+What the architecture note now shows: `docs/architecture/10-intake-and-admission.drawio`, `04-intake-dedup-and-dead-letter.drawio` and the new `19-broker-intake-and-dead-letter.drawio`, with their SVGs, are as 0.2 (issue) left them, and were re-checked by eye in this run for row 4.
+
+What moved to which epic, unchanged from section 7 and the rules rows of 0.4:
+
+- publishing from the real submit sequence and reconciler, with `PublishTimeout` and the reconnect (#24)
+- consuming with the real admission policy, the start call, `release()` for the four causes of Q4 and the `job.dead.lettered` event (#8), and scaling admission to zero in row 10 once its module is on `main`
+- Prometheus scraping of the detailed endpoint, export of the `wdf_broker_*` counters and the three alert rules (#13)
+- broker chaos under load (#15)
+- `max_length`, the caps and the broker footprint at the standard load of 100,000 jobs (#16)
+- a broker on more than one node
+
+Follow-ups found:
+
+- [#421](https://github.com/AndoNorth/wasm-dag-forge/issues/421): the "State" section of `packages/broker/README.md` still says the client, the topology generator, the T1 container, the suite and the dead-letter tool are not built, which T.1, C.1, C.2 and D.1 each noted as lane 0's file.
+- `02-cluster.md` and section 8 above quote 566 MiB free on the `ci` infra node, where `budget.sh ci` now prints 502 MiB, and row 0 above quotes the 12,928 MiB gate of the 11,904 MiB preset; neither changes a check, and the next spec that sizes the infra node or the host takes the figures of this Closure.
 
 Closure addenda, one dated line each, added after close when a `revisit` child issue is filed against this epic:
 
