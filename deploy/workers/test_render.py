@@ -1,0 +1,215 @@
+"""Render tests of the three pool worker modules through `tilt alpha tiltfile-result`, run by
+`just test`.
+
+No cluster and no image build are needed.
+A wrapper Tiltfile stands in for the modules they depend on, enables only their own resources as
+the root Tiltfile does, and loads them from a copy of the files they read, with a state directory
+of its own.
+"""
+
+import json
+import os
+import shutil
+import subprocess
+from pathlib import Path
+
+import pytest
+import yaml
+from wdf_storecheck.s3 import Creds, dump_credentials
+
+ROOT = Path(__file__).resolve().parents[2]
+POOLS = ("compile", "simulate", "aggregate")
+INPUTS = [
+    "deploy/versions.yaml",
+    "contracts/topology/topology.yaml",
+    "contracts/temporal/naming.yaml",
+    "scripts/storage/store/identities.sh",
+    "nix/wasm-tools.nix",
+]
+DEPENDS = ["temporal-bootstrap", "objectstore-bootstrap", "mirror"]
+ROLES = ("admin", "workflow", "compile", "simulate", "aggregate")
+SCRATCH_ENV = {
+    "WDF_SCRATCH": "/var/wdf",
+    "WDF_READY_FILE": "/var/wdf/ready",
+    "HOME": "/var/wdf/home",
+    "TMPDIR": "/var/wdf/tmp",
+    "XDG_CACHE_HOME": "/var/wdf/cache",
+    "UV_CACHE_DIR": "/var/wdf/cache/uv",
+}
+
+pytestmark = pytest.mark.skipif(shutil.which("tilt") is None, reason="tilt not on PATH")
+
+
+@pytest.fixture(scope="module")
+def rendered(tmp_path_factory):
+    root = tmp_path_factory.mktemp("render")
+    shutil.copytree(
+        ROOT / "deploy/workers",
+        root / "deploy/workers",
+        ignore=shutil.ignore_patterns("*.py", "__pycache__"),
+    )
+    for f in INPUTS:
+        (root / f).parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(ROOT / f, root / f)
+    (root / "packages").mkdir()
+    (root / "uv.lock").touch()
+    state = root / "state"
+    state.mkdir()
+    dump_credentials(
+        state / "objectstore.credentials.json",
+        {role: Creds(f"{role}-id", f"{role}-key") for role in ROLES},
+    )
+    (root / "Tiltfile").write_text(
+        "".join(f"local_resource('{d}', cmd='true')\n" for d in DEPENDS)
+        + "".join(f"load_dynamic('deploy/workers/{p}/Tiltfile.module')\n" for p in POOLS)
+        + f"config.set_enabled_resources({DEPENDS + [f'{p}-worker' for p in POOLS]})\n"
+    )
+    run = subprocess.run(
+        ["tilt", "alpha", "tiltfile-result", "-f", str(root / "Tiltfile")],
+        cwd=root,
+        env=os.environ
+        | {
+            "KUBECONFIG": str(ROOT / "scripts/tilt/fixtures/kubeconfig-wdf.yaml"),
+            "WDF_STATE_DIR": str(state),
+        },
+        capture_output=True,
+        text=True,
+    )
+    assert run.returncode == 0, run.stderr
+    manifests = {m["Name"]: m for m in json.loads(run.stdout)["Manifests"]}
+    objects = {
+        (o["kind"], o["metadata"]["name"]): o
+        for m in manifests.values()
+        for o in yaml.safe_load_all(m["DeployTarget"].get("yaml", ""))
+        if o
+    }
+    return manifests, objects
+
+
+def pod(objects, pool: str) -> dict:
+    return objects["Deployment", f"{pool}-worker"]["spec"]["template"]["spec"]
+
+
+@pytest.mark.parametrize("pool", POOLS)
+def test_one_slot_pod_on_the_pool_node(rendered, pool):
+    _, objects = rendered
+    deployment = objects["Deployment", f"{pool}-worker"]
+    assert deployment["metadata"]["namespace"] == "wdf-workers"
+    assert deployment["spec"]["replicas"] == 1
+    assert deployment["spec"]["strategy"] == {"type": "Recreate"}
+    spec = pod(objects, pool)
+    assert spec["nodeSelector"] == {"wdf.dev/pool": pool}
+    assert spec["tolerations"] == [
+        {"key": "wdf.dev/pool", "operator": "Equal", "value": pool, "effect": "NoSchedule"}
+    ]
+    slot = yaml.safe_load((ROOT / "deploy/presets/slots/ci.yaml").read_text())["pools"][pool]
+    module = yaml.safe_load((ROOT / f"deploy/workers/{pool}/module.yaml").read_text())
+    [container] = spec["containers"]
+    assert container["resources"] == slot == module["resources"][f"{pool}-worker"]
+    assert slot["requests"] == slot["limits"]
+
+
+@pytest.mark.parametrize("pool", POOLS)
+def test_secret_holds_the_pool_identity_only(rendered, pool):
+    _, objects = rendered
+    secret = objects["Secret", f"{pool}-worker-store"]
+    held = json.loads(secret["stringData"]["credentials.json"])
+    assert held == {pool: Creds(f"{pool}-id", f"{pool}-key")._asdict()}
+    volumes = {v["name"]: v for v in pod(objects, pool)["volumes"]}
+    assert volumes["store"]["secret"] == {"secretName": f"{pool}-worker-store"}
+
+
+@pytest.mark.parametrize("pool", POOLS)
+def test_environment_has_no_database_prefix_or_build(rendered, pool):
+    _, objects = rendered
+    [container] = pod(objects, pool)["containers"]
+    env = {e["name"]: e.get("value", e.get("valueFrom")) for e in container["env"]}
+    print(sorted(env))
+    assert "envFrom" not in container
+    assert not [n for n in env if n.startswith("WDF_") and n.endswith("_DSN")]
+    assert "WDF_POOL_QUEUE_PREFIX" not in env
+    assert not [n for n in env if "BUILD" in n or "DEPLOYMENT" in n]
+    assert env["WDF_NAMESPACE"] == "wdf"
+    assert env["WDF_TEMPORAL_ADDRESS"] == "temporal-frontend.wdf-infra.svc.cluster.local:7233"
+    assert env["WDF_STORE_ENDPOINT"] == "http://objectstore.wdf-infra.svc.cluster.local:8333"
+    assert env["WDF_STORE_CREDENTIALS"] == "/etc/wdf/store/credentials.json"
+    assert env["WDF_SLOT_MEMORY_MIB"] == {
+        "resourceFieldRef": {"resource": "limits.memory", "divisor": "1Mi"}
+    }
+    assert ("WDF_MIRROR" in env) == (pool == "compile")
+    assert {k: env[k] for k in SCRATCH_ENV} == SCRATCH_ENV
+
+
+@pytest.mark.parametrize("pool", POOLS)
+def test_disk_scratch_volume_with_its_directories(rendered, pool):
+    _, objects = rendered
+    spec = pod(objects, pool)
+    volumes = {v["name"]: v for v in spec["volumes"]}
+    assert volumes["scratch"]["emptyDir"] == {"sizeLimit": "1Gi"}
+    [init] = spec["initContainers"]
+    [container] = spec["containers"]
+    for c in (init, container):
+        assert {"name": "scratch", "mountPath": "/var/wdf"} in c["volumeMounts"]
+    assert init["image"] == container["image"] == f"wdf-{pool}-worker"
+    assert init["command"][:2] == ["mkdir", "-p"]
+    assert set(init["command"][2:]) == {
+        SCRATCH_ENV[k] for k in ("HOME", "TMPDIR", "XDG_CACHE_HOME", "UV_CACHE_DIR")
+    }
+
+
+@pytest.mark.parametrize("pool", POOLS)
+def test_pod_settings_and_readiness(rendered, pool):
+    _, objects = rendered
+    spec = pod(objects, pool)
+    assert spec["automountServiceAccountToken"] is False
+    assert spec["terminationGracePeriodSeconds"] == 75
+    assert spec["securityContext"]["runAsUser"] == 65532
+    assert spec["securityContext"]["runAsNonRoot"] is True
+    for c in spec["containers"] + spec["initContainers"]:
+        assert c["securityContext"]["readOnlyRootFilesystem"] is True
+        assert c["securityContext"]["allowPrivilegeEscalation"] is False
+    [container] = spec["containers"]
+    assert container["readinessProbe"]["exec"]["command"] == ["test", "-e", "/var/wdf/ready"]
+    assert "ports" not in container
+
+
+@pytest.mark.parametrize("pool", POOLS)
+def test_egress_only_to_the_platform_endpoints(rendered, pool):
+    _, objects = rendered
+    policy = objects["NetworkPolicy", f"{pool}-worker"]["spec"]
+    assert policy["podSelector"] == {"matchLabels": {"app.kubernetes.io/name": f"{pool}-worker"}}
+    assert policy["policyTypes"] == ["Ingress", "Egress"]
+    assert "ingress" not in policy
+    reached = {
+        (
+            peer["namespaceSelector"]["matchLabels"]["kubernetes.io/metadata.name"],
+            json.dumps(peer["podSelector"]["matchLabels"], sort_keys=True),
+            port["protocol"],
+            port["port"],
+        )
+        for rule in policy["egress"]
+        for peer in rule["to"]
+        for port in rule["ports"]
+    }
+    temporal = {"app.kubernetes.io/component": "frontend", "app.kubernetes.io/name": "temporal"}
+    expected = {
+        ("kube-system", json.dumps({"k8s-app": "kube-dns"}), "UDP", 53),
+        ("kube-system", json.dumps({"k8s-app": "kube-dns"}), "TCP", 53),
+        ("wdf-infra", json.dumps(temporal, sort_keys=True), "TCP", 7233),
+        ("wdf-infra", json.dumps({"app": "objectstore"}), "TCP", 8333),
+    }
+    if pool == "compile":
+        expected.add(("wdf-infra", json.dumps({"app": "mirror"}), "TCP", 8080))
+    assert reached == expected
+
+
+@pytest.mark.parametrize("pool", POOLS)
+def test_waits_for_its_dependencies_and_carries_its_objects(rendered, pool):
+    manifests, _ = rendered
+    manifest = manifests[f"{pool}-worker"]
+    depends = DEPENDS if pool == "compile" else DEPENDS[:2]
+    assert sorted(manifest["ResourceDependencies"]) == sorted(depends)
+    [image] = manifest["ImageTargets"]
+    *_, script, built = image["BuildDetails"]["args"]
+    assert script.endswith("deploy/workers/image.sh")
+    assert built == pool

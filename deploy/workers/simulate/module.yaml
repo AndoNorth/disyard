@@ -1,0 +1,28 @@
+name: simulate-worker
+group: workers
+namespace: wdf-workers
+artifact:
+  kind: image
+  pin: python
+# One pod slot of deploy/presets/slots/ci.yaml, so requests equal limits.
+resources:
+  simulate-worker:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: 250m
+      memory: 512Mi
+readiness:
+  command:
+    - kubectl
+    - --context=kind-wdf
+    - --namespace=wdf-workers
+    - wait
+    - --for=condition=Available
+    - deployment/simulate-worker
+    - --timeout=300s
+profiles: [ci]
+depends_on:
+  - infra/temporal-bootstrap
+  - infra/objectstore-bootstrap
