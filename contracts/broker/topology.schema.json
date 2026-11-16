@@ -166,6 +166,24 @@
           "title": "Dead Letter Strategy",
           "type": "string"
         },
+        "delayed_retry_max": {
+          "description": "In ms, the longest delay.",
+          "exclusiveMinimum": 0,
+          "title": "Delayed Retry Max",
+          "type": "integer"
+        },
+        "delayed_retry_min": {
+          "description": "In ms, times the delivery count.",
+          "exclusiveMinimum": 0,
+          "title": "Delayed Retry Min",
+          "type": "integer"
+        },
+        "delayed_retry_type": {
+          "const": "failed",
+          "description": "Only a counted retry is delayed, and an uncounted release returns at once.",
+          "title": "Delayed Retry Type",
+          "type": "string"
+        },
         "delivery_limit": {
           "exclusiveMinimum": 0,
           "title": "Delivery Limit",
@@ -185,7 +203,10 @@
         "max_length",
         "overflow",
         "dead_letter_exchange",
-        "dead_letter_strategy"
+        "dead_letter_strategy",
+        "delayed_retry_type",
+        "delayed_retry_min",
+        "delayed_retry_max"
       ],
       "title": "IntakeDefinition",
       "type": "object"
@@ -277,6 +298,29 @@
         "binding"
       ],
       "title": "IntakeQueue",
+      "type": "object"
+    },
+    "Memory": {
+      "additionalProperties": false,
+      "properties": {
+        "high_watermark_mib": {
+          "description": "Absolute, so it never depends on the memory the container detects.",
+          "exclusiveMinimum": 0,
+          "title": "High Watermark Mib",
+          "type": "integer"
+        },
+        "limit_mib": {
+          "description": "The memory request and limit of the broker.",
+          "exclusiveMinimum": 0,
+          "title": "Limit Mib",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "limit_mib",
+        "high_watermark_mib"
+      ],
+      "title": "Memory",
       "type": "object"
     },
     "Message": {
@@ -420,7 +464,7 @@
   "$id": "urn:wdf:schema:broker:topology:1",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
-  "description": "topology.yaml: the exchanges, queues, policies, message shape, users and ports.",
+  "description": "topology.yaml: the exchanges, queues, policies, message shape, users, ports and memory.",
   "properties": {
     "addresses": {
       "$ref": "#/$defs/Addresses"
@@ -445,6 +489,9 @@
     },
     "intake_queue": {
       "$ref": "#/$defs/IntakeQueue"
+    },
+    "memory": {
+      "$ref": "#/$defs/Memory"
     },
     "message": {
       "$ref": "#/$defs/Message"
@@ -473,7 +520,8 @@
     "message",
     "annotations",
     "users",
-    "ports"
+    "ports",
+    "memory"
   ],
   "title": "contracts/broker topology",
   "type": "object"
