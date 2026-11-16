@@ -43,8 +43,9 @@ _SERVING: ContextVar[tuple[Context, Path]] = ContextVar("serving")
 @contextmanager
 def serving(context: Context, tmp: Path) -> Iterator[None]:
     """Every `run_task` started inside runs with a copy of `context` of its own. `tmp`, the TMPDIR
-    of the task's children, is emptied with the task scratch when a task starts, since a stopped
-    child leaves its files behind."""
+    of the task's children, is emptied when a task starts, since a stopped child leaves its files
+    behind. The scratch root is not, because it holds what outlives a task, the module cache among
+    it, and each task path empties its own directory of it."""
     token = _SERVING.set((context, tmp))
     try:
         yield
@@ -57,11 +58,19 @@ async def run_task(task: TaskInput) -> TaskResult:
     served, tmp = _SERVING.get()
     context = replace(served, beat=None)
     started_at = format_time(activity.info().started_time)
-    _empty(context.scratch)
+    context.scratch.mkdir(parents=True, exist_ok=True)
     _empty(tmp)
     beating = asyncio.create_task(_heartbeat(context, started_at))
     try:
         return await path_of(task.request)(task, context)
+    except asyncio.CancelledError as error:
+        # The SDK cancels a task still running at the end of a drain. Re-raised, that would be
+        # reported as a cancel, which withdraws the attempt, so it fails as the shutdown it is.
+        cancelled = activity.cancellation_details()
+        if cancelled is None or not cancelled.worker_shutdown:
+            raise
+        reason = "worker_shutdown: drain: the worker stopped before the task ended"
+        raise await _failure(context, task, "worker_shutdown", reason, started_at, error) from None
     except ApplicationError:
         raise
     except ArtifactError as error:
@@ -71,7 +80,6 @@ async def run_task(task: TaskInput) -> TaskResult:
         raise await _failure(context, task, "worker_shutdown", reason, started_at, error) from error
     finally:
         beating.cancel()
-        _empty(context.scratch)
 
 
 def path_of(event):

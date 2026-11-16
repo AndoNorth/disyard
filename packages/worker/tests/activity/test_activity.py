@@ -1,5 +1,5 @@
 """The activity outside Temporal: the failure class of an error the task path lets through, the
-scratch it empties, the heartbeat details of a beat, and the worker stage it reads through."""
+TMPDIR it empties, the heartbeat details of a beat, and the worker stage it reads through."""
 
 import asyncio
 
@@ -48,22 +48,25 @@ def test_failure_class_of_the_path_passes_through(context, task, path):
     assert raised.value is failure
 
 
-def test_scratch_and_tmp_emptied_at_start_and_scratch_after(context, task, path, succeed, tmp_path):
-    for directory in (context.scratch, tmp_path / "tmp"):
-        directory.mkdir(parents=True)
-        (directory / "left").write_text("by a stopped child")
+def test_tmp_emptied_at_start_and_scratch_root_kept(context, task, path, succeed, tmp_path):
+    """A stopped child's temporary files are gone when the next task starts, and what the scratch
+    root keeps across tasks, the module cache among it, is left to the task paths."""
+    kept = context.scratch / "modules" / "component"
+    kept.parent.mkdir(parents=True)
+    kept.write_text("compiled")
+    (tmp_path / "tmp").mkdir()
+    (tmp_path / "tmp" / "left").write_text("by a stopped child")
     seen = {}
 
     async def runs(task, given):
-        seen["scratch"] = list(given.scratch.iterdir())
         seen["tmp"] = list((tmp_path / "tmp").iterdir())
-        (given.scratch / "staged").write_text("input")
+        seen["kept"] = kept.exists()
         return succeed(task, given)
 
     path(runs)
     run(task)
-    assert seen == {"scratch": [], "tmp": []}
-    assert list(context.scratch.iterdir()) == []
+    assert seen == {"tmp": [], "kept": True}
+    assert kept.read_text() == "compiled"
 
 
 def test_each_task_starts_with_no_beat(context, task, path, succeed):
