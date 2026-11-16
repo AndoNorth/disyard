@@ -2,7 +2,8 @@
 workflow worker with tasks in flight, and the T1 refusal of the scenarios that read the job row or
 the index, and the status query that the counters read, asked again while it times out. Runs on
 the real pools start no FakePool and seed the workload library bundle, and every fake run holds
-its pool queues behind a prefix of its own."""
+its pool queues behind a prefix of its own. The command ends its process without the interpreter's
+teardown."""
 
 import asyncio
 import hashlib
@@ -126,6 +127,48 @@ def test_usage_errors_exit_2(argv, capsys):
     except SystemExit as exit:
         code = exit.code
     assert code == 2
+
+
+# Runs the harness with a global whose teardown waits for a thread that never ends, as the drop of
+# temporalio's runtime at interpreter teardown waits for a blocking thread that the teardown parked
+# when it asked for the GIL to hand a result back to the event loop.
+WAITS_AT_TEARDOWN = """
+import runpy, sys, threading
+
+parked = threading.Thread(target=threading.Event().wait, daemon=True)
+parked.start()
+
+
+class Waits:
+    def __del__(self, join=parked.join):
+        join()
+
+
+waits = Waits()
+sys.argv = ["harness", *sys.argv[1:]]
+runpy.run_module("wdf_workflow.harness", run_name="__main__", alter_sys=True)
+"""
+
+
+def test_harness_exits_without_interpreter_teardown():
+    """The harness ends its process once it has printed, so nothing torn down after can hold it."""
+    done = subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            WAITS_AT_TEARDOWN,
+            "--address",
+            "127.0.0.1:1",
+            "smoke",
+            "--jobs",
+            "0",
+        ],
+        capture_output=True,
+        text=True,
+        timeout=60,
+    )
+    assert done.returncode == 2
+    assert "positive count" in done.stderr
 
 
 @pytest.mark.integration

@@ -22,6 +22,7 @@ import argparse
 import asyncio
 import os
 import sys
+import traceback
 
 from ..contract import naming
 from . import (
@@ -123,4 +124,16 @@ def main(argv: list[str] | None = None) -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    try:
+        code = main()
+    except SystemExit as exit:
+        code = exit.code
+    except BaseException:
+        traceback.print_exc()
+        code = 1
+    # The interpreter's teardown drops temporalio's runtime, which waits for its blocking threads,
+    # and one handing a late result back to the event loop parks for good once it asks for the GIL
+    # there. Nothing is left to tear down once the run has printed, so the process ends here.
+    sys.stdout.flush()
+    sys.stderr.flush()
+    os._exit(code)
