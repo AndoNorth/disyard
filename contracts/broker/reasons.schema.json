@@ -1,0 +1,100 @@
+{
+  "$defs": {
+    "Reason": {
+      "additionalProperties": false,
+      "properties": {
+        "action": {
+          "minLength": 1,
+          "title": "Action",
+          "type": "string"
+        },
+        "code": {
+          "title": "Code",
+          "type": "string"
+        },
+        "event": {
+          "anyOf": [
+            {
+              "const": "job.dead.lettered",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Event"
+        },
+        "on_intake": {
+          "enum": [
+            "expected",
+            "not-expected"
+          ],
+          "title": "On Intake",
+          "type": "string"
+        },
+        "read_from": {
+          "enum": [
+            "x-opt-wdf-reason",
+            "x-last-death-reason"
+          ],
+          "title": "Read From",
+          "type": "string"
+        },
+        "recovery": {
+          "anyOf": [
+            {
+              "enum": [
+                "never",
+                "after-fix",
+                "replay"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Recovery"
+        },
+        "source": {
+          "enum": [
+            "application",
+            "broker"
+          ],
+          "title": "Source",
+          "type": "string"
+        }
+      },
+      "required": [
+        "code",
+        "source",
+        "read_from",
+        "on_intake",
+        "event",
+        "recovery",
+        "action"
+      ],
+      "title": "Reason",
+      "type": "object"
+    }
+  },
+  "$id": "urn:wdf:schema:broker:reasons:1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "reasons.yaml: every dead-letter reason with its event and its recovery.",
+  "properties": {
+    "reasons": {
+      "items": {
+        "$ref": "#/$defs/Reason"
+      },
+      "minItems": 1,
+      "title": "Reasons",
+      "type": "array"
+    }
+  },
+  "required": [
+    "reasons"
+  ],
+  "title": "contracts/broker reasons",
+  "type": "object"
+}

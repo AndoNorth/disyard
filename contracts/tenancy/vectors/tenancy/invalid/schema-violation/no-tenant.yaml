@@ -1,0 +1,15 @@
+# A profile with no tenant.
+tilt_profiles: {minimal: ci, ci: ci, dev: dev, full: dev, soak: soak}
+profiles:
+  ci: &figures
+    priority_classes: [standard]
+    reserve_interval: {value: 5, estimate: true}
+    caps:
+      open: {value: 2000, estimate: true}
+      global: {value: 1000, estimate: true}
+      job_class:
+        short: {value: 1000, estimate: true}
+        long: {value: 100, estimate: true}
+    tenants: {}
+  dev: *figures
+  soak: *figures

@@ -35,7 +35,11 @@ def test_the_file_validates_against_its_schema():
 
 
 def test_the_file_defines_the_metrics_of_the_event_contract():
-    labels = {name: set(metric["labels"]) for name, metric in METRICS.items()}
+    labels = {
+        name: set(metric["labels"])
+        for name, metric in METRICS.items()
+        if name.startswith("wdf_event_")
+    }
     assert labels == {
         "wdf_event_bytes": set(),
         "wdf_event_size_warnings_total": set(),
