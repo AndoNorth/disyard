@@ -27,6 +27,7 @@ The broker imports the topology and the users definitions from `/etc/rabbitmq/de
 A definitions import adds and updates but never deletes, so a tenant or a class removed from a profile leaves its queue in place.
 The pod template carries `wdf.dev/config-digest`, a digest of the configuration, the passwords and the cookie, so a changed tenancy profile or a new password rolls the pod.
 An init container copies the cookie onto the data volume, because the broker refuses a cookie file that is not its own and readable by it alone.
+A StatefulSet does not replace a pod that never became ready, so after fixing a configuration that kept the broker from booting, delete `rabbitmq-0` and the new pod takes the fixed configuration.
 
 ## Credentials
 
