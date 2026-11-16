@@ -1,0 +1,28 @@
+name: aggregate-worker
+group: workers
+namespace: wdf-workers
+artifact:
+  kind: image
+  pin: python
+# One pod slot of deploy/presets/slots/ci.yaml, so requests equal limits.
+resources:
+  aggregate-worker:
+    requests:
+      cpu: "1"
+      memory: 1Gi
+    limits:
+      cpu: "1"
+      memory: 1Gi
+readiness:
+  command:
+    - kubectl
+    - --context=kind-wdf
+    - --namespace=wdf-workers
+    - wait
+    - --for=condition=Available
+    - deployment/aggregate-worker
+    - --timeout=300s
+profiles: [ci]
+depends_on:
+  - infra/temporal-bootstrap
+  - infra/objectstore-bootstrap

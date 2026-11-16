@@ -12,6 +12,7 @@ TREES = (
     "deploy/objectstore",
     "deploy/temporal",
     "deploy/workflow",
+    "deploy/workers",
     "scripts/storage",
     "contracts/state",
     "contracts/store",

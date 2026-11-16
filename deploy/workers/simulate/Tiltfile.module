@@ -1,0 +1,4 @@
+# The simulate pool worker module, defined for every pool in deploy/workers/pool.star.
+load("../pool.star", "pool_worker")
+
+pool_worker("simulate")
