@@ -11,7 +11,7 @@ import sys
 import time
 from contextlib import contextmanager
 from dataclasses import dataclass
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta
 from hashlib import sha256
 
 import psycopg
@@ -25,9 +25,10 @@ CHUNK = 1_000
 TENANT = "bench"
 TASKS = ("compile", "sim")
 EVENTS_PER_JOB = 14
-# The start of the day keeps every event key, which includes the time, the same from run to run,
-# and keeps the events younger than the retention policy that drops old chunks.
-ORIGIN = datetime.now(UTC).replace(hour=0, minute=0, second=0, microsecond=0)
+# The start of the UTC day keeps every event key, which includes the time, the same from run to run,
+# and keeps the events younger than the retention policy that drops old chunks. It is read from the
+# database clock when the bench runs, the clock the policy measures age by.
+ORIGIN = "SELECT date_trunc('day', now(), 'UTC')"
 JOB_SPACING = timedelta(seconds=6)
 EVENT_SPACING = timedelta(milliseconds=400)
 OK, WRONG_COUNT = 0, 1
@@ -97,7 +98,12 @@ def job_row(i: int) -> JobRow:
     )
 
 
-def job_events(i: int, row: JobRow) -> list[Event]:
+def origin(conn) -> datetime:
+    """The start of the current UTC day on the database clock."""
+    return conn.execute(ORIGIN).fetchone()[0]
+
+
+def job_events(i: int, row: JobRow, start: datetime) -> list[Event]:
     """The 14 events of a two-task job in the order they happened, the accepted event first."""
     plan = [(name, None) for name in JOB_EVENTS] + [
         (name, task) for task in TASKS for name in TASK_EVENTS
@@ -137,7 +143,7 @@ def job_events(i: int, row: JobRow) -> list[Event]:
                 priorityclass=row.priority_class,
                 jobclass=row.job_class,
                 traceparent=row.traceparent,
-                time=ORIGIN + JOB_SPACING * i + EVENT_SPACING * sequence,
+                time=start + JOB_SPACING * i + EVENT_SPACING * sequence,
                 data=data,
                 taskid=task,
                 attempt=1 if name in ATTEMPT_TYPES else None,
@@ -152,13 +158,13 @@ def chunks(jobs: int):
         yield range(start, min(start + CHUNK, jobs))
 
 
-def insert_run(conn, jobs: int) -> Run:
+def insert_run(conn, jobs: int, start: datetime) -> Run:
     """One pass over the rows and one over the remaining events, timing only database work."""
     rows_inserted = rows_duplicates = events_inserted = events_duplicates = 0
     rows_seconds = events_seconds = 0.0
     for numbers in chunks(jobs):
         rows = [job_row(i) for i in numbers]
-        accepted = [job_events(i, row)[0] for i, row in zip(numbers, rows, strict=True)]
+        accepted = [job_events(i, row, start)[0] for i, row in zip(numbers, rows, strict=True)]
         started = time.monotonic()
         with conn.transaction():
             result = insert_accepted(conn, rows)
@@ -169,7 +175,7 @@ def insert_run(conn, jobs: int) -> Run:
         events_inserted += batch.inserted
         events_duplicates += batch.duplicates
     for numbers in chunks(jobs):
-        remaining = [e for i in numbers for e in job_events(i, job_row(i))[1:]]
+        remaining = [e for i in numbers for e in job_events(i, job_row(i), start)[1:]]
         started = time.monotonic()
         with conn.transaction():
             batch = insert_events(conn, remaining)
@@ -215,7 +221,8 @@ def problems(conn, jobs: int, runs: list[Run]) -> list[str]:
 
 def run_bench(conn, jobs: int, twice: bool = False) -> tuple[list[Run], list[str]]:
     """Runs the insert once or twice and returns each run with the problems found."""
-    runs = [insert_run(conn, jobs) for _ in range(2 if twice else 1)]
+    start = origin(conn)
+    runs = [insert_run(conn, jobs, start) for _ in range(2 if twice else 1)]
     return runs, problems(conn, jobs, runs)
 
 
