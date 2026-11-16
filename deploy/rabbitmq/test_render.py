@@ -82,7 +82,10 @@ def test_volumes_mount_the_configuration_and_the_cookie():
     assert mounts["/var/lib/rabbitmq"]["name"] == "data"
     assert mounts["/etc/rabbitmq/rabbitmq.conf"]["subPath"] == "rabbitmq.conf"
     assert mounts["/etc/rabbitmq/enabled_plugins"]["subPath"] == "enabled_plugins"
-    assert mounts[topology.DEFINITIONS_PATH]["name"] == "definitions"
+    assert topology.DEFINITIONS_PATH not in mounts, "the directory holds the volume's own entries"
+    for file in ("topology.json", "users.json"):
+        mount = mounts[f"{topology.DEFINITIONS_PATH}/{file}"]
+        assert (mount["name"], mount["subPath"]) == ("definitions", file)
     volumes = {v["name"]: v for v in pod["volumes"]}
     sources = volumes["definitions"]["projected"]["sources"]
     assert [s["configMap"]["items"] for s in sources if "configMap" in s] == [

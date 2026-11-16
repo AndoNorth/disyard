@@ -202,11 +202,17 @@ def render(tilt_profile: str, profile=None) -> list[dict]:
                                         "subPath": topology.PLUGINS,
                                         "readOnly": True,
                                     },
-                                    {
-                                        "name": "definitions",
-                                        "mountPath": topology.DEFINITIONS_PATH,
-                                        "readOnly": True,
-                                    },
+                                    # The broker imports every entry of the directory, so each
+                                    # file is mounted alone, without the volume's own entries.
+                                    *(
+                                        {
+                                            "name": "definitions",
+                                            "mountPath": f"{topology.DEFINITIONS_PATH}/{file}",
+                                            "subPath": file,
+                                            "readOnly": True,
+                                        }
+                                        for file in (DEFINITIONS, USERS)
+                                    ),
                                 ],
                             }
                         ],
