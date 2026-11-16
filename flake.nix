@@ -106,8 +106,12 @@
             kubeconform
             nixfmt
             prek
-            # python-qpid-proton publishes no Linux wheel, so uv builds it from its sdist.
+            # python-qpid-proton publishes no Linux wheel, so uv builds it from its sdist. Its build asks
+            # pkg-config for OpenSSL, so both come from the shell rather than from a host whose headers
+            # the compiler cannot see.
             gcc
+            pkg-config
+            openssl
           ]
           ++ pkgs.lib.optionals (builtins.pathExists ./nix/wasm-tools.nix) (
             import ./nix/wasm-tools.nix { inherit pkgs; }
