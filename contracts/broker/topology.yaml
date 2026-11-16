@@ -1,4 +1,5 @@
-# The intake topology of RabbitMQ: exchanges, queues, policies, message shape, users and ports. Rules: README.md.
+# The intake topology of RabbitMQ: exchanges, queues, policies, message shape, users, ports and memory.
+# Rules: README.md.
 # Schema: topology.schema.json, generated from wdf_broker.models.
 # The intake queues are one per tenant and priority class of the tenancy profile, named by the template.
 # A number marked estimate: true changes by a value PR, and every other change is a contract-change PR.
@@ -15,6 +16,11 @@ intake_policy:
     overflow: reject-publish
     dead_letter_exchange: wdf.dlx
     dead_letter_strategy: at-least-once
+    # Only a counted retry waits before its redelivery, delayed_retry_min times its delivery count in ms,
+    # up to delayed_retry_max.
+    delayed_retry_type: failed
+    delayed_retry_min: 1000
+    delayed_retry_max: 30000
 dead_letter_exchange: {name: wdf.dlx, type: fanout, durable: true}
 dead_letter_queue: {name: intake.dlq, type: quorum, initial_group_size: 1}
 dlq_policy:
@@ -45,3 +51,6 @@ users:
     write: '^wdf\.intake$'
     read: '^intake\.dlq$|^intake\.[a-z0-9][a-z0-9-]*\.[a-z0-9][a-z0-9-]*$'
 ports: {amqp: 5672, prometheus: 15692}
+# The memory request and limit of the broker, and its absolute high watermark at 0.6 of the limit,
+# above which the broker blocks every publisher.
+memory: {limit_mib: 320, high_watermark_mib: 192}

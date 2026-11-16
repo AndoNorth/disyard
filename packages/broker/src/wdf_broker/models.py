@@ -1,5 +1,7 @@
-"""The models of the broker and tenancy contracts, the source of their generated schemas."""
+"""The models of the broker and tenancy contracts, the source of their generated schemas, and the
+publish outcomes and errors of the client API."""
 
+import enum
 import re
 from importlib import resources
 from typing import Literal
@@ -15,6 +17,26 @@ PRESETS = ("ci", "dev", "soak")
 BROKER_CODES = ("delivery_limit", "rejected", "maxlen", "expired")
 APPLICATION_CODE = re.compile("[A-Z][A-Z0-9_]{0,63}")
 NAME_MAX_BYTES = 255
+
+
+class Outcome(enum.Enum):
+    """The outcome of a publish, valued as the outcome label of wdf_broker_publish_total."""
+
+    ACCEPTED = "accepted"
+    REJECTED = "rejected"
+    UNROUTABLE = "unroutable"
+
+
+class TopologyError(Exception):
+    """A link refused with amqp:not-found, because the exchange or the queue is missing."""
+
+
+class PublishTimeout(Exception):
+    """No publish outcome within the timeout, under a memory or disk alarm or a stalled broker."""
+
+
+class BrokerUnavailable(Exception):
+    """The connection is lost, and every pending and later call on it raises this."""
 
 
 class _Model(BaseModel):
@@ -59,6 +81,17 @@ class IntakeDefinition(_Model):
     overflow: Literal["reject-publish"]
     dead_letter_exchange: str
     dead_letter_strategy: Literal["at-least-once"]
+    delayed_retry_type: Literal["failed"] = Field(
+        description="Only a counted retry is delayed, and an uncounted release returns at once."
+    )
+    delayed_retry_min: PositiveInt = Field(description="In ms, times the delivery count.")
+    delayed_retry_max: PositiveInt = Field(description="In ms, the longest delay.")
+
+    @model_validator(mode="after")
+    def _delays(self):
+        if self.delayed_retry_min > self.delayed_retry_max:
+            raise ValueError("delayed_retry_min is above delayed_retry_max")
+        return self
 
 
 class DlqDefinition(_Model):
@@ -120,8 +153,21 @@ class Ports(_Model):
     prometheus: Literal[15692]
 
 
+class Memory(_Model):
+    limit_mib: PositiveInt = Field(description="The memory request and limit of the broker.")
+    high_watermark_mib: PositiveInt = Field(
+        description="Absolute, so it never depends on the memory the container detects."
+    )
+
+    @model_validator(mode="after")
+    def _watermark(self):
+        if self.high_watermark_mib >= self.limit_mib:
+            raise ValueError("high_watermark_mib is not below limit_mib")
+        return self
+
+
 class Topology(_Model):
-    """topology.yaml: the exchanges, queues, policies, message shape, users and ports."""
+    """topology.yaml: the exchanges, queues, policies, message shape, users, ports and memory."""
 
     vhost: Literal["/"]
     intake_exchange: IntakeExchange
@@ -135,6 +181,7 @@ class Topology(_Model):
     annotations: Annotations
     users: Users
     ports: Ports
+    memory: Memory
 
 
 class Reason(_Model):

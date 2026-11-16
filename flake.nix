@@ -106,6 +106,8 @@
             kubeconform
             nixfmt
             prek
+            # python-qpid-proton publishes no Linux wheel, so uv builds it from its sdist.
+            gcc
           ]
           ++ pkgs.lib.optionals (builtins.pathExists ./nix/wasm-tools.nix) (
             import ./nix/wasm-tools.nix { inherit pkgs; }
