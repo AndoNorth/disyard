@@ -30,8 +30,9 @@ assert (resources.files('wdf_stateops.migrations') / 'R__roles.sql').is_file()
 assert len(queries()) == 6, sorted(queries())
 from wdf_stateops.windows import params
 assert params()['failure_codes'] and params()['unreferenced_grace']
+from datetime import UTC, datetime
 from wdf_stateops.bench import EVENTS_PER_JOB, job_events, job_row
-assert len(job_events(0, job_row(0))) == EVENTS_PER_JOB
+assert len(job_events(0, job_row(0), datetime.now(UTC))) == EVENTS_PER_JOB
 
 """
 

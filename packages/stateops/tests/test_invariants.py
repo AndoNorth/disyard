@@ -18,7 +18,8 @@ pytestmark = pytest.mark.integration
 
 SHA = "a" * 64
 TRACE = "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01"
-TIME = datetime(2026, 11, 1, 12, 0, 0, 123456, tzinfo=UTC)
+# The retention policy drops event chunks by their age on the database clock, so events follow it.
+TIME = datetime.now(UTC)
 
 
 def make_row(**overrides) -> JobRow:
@@ -112,6 +113,12 @@ def open_workflows(*rows: JobRow) -> list[str]:
 
 def lines(report) -> list[str]:
     return [f"invariant: {name}: {key}" for name, key in report.violations]
+
+
+def test_event_time_follows_the_database_clock(db):
+    """A calendar date here would pass until the retention policy dropped its events."""
+    (database_now,) = db.execute("SELECT now()").fetchone()
+    assert abs(database_now - TIME) < timedelta(days=1)
 
 
 def test_clean_database_reports_nothing(db):

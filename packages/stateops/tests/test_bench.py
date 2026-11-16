@@ -2,7 +2,7 @@
 
 import subprocess
 import sys
-from datetime import timedelta
+from datetime import UTC, datetime
 
 import psycopg
 import pytest
@@ -62,10 +62,12 @@ def test_a_repeat_invocation_against_the_same_database_inserts_nothing(appdb, ca
 
 
 def test_the_origin_is_today_on_the_database_clock(appdb):
-    """A calendar date here would be dropped by the retention policy once it aged past it."""
+    """Neither the time of the import nor the clock of the host moves it off the database's day."""
     with psycopg.connect(appdb) as conn:
         (database_now,) = conn.execute("SELECT now()").fetchone()
-    assert timedelta(0) <= database_now - bench.ORIGIN < timedelta(days=1)
+        origin = bench.origin(conn)
+    midnight = database_now.astimezone(UTC).replace(hour=0, minute=0, second=0, microsecond=0)
+    assert origin == midnight
 
 
 def test_bench_exits_1_when_a_count_is_wrong(appdb, monkeypatch, capsys):
@@ -93,7 +95,8 @@ def test_bench_rejects_a_job_count_below_one(capsys):
 
 
 def test_the_events_of_a_job_are_fourteen_with_distinct_keys():
-    events = bench.job_events(7, bench.job_row(7))
+    start = datetime.now(UTC)
+    events = bench.job_events(7, bench.job_row(7), start)
     assert len(events) == bench.EVENTS_PER_JOB
     assert len({e.id for e in events}) == len(events)
-    assert events == bench.job_events(7, bench.job_row(7))
+    assert events == bench.job_events(7, bench.job_row(7), start)
