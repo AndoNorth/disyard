@@ -1,6 +1,6 @@
 # Epic #10: Kubernetes workers - breakdown
 
-Status: draft
+Status: closed 2026-11-16
 Epic: https://github.com/AndoNorth/wasm-dag-forge/issues/10
 Architecture note: docs/architecture/11-placement-and-workers.drawio, and the worker detail in a new diagram `docs/architecture/NN-pool-worker.drawio`, which 0.1 (issue) adds with the next free number on `main`, because #8's spec has taken 17 (`docs/architecture/17-admission-cycle.drawio`) and #24's names its own diagram `NN`
 Depends on (closed epics): Dev environment (#1), Fixed-resource cluster (#2), Job event envelope (#4), DAG configuration schema and validator (#5), Durable state and artifact storage (#3), Artifact passing (#12), Workload toolchain (#11), Workflow engine (#6)
@@ -497,9 +497,87 @@ Not provable by this epic: checkpoints, `operator_interrupt` and resume from a c
 - Estimates, not measurements, in worker-days: 0.1 (1.5), S11 (1.5), H.1 (1.5), R.1 (2.5), T.1 (2), T.2 (2), T.3 (1.5), A.1 (2), A.2 (2), D.1 (2), D.2 (3), exit test (1.5).
   That is about 23 worker-days of effort and about 14 days elapsed along 0.1, R.1, T.1, T.3, A.2, D.2 and the exit test (1.5 + 2.5 + 2 + 1.5 + 2 + 3 + 1.5, with A.1 and T.2 inside the T lane's window), with S11 failing into the simulate resize of Q1, the NetworkPolicy fallback of Q2, a real component larger than S6's stand-in and cluster lock contention as the main sources of slip.
 
-## 9. Closure (filled at close)
+## 9. Closure
 
-Not run yet.
+Run on 2026-11-16 against `4ade873ac2563a269a0f8ea27f07ca1dd4abe93f`, the merge of D.2, from a `git archive origin/main` extracted into a scratch directory with no enclosing git repository, recorded by [#408](https://github.com/AndoNorth/wasm-dag-forge/issues/408).
+Every row passes.
+The pasted output of every row is in the pull request that records this run.
+
+Method of the run:
+
+- The worker that ran it wrote none of the lanes.
+- The host is the 20 GiB WSL2 VM with Docker running for the whole run, and the containers not started by the run (`open-webui`, and two SeaweedFS containers of another worker's T1 session that appeared during row 9) were left untouched.
+- Rows 0 to 5 ran first in order, row 0 was repeated just before row 6, rows 6 to 11 ran in one sequence under the cluster lock, held by one `flock` process with `WDF_CLUSTER_LOCK_HELD=1` on each command, and rows 12 and 13 ran after the lock was released.
+- The export has no git checkout, so row 6 runs `scripts/tilt/run.sh ci` with `WDF_BUILD_ID=exit-a`, which the workflow module requires outside one (`deploy/workflow/Tiltfile.module:15-17`), as the workflow engine exit run did; the first attempt without it stopped at that check before deploying anything.
+- Row 5's diagram was rendered to PNG with ImageMagick and read by eye, because the browser bridge was down.
+- The cancel latency and drain time of D18 come from row 3's tests rerun with `-s` after row 12, because `-v` captures what they print.
+
+Results:
+
+| # | Result | Evidence |
+| --- | --- | --- |
+| 0 | pass | `MemAvailable` 17,934,436 kB at the start and 17,764,472 kB before row 6, both above 13,369,344 kB |
+| 1 | pass | `uv sync --frozen` exit 0, `uv lock --check` exit 0 with 69 packages resolved, the `uv.lock` SHA-256 `52a3955e…` unchanged |
+| 2 | pass | 117 passed and no `SKIPPED` line |
+| 3 | pass | 54 passed, each named test listed `PASSED`, and `test_activity_contract` once per pool on the real worker |
+| 4 | pass | 20 passed, with `test_real_pools_starts_no_fake`, `test_real_pools_seeds_workload_bundle` and `test_fake_run_gets_its_own_prefix` |
+| 5 | pass | exit 0 for the three commands, and `18-pool-worker.drawio` shows dispatch, stage, warm-up, run in a process group, classify, collect, tail and return, with the heartbeat loop, cancel and drain beside them, unversioned queues, and checkpoints only under "Not in this pass" |
+| 6 | pass | `cluster wdf ready: preset ci, 6 nodes`, `SUCCESS. All workloads are healthy.`, the three worker pods `Running` on `wdf-worker3`, `wdf-worker4` and `wdf-worker5`, labelled `compile`, `simulate` and `aggregate`, and each log `polling wdf-<pool> in namespace wdf for pool <pool>, unversioned` |
+| 7 | pass | `temporal: ok` and `store: ok` on every pod, `mirror: ok` on compile only, `mirror: refused` on simulate and aggregate, `appdb: refused` on all three, exit 0 each |
+| 8 | pass | `finished: 10`, `failed: 0`, `infra_retries: 0`, `verified: 10` in 6.5 minutes, then `finished: 5`, `failed: 0`, `queue_prefix: h-40ff0ed3-`, with no worker pod restarted and no task in any worker log |
+| 9 | pass | `finished: 10`, `failed: 0`, `infra_retries: 1`, `in_flight: 6`, `restarted: simulate-worker`, exit 0 on its own after 9.7 minutes |
+| 10 | pass | `oom_kill 0` and `oom_group_kill 0` on every pool, with `anon` and `memory.peak` in the table below |
+| 11 | pass | exit 0 for `just doctor`, `just down` and both `just nuke`, the second `just nuke` deletes nothing, and `kind get clusters` prints `No kind clusters found.` |
+| 12 | pass | `just ci` exit 0 in the export, full path, 2,705 passed in `just test` and 557 passed in `just itest` |
+| 13 | pass | the `ci` run [43809383220](https://github.com/AndoNorth/wasm-dag-forge/actions/runs/43809383220) and the `state-modules` run [43809383212](https://github.com/AndoNorth/wasm-dag-forge/actions/runs/43809383212), success on `4ade873` on `main`; no run on `main` holds this record yet, since it is the pull request that adds it |
+
+Row 10 per pool, read after rows 8 and 9 with every pod idle:
+
+| Pool | `anon` | `memory.peak` | Pod life covered |
+| --- | --- | --- | --- |
+| compile | 82.9 MiB | 476.0 MiB | since row 6, every compile of rows 8 and 9 |
+| simulate | 84.0 MiB | 439.8 MiB | since row 9 replaced the pod, so its own warm-up and the simulate tasks of row 9 after the restart |
+| aggregate | 104.6 MiB | 205.8 MiB | since row 6, every aggregate of rows 8 and 9 |
+
+`memory.peak` counts page cache and is for reference only (section 7, row 10).
+The idle `anon` of 83 to 105 MiB agrees with the idle working set of 85 to 88 MiB that S11 measured for the stand-in worker.
+
+Real pool values for #9 (D18), from S11 on the stand-in worker of the shape of 0.4, A.1 and A.2 on the real worker, and row 10 as the check:
+
+| Pool | Slot | Worker idle | Worker peak | Staging | Warm-up | Pod peak working set | Pod peak anon | Row 10 `anon` | Heartbeat |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| compile | 1,000m, 1,024 MiB | 114 MiB | 151 MiB | under 0.1 s for the bundle | none | 463 MiB | 442 MiB | 82.9 MiB | every 10 s |
+| simulate | 250m, 512 MiB | 113 MiB | 166 MiB | 0.14 s for the component, 1.1 s for a 64 MiB result | 33.2 s | 424 MiB | 416 MiB | 84.0 MiB | every 10 s |
+| aggregate | 1,000m, 1,024 MiB | 113 MiB | 115 MiB | done by the child | none | 466 MiB | 393 MiB | 104.6 MiB | every 10 s |
+
+The heartbeat is `HEARTBEAT_EVERY_S` of 10 s, shortened to a third of a heartbeat timeout under 30 s, and the 60 s of `pools.yaml` keeps it at 10 s.
+The cancel latency is 4.01 s in `test_cancel_stops_child_and_withdraws` and 3.97 s for a cancel during the drain, and the drain is 30.05 s in `test_sigterm_fails_long_task`, the 30 s `DRAIN` of the service, while a task inside the drain ends 5.01 s after the `SIGTERM`.
+`WORKER_RESERVE_MIB` is 256, so the simulate guest cap is 128 MiB.
+
+What was learned:
+
+- The real workers ran 10 jobs of four simulate tasks each with every result matching the level 0 vector, beside a fake run on its own prefix that none of them took, so the queue prefix of D22 holds on the cluster.
+- A simulate pod deleted with no grace mid-task cost one infrastructure retry and no job, and its replacement passed its own warm-up inside the 512 MiB slot with no OOM kill.
+- The compile pod's `memory.peak` of 476 MiB after rows 8 and 9 is within S11's 473 to 479 MiB for one build beside the stand-in worker.
+
+What the architecture note now shows: `docs/architecture/18-pool-worker.drawio` and its SVG are unchanged from 0.1 (issue), and were re-checked by eye in this run for row 5; `docs/architecture/11-placement-and-workers.drawio` is unchanged, as section 3 says.
+
+What moved to which epic, unchanged from section 7:
+
+- checkpoints, `operator_interrupt` and resume from a checkpoint (#18)
+- OOM classification at the pod limit and the kubelet setting `singleProcessOOMKill` (#15)
+- worker metrics and JSON logs (#13)
+- real placement and `pools.yaml` from the figures above (#9)
+- node loss and an engine outage longer than the heartbeat timeout (#15)
+- module cache growth over a soak and its pruning rule (#16)
+- the `dev`, `full` and `soak` profiles
+
+The Closure addendum of `08-workflow-engine.md` that decision 7 asks for is the 2026-11-15 line of [#374](https://github.com/AndoNorth/wasm-dag-forge/issues/374), and the one of `02-cluster.md` for the simulate slot is the 2026-11-15 line of [#380](https://github.com/AndoNorth/wasm-dag-forge/issues/380), both on `main` before this run.
+
+Follow-ups found, none filed by this run:
+
+- #360, the harness restart mode that can hang after printing its result, stays open, and row 9 exited on its own in this run.
+- The pool workers log one line when they start polling and none per task, so a worker's log cannot show which tasks it ran until #13 adds its logs.
 
 Closure addenda, one dated line each, added after close when a `revisit` child issue is filed against this epic:
 
