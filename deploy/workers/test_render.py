@@ -171,6 +171,8 @@ def test_pod_settings_and_readiness(rendered, pool):
     [container] = spec["containers"]
     assert container["readinessProbe"]["exec"]["command"] == ["test", "-e", "/var/wdf/ready"]
     assert "ports" not in container
+    template = objects["Deployment", f"{pool}-worker"]["spec"]["template"]["metadata"]
+    assert template["annotations"]["kubectl.kubernetes.io/default-container"] == container["name"]
 
 
 @pytest.mark.parametrize("pool", POOLS)

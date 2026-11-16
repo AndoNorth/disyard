@@ -106,7 +106,8 @@ def pool_worker(pool):
             "strategy": {"type": "Recreate"},
             "selector": {"matchLabels": labels},
             "template": {
-                "metadata": {"labels": labels},
+                # kubectl logs and exec reach the worker, not the init container, without a -c.
+                "metadata": {"labels": labels, "annotations": {"kubectl.kubernetes.io/default-container": name}},
                 "spec": {
                     "nodeSelector": {topology["pool_label"]: topology["pools"][pool]},
                     "tolerations": [{
