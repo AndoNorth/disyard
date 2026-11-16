@@ -1,0 +1,24 @@
+# RabbitMQ, the intake buffer between dispatch and admission: one broker on the infra pool, configured from the broker
+# contract and the tenancy profile that the Tilt profile maps to, with its user passwords and Erlang cookie generated
+# into the state directory and delivered as a Secret. config.py renders every object of the module.
+module = read_yaml("module.yaml")
+name = module["name"]
+namespace = module["namespace"]
+
+tilt_profile = os.getenv("WDF_TILT_PROFILE", "")
+if not tilt_profile:
+    fail("WDF_TILT_PROFILE is unset: load this module through the root Tiltfile")
+
+for path in ["config.py", "../versions.yaml", "../../contracts/broker", "../../contracts/tenancy", "../../contracts/topology", "../../packages/broker/src"]:
+    watch_file(path)
+k8s_yaml(encode_yaml_stream(decode_json(str(local(
+    ["uv", "run", "--frozen", "--quiet", "python", os.path.abspath("config.py"), "render", tilt_profile],
+    quiet = True,
+)))))
+
+k8s_resource(
+    name,
+    objects = [name + ":configmap:" + namespace, name + ":secret:" + namespace],
+    labels = [module["group"]],
+    resource_deps = [d.split("/")[1] for d in module.get("depends_on", [])],
+)
