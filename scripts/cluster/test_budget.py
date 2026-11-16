@@ -40,11 +40,13 @@ def test_every_preset_holds_its_modules(preset):
 def test_ci_infra_node_figures():
     run = budget("ci")
     assert "node infra requests cpu: 2680m of 2900m, free 220m, fits" in run.stdout
-    assert "node infra requests memory: 4938Mi of 5504Mi, free 566Mi, fits" in run.stdout
+    assert "node infra requests memory: 5002Mi of 5504Mi, free 502Mi, fits" in run.stdout
     assert "workflow-worker (workflow-worker, second build)" in run.stdout
     assert "temporal-schema (temporal)" in run.stdout
     assert "appdb-migrate" not in run.stdout
-    for reserve in ("rabbitmq", "dispatch", "admission"):
+    assert "item wdf-infra rabbitmq (rabbitmq): cpu 100m/500m, memory 320Mi/320Mi" in run.stdout
+    assert "rabbitmq (reserve)" not in run.stdout
+    for reserve in ("dispatch", "admission"):
         assert f"{reserve} (reserve)" in run.stdout
 
 
@@ -58,7 +60,7 @@ def test_infra_node_of_5120_mib_is_over():
     finally:
         target.write_text(original)
     assert run.returncode == 1
-    assert "node infra requests memory: 4938Mi of 4544Mi, OVER by 394Mi" in run.stdout
+    assert "node infra requests memory: 5002Mi of 4544Mi, OVER by 458Mi" in run.stdout
 
 
 def test_module_set_over_the_node_is_refused(tmp_path):

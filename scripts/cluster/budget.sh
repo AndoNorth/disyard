@@ -33,7 +33,7 @@ DAEMON_MEM_MIB=50
 # name group namespace cpu-request cpu-limit (millicores) memory-request memory-limit (MiB).
 # A row is dropped as soon as a module.yaml of that name exists, so the owner's real figures replace it.
 RESERVES=(
-    "rabbitmq infra wdf-infra 100 500 256 256"
+    "rabbitmq infra wdf-infra 100 500 320 320"
     "dispatch control wdf-control 100 500 256 256"
     "admission control wdf-control 50 250 128 128"
 )

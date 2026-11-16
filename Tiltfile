@@ -26,6 +26,7 @@ module_profile = profiles[profile].get('modules', profile)
 
 # Library functions read the mode from the environment because a loaded file cannot see Tiltfile globals.
 os.putenv('WDF_LIVE_UPDATE', '1' if profiles[profile].get('live_update', False) else '0')
+os.putenv('WDF_TILT_PROFILE', profile)
 
 # Components sit at most two levels down (deploy/dummy/<group>), so fixtures under deploy/tilt are skipped.
 root = os.path.abspath(modules_dir) + '/'

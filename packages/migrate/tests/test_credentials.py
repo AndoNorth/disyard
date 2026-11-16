@@ -9,6 +9,7 @@ ROOT = Path(__file__).resolve().parents[3]
 TREES = (
     "deploy/appdb",
     "deploy/temporaldb",
+    "deploy/rabbitmq",
     "deploy/objectstore",
     "deploy/temporal",
     "deploy/workflow",
