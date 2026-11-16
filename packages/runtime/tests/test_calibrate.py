@@ -33,13 +33,17 @@ def calibrate(*args) -> subprocess.CompletedProcess:
     return done
 
 
+def printed_rate(done: subprocess.CompletedProcess) -> float:
+    first = done.stdout.splitlines()[0]
+    assert first.startswith(RATE)
+    return float(first.removeprefix(RATE))
+
+
 @pytest.fixture(scope="module")
 def measured(component) -> float:
     done = calibrate("--component", component, "--runs", 3)
     assert done.returncode == 0
-    first = done.stdout.splitlines()[0]
-    assert first.startswith(RATE)
-    return float(first.removeprefix(RATE))
+    return printed_rate(done)
 
 
 def test_calibrate_prints_units_per_second(measured):
@@ -49,10 +53,14 @@ def test_calibrate_prints_units_per_second(measured):
 @pytest.mark.parametrize("factor", [1.5, 0.5])
 def test_check_refuses_rate_outside_tolerance(component, measured, factor, tmp_path):
     off = tmp_path / "catalogue.yaml"
-    off.write_text(yaml.safe_dump(load() | {"units_per_second": round(measured * factor, 1)}))
+    catalogued = round(measured * factor, 1)
+    off.write_text(yaml.safe_dump(load() | {"units_per_second": catalogued}))
     done = calibrate("--component", component, "--runs", 3, "--check", off)
-    assert done.returncode == 1
-    assert done.stderr.splitlines()[-1].startswith("reason: rate-outside-tolerance: ")
+    # Host load moves the rate between the fixture's run and this one, so the expected decision
+    # comes from the rate this run measured.
+    outside = differs(printed_rate(done), catalogued, TOLERANCE)
+    assert done.returncode == outside
+    assert ("reason: rate-outside-tolerance: " in done.stderr) == outside
 
 
 def test_tolerance_is_a_fraction_of_the_catalogued_rate():

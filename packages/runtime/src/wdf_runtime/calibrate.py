@@ -161,7 +161,8 @@ def main(argv: list[str]) -> int:
                         duration(args.component, cache_dir, input_file) for _ in range(args.runs)
                     ]
                 durations[fixture.name] = (params, seconds)
-    measured = statistics.median(rates)
+    # Rounded as printed, so --check judges the rate it reports.
+    measured = round(statistics.median(rates), 1)
     print(f"units_per_second: {measured:.1f}")
     print(f"spread: {min(rates):.1f}..{max(rates):.1f} over {len(rates)} runs")
     if args.write is not None:
