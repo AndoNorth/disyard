@@ -1,0 +1,133 @@
+{
+  "$defs": {
+    "Caps": {
+      "additionalProperties": false,
+      "properties": {
+        "global": {
+          "$ref": "#/$defs/Estimate",
+          "description": "Live workflows across tenants."
+        },
+        "job_class": {
+          "additionalProperties": {
+            "$ref": "#/$defs/Estimate"
+          },
+          "description": "Live workflows of each job class of the limits profile.",
+          "minProperties": 1,
+          "title": "Job Class",
+          "type": "object"
+        },
+        "open": {
+          "$ref": "#/$defs/Estimate",
+          "description": "Live and paused workflows across tenants."
+        }
+      },
+      "required": [
+        "open",
+        "global",
+        "job_class"
+      ],
+      "title": "Caps",
+      "type": "object"
+    },
+    "Estimate": {
+      "additionalProperties": false,
+      "description": "A figure that a value PR may change, marked as an estimate until it is measured.",
+      "properties": {
+        "estimate": {
+          "title": "Estimate",
+          "type": "boolean"
+        },
+        "value": {
+          "exclusiveMinimum": 0,
+          "title": "Value",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "value",
+        "estimate"
+      ],
+      "title": "Estimate",
+      "type": "object"
+    },
+    "TenancyProfile": {
+      "additionalProperties": false,
+      "properties": {
+        "caps": {
+          "$ref": "#/$defs/Caps"
+        },
+        "priority_classes": {
+          "description": "Ordered from first served to last.",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Priority Classes",
+          "type": "array"
+        },
+        "reserve_interval": {
+          "$ref": "#/$defs/Estimate",
+          "description": "One admission in this many goes to the lowest waiting class."
+        },
+        "tenants": {
+          "additionalProperties": {
+            "$ref": "#/$defs/Tenant"
+          },
+          "minProperties": 1,
+          "title": "Tenants",
+          "type": "object"
+        }
+      },
+      "required": [
+        "priority_classes",
+        "reserve_interval",
+        "caps",
+        "tenants"
+      ],
+      "title": "TenancyProfile",
+      "type": "object"
+    },
+    "Tenant": {
+      "additionalProperties": false,
+      "properties": {
+        "quota": {
+          "$ref": "#/$defs/Estimate",
+          "description": "Live workflows of the tenant."
+        }
+      },
+      "required": [
+        "quota"
+      ],
+      "title": "Tenant",
+      "type": "object"
+    }
+  },
+  "$id": "urn:wdf:schema:tenancy:tenancy:1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "tenancy.yaml: one profile per preset, and the tenancy profile of each Tilt profile.",
+  "properties": {
+    "profiles": {
+      "additionalProperties": {
+        "$ref": "#/$defs/TenancyProfile"
+      },
+      "minProperties": 1,
+      "title": "Profiles",
+      "type": "object"
+    },
+    "tilt_profiles": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "minProperties": 1,
+      "title": "Tilt Profiles",
+      "type": "object"
+    }
+  },
+  "required": [
+    "tilt_profiles",
+    "profiles"
+  ],
+  "title": "contracts/tenancy tenancy",
+  "type": "object"
+}

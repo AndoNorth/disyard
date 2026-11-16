@@ -1,0 +1,480 @@
+{
+  "$defs": {
+    "Addresses": {
+      "additionalProperties": false,
+      "properties": {
+        "consume": {
+          "const": "/queues/<queue>",
+          "title": "Consume",
+          "type": "string"
+        },
+        "publish": {
+          "const": "/exchanges/wdf.intake/<routing key>",
+          "title": "Publish",
+          "type": "string"
+        }
+      },
+      "required": [
+        "publish",
+        "consume"
+      ],
+      "title": "Addresses",
+      "type": "object"
+    },
+    "Annotations": {
+      "additionalProperties": false,
+      "properties": {
+        "detail": {
+          "const": "x-opt-wdf-detail",
+          "title": "Detail",
+          "type": "string"
+        },
+        "detail_max_chars": {
+          "const": 1024,
+          "title": "Detail Max Chars",
+          "type": "integer"
+        },
+        "reason": {
+          "const": "x-opt-wdf-reason",
+          "title": "Reason",
+          "type": "string"
+        }
+      },
+      "required": [
+        "reason",
+        "detail",
+        "detail_max_chars"
+      ],
+      "title": "Annotations",
+      "type": "object"
+    },
+    "DeadLetterExchange": {
+      "additionalProperties": false,
+      "properties": {
+        "durable": {
+          "const": true,
+          "title": "Durable",
+          "type": "boolean"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "type": {
+          "const": "fanout",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "type",
+        "durable"
+      ],
+      "title": "DeadLetterExchange",
+      "type": "object"
+    },
+    "DlqDefinition": {
+      "additionalProperties": false,
+      "properties": {
+        "delivery_limit": {
+          "const": -1,
+          "description": "-1 turns the delivery limit off.",
+          "title": "Delivery Limit",
+          "type": "integer"
+        },
+        "message_ttl": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Never set: a dead letter leaves only by replay or purge.",
+          "title": "Message Ttl"
+        }
+      },
+      "required": [
+        "delivery_limit"
+      ],
+      "title": "DlqDefinition",
+      "type": "object"
+    },
+    "DlqPolicy": {
+      "additionalProperties": false,
+      "properties": {
+        "apply_to": {
+          "const": "quorum_queues",
+          "title": "Apply To",
+          "type": "string"
+        },
+        "definition": {
+          "$ref": "#/$defs/DlqDefinition"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "pattern": {
+          "title": "Pattern",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "pattern",
+        "apply_to",
+        "definition"
+      ],
+      "title": "DlqPolicy",
+      "type": "object"
+    },
+    "Estimate": {
+      "additionalProperties": false,
+      "description": "A figure that a value PR may change, marked as an estimate until it is measured.",
+      "properties": {
+        "estimate": {
+          "title": "Estimate",
+          "type": "boolean"
+        },
+        "value": {
+          "exclusiveMinimum": 0,
+          "title": "Value",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "value",
+        "estimate"
+      ],
+      "title": "Estimate",
+      "type": "object"
+    },
+    "IntakeDefinition": {
+      "additionalProperties": false,
+      "properties": {
+        "dead_letter_exchange": {
+          "title": "Dead Letter Exchange",
+          "type": "string"
+        },
+        "dead_letter_strategy": {
+          "const": "at-least-once",
+          "title": "Dead Letter Strategy",
+          "type": "string"
+        },
+        "delivery_limit": {
+          "exclusiveMinimum": 0,
+          "title": "Delivery Limit",
+          "type": "integer"
+        },
+        "max_length": {
+          "$ref": "#/$defs/Estimate"
+        },
+        "overflow": {
+          "const": "reject-publish",
+          "title": "Overflow",
+          "type": "string"
+        }
+      },
+      "required": [
+        "delivery_limit",
+        "max_length",
+        "overflow",
+        "dead_letter_exchange",
+        "dead_letter_strategy"
+      ],
+      "title": "IntakeDefinition",
+      "type": "object"
+    },
+    "IntakeExchange": {
+      "additionalProperties": false,
+      "properties": {
+        "durable": {
+          "const": true,
+          "title": "Durable",
+          "type": "boolean"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "type": {
+          "const": "direct",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "type",
+        "durable"
+      ],
+      "title": "IntakeExchange",
+      "type": "object"
+    },
+    "IntakePolicy": {
+      "additionalProperties": false,
+      "properties": {
+        "apply_to": {
+          "const": "quorum_queues",
+          "title": "Apply To",
+          "type": "string"
+        },
+        "definition": {
+          "$ref": "#/$defs/IntakeDefinition"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "pattern": {
+          "title": "Pattern",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "pattern",
+        "apply_to",
+        "definition"
+      ],
+      "title": "IntakePolicy",
+      "type": "object"
+    },
+    "IntakeQueue": {
+      "additionalProperties": false,
+      "properties": {
+        "binding": {
+          "const": "queue-name",
+          "description": "Bound to the intake exchange by its name.",
+          "title": "Binding",
+          "type": "string"
+        },
+        "initial_group_size": {
+          "const": 1,
+          "title": "Initial Group Size",
+          "type": "integer"
+        },
+        "template": {
+          "description": "The queue name, with <tenant> and <class> replaced.",
+          "title": "Template",
+          "type": "string"
+        },
+        "type": {
+          "const": "quorum",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "template",
+        "type",
+        "initial_group_size",
+        "binding"
+      ],
+      "title": "IntakeQueue",
+      "type": "object"
+    },
+    "Message": {
+      "additionalProperties": false,
+      "properties": {
+        "annotations_on_publish": {
+          "const": false,
+          "title": "Annotations On Publish",
+          "type": "boolean"
+        },
+        "application_properties": {
+          "const": false,
+          "title": "Application Properties",
+          "type": "boolean"
+        },
+        "content_type": {
+          "const": "application/cloudevents+json; charset=utf-8",
+          "title": "Content Type",
+          "type": "string"
+        },
+        "durable": {
+          "const": true,
+          "title": "Durable",
+          "type": "boolean"
+        },
+        "sections": {
+          "items": {
+            "const": "data",
+            "type": "string"
+          },
+          "maxItems": 1,
+          "minItems": 1,
+          "title": "Sections",
+          "type": "array"
+        }
+      },
+      "required": [
+        "sections",
+        "content_type",
+        "durable",
+        "application_properties",
+        "annotations_on_publish"
+      ],
+      "title": "Message",
+      "type": "object"
+    },
+    "Permissions": {
+      "additionalProperties": false,
+      "description": "RabbitMQ regular expressions on the vhost, where the empty string grants nothing.",
+      "properties": {
+        "configure": {
+          "title": "Configure",
+          "type": "string"
+        },
+        "read": {
+          "title": "Read",
+          "type": "string"
+        },
+        "write": {
+          "title": "Write",
+          "type": "string"
+        }
+      },
+      "required": [
+        "configure",
+        "write",
+        "read"
+      ],
+      "title": "Permissions",
+      "type": "object"
+    },
+    "Ports": {
+      "additionalProperties": false,
+      "properties": {
+        "amqp": {
+          "const": 5672,
+          "title": "Amqp",
+          "type": "integer"
+        },
+        "prometheus": {
+          "const": 15692,
+          "title": "Prometheus",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "amqp",
+        "prometheus"
+      ],
+      "title": "Ports",
+      "type": "object"
+    },
+    "Queue": {
+      "additionalProperties": false,
+      "properties": {
+        "initial_group_size": {
+          "const": 1,
+          "title": "Initial Group Size",
+          "type": "integer"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "type": {
+          "const": "quorum",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "type",
+        "initial_group_size"
+      ],
+      "title": "Queue",
+      "type": "object"
+    },
+    "Users": {
+      "additionalProperties": false,
+      "properties": {
+        "admission": {
+          "$ref": "#/$defs/Permissions"
+        },
+        "dispatch": {
+          "$ref": "#/$defs/Permissions"
+        },
+        "operator": {
+          "$ref": "#/$defs/Permissions"
+        }
+      },
+      "required": [
+        "dispatch",
+        "admission",
+        "operator"
+      ],
+      "title": "Users",
+      "type": "object"
+    }
+  },
+  "$id": "urn:wdf:schema:broker:topology:1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "topology.yaml: the exchanges, queues, policies, message shape, users and ports.",
+  "properties": {
+    "addresses": {
+      "$ref": "#/$defs/Addresses"
+    },
+    "annotations": {
+      "$ref": "#/$defs/Annotations"
+    },
+    "dead_letter_exchange": {
+      "$ref": "#/$defs/DeadLetterExchange"
+    },
+    "dead_letter_queue": {
+      "$ref": "#/$defs/Queue"
+    },
+    "dlq_policy": {
+      "$ref": "#/$defs/DlqPolicy"
+    },
+    "intake_exchange": {
+      "$ref": "#/$defs/IntakeExchange"
+    },
+    "intake_policy": {
+      "$ref": "#/$defs/IntakePolicy"
+    },
+    "intake_queue": {
+      "$ref": "#/$defs/IntakeQueue"
+    },
+    "message": {
+      "$ref": "#/$defs/Message"
+    },
+    "ports": {
+      "$ref": "#/$defs/Ports"
+    },
+    "users": {
+      "$ref": "#/$defs/Users"
+    },
+    "vhost": {
+      "const": "/",
+      "title": "Vhost",
+      "type": "string"
+    }
+  },
+  "required": [
+    "vhost",
+    "intake_exchange",
+    "intake_queue",
+    "intake_policy",
+    "dead_letter_exchange",
+    "dead_letter_queue",
+    "dlq_policy",
+    "addresses",
+    "message",
+    "annotations",
+    "users",
+    "ports"
+  ],
+  "title": "contracts/broker topology",
+  "type": "object"
+}

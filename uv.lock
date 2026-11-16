@@ -14,6 +14,7 @@ members = [
     "wdf-artifactclient",
     "wdf-artifactindex",
     "wdf-artifactreaper",
+    "wdf-broker",
     "wdf-compat",
     "wdf-compile",
     "wdf-events",
@@ -635,6 +636,7 @@ dev = [
     { name = "wdf-artifactclient" },
     { name = "wdf-artifactindex" },
     { name = "wdf-artifactreaper" },
+    { name = "wdf-broker" },
     { name = "wdf-compat" },
     { name = "wdf-compile" },
     { name = "wdf-events" },
@@ -670,6 +672,7 @@ dev = [
     { name = "wdf-artifactclient", editable = "packages/artifactclient" },
     { name = "wdf-artifactindex", editable = "packages/artifactindex" },
     { name = "wdf-artifactreaper", editable = "packages/artifactreaper" },
+    { name = "wdf-broker", editable = "packages/broker" },
     { name = "wdf-compat", editable = "packages/compat" },
     { name = "wdf-compile", editable = "packages/compile" },
     { name = "wdf-events", editable = "packages/events" },
@@ -783,6 +786,29 @@ requires-dist = [
     { name = "wdf-artifactclient", editable = "packages/artifactclient" },
     { name = "wdf-artifactindex", editable = "packages/artifactindex" },
     { name = "wdf-storecheck", editable = "packages/storecheck" },
+]
+
+[[package]]
+name = "wdf-broker"
+version = "0.0.0"
+source = { editable = "packages/broker" }
+dependencies = [
+    { name = "pydantic" },
+    { name = "pyyaml" },
+    { name = "wdf-compat" },
+    { name = "wdf-events" },
+    { name = "wdf-itest" },
+    { name = "wdf-jobdoc" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "pydantic" },
+    { name = "pyyaml" },
+    { name = "wdf-compat", editable = "packages/compat" },
+    { name = "wdf-events", editable = "packages/events" },
+    { name = "wdf-itest", editable = "packages/itest" },
+    { name = "wdf-jobdoc", editable = "packages/jobdoc" },
 ]
 
 [[package]]

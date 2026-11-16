@@ -31,9 +31,11 @@ Epic numbers link to the epic issues on GitHub.
 | [module](../contracts/module/README.md) | #2 | each component ships its own `deploy/<component>/module.yaml` | the epics that ship an infrastructure component, and the Tilt skeleton | PoC-essential interface |
 | [activity](../contracts/activity/README.md) | #6 | the `wdf_workflow` models generate the task input, task result, failure details, heartbeat and failure class schemas | #9, #10, #13, #15, #18 | PoC-essential interface |
 | [temporal](../contracts/temporal/README.md) | #6 | the `wdf_workflow` models generate the naming, pool table, signal and status query schemas | #8, #9, #10, #12, #13, #15, #16, #24 | PoC-essential interface |
+| [broker](../contracts/broker/README.md) | #7 | the `wdf_broker` models generate the topology and reason schemas | #8, #24, #13, #15, #17 | PoC-essential interface |
 | [state](../contracts/state/README.md) | #3 | `packages/jobstate`, `packages/eventstore` and `packages/artifactindex` generate the row schemas | #24, #8, #6, #7, #12, #13, #16, #17 | Shared data format |
 | [workload](../contracts/workload/README.md) | #11 | the `wdf_runtime` models generate the input, error, results, exit class, summary and build info schemas, and `wdf_kernel.format` holds the result format rules | #6, #10, #13, #15, #17, #18, #24 | Shared data format |
 | [status](../contracts/status/README.md) | #4 | a hand-written table, validated by its schema | #3, #6, #8, #24 | Shared data format |
+| [tenancy](../contracts/tenancy/README.md) | #7 | the `wdf_broker` models generate the tenancy schema | #8, #24, #16 | Shared data format |
 | [instrumentation](../contracts/instrumentation/README.md) | #4, then #13 | a hand-written metrics file, validated by its schema | #13 and every component that emits a metric, a log line or a span | Shared data format |
 | [preset](../contracts/preset/README.md) | #2 | the files in `deploy/presets/`, validated by its schema | every epic through `just up`, plus `just doctor` and the cluster renderer | Shared data format |
 | [versions](../contracts/versions.schema.json) (a schema only, see [versions policy](versions-policy.md)) | #1 | `deploy/versions.yaml`, checked by `just versions --check` | #2, #3, #6, #7, #13 | Shared data format |
@@ -81,6 +83,12 @@ A module is how one component plugs into the cluster, through a manifest and a T
 The manifest ties the component to a group, a namespace, a pinned artifact and a readiness check, and nothing outside the `obs` group may depend on an `obs` resource.
 Details: [contracts/module/README.md](../contracts/module/README.md).
 
+### broker
+
+RabbitMQ is the intake buffer between the dispatch API and admission, and nothing else.
+The contract pins the intake topology, one quorum queue per tenant and priority class, the message shape, the publish outcomes, the settle calls, the dead-letter reasons with their recovery, the broker users and the alert rules.
+Details: [contracts/broker/README.md](../contracts/broker/README.md).
+
 ## Shared data formats
 
 ### state
@@ -96,10 +104,16 @@ The job status is a stored value on the job row, and each status is set by one j
 The table lists the ten stored statuses, the projection from event type to status and the allowed moves, and it keeps `pausing` and `cancelling` as views that are never stored.
 Details: [contracts/status/README.md](../contracts/status/README.md).
 
+### tenancy
+
+The tenancy file holds, per preset, the tenants, the ordered priority classes and the admission caps, with every figure marked as an estimate.
+The broker names its intake queues after it, admission reads its caps and dispatch refuses a tenant or a class outside it.
+Details: [contracts/tenancy/README.md](../contracts/tenancy/README.md).
+
 ### instrumentation
 
 The instrumentation contract pins naming rules for metrics, bounded label rules, structured log fields and trace propagation.
-Its metrics file holds only the metrics of the event contract until the observability epic takes the file over and extends it.
+Its metrics file holds the metrics of the event contract and the counters of the broker client until the observability epic takes the file over and extends it.
 Details: [contracts/instrumentation/README.md](../contracts/instrumentation/README.md).
 
 ### preset

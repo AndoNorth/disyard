@@ -1,0 +1,58 @@
+# MALFORMED is listed twice.
+reasons:
+  - code: MALFORMED
+    source: application
+    read_from: x-opt-wdf-reason
+    on_intake: expected
+    event: job.dead.lettered
+    recovery: never
+    action: show, then purge, and end the named job through the control API
+  - code: UNSUPPORTED_VERSION
+    source: application
+    read_from: x-opt-wdf-reason
+    on_intake: expected
+    event: job.dead.lettered
+    recovery: after-fix
+    action: deploy a reader of that major inside the replay window of a previous major, then replay
+  - code: ADMISSION_FAILED
+    source: application
+    read_from: x-opt-wdf-reason
+    on_intake: expected
+    event: null
+    recovery: replay
+    action: find the cause from the detail token and the admission log of the job, fix it, then replay
+  - code: delivery_limit
+    source: broker
+    read_from: x-last-death-reason
+    on_intake: expected
+    event: null
+    recovery: replay
+    action: check why the consumer lost the last delivery, then replay
+  - code: rejected
+    source: broker
+    read_from: x-last-death-reason
+    on_intake: not-expected
+    event: null
+    recovery: after-fix
+    action: fix the consumer, then replay
+  - code: maxlen
+    source: broker
+    read_from: x-last-death-reason
+    on_intake: not-expected
+    event: null
+    recovery: after-fix
+    action: fix the topology, then replay
+  - code: expired
+    source: broker
+    read_from: x-last-death-reason
+    on_intake: not-expected
+    event: null
+    recovery: after-fix
+    action: fix the topology, then replay
+  - code: MALFORMED
+    source: application
+    read_from: x-opt-wdf-reason
+    on_intake: expected
+    event: job.dead.lettered
+    recovery: never
+    action: show, then purge, and end the named job through the control API

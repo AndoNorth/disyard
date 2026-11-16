@@ -13,6 +13,7 @@ wdf-aggregate = { workspace = true }
 wdf-artifactclient = { workspace = true }
 wdf-artifactindex = { workspace = true }
 wdf-artifactreaper = { workspace = true }
+wdf-broker = { workspace = true }
 wdf-compat = { workspace = true }
 wdf-compile = { workspace = true }
 wdf-events = { workspace = true }
@@ -45,6 +46,7 @@ dev = [
     "wdf-artifactclient",
     "wdf-artifactindex",
     "wdf-artifactreaper",
+    "wdf-broker",
     "wdf-compat",
     "wdf-compile",
     "wdf-events",
