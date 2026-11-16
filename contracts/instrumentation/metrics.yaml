@@ -1,5 +1,5 @@
 ---
-# Metrics defined by the event contract. Rules: README.md. Schema: metrics.schema.json.
+# Metrics defined by the event contract and the broker contract. Rules: README.md. Schema: metrics.schema.json.
 metrics:
   wdf_event_bytes:
     type: histogram
@@ -25,3 +25,21 @@ metrics:
         values_from: contracts/events/schemas
       from_major:
         values: ["1"]
+  wdf_broker_publish_total:
+    type: counter
+    help: Publishes of the broker client to the intake exchange, by outcome.
+    labels:
+      outcome:
+        values: [accepted, rejected, unroutable, timeout, unavailable, topology-error]
+  wdf_broker_settle_total:
+    type: counter
+    help: Settle calls of the broker client on an intake delivery, by call.
+    labels:
+      call:
+        values: [ack, retry, dead_letter, release]
+  wdf_broker_dead_letter_total:
+    type: counter
+    help: Intake deliveries the consumer dead-lettered, by application reason of contracts/broker/reasons.yaml.
+    labels:
+      reason:
+        values: [MALFORMED, UNSUPPORTED_VERSION, ADMISSION_FAILED]

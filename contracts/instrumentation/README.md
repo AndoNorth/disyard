@@ -1,11 +1,12 @@
 # Instrumentation contract
 
 Owner epic: #4 (job event envelope and state propagation), until the observability epic (#13) takes the file over.
-Version: 1
+Version: 2
 Consumers: observability (#13) and every component that emits a metric, a log line or a span.
 
-This contract pins the rules for metrics, labels, log fields and traces, and a `metrics.yaml` that holds only the metrics the event contract defines.
+This contract pins the rules for metrics, labels, log fields and traces, and a `metrics.yaml` that holds the metrics of the event contract and the counters of the broker client.
 The observability epic extends `metrics.yaml` with the rest of the platform catalogue and owns the contract after the pin.
+An epic may add its own metrics to `metrics.yaml` before then, by a contract-change PR.
 
 ## Metric names
 
@@ -19,7 +20,7 @@ The observability epic extends `metrics.yaml` with the rest of the platform cata
 - A label is never an unbounded identifier.
   The denylist is `x-label-denylist` in [metrics.schema.json](metrics.schema.json), and it holds the job id, task id, event id, trace id and the names that spell them differently.
 - Every label declares its bounded set of values in `metrics.yaml`, either as `values` or as `values_from`, the repository directory whose entry names are the values.
-  The labels `reason`, `type` and `from_major` of the metrics below do so.
+  The labels `reason`, `type`, `from_major`, `outcome` and `call` of the metrics below do so.
 - The priority class and the job class are the context attributes that are allowed as labels, because each is a configured set.
   They are declared like any other label.
 - `le` and `quantile` are reserved.
@@ -47,6 +48,20 @@ The stored event key keeps the name `event_id`, which is the pair `<source>#<id>
 | `wdf_event_upgraded_total` | counter | `type`, `from_major` | `read_event` and `upgrade_for_replay` on each upgrade |
 
 The events lane asserts the serializer metrics and the compatibility lane asserts the upgrade metric in their own tests.
+
+## Metrics of the broker contract
+
+Version 2 adds the counters of the broker client, which [contracts/broker/README.md](../broker/README.md) describes.
+They live in the in-process registry of `wdf_events.metrics`, and the observability epic exports that registry from every process that loads it.
+
+| Metric | Type | Labels | Emitted by |
+| --- | --- | --- | --- |
+| `wdf_broker_publish_total` | counter | `outcome`: `accepted`, `rejected`, `unroutable`, `timeout`, `unavailable`, `topology-error` | the client on every publish, as its outcome or error |
+| `wdf_broker_settle_total` | counter | `call`: `ack`, `retry`, `dead_letter`, `release` | the client on every settle call of an intake delivery |
+| `wdf_broker_dead_letter_total` | counter | `reason`: `MALFORMED`, `UNSUPPORTED_VERSION`, `ADMISSION_FAILED` | the client on every `dead_letter` call, by its application reason |
+
+The `reason` values are the application codes of `contracts/broker/reasons.yaml`, and `packages/broker/tests/test_reasons.py` holds them equal.
+Version 2 consumers: admission (#8), observability (#13) and dispatch (#24).
 
 ## Loader
 
