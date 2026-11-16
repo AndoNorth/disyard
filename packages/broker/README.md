@@ -1,6 +1,6 @@
 # wdf-broker
 
-The models and the loader of the broker and tenancy contracts, the tenancy loader that the publisher and the consumer of the intake queues read, and the in-memory broker they test against at T0.
+The broker client that the publisher and the consumer of the intake queues use, the models and the loader of the broker and tenancy contracts, the topology generator of the broker configuration, the regression suite and the dead-letter tool of the operator, and the brokers they test against: in memory at T0 and in a container at T1.
 The contracts it loads are pinned in `contracts/broker/README.md` and `contracts/tenancy/README.md`.
 
 ## State
@@ -9,8 +9,12 @@ The models (`wdf_broker.models`), the loader `python -m wdf_broker.contract --ch
 `wdf_broker.contract` also returns the pinned files as typed models through `topology()`, `reasons()` and `tenancy()`.
 `wdf_broker.models` holds the publish `Outcome` and the client errors `TopologyError`, `PublishTimeout` and `BrokerUnavailable`.
 `wdf_broker.testing.FakeBroker` is an in-memory broker behind the client API, with the topology of a tenancy profile, credit, delivery counts, the delivery limit, `max-length` with `reject-publish`, `UNROUTABLE` for an unknown routing key, dead-lettering with the reason annotations, `restart()` and `alarm(on)`.
-`wdf_broker.testing.broker_contract(connect)` is the conformance test that the fake passes and that the client must pass against a broker container, where `connect(user)` opens a connection as `dispatch`, `admission` or `operator`.
-The client, the topology generator, the T1 broker container, the regression suite and the dead-letter tool are not built yet.
+`wdf_broker.testing.broker_contract(connect)` is the conformance test that the fake passes and that the client passes against a broker container, where `connect(user)` opens a connection as `dispatch`, `admission` or `operator`.
+`wdf_broker.client.connect(address, Credentials(user, password))` opens a connection with `publish`, `consumer(queue)` and `browser(queue)`, and a consumer hands out deliveries through `pull` and `drain` that the caller settles with `ack`, `retry`, `dead_letter` or `release`.
+`python -m wdf_broker.topology --profile NAME [--users FILE] [--out DIR]` renders the broker configuration for a tenancy profile, the files that the `rabbitmq` module deploys (`deploy/rabbitmq/README.md`).
+`wdf_broker.testing.container.broker_container(t1, profile)` starts the pinned RabbitMQ image with that configuration in a T1 session and yields a `Broker` with its address, metrics endpoint and user passwords.
+`python -m wdf_broker.suite --address HOST:PORT --metrics URL --credentials-dir DIR COMMAND` is the regression suite, where `check` runs every check and `fill`, `drain`, `count` and `deadletter` stand in for the publisher and the consumer.
+`python -m wdf_broker.dlq {list,show,replay,purge} --address HOST:PORT --credentials-dir DIR` is the dead-letter tool of the operator.
 
 The client depends on `python-qpid-proton` 0.40.0, which publishes no Linux wheel, so `uv` builds it from its sdist with the `gcc` of the dev shell, and an image builds it in a build stage with `gcc` and `libc6-dev`.
 
