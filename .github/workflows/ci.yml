@@ -37,6 +37,13 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: DeterminateSystems/nix-installer-action@v23
+      # The image builds of the integration tests read their wheels and release assets from this cache first.
+      - name: Restore the build download cache
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/wasm-dag-forge/build
+          key: build-downloads-${{ hashFiles('uv.lock', 'nix/wasm-tools.nix', 'deploy/versions.yaml') }}
+          restore-keys: build-downloads-
       - run: nix develop -c just ci --${{ needs.changes.outputs.mode }}
       - name: Reproducibility check
         if: ${{ needs.changes.outputs.mode == 'full' }}

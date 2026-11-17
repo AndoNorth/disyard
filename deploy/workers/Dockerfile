@@ -5,7 +5,10 @@
 ARG BASE
 FROM ${BASE} AS worker
 COPY requirements.txt /tmp/build/
-RUN pip install --no-cache-dir --no-deps --require-hashes -r /tmp/build/requirements.txt
+# The hash-pinned packages install from dists/, mounted rather than copied so its files add no layer, with no network.
+RUN --network=none --mount=type=bind,source=dists,target=/tmp/dists \
+    pip install --no-cache-dir --no-deps --require-hashes --no-index --find-links /tmp/dists \
+    -r /tmp/build/requirements.txt
 COPY wheels /tmp/build/wheels
 RUN pip install --no-cache-dir --no-deps --no-index /tmp/build/wheels/*.whl && pip check && rm -rf /tmp/build
 COPY bin/ /usr/local/bin/
