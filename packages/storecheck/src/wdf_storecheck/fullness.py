@@ -136,13 +136,19 @@ def batch_delete(store: Store, bucket: str) -> str:
     return outcome
 
 
-def settle(probe) -> str:
-    """The outcome of a put that may need a moment after recovery before the store takes it."""
+def settle(probe, recover) -> str:
+    """The outcome of a put after recovery, recovering again while the store still refuses it.
+
+    The S3 delete of SeaweedFS returns before its volumes have dropped the chunks, and a vacuum
+    that comes first finds nothing to reclaim, so one vacuum is not enough on a slow host.
+    """
     deadline = time.monotonic() + SETTLE_SECONDS
+    recover()
     while probe():
         if time.monotonic() >= deadline:
             return "refused"
         time.sleep(2)
+        recover()
     return ALLOWED
 
 
@@ -166,8 +172,7 @@ def observe_full_disk(store: Store, product: str | None, recover_with=None) -> F
         )
         run.put_after_delete = "refused" if probe() else ALLOWED
         if recover_with:
-            recover_with(store)
-            run.put_after_recovery = settle(probe)
+            run.put_after_recovery = settle(probe, lambda: recover_with(store))
     finally:
         store.sweep()
     return run
@@ -213,14 +218,15 @@ def run_disk_full(store: Store, report: Report, product, recover_with=None) -> N
 def vacuum_through(exec_prefix: list[str]):
     """The recovery of SeaweedFS: a vacuum through `weed shell` inside the store container."""
 
-    def recover(store: Store) -> None:
-        subprocess.run(
+    def recover(store: Store) -> str:
+        """What the shell printed, since it exits 0 when a command inside it fails."""
+        return subprocess.run(
             [*exec_prefix, *SEAWEEDFS_SHELL],
             input=VACUUM,
             text=True,
             check=True,
             capture_output=True,
-        )
+        ).stdout
 
     return recover
 

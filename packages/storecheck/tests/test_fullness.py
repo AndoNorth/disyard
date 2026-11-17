@@ -20,7 +20,7 @@ CAP_MIB = 128
 
 
 ATTEMPTS = 3
-STORE_LOG = re.compile(r"compact|vacuum|dir /data |becomes|insufficient")
+STORE_LOG = re.compile(r"compact|vacuum|dir /data |becomes|insufficient", re.IGNORECASE)
 
 
 def free_kib(prefix: list[str]) -> int:
@@ -29,13 +29,13 @@ def free_kib(prefix: list[str]) -> int:
     return int(df.stdout.splitlines()[1].split()[3])
 
 
-def vacuum_noting_room(prefix: list[str], room: list[int]):
+def vacuum_noting_room(prefix: list[str], room: list[int], said: list[str]):
     """The vacuum of SeaweedFS, noting the free space it had to write the compacted volume into."""
     vacuum = vacuum_through(prefix)
 
     def recover(store) -> None:
         room.append(free_kib(prefix))
-        vacuum(store)
+        said.append(vacuum(store))
 
     return recover
 
@@ -64,18 +64,18 @@ def runs(start_capped):
     seen = {}
     for product in ("seaweedfs", "rustfs"):
         for _ in range(ATTEMPTS):
-            room = []
+            room, said = [], []
             with start_capped(product, CAP_MIB) as started:
                 prefix = started.exec_prefix()
                 recover = (
-                    vacuum_noting_room(prefix, room)
+                    vacuum_noting_room(prefix, room, said)
                     if product == "seaweedfs"
                     else free_outside_s3(prefix)
                 )
                 seen[product] = observe_full_disk(started.store(), product, recover)
                 if product == "seaweedfs" and seen[product].put_after_recovery != ALLOWED:
-                    seen["seaweedfs-state"] = store_state(started)
-            if product == "rustfs" or (seen[product].delete == ALLOWED and room != [0]):
+                    seen["seaweedfs-state"] = "\n".join([*said[-1:], store_state(started)])
+            if product == "rustfs" or (seen[product].delete == ALLOWED and room[:1] != [0]):
                 break
     return seen
 
