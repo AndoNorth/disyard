@@ -1,7 +1,7 @@
 # Events contract
 
 Owner epic: #4 (job event envelope and state propagation).
-Version: 3
+Version: 4
 Consumers: every epic.
 Storage (#3), validator (#5), workflow (#6), broker (#7), admission (#8), placement (#9), workers (#10), toolchain (#11), artifacts (#12), observability (#13), dispatch (#24) and the checkpoint epic (#18) read it.
 
@@ -38,6 +38,12 @@ Sensitive values never go in a context attribute.
 
 `time` is the time of the fact being recorded and never a write-time clock.
 It always carries exactly six fractional digits, zero padded by producers (`wdf_events.format_time`), so that the event store key `<source>#<id>` plus `time` survives a `timestamptz` round trip and a replay inserts nothing new.
+
+### `jobclass`
+
+`jobclass` takes a class of `classes` in [contracts/job/limits.yaml](../job/limits.yaml), the same value as the `job_class` column of the job's row.
+The dispatch API checks it where the class enters, at the accepted event, and every later event of the job copies it.
+Readers accept any class name that matches the profile pattern, so recorded histories keep decoding.
 
 ### Content type
 

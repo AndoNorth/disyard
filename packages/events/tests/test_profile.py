@@ -6,6 +6,7 @@ import subprocess
 from pathlib import Path
 
 import pytest
+import yaml
 from jsonschema import Draft7Validator, validate
 from wdf_events import EventTooLarge, SchemaInvalid, UnsupportedMajor, from_bytes, to_bytes
 from wdf_events.errors import EventError
@@ -16,6 +17,8 @@ ROOT = CONTRACT_DIR.parents[1]
 VALID = sorted((CONTRACT_DIR / "vectors/accepted/valid").glob("*.json"))
 INVALID = sorted((CONTRACT_DIR / "vectors/accepted/invalid").glob("*.json"))
 CHECK = CONTRACT_DIR / "check.sh"
+LIMITS = yaml.safe_load((ROOT / "contracts/job/limits.yaml").read_text())
+CLASSES = LIMITS["profiles"]["ci"]["classes"]
 
 
 def reason_of(path: Path) -> str:
@@ -69,6 +72,19 @@ def test_check_sh_exits_1_with_a_reason_for_an_invalid_vector(path):
     run = subprocess.run([CHECK, path], capture_output=True, text=True)
     assert run.returncode == 1
     assert run.stderr.startswith(f"reason: {reason_of(path)}: "), run.stderr
+
+
+def test_every_vector_carries_a_job_class_of_the_validator():
+    classes = {}
+    for path in (CONTRACT_DIR / "vectors").rglob("*.json"):
+        try:
+            event = load(path)
+        except json.JSONDecodeError:
+            continue
+        if isinstance(event, dict) and "jobclass" in event:
+            classes[path.relative_to(CONTRACT_DIR).as_posix()] = event["jobclass"]
+    assert len(classes) > 100
+    assert {p: c for p, c in classes.items() if c not in CLASSES} == {}
 
 
 def test_check_sh_exits_2_without_an_argument():
