@@ -201,7 +201,7 @@ The full policy, including the preference for first-party charts, is in [version
 ## CI
 
 `.github/workflows/ci.yml` runs on pushes to `main` and on pull requests.
-Its `changes` job picks the path, and its `check` job runs checkout, Nix installation, `nix develop -c just ci --<path>`, and on the full path a reproducibility check.
+Its `changes` job picks the path, and its `check` job runs checkout, Nix installation, the restore of the build download cache, `nix develop -c just ci --<path>`, and on the full path a reproducibility check.
 The reproducibility check runs `git archive HEAD` into two fresh directories and evaluates `.#devShells.x86_64-linux.default.drvPath` in each.
 The job fails when the two derivation paths differ, which stands in for a second contributor's machine.
 
@@ -210,6 +210,10 @@ A pull request whose changed files are all documentation takes the docs path, an
 The docs path runs lint, the link check, the contracts map, the verify-skills lint and `nix flake check`, whose `checks.pre-commit` reads documentation too.
 It skips the unit and integration tests, the reproducibility check and the `kind-smoke` cluster run.
 Each skipped job still reports as skipped, so a check made required later never stays pending.
+
+The image builds, `deploy/workers/image.sh` and `deploy/workflow/image.sh`, read the wheels that `uv.lock` pins and the release assets of `nix/wasm-tools.nix` from the build download cache before the network, locally as in CI.
+A second build on the same host downloads nothing, and every cached file is checked against its pinned hash before use.
+The cache is `~/.cache/wasm-dag-forge/build` (under `XDG_CACHE_HOME` when set, or `WDF_BUILD_CACHE`), removing it is always safe, and `actions/cache` carries it between runs of `check` and `state-modules`.
 
 CI can be switched off in two ways:
 

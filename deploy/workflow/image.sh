@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Builds the image of the workflow worker service from this tree: wheels of the workspace packages that wdf-workflow
 # needs, built on the host, over the third-party packages that uv.lock pins by hash, on the pinned Python base.
+# The third-party packages are read from the build cache first, as deploy/wheel-cache.sh says.
 # The build id is WDF_BUILD_ID, or the short commit when it is unset, and the image carries it as WDF_BUILD_ID.
 # Usage: image.sh [REF]. REF defaults to EXPECTED_REF, which Tilt sets. Exit 0 built, 1 no build id or a failed build,
 # 2 usage.
@@ -22,6 +23,7 @@ uv export --frozen --quiet --no-dev --package wdf-workflow --only-emit-workspace
     uv build --quiet --wheel --out-dir "$context/wheels" "$package"
 done
 
+deploy/wheel-cache.sh "$base" "$context/requirements.txt" "$context/dists"
 docker build --quiet -f deploy/workflow/Dockerfile -t "$ref" \
     --build-arg "BASE=$base" --build-arg "WDF_BUILD_ID=$build_id" \
     --label "wdf.dev/build-id=$build_id" "$context" >/dev/null
