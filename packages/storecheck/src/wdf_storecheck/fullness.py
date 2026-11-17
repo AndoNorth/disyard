@@ -23,10 +23,15 @@ MARKER_BUCKET_INDEX = 0
 MARKER_KEY = "storecheck-marker/object"
 VACUUM = "lock\nvolume.vacuum\nunlock\n"
 SEAWEEDFS_SHELL = ["weed", "shell", "-master=127.0.0.1:9333"]
-SETTLE_SECONDS = 60
 DELETE_ATTEMPTS = 6
 # The volume servers of SeaweedFS report their free space to the master every few seconds.
 HEARTBEAT_SECONDS = 6
+# A volume server of SeaweedFS reads its free space once a minute, and while the last reading
+# was under 1% every volume on that disk is read-only, so a vacuum just after a low reading is
+# seen at the next one.
+DISK_CHECK_SECONDS = 60
+# The next disk check, then heartbeats to carry it to the master on a loaded host.
+SETTLE_SECONDS = DISK_CHECK_SECONDS + 5 * HEARTBEAT_SECONDS
 DELETE_PAUSE = 5
 GAP = "delete-while-full"
 

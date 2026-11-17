@@ -24,9 +24,7 @@ def runs(start_capped):
 
     SeaweedFS learns of its free space from a heartbeat, so a fast fill can overshoot into the
     room that its metadata needs, and then even a delete is refused.
-    The vacuum that follows is also reported through that heartbeat, so a slow host can leave the
-    store refusing after the settle window.
-    Neither run says anything about the product, so the sequence starts again on a fresh volume.
+    That run says nothing about the product, so the sequence starts again on a fresh volume.
     """
     seen = {}
     for product in ("seaweedfs", "rustfs"):
@@ -37,9 +35,7 @@ def runs(start_capped):
                     vacuum_through(prefix) if product == "seaweedfs" else free_outside_s3(prefix)
                 )
                 seen[product] = observe_full_disk(started.store(), product, recover)
-            if product == "rustfs" or (
-                seen[product].delete == ALLOWED and seen[product].put_after_recovery == ALLOWED
-            ):
+            if product == "rustfs" or seen[product].delete == ALLOWED:
                 break
     return seen
 
