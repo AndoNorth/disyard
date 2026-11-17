@@ -82,6 +82,8 @@ Space freed by deleting objects returns to the store only after a vacuum.
    ```
 
 3. Put an object again to confirm.
+   The store reads its free space once a minute and holds every volume read-only while the last reading was under 1%, so the put can be refused for about a minute after the vacuum.
+   The batch delete returns before the volumes have dropped the chunks, and a vacuum that comes first reclaims nothing, so vacuum again while the put is refused.
 
 The contract script's `recover` mode runs the same steps against a size-capped tmpfs.
 

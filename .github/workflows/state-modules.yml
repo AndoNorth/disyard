@@ -37,6 +37,12 @@ jobs:
           path: ~/.cache/wasm-dag-forge/build
           key: build-downloads-${{ hashFiles('uv.lock', 'nix/wasm-tools.nix', 'deploy/versions.yaml') }}
           restore-keys: build-downloads-
+      # The six kind nodes need more inotify instances than the kernel default of 128.
+      # The runner image writes higher limits to /etc/sysctl.conf, which Ubuntu 26.04 no longer loads at boot.
+      - name: Raise inotify limits
+        run: |
+          sysctl fs.inotify.max_user_instances fs.inotify.max_user_watches
+          sudo sysctl -w fs.inotify.max_user_instances=1280 fs.inotify.max_user_watches=655360
       - run: nix develop -c just up
       - run: nix develop -c scripts/tilt/run.sh ci
       - name: Store contract script

@@ -46,6 +46,12 @@ jobs:
           nproc
           grep -E '^(MemTotal|MemAvailable):' /proc/meminfo
           free -m
+      # The six kind nodes need more inotify instances than the kernel default of 128.
+      # The runner image writes higher limits to /etc/sysctl.conf, which Ubuntu 26.04 no longer loads at boot.
+      - name: Raise inotify limits
+        run: |
+          sysctl fs.inotify.max_user_instances fs.inotify.max_user_watches
+          sudo sysctl -w fs.inotify.max_user_instances=1280 fs.inotify.max_user_watches=655360
       - run: nix develop -c just up
       - name: Export cluster logs
         if: ${{ failure() }}
