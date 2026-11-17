@@ -3,7 +3,7 @@
   "datacontenttype": "application/json",
   "dataschema": "urn:wdf:schema:job.started:1.0",
   "id": "45a93569-b3dc-5ac0-b90a-683c3e68419d",
-  "jobclass": "simulate",
+  "jobclass": "short",
   "jobid": "3a9617fa-df7c-5760-a644-42d559e0f433",
   "priorityclass": "standard",
   "source": "/wdf/workflow",
