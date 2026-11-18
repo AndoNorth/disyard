@@ -5,7 +5,9 @@ and its events in one transaction.
 """
 
 from dataclasses import dataclass
+from datetime import datetime
 from functools import cache
+from typing import Any
 
 import yaml
 from psycopg import Connection
@@ -129,11 +131,24 @@ def insert_accepted(conn: Connection, rows: list[JobRow]) -> InsertResult:
     return InsertResult(inserted, duplicates)
 
 
-def get_job(conn: Connection, job_id: str) -> JobRow | None:
+def _read(conn: Connection, job_id: str, lock: str) -> JobRow | None:
     with conn.cursor(row_factory=dict_row) as cur:
-        cur.execute(f"SELECT {READ_COLUMNS} FROM accepted_job WHERE job_id = %s", (job_id,))
+        cur.execute(f"SELECT {READ_COLUMNS} FROM accepted_job WHERE job_id = %s{lock}", (job_id,))
         row = cur.fetchone()
     return JobRow(**row) if row else None
+
+
+def get_job(conn: Connection, job_id: str) -> JobRow | None:
+    return _read(conn, job_id, "")
+
+
+def lock_job(conn: Connection, job_id: str) -> JobRow | None:
+    """Reads the row and holds its lock until the caller's transaction ends.
+
+    A control decision taken on it and written in the same transaction cannot interleave with a
+    claim or another control request: their guarded writes wait, then see the committed row.
+    """
+    return _read(conn, job_id, " FOR UPDATE")
 
 
 def _applied_actions(expected: str, to: str) -> list[str]:
@@ -209,13 +224,31 @@ def request_action(conn: Connection, job_id: str, action: str) -> ControlRequest
     return ControlRequest(action, found[0])
 
 
-def mark_published(conn: Connection, job_id: str) -> None:
-    """Records the broker receipt once, and a repeat keeps the first time."""
-    conn.execute(
-        "UPDATE accepted_job SET published_at = now() WHERE job_id = %s AND published_at IS NULL",
+def mark_published(conn: Connection, job_id: str) -> datetime | None:
+    """Records the broker receipt once, and returns its time only to the call that set it."""
+    won = conn.execute(
+        "UPDATE accepted_job SET published_at = now() WHERE job_id = %s AND published_at IS NULL"
+        " RETURNING published_at",
         (job_id,),
-    )
+    ).fetchone()
+    if won:
+        return won[0]
     _status_of(conn, job_id)
+    return None
+
+
+def set_pending_patch(
+    conn: Connection, job_id: str, control_seq: int, ref: dict[str, Any] | None
+) -> Lost | None:
+    """Writes or clears the pending patch while the resume of `control_seq` is outstanding."""
+    written = conn.execute(
+        "UPDATE accepted_job SET pending_patch_ref = %s"
+        " WHERE job_id = %s AND requested_action = 'resume' AND control_seq = %s",
+        (None if ref is None else Jsonb(ref), job_id, control_seq),
+    )
+    if written.rowcount:
+        return None
+    return Lost(_status_of(conn, job_id))
 
 
 def mark_delivered(conn: Connection, job_id: str, control_seq: int) -> None:
