@@ -1,8 +1,8 @@
-# Pool table v0: the ci slot of each pool and its timeouts. Schema: pools.schema.json.
-# Every value is an estimate, until a contract change replaces this file with real values and formulas.
+# Pool table: the ci slot of each pool and its timeouts. Schema: pools.schema.json.
+# The figures are measured on the ci workers, and README.md gives the formula behind each timeout.
 # The slots equal deploy/presets/slots/ci.yaml. A task's start-to-close timeout is its run timeout plus the margin.
-# A schedule-to-start timeout doubles at each re-schedule up to the ceiling.
-estimate: true
+# A schedule-to-start timeout doubles at each re-schedule up to the ceiling, and the performance epic tunes both.
+estimate: false
 schedule_to_start_ceiling_s: 900
 pools:
   compile:
@@ -13,7 +13,7 @@ pools:
     start_to_close_margin_s: 120
   simulate:
     cpu_milli: 250
-    memory_mib: 384
+    memory_mib: 512
     schedule_to_start_s: 1800
     heartbeat_s: 60
     start_to_close_margin_s: 120

@@ -1,11 +1,11 @@
 # Temporal contract
 
 Owner epic: #6 (workflow engine on Temporal).
-Version: 2, in [VERSION](VERSION).
+Version: 3, in [VERSION](VERSION).
 The [Consumers](#consumers) section names who reads each part.
 
 Temporal owns the state of every job.
-This directory pins the names that the workflow, its workers and its callers share, pool table v0, the control signals and the status query.
+This directory pins the names that the workflow, its workers and its callers share, the pool table, the control signals and the status query.
 The schemas are generated from the models of `wdf_workflow.models` and never edited by hand.
 The payload of each signal and query is canonical JSON, as `wdf_temporal.converter` writes a model.
 
@@ -29,10 +29,10 @@ The payload of each signal and query is canonical JSON, as `wdf_temporal.convert
 A retry policy is written with Temporal's own fields, `maximum_attempts`, `initial_interval_s`, `backoff_coefficient` and `maximum_interval_s`, where `maximum_attempts` 0 means no limit, as in Temporal.
 The estimates among them are fixed by the performance epic.
 
-## Pool table v0
+## Pool table
 
-[pools.yaml](pools.yaml), with schema [pools.schema.json](pools.schema.json), marked `estimate: true`.
-The placement epic replaces it with real values and timeout formulas by a contract-change PR, and keeps the queue names of `naming.yaml`.
+[pools.yaml](pools.yaml), with schema [pools.schema.json](pools.schema.json), marked `estimate: false`.
+The placement epic (#9) sets it from the figures that the Kubernetes workers epic measured on the `ci` pool workers (`docs/delivery/epics/11-workers.md`, its real pool values for #9), and keeps the queue names of `naming.yaml`.
 
 | Pool | `cpu_milli` | `memory_mib` | `schedule_to_start_s` | `heartbeat_s` | `start_to_close_margin_s` |
 | --- | --- | --- | --- | --- | --- |
@@ -42,10 +42,16 @@ The placement epic replaces it with real values and timeout formulas by a contra
 
 The slots equal `deploy/presets/slots/ci.yaml`, and `packages/workflow/tests/test_pools.py` holds them equal.
 A placer takes the queue of a pool from `pools` of `naming.yaml`, so the queue names live in one file.
-The start-to-close timeout of a task is its run timeout plus the margin, because `run_timeout_s` is a field of each plan task.
-The heartbeat timeout of 60 s is above the 30 s that a component's first run on a pod takes to warm up, and the margin of 120 s covers that warm-up and staging.
-The schedule-to-start timeout starts at `schedule_to_start_s` and doubles at each re-schedule up to `schedule_to_start_ceiling_s`, 43,200 s, with no count cap, so a task is never dropped.
 A request above the slot of its pool is `insufficient_memory` or `insufficient_cpu`, and a task type with no pool is `no_matching_pool`.
+The slot is the pod's memory, not what a task can use of it: the simulate worker keeps 256 MiB of its 512 MiB slot, so its guest gets 128 MiB, and a usable-memory budget is left to the performance epic (#16).
+
+Each timeout follows a formula, and the table below names its measured terms.
+
+| Timeout | Formula | Measured terms |
+| --- | --- | --- |
+| start-to-close | `run_timeout_s + start_to_close_margin_s`, because `run_timeout_s` is a field of each plan task | the margin of 120 s covers the worker's upload reserve of 30 s, staging of up to 1.1 s and the first-run warm-up of 33.2 s on a simulate pod, 64.3 s in all |
+| heartbeat | `heartbeat_s`, at least three worker beats | the worker beats every 10 s (`HEARTBEAT_EVERY_S`), and 60 s keeps six beats, because the beat loop shares the 250m simulate CPU limit with the warm-up |
+| schedule-to-start | starts at `schedule_to_start_s` and doubles at each re-schedule up to `schedule_to_start_ceiling_s`, 43,200 s, with no count cap, so a task is never dropped | none: 1,800 s and its ceiling are the one figure pair that the performance epic (#16) tunes |
 
 ## Signals and query
 
@@ -78,11 +84,11 @@ The schema bounds the query by its 524,288 bytes, and the `max_tasks` of the pla
 | --- | --- |
 | #6 workflow engine | every part |
 | #8 admission | the workflow type, queue, id, reuse policy and search attributes of the start, and the resume signal |
-| #9 placement | the pool queues and pool table v0, which it replaces |
+| #9 placement | the pool queues and the pool table, which it sets |
 | #10 Kubernetes workers | the pool queues and the pool activity, which every worker serves unversioned |
 | #12 artifact passing | the reaper Schedule's names |
 | #13 observability | the namespace, queues and status query |
-| #15 failure scenarios and #16 performance | the names and pool table v0 the harness drives |
+| #15 failure scenarios and #16 performance | the names and the pool table the harness drives |
 | #24 dispatch and control API | the control signals and the status query |
 
 ## Loader

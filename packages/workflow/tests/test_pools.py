@@ -1,4 +1,4 @@
-"""Pool table v0 holds the ci slots, and its pools and queues are those of the registry."""
+"""The pool table holds the ci slots, and its pools and queues are those of the registry."""
 
 from pathlib import Path
 
@@ -38,9 +38,9 @@ def test_pools_match_ci_slots():
     assert slot_mismatches(table, slots) == ["simulate"]
 
 
-def test_pools_are_estimates_with_the_v0_timeouts():
+def test_pools_are_real_with_the_measured_timeouts():
     table = pools()
-    assert table.estimate is True
+    assert table.estimate is False
     assert table.schedule_to_start_ceiling_s == 43_200
     for pool in table.pools.values():
         assert (pool.schedule_to_start_s, pool.heartbeat_s, pool.start_to_close_margin_s) == (
