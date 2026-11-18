@@ -11,9 +11,11 @@ from .jobs import (
     Vocabulary,
     get_job,
     insert_accepted,
+    lock_job,
     mark_delivered,
     mark_published,
     request_action,
+    set_pending_patch,
     status_vocabulary,
     transition,
 )
@@ -35,9 +37,11 @@ __all__ = [
     "Vocabulary",
     "get_job",
     "insert_accepted",
+    "lock_job",
     "mark_delivered",
     "mark_published",
     "request_action",
+    "set_pending_patch",
     "status_vocabulary",
     "transition",
 ]
