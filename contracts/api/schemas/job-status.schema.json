@@ -1,0 +1,480 @@
+{
+  "$defs": {
+    "CheckpointReference": {
+      "additionalProperties": false,
+      "description": "A checkpoint reference, a subset of contracts/artifact/reference.schema.json.",
+      "properties": {
+        "kind": {
+          "const": "checkpoint",
+          "title": "Kind",
+          "type": "string"
+        },
+        "name": {
+          "maxLength": 255,
+          "minLength": 1,
+          "pattern": "^[^/]+$",
+          "title": "Name",
+          "type": "string"
+        },
+        "producer": {
+          "$ref": "#/$defs/ProducerRef"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        },
+        "size": {
+          "minimum": 0,
+          "title": "Size",
+          "type": "integer"
+        },
+        "uri": {
+          "pattern": "^s3://wdf-checkpoints/.+$",
+          "title": "Uri",
+          "type": "string"
+        }
+      },
+      "required": [
+        "uri",
+        "sha256",
+        "size",
+        "name",
+        "kind",
+        "producer"
+      ],
+      "title": "CheckpointReference",
+      "type": "object"
+    },
+    "DeadLetter": {
+      "additionalProperties": false,
+      "properties": {
+        "detail": {
+          "title": "Detail",
+          "type": "string"
+        },
+        "dlq_reason": {
+          "pattern": "^[A-Z][A-Z0-9_]*$",
+          "title": "Dlq Reason",
+          "type": "string"
+        },
+        "time": {
+          "format": "date-time",
+          "title": "Time",
+          "type": "string"
+        }
+      },
+      "required": [
+        "dlq_reason",
+        "detail",
+        "time"
+      ],
+      "title": "DeadLetter",
+      "type": "object"
+    },
+    "ProducerRef": {
+      "additionalProperties": false,
+      "properties": {
+        "attempt": {
+          "pattern": "^r[0-9]+a[0-9]+$",
+          "title": "Attempt",
+          "type": "string"
+        },
+        "job": {
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "title": "Job",
+          "type": "string"
+        },
+        "task": {
+          "pattern": "^[a-z0-9][a-z0-9._-]{0,62}$",
+          "title": "Task",
+          "type": "string"
+        }
+      },
+      "required": [
+        "job",
+        "task",
+        "attempt"
+      ],
+      "title": "ProducerRef",
+      "type": "object"
+    },
+    "ResultReference": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "enum": [
+            "result",
+            "summary"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "name": {
+          "maxLength": 255,
+          "minLength": 1,
+          "pattern": "^[^/]+$",
+          "title": "Name",
+          "type": "string"
+        },
+        "producer": {
+          "$ref": "#/$defs/ProducerRef"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        },
+        "size": {
+          "minimum": 0,
+          "title": "Size",
+          "type": "integer"
+        },
+        "uri": {
+          "pattern": "^s3://wdf-(sources|components|results|checkpoints)/.+$",
+          "title": "Uri",
+          "type": "string"
+        }
+      },
+      "required": [
+        "uri",
+        "sha256",
+        "size",
+        "name",
+        "kind",
+        "producer"
+      ],
+      "title": "ResultReference",
+      "type": "object"
+    },
+    "StatusQuery": {
+      "additionalProperties": false,
+      "description": "The result of the query status.",
+      "properties": {
+        "control_seq": {
+          "maximum": 2147483647,
+          "minimum": 0,
+          "title": "Control Seq",
+          "type": "integer"
+        },
+        "job_status": {
+          "description": "A status of contracts/status/status.yaml.",
+          "title": "Job Status",
+          "type": "string"
+        },
+        "pause_reason": {
+          "anyOf": [
+            {
+              "enum": [
+                "operator",
+                "retries-exhausted",
+                "resume-compile-failed"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Pause Reason"
+        },
+        "resume_counter": {
+          "minimum": 0,
+          "title": "Resume Counter",
+          "type": "integer"
+        },
+        "tasks": {
+          "description": "In ascending task id.",
+          "items": {
+            "$ref": "#/$defs/TaskStatus"
+          },
+          "minItems": 1,
+          "title": "Tasks",
+          "type": "array"
+        }
+      },
+      "required": [
+        "job_status",
+        "pause_reason",
+        "resume_counter",
+        "control_seq",
+        "tasks"
+      ],
+      "title": "StatusQuery",
+      "type": "object"
+    },
+    "TaskStatus": {
+      "additionalProperties": false,
+      "properties": {
+        "checkpoint": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CheckpointReference"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "The newest kept checkpoint."
+        },
+        "guest_left": {
+          "minimum": 0,
+          "title": "Guest Left",
+          "type": "integer"
+        },
+        "id": {
+          "pattern": "^[a-z0-9][a-z0-9._-]{0,62}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "infra_left": {
+          "minimum": 0,
+          "title": "Infra Left",
+          "type": "integer"
+        },
+        "last_class": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "A class of failure-classes.yaml.",
+          "title": "Last Class"
+        },
+        "reschedules": {
+          "minimum": 0,
+          "title": "Reschedules",
+          "type": "integer"
+        },
+        "state": {
+          "enum": [
+            "pending",
+            "ready",
+            "running",
+            "succeeded",
+            "skipped",
+            "failed",
+            "blocked",
+            "paused",
+            "cancelled"
+          ],
+          "title": "State",
+          "type": "string"
+        },
+        "task_attempt": {
+          "description": "0 for a task that never ran.",
+          "minimum": 0,
+          "title": "Task Attempt",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id",
+        "state",
+        "task_attempt",
+        "guest_left",
+        "infra_left",
+        "reschedules",
+        "last_class",
+        "checkpoint"
+      ],
+      "title": "TaskStatus",
+      "type": "object"
+    }
+  },
+  "$id": "urn:wdf:schema:api:job-status:1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "batch_id": {
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+      "title": "Batch Id",
+      "type": "string"
+    },
+    "control_delivered": {
+      "title": "Control Delivered",
+      "type": "boolean"
+    },
+    "control_seq": {
+      "maximum": 2147483647,
+      "minimum": 0,
+      "title": "Control Seq",
+      "type": "integer"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "dead_letter": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/DeadLetter"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "detail": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/StatusQuery"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "detail_error": {
+      "anyOf": [
+        {
+          "enum": [
+            "unavailable",
+            "no-workflow"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Detail Error"
+    },
+    "job_class": {
+      "minLength": 1,
+      "title": "Job Class",
+      "type": "string"
+    },
+    "job_id": {
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+      "title": "Job Id",
+      "type": "string"
+    },
+    "priority_class": {
+      "minLength": 1,
+      "title": "Priority Class",
+      "type": "string"
+    },
+    "published": {
+      "title": "Published",
+      "type": "boolean"
+    },
+    "requested_action": {
+      "anyOf": [
+        {
+          "enum": [
+            "cancel",
+            "terminate",
+            "pause",
+            "resume"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Requested Action"
+    },
+    "results": {
+      "description": "In task id order.",
+      "items": {
+        "$ref": "#/$defs/ResultReference"
+      },
+      "title": "Results",
+      "type": "array"
+    },
+    "status": {
+      "enum": [
+        "accepted",
+        "admitted",
+        "running",
+        "paused",
+        "resume-pending",
+        "succeeded",
+        "partial",
+        "failed",
+        "cancelled",
+        "terminated"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "submission_key": {
+      "maxLength": 256,
+      "minLength": 1,
+      "title": "Submission Key",
+      "type": "string"
+    },
+    "tenant": {
+      "minLength": 1,
+      "title": "Tenant",
+      "type": "string"
+    },
+    "terminal_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Terminal At"
+    },
+    "trace_id": {
+      "pattern": "^[0-9a-f]{32}$",
+      "title": "Trace Id",
+      "type": "string"
+    },
+    "updated_at": {
+      "format": "date-time",
+      "title": "Updated At",
+      "type": "string"
+    },
+    "view": {
+      "anyOf": [
+        {
+          "enum": [
+            "pausing",
+            "cancelling"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "View"
+    }
+  },
+  "required": [
+    "job_id",
+    "tenant",
+    "batch_id",
+    "submission_key",
+    "status",
+    "view",
+    "requested_action",
+    "control_seq",
+    "control_delivered",
+    "priority_class",
+    "job_class",
+    "published",
+    "created_at",
+    "updated_at",
+    "terminal_at",
+    "trace_id",
+    "detail",
+    "detail_error",
+    "results",
+    "dead_letter"
+  ],
+  "title": "contracts/api job-status",
+  "type": "object"
+}

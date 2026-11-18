@@ -18,6 +18,7 @@ members = [
     "wdf-broker",
     "wdf-compat",
     "wdf-compile",
+    "wdf-dispatchapi",
     "wdf-events",
     "wdf-eventstore",
     "wdf-itest",
@@ -687,6 +688,7 @@ dev = [
     { name = "wdf-broker" },
     { name = "wdf-compat" },
     { name = "wdf-compile" },
+    { name = "wdf-dispatchapi" },
     { name = "wdf-events" },
     { name = "wdf-eventstore" },
     { name = "wdf-itest" },
@@ -724,6 +726,7 @@ dev = [
     { name = "wdf-broker", editable = "packages/broker" },
     { name = "wdf-compat", editable = "packages/compat" },
     { name = "wdf-compile", editable = "packages/compile" },
+    { name = "wdf-dispatchapi", editable = "packages/dispatchapi" },
     { name = "wdf-events", editable = "packages/events" },
     { name = "wdf-eventstore", editable = "packages/eventstore" },
     { name = "wdf-itest", editable = "packages/itest" },
@@ -925,6 +928,57 @@ requires-dist = [
     { name = "wdf-jobcheck", editable = "packages/jobcheck" },
     { name = "wdf-keys", editable = "packages/keys" },
     { name = "wdf-runtime", editable = "packages/runtime" },
+]
+
+[[package]]
+name = "wdf-dispatchapi"
+version = "0.0.0"
+source = { editable = "packages/dispatchapi" }
+dependencies = [
+    { name = "boto3" },
+    { name = "psycopg", extra = ["binary"] },
+    { name = "pydantic" },
+    { name = "pyyaml" },
+    { name = "temporalio" },
+    { name = "wdf-artifactclient" },
+    { name = "wdf-artifactindex" },
+    { name = "wdf-broker" },
+    { name = "wdf-compile" },
+    { name = "wdf-events" },
+    { name = "wdf-eventstore" },
+    { name = "wdf-itest" },
+    { name = "wdf-jobcheck" },
+    { name = "wdf-jobpatch" },
+    { name = "wdf-jobstate" },
+    { name = "wdf-keys" },
+    { name = "wdf-plan" },
+    { name = "wdf-stages" },
+    { name = "wdf-temporal" },
+    { name = "wdf-workflow" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "boto3" },
+    { name = "psycopg", extras = ["binary"] },
+    { name = "pydantic" },
+    { name = "pyyaml" },
+    { name = "temporalio" },
+    { name = "wdf-artifactclient", editable = "packages/artifactclient" },
+    { name = "wdf-artifactindex", editable = "packages/artifactindex" },
+    { name = "wdf-broker", editable = "packages/broker" },
+    { name = "wdf-compile", editable = "packages/compile" },
+    { name = "wdf-events", editable = "packages/events" },
+    { name = "wdf-eventstore", editable = "packages/eventstore" },
+    { name = "wdf-itest", editable = "packages/itest" },
+    { name = "wdf-jobcheck", editable = "packages/jobcheck" },
+    { name = "wdf-jobpatch", editable = "packages/jobpatch" },
+    { name = "wdf-jobstate", editable = "packages/jobstate" },
+    { name = "wdf-keys", editable = "packages/keys" },
+    { name = "wdf-plan", editable = "packages/plan" },
+    { name = "wdf-stages", editable = "packages/stages" },
+    { name = "wdf-temporal", editable = "packages/temporal" },
+    { name = "wdf-workflow", editable = "packages/workflow" },
 ]
 
 [[package]]

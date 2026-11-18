@@ -1,0 +1,74 @@
+{
+  "$id": "urn:wdf:schema:api:batch-entry:1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "One job of a batch submit call, one line each after the header.",
+  "properties": {
+    "index": {
+      "description": "Unique within the call.",
+      "exclusiveMaximum": 100000,
+      "minimum": 0,
+      "title": "Index",
+      "type": "integer"
+    },
+    "job_class": {
+      "anyOf": [
+        {
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Job Class"
+    },
+    "parameters": {
+      "additionalProperties": true,
+      "title": "Parameters",
+      "type": "object"
+    },
+    "priority_class": {
+      "anyOf": [
+        {
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Priority Class"
+    },
+    "seed": {
+      "maximum": 9007199254740991,
+      "minimum": 0,
+      "title": "Seed",
+      "type": "integer"
+    },
+    "submission_key": {
+      "anyOf": [
+        {
+          "maxLength": 256,
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Defaults to <batch key>/<index>.",
+      "title": "Submission Key"
+    }
+  },
+  "required": [
+    "index",
+    "seed",
+    "parameters"
+  ],
+  "title": "contracts/api batch-entry",
+  "type": "object"
+}

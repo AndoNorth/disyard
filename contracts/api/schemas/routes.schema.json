@@ -1,0 +1,193 @@
+{
+  "$defs": {
+    "Payload": {
+      "additionalProperties": false,
+      "properties": {
+        "body": {
+          "enum": [
+            "none",
+            "json",
+            "ndjson",
+            "bytes"
+          ],
+          "title": "Body",
+          "type": "string"
+        },
+        "models": {
+          "default": [],
+          "description": "The line models, in order, of an NDJSON body.",
+          "items": {
+            "enum": [
+              "batch-header",
+              "batch-entry",
+              "entry-answer",
+              "summary-line",
+              "error-line",
+              "entry-error",
+              "error",
+              "control-request",
+              "control-answer",
+              "job-status",
+              "object-answer",
+              "batch-summary",
+              "job-page",
+              "depth",
+              "health"
+            ],
+            "type": "string"
+          },
+          "title": "Models",
+          "type": "array"
+        }
+      },
+      "required": [
+        "body"
+      ],
+      "title": "Payload",
+      "type": "object"
+    },
+    "QueryParam": {
+      "additionalProperties": false,
+      "properties": {
+        "maximum": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Maximum"
+        },
+        "minimum": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Minimum"
+        },
+        "name": {
+          "pattern": "^[a-z_]+$",
+          "title": "Name",
+          "type": "string"
+        },
+        "type": {
+          "enum": [
+            "status",
+            "job-id",
+            "integer"
+          ],
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "type"
+      ],
+      "title": "QueryParam",
+      "type": "object"
+    },
+    "Route": {
+      "additionalProperties": false,
+      "properties": {
+        "answer": {
+          "$ref": "#/$defs/Payload"
+        },
+        "listeners": {
+          "items": {
+            "enum": [
+              "dispatch-api",
+              "control-api"
+            ],
+            "type": "string"
+          },
+          "maxItems": 2,
+          "minItems": 1,
+          "title": "Listeners",
+          "type": "array"
+        },
+        "method": {
+          "enum": [
+            "GET",
+            "PUT",
+            "POST"
+          ],
+          "title": "Method",
+          "type": "string"
+        },
+        "path": {
+          "pattern": "^/[a-z0-9{}_/-]*$",
+          "title": "Path",
+          "type": "string"
+        },
+        "query": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/QueryParam"
+          },
+          "title": "Query",
+          "type": "array"
+        },
+        "request": {
+          "$ref": "#/$defs/Payload"
+        },
+        "success": {
+          "items": {
+            "type": "integer"
+          },
+          "minItems": 1,
+          "title": "Success",
+          "type": "array"
+        },
+        "values": {
+          "additionalProperties": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "default": {},
+          "description": "The values a path parameter may take, where they are a fixed set.",
+          "title": "Values",
+          "type": "object"
+        }
+      },
+      "required": [
+        "listeners",
+        "method",
+        "path",
+        "request",
+        "answer",
+        "success"
+      ],
+      "title": "Route",
+      "type": "object"
+    }
+  },
+  "$id": "urn:wdf:schema:api:routes:1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "routes": {
+      "items": {
+        "$ref": "#/$defs/Route"
+      },
+      "minItems": 1,
+      "title": "Routes",
+      "type": "array"
+    }
+  },
+  "required": [
+    "routes"
+  ],
+  "title": "contracts/api routes",
+  "type": "object"
+}

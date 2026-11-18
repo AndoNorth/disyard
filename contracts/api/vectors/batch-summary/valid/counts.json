@@ -1,0 +1,9 @@
+{
+  "batch_id": "7d1f0a52-6c3b-5e8d-a1f4-29b7c3e5d061",
+  "total": 10000,
+  "counts": {
+    "accepted": 9000,
+    "running": 32,
+    "succeeded": 968
+  }
+}

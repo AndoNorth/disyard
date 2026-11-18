@@ -1,0 +1,6 @@
+---
+reasons:
+  - code: UNKNOWN_TENANT
+    scopes: [any]
+    http: 404
+    when: the tenant of the path is not in the configuration

@@ -32,6 +32,7 @@ Epic numbers link to the epic issues on GitHub.
 | [activity](../contracts/activity/README.md) | #6 | the `wdf_workflow` models generate the task input, task result, failure details, heartbeat and failure class schemas | #9, #10, #13, #15, #18 | PoC-essential interface |
 | [temporal](../contracts/temporal/README.md) | #6 | the `wdf_workflow` models generate the naming, pool table, signal and status query schemas | #8, #9, #10, #12, #13, #15, #16, #24 | PoC-essential interface |
 | [broker](../contracts/broker/README.md) | #7 | the `wdf_broker` models generate the topology and reason schemas | #8, #24, #13, #15, #17 | PoC-essential interface |
+| [api](../contracts/api/README.md) | #24 | the `wdf_dispatchapi` models generate the route, reason, control table, fingerprint and body schemas | #14, #15, #16, #17 | PoC-essential interface |
 | [state](../contracts/state/README.md) | #3 | `packages/jobstate`, `packages/eventstore` and `packages/artifactindex` generate the row schemas | #24, #8, #6, #7, #12, #13, #16, #17 | Shared data format |
 | [workload](../contracts/workload/README.md) | #11 | the `wdf_runtime` models generate the input, error, results, exit class, summary and build info schemas, and `wdf_kernel.format` holds the result format rules | #6, #10, #13, #15, #17, #18, #24 | Shared data format |
 | [status](../contracts/status/README.md) | #4 | a hand-written table, validated by its schema | #3, #6, #8, #24 | Shared data format |
@@ -88,6 +89,12 @@ Details: [contracts/module/README.md](../contracts/module/README.md).
 RabbitMQ is the intake buffer between the dispatch API and admission, and nothing else.
 The contract pins the intake topology, one quorum queue per tenant and priority class, the message shape, the publish outcomes, the settle calls, the dead-letter reasons with their recovery, the broker users and the alert rules.
 Details: [contracts/broker/README.md](../contracts/broker/README.md).
+
+### api
+
+The dispatch and control API is the front door: a batch of jobs in one call with an answer per job, and the control of each job.
+The contract pins the routes on the two listeners, the NDJSON and JSON bodies, the reason codes with their scopes, the control table and the job fingerprint.
+Details: [contracts/api/README.md](../contracts/api/README.md).
 
 ## Shared data formats
 

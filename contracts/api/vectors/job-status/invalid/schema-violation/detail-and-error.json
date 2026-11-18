@@ -1,0 +1,62 @@
+{
+  "job_id": "3a9617fa-df7c-5760-a644-42d559e0f433",
+  "tenant": "acme",
+  "batch_id": "7d1f0a52-6c3b-5e8d-a1f4-29b7c3e5d061",
+  "submission_key": "nightly/0",
+  "status": "running",
+  "view": "pausing",
+  "requested_action": "pause",
+  "control_seq": 2,
+  "control_delivered": true,
+  "priority_class": "standard",
+  "job_class": "short",
+  "published": true,
+  "created_at": "2026-11-18T09:00:00.123456Z",
+  "updated_at": "2026-11-18T09:05:00Z",
+  "terminal_at": null,
+  "trace_id": "4bf92f3577b34da6a3ce929d0e0e4736",
+  "detail": {
+    "job_status": "running",
+    "pause_reason": null,
+    "resume_counter": 0,
+    "control_seq": 2,
+    "tasks": [
+      {
+        "id": "build",
+        "state": "succeeded",
+        "task_attempt": 1,
+        "guest_left": 0,
+        "infra_left": 3,
+        "reschedules": 0,
+        "last_class": null,
+        "checkpoint": null
+      },
+      {
+        "id": "echo",
+        "state": "running",
+        "task_attempt": 1,
+        "guest_left": 0,
+        "infra_left": 3,
+        "reschedules": 0,
+        "last_class": null,
+        "checkpoint": null
+      }
+    ]
+  },
+  "detail_error": "unavailable",
+  "results": [
+    {
+      "kind": "result",
+      "name": "result.bin",
+      "producer": {
+        "attempt": "r0a2",
+        "job": "3a9617fa-df7c-5760-a644-42d559e0f433",
+        "task": "echo"
+      },
+      "sha256": "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08",
+      "size": 8192,
+      "uri": "s3://wdf-results/acme/b/j/7/echo/r0a2/result.bin"
+    }
+  ],
+  "dead_letter": null
+}

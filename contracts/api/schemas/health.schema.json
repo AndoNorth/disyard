@@ -1,0 +1,21 @@
+{
+  "$id": "urn:wdf:schema:api:health:1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "status": {
+      "enum": [
+        "ok",
+        "ready",
+        "not-ready"
+      ],
+      "title": "Status",
+      "type": "string"
+    }
+  },
+  "required": [
+    "status"
+  ],
+  "title": "contracts/api health",
+  "type": "object"
+}

@@ -1,0 +1,145 @@
+---
+# API reason codes. Schema: schemas/reasons.schema.json.
+# A scope says where a code may be answered: call (a batch submit call), entry (one entry of it),
+# upload, control, read, or any route. http is null for a code carried only in a line.
+reasons:
+  - code: UNKNOWN_TENANT
+    scopes: [any]
+    http: 404
+    when: the tenant of the path is not in the configuration
+  - code: INVALID_HEADER
+    scopes: [call]
+    http: 400
+    when: the header line does not parse or breaks BatchHeader
+  - code: HEADER_TOO_LARGE
+    scopes: [call]
+    http: 413
+    when: the header line is above its limit
+  - code: INVALID_TEMPLATE
+    scopes: [call]
+    http: 400
+    when: the validator refuses the template
+  - code: TOO_MANY_ENTRIES
+    scopes: [call]
+    http: 413
+    when: 'an entry line beyond the limit arrives, and every entry before it is answered'
+  - code: TOO_MANY_CALLS
+    scopes: [any]
+    http: 429
+    when: 'the tenant or the process has its limit of submit calls in flight, or the process its limit of requests'
+  - code: IDLE_TIMEOUT
+    scopes: [call]
+    http: null
+    when: 'no byte arrived for the idle timeout, or an answer write did not finish in its timeout'
+  - code: MALFORMED_LINE
+    scopes: [entry]
+    http: null
+    when: an entry line is not a JSON object or breaks BatchEntry
+  - code: ENTRY_TOO_LARGE
+    scopes: [entry]
+    http: null
+    when: an entry line is above its limit
+  - code: DUPLICATE_INDEX
+    scopes: [entry]
+    http: null
+    when: the index was used earlier in the call
+  - code: UNKNOWN_PRIORITY_CLASS
+    scopes: [entry]
+    http: null
+    when: the class is not in the configuration
+  - code: UNKNOWN_JOB_CLASS
+    scopes: [entry]
+    http: null
+    when: the class is not in classes of the limits profile
+  - code: INVALID_PARAMS
+    scopes: [entry]
+    http: null
+    when: check_job_params reports issues
+  - code: KEY_CONFLICT
+    scopes: [entry]
+    http: null
+    when: 'the key exists with another fingerprint, and nothing changed'
+  - code: BAD_KIND
+    scopes: [upload]
+    http: 400
+    when: the kind is not source or index
+  - code: HASH_MISMATCH
+    scopes: [upload]
+    http: 422
+    when: the received bytes hash to another value than the path
+  - code: OBJECT_TOO_LARGE
+    scopes: [upload]
+    http: 413
+    when: the bytes pass the kind cap of the staging contract
+  - code: UNREADABLE_BUNDLE
+    scopes: [upload]
+    http: 422
+    when: wdf_compile.bundle.info refuses a source bundle
+  - code: OBJECT_MISSING
+    scopes: [call]
+    http: 200
+    when: 'an object the template names was purged after its upload, and must be uploaded again'
+  - code: JOB_NOT_FOUND
+    scopes: [control, read]
+    http: 404
+    when: no row of this tenant has the job id
+  - code: BATCH_NOT_FOUND
+    scopes: [control, read]
+    http: 404
+    when: no row of this tenant has the batch key
+  - code: INVALID_QUERY
+    scopes: [read]
+    http: 400
+    when: a query parameter of a read is out of its range or unknown
+  - code: TEMPLATE_NOT_ALLOWED
+    scopes: [control]
+    http: 400
+    when: 'a template sent with an action other than resume, or on a batch control call'
+  - code: NOT_PAUSED
+    scopes: [control]
+    http: 409
+    when: a resume of a job that is not paused
+  - code: STOPPING
+    scopes: [control]
+    http: 409
+    when: a pause or resume while a cancel or terminate is outstanding
+  - code: PAUSE_IN_PROGRESS
+    scopes: [control]
+    http: 409
+    when: a resume while a pause is outstanding
+  - code: RESUME_PENDING
+    scopes: [control]
+    http: 409
+    when: a pause of a job at resume-pending
+  - code: ALREADY_ENDED
+    scopes: [control]
+    http: 409
+    when: a pause or resume of a job in a terminal status
+  - code: PATCH_PENDING
+    scopes: [control]
+    http: 409
+    when: a resume whose patch differs from the pending one
+  - code: PATCH_NOT_STARTED
+    scopes: [control]
+    http: 409
+    when: a resume with a patch of a job that never started
+  - code: PATCH_INVALID
+    scopes: [control]
+    http: 400
+    when: the validator refuses the patched template
+  - code: PATCH_INCOMPATIBLE
+    scopes: [control]
+    http: 422
+    when: 'patch_check refuses the patch, with its issues in message'
+  - code: DATABASE_UNAVAILABLE
+    scopes: [any]
+    http: 503
+    when: 'Postgres did not answer, and nothing was written'
+  - code: STORE_UNAVAILABLE
+    scopes: [any]
+    http: 503
+    when: 'the object store did not answer, and nothing was written'
+  - code: TEMPORAL_UNAVAILABLE
+    scopes: [any]
+    http: 503
+    when: 'Temporal did not answer, and nothing was written'

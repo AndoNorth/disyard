@@ -17,6 +17,7 @@ wdf-artifactreaper = { workspace = true }
 wdf-broker = { workspace = true }
 wdf-compat = { workspace = true }
 wdf-compile = { workspace = true }
+wdf-dispatchapi = { workspace = true }
 wdf-events = { workspace = true }
 wdf-eventstore = { workspace = true }
 wdf-itest = { workspace = true }
@@ -51,6 +52,7 @@ dev = [
     "wdf-broker",
     "wdf-compat",
     "wdf-compile",
+    "wdf-dispatchapi",
     "wdf-events",
     "wdf-eventstore",
     "wdf-itest",

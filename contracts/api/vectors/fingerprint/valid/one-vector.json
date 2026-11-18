@@ -1,0 +1,16 @@
+{
+  "vectors": [
+    {
+      "name": "defaults",
+      "input": {
+        "job_class": "short",
+        "manifest_sha256": "05b3abf2579a5eb66403cd78be557fd860633a1fe2103c7642030defe32c657f",
+        "parameters": {},
+        "priority_class": "standard",
+        "seed": 0
+      },
+      "canonical": "{\"job_class\":\"short\",\"manifest_sha256\":\"05b3abf2579a5eb66403cd78be557fd860633a1fe2103c7642030defe32c657f\",\"parameters\":{},\"priority_class\":\"standard\",\"seed\":0}",
+      "output": "2e395124a47173d868c944bce02dd7ef2cdc749f6c07eab697bd7383d4dda577"
+    }
+  ]
+}

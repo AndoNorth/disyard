@@ -1,0 +1,36 @@
+{
+  "$id": "urn:wdf:schema:api:entry-error:1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "One line of a batch control answer, for a job whose action was refused.",
+  "properties": {
+    "code": {
+      "pattern": "^[A-Z][A-Z0-9_]*$",
+      "title": "Code",
+      "type": "string"
+    },
+    "job_id": {
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+      "title": "Job Id",
+      "type": "string"
+    },
+    "message": {
+      "title": "Message",
+      "type": "string"
+    },
+    "submission_key": {
+      "maxLength": 256,
+      "minLength": 1,
+      "title": "Submission Key",
+      "type": "string"
+    }
+  },
+  "required": [
+    "job_id",
+    "submission_key",
+    "code",
+    "message"
+  ],
+  "title": "contracts/api entry-error",
+  "type": "object"
+}

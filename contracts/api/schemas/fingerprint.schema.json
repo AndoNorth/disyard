@@ -1,0 +1,93 @@
+{
+  "$defs": {
+    "FingerprintInput": {
+      "additionalProperties": false,
+      "properties": {
+        "job_class": {
+          "minLength": 1,
+          "title": "Job Class",
+          "type": "string"
+        },
+        "manifest_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Manifest Sha256",
+          "type": "string"
+        },
+        "parameters": {
+          "additionalProperties": true,
+          "title": "Parameters",
+          "type": "object"
+        },
+        "priority_class": {
+          "minLength": 1,
+          "title": "Priority Class",
+          "type": "string"
+        },
+        "seed": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "title": "Seed",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "job_class",
+        "manifest_sha256",
+        "parameters",
+        "priority_class",
+        "seed"
+      ],
+      "title": "FingerprintInput",
+      "type": "object"
+    },
+    "FingerprintVector": {
+      "additionalProperties": false,
+      "properties": {
+        "canonical": {
+          "description": "The canonical JSON of the input that is hashed.",
+          "title": "Canonical",
+          "type": "string"
+        },
+        "input": {
+          "$ref": "#/$defs/FingerprintInput"
+        },
+        "name": {
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "output": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Output",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "input",
+        "canonical",
+        "output"
+      ],
+      "title": "FingerprintVector",
+      "type": "object"
+    }
+  },
+  "$id": "urn:wdf:schema:api:fingerprint:1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "vectors": {
+      "items": {
+        "$ref": "#/$defs/FingerprintVector"
+      },
+      "minItems": 1,
+      "title": "Vectors",
+      "type": "array"
+    }
+  },
+  "required": [
+    "vectors"
+  ],
+  "title": "contracts/api fingerprint",
+  "type": "object"
+}

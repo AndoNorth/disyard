@@ -1,0 +1,25 @@
+{
+  "vectors": [
+    {
+      "name": "nested-keys-are-sorted",
+      "input": {
+        "job_class": "short",
+        "manifest_sha256": "05b3abf2579a5eb66403cd78be557fd860633a1fe2103c7642030defe32c657f",
+        "parameters": {
+          "z": 1,
+          "a": {
+            "y": [
+              3,
+              1
+            ],
+            "b": "x"
+          }
+        },
+        "priority_class": "standard",
+        "seed": 42
+      },
+      "canonical": "{\"job_class\":\"short\",\"manifest_sha256\":\"05b3abf2579a5eb66403cd78be557fd860633a1fe2103c7642030defe32c657f\",\"parameters\":{\"z\":1,\"a\":{\"y\":[3,1],\"b\":\"x\"}},\"priority_class\":\"standard\",\"seed\":42}",
+      "output": "4f7c7663ef85d0c4cf1a2a3f98c26bc0b4c40af68c0ab9eb74039d473388cfb4"
+    }
+  ]
+}

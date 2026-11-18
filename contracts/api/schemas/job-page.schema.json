@@ -1,0 +1,92 @@
+{
+  "$defs": {
+    "JobLine": {
+      "additionalProperties": false,
+      "properties": {
+        "job_id": {
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "title": "Job Id",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "accepted",
+            "admitted",
+            "running",
+            "paused",
+            "resume-pending",
+            "succeeded",
+            "partial",
+            "failed",
+            "cancelled",
+            "terminated"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "submission_key": {
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Submission Key",
+          "type": "string"
+        },
+        "view": {
+          "anyOf": [
+            {
+              "enum": [
+                "pausing",
+                "cancelling"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "View"
+        }
+      },
+      "required": [
+        "job_id",
+        "submission_key",
+        "status",
+        "view"
+      ],
+      "title": "JobLine",
+      "type": "object"
+    }
+  },
+  "$id": "urn:wdf:schema:api:job-page:1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "jobs": {
+      "description": "In job id order.",
+      "items": {
+        "$ref": "#/$defs/JobLine"
+      },
+      "maxItems": 1000,
+      "title": "Jobs",
+      "type": "array"
+    },
+    "next": {
+      "anyOf": [
+        {
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "The `after` of the next page.",
+      "title": "Next"
+    }
+  },
+  "required": [
+    "jobs",
+    "next"
+  ],
+  "title": "contracts/api job-page",
+  "type": "object"
+}

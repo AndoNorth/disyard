@@ -1,0 +1,17 @@
+{
+  "jobs": [
+    {
+      "job_id": "3a9617fa-df7c-5760-a644-42d559e0f433",
+      "submission_key": "nightly/0",
+      "status": "running",
+      "view": null
+    },
+    {
+      "job_id": "5c0e1d2a-8f4b-5a3e-9d71-0b6c2e4f8a19",
+      "submission_key": "nightly/1",
+      "status": "accepted",
+      "view": "cancelling"
+    }
+  ],
+  "next": "5c0e1d2a-8f4b-5a3e-9d71-0b6c2e4f8a19"
+}

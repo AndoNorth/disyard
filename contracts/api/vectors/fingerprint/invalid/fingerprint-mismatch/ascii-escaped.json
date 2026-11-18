@@ -1,0 +1,18 @@
+{
+  "vectors": [
+    {
+      "name": "non-ascii-is-not-escaped",
+      "input": {
+        "job_class": "long",
+        "manifest_sha256": "05b3abf2579a5eb66403cd78be557fd860633a1fe2103c7642030defe32c657f",
+        "parameters": {
+          "label": "café ✓"
+        },
+        "priority_class": "standard",
+        "seed": 7
+      },
+      "canonical": "{\"job_class\":\"long\",\"manifest_sha256\":\"05b3abf2579a5eb66403cd78be557fd860633a1fe2103c7642030defe32c657f\",\"parameters\":{\"label\":\"caf\\u00e9 \\u2713\"},\"priority_class\":\"standard\",\"seed\":7}",
+      "output": "3f5b196ea5efed75f296a1fc50ab2a3e8edaa0230e67c3777e0b903ac2260726"
+    }
+  ]
+}

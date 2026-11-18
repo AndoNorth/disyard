@@ -1,0 +1,10 @@
+{
+  "reference": {
+    "uri": "s3://wdf-sources/sha256/bb/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "size": 4096,
+    "name": "index.parquet",
+    "kind": "index"
+  },
+  "created": false
+}
