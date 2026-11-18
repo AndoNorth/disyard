@@ -8,16 +8,16 @@ from psycopg import Connection
 from psycopg.rows import dict_row
 from wdf_events import Event, build_event, to_bytes
 from wdf_eventstore import insert_events
-from wdf_jobstate import JobRow, Lost, transition
+from wdf_jobstate import JobRow, Lost, mark_published, transition
 from wdf_jobstate.jobs import READ_COLUMNS, status_vocabulary
 from wdf_stages import Facts
 
 from . import stage
 from .start import params_of, search_attributes
 
-# A message whose row is in neither case may still be admitted later, so it is retried and not
-# acknowledged: the row may not be visible yet, or dispatch has not yet marked its receipt.
-RETRIED = ("no-row", "no-receipt")
+# A message with no row may still be admitted later, so it is retried and not acknowledged: the row
+# may not be visible yet.
+RETRIED = ("no-row",)
 
 
 @dataclass(frozen=True)
@@ -81,6 +81,10 @@ def claim(conn: Connection, job_id: str) -> Claimed | Skipped:
     The row is locked before it is checked, so a control request that commits first wins and one
     that comes after waits for the claim. A row already at `admitted` was claimed by a run that did
     not start it, and is returned to be started with no new event.
+
+    The claim runs for a delivered message, which proves its publish, so a row with no receipt is
+    claimed all the same: the claim sets the receipt and records `job.published` at its time. A row
+    whose receipt is already set got its `job.published` from whoever set it.
     """
     with conn.transaction():
         with conn.cursor(row_factory=dict_row) as cur:
@@ -95,12 +99,17 @@ def claim(conn: Connection, job_id: str) -> Claimed | Skipped:
             return Claimed(row, _start_arguments(row))
         if row.status != "accepted" or row.requested_action is not None:
             return _skipped(row.status)
-        if row.published_at is None:
-            return Skipped("no-receipt")
         accepted = _start_arguments(row)
         moved = transition(conn, job_id, "accepted", "admitted")
         if isinstance(moved, Lost):
             return _skipped(moved.status)
-        facts = Facts(time=datetime.now(UTC), emit=("job.admitted",))
-        insert_events(conn, stage.admission(accepted, facts))
+        events = []
+        if row.published_at is None:
+            mark_published(conn, job_id)
+            [received] = conn.execute(
+                "SELECT published_at FROM accepted_job WHERE job_id = %s", (job_id,)
+            ).fetchone()
+            events += stage.admission(accepted, Facts(time=received, emit=("job.published",)))
+        events += stage.admission(accepted, Facts(time=datetime.now(UTC), emit=("job.admitted",)))
+        insert_events(conn, events)
     return Claimed(row.model_copy(update={"status": "admitted"}), accepted)

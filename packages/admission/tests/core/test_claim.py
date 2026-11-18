@@ -7,12 +7,14 @@ import threading
 import time
 import uuid
 
+import psycopg
 import pytest
 from temporalio.service import RPCError, RPCStatusCode
 from wdf_admission import claim as claim_module
 from wdf_admission.claim import Claimed, Skipped, accepted_of, claim
 from wdf_admission.start import start
-from wdf_events import EventError, format_time, from_bytes
+from wdf_events import EventError, build_event, format_time, from_bytes
+from wdf_eventstore import insert_events
 from wdf_jobstate import Lost, get_job, request_action, transition
 from wdf_keys import workflow_id
 
@@ -21,6 +23,7 @@ pytestmark = [pytest.mark.integration, pytest.mark.pair]
 LIMIT_S = 60
 ACCEPTED = ("dev.wdf.job.accepted.v1", "/wdf/dispatch")
 ADMITTED = ("dev.wdf.job.admitted.v1", "/wdf/admission")
+PUBLISHED = ("dev.wdf.job.published.v1", "/wdf/admission")
 
 
 def run(body):
@@ -104,11 +107,112 @@ def test_claim_skips_outstanding_action(admission_db, db, seed, status, path, ac
     assert status(job_id) == held
 
 
-def test_claim_refuses_no_receipt(admission_db, seed, status, events):
+def published_at(db, job_id: str):
+    return db.execute(
+        "SELECT published_at FROM accepted_job WHERE job_id = %s", (job_id,)
+    ).fetchone()[0]
+
+
+def published(db, job_id: str) -> list[tuple]:
+    """The source and time of each stored `job.published` of the job."""
+    return db.execute(
+        "SELECT source, event_time FROM event WHERE job_id = %s AND type = %s",
+        (job_id, PUBLISHED[0]),
+    ).fetchall()
+
+
+def test_claim_sets_a_missing_receipt_once(admission_db, db, seed, status, events):
     job_id = seed(published=False)
-    assert claim(admission_db, job_id) == Skipped("no-receipt")
-    assert (status(job_id), events(job_id)) == ("accepted", [ACCEPTED])
+    assert isinstance(claim(admission_db, job_id), Claimed)
+    received = published_at(db, job_id)
+    assert received is not None
+    assert (status(job_id), events(job_id)) == ("admitted", [ACCEPTED, PUBLISHED, ADMITTED])
+    assert published(db, job_id) == [(PUBLISHED[1], received)]
+    assert isinstance(claim(admission_db, job_id), Claimed)
+    assert published_at(db, job_id) == received
+    assert events(job_id) == [ACCEPTED, PUBLISHED, ADMITTED]
     assert claim(admission_db, str(uuid.uuid4())) == Skipped("no-row")
+
+
+def test_claim_with_receipt_records_no_published(admission_db, db, seed, events):
+    job_id = seed()
+    received = published_at(db, job_id)
+    assert isinstance(claim(admission_db, job_id), Claimed)
+    assert published_at(db, job_id) == received
+    assert events(job_id) == [ACCEPTED, ADMITTED]
+
+
+def mark_as_dispatch(conn, accepted) -> bool:
+    """The dispatch side's receipt: one atomic update that sets it only when it is null, and a
+    `job.published` recorded only when that update set it."""
+    found = conn.execute(
+        "UPDATE accepted_job SET published_at = now() WHERE job_id = %s AND published_at IS NULL"
+        " RETURNING published_at",
+        (accepted.jobid,),
+    ).fetchone()
+    if found is not None:
+        insert_events(
+            conn,
+            [
+                build_event(
+                    "job.published",
+                    source="/wdf/dispatch",
+                    tenant=accepted.tenant,
+                    jobid=accepted.jobid,
+                    priorityclass=accepted.priorityclass,
+                    jobclass=accepted.jobclass,
+                    traceparent=accepted.traceparent,
+                    time=found[0],
+                    data={},
+                )
+            ],
+        )
+    return found is not None
+
+
+SETTER = {"dispatch": "/wdf/dispatch", "claim": "/wdf/admission"}
+
+
+@pytest.mark.parametrize("first", SETTER)
+def test_claim_and_mark_race_records_one_published(
+    admission_db, appdb, db, seed_event, monkeypatch, first
+):
+    """Whichever side holds the row first sets the receipt, and the other waits on its lock and
+    then finds the receipt set."""
+    accepted = seed_event(published=False)
+    job_id = accepted.jobid
+    assert published_at(db, job_id) is None
+    marked, claimed = [], []
+    with psycopg.connect(appdb, autocommit=True) as dispatch:
+
+        def second(target):
+            waiting = threading.Thread(target=target)
+            waiting.start()
+            time.sleep(1)
+            assert waiting.is_alive()
+            return waiting
+
+        if first == "dispatch":
+            with dispatch.transaction():
+                marked.append(mark_as_dispatch(dispatch, accepted))
+                waiting = second(lambda: claimed.append(claim(admission_db, job_id)))
+        else:
+            insert = claim_module.insert_events
+
+            def held(conn, events):
+                nonlocal waiting
+                waiting = second(lambda: marked.append(mark_as_dispatch(dispatch, accepted)))
+                return insert(conn, events)
+
+            waiting = None
+            monkeypatch.setattr(claim_module, "insert_events", held)
+            claimed.append(claim(admission_db, job_id))
+        waiting.join(LIMIT_S)
+    assert isinstance(claimed[0], Claimed)
+    assert marked == [first == "dispatch"]
+    received = published_at(db, job_id)
+    assert received is not None
+    assert published(db, job_id) == [(SETTER[first], received)]
 
 
 def test_claim_locks_row(admission_db, db, seed, status):

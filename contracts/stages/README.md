@@ -1,7 +1,7 @@
 # Stages contract
 
 Owner epic: #4 (job event envelope and state propagation).
-Version: 1
+Version: 2
 Consumers: storage (#3), workflow (#6), admission (#8), placement (#9), workers (#10) and dispatch (#24).
 
 The stage table says, for each stage of the platform, which source it writes under, which context attributes and data fields it reads, and which event types it emits.
@@ -12,9 +12,9 @@ Event types are named without the `dev.wdf` prefix and the major, as the schema 
 
 | Stage | Source | Emits |
 | --- | --- | --- |
-| `dispatch` | `/wdf/dispatch` | `job.accepted` and `job.published` |
+| `dispatch` | `/wdf/dispatch` | `job.accepted`, and `job.published` when it set the receipt after the broker accepted its publish |
 | `control` | `/wdf/control` | the four request types, and `job.paused`, `job.resumed`, `job.cancelled` and `job.terminated` for a job that never started |
-| `admission` | `/wdf/admission` | `job.admitted`, and `job.dead.lettered` for a message that parses far enough to name a job |
+| `admission` | `/wdf/admission` | `job.admitted`, `job.dead.lettered` for a message that parses far enough to name a job, and `job.published` when its claim set a missing receipt from a delivered message |
 | `workflow` | `/wdf/workflow` | every other job type and every task type except the task request |
 | `placement` | `/wdf/placement` | nothing, it reads the task type, CPU and memory of the task request |
 | `worker` | `/wdf/worker` | nothing, it reads the task request and writes references into heartbeat details |
@@ -29,7 +29,8 @@ An `emits` entry has the `type`, the `source` it is written under, and an option
 The `source` of an entry is repeated from its stage on purpose, so that an entry moved between stages without being edited fails the loader.
 
 A type that two stages emit needs a `when` on each entry, which names the condition under which that stage is the emitter.
-The four types that a job without a workflow gets from the control stage are the only ones today.
+The four types that a job without a workflow gets from the control stage are four of them.
+`job.published` is the other: dispatch emits it when it set the receipt after the broker accepted its publish, and admission when its claim set a receipt still missing when the message arrived, so a job gets one `job.published`, from whichever set the receipt.
 The projection in [the status table](../status/status.yaml) keys the same cases by source.
 
 ## Obligations of the stage epics
