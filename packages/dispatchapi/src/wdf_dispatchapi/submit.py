@@ -254,7 +254,7 @@ class _Call:
             for position, answer in zip(jobs, self._insert(list(jobs.values())), strict=True):
                 answers[position] = answer
         for answer in answers:
-            self.counts["rejected" if answer.reason else answer.outcome] += 1
+            self.counts[answer.outcome] += 1
         self._write(*answers)
 
     def _check(self, item: BatchEntry | Rejected) -> _Job | EntryAnswer:
