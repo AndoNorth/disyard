@@ -387,7 +387,7 @@ Departures from the method, stated so the review approves them knowingly:
 | B Submit path | 1 | `wdf_dispatchapi/{objects,resolver,submit,publish,reconciler}.py`, `tests/{objects,submit,publish}/**` | B.1, B.2, B.3 | lane 0, E.1 for B.1, B.1 and P.2 for B.2, B.2 and E.3 for B.3 |
 | C Control | 1 | `wdf_dispatchapi/{control,retrier,gateway,patch}.py`, `tests/control/**` | C.1, C.2, C.3 | lane 0, P.1 and E.3 for C.1, C.1 for C.2, C.2, E.3 and B.1 for C.3 |
 | R Reads | 1 | `wdf_dispatchapi/reads.py`, `tests/reads/**` | R.1 | lane 0 |
-| D Service and deployment | 1 | `wdf_dispatchapi/{service,smoke}/**`, `tests/service/**`, `deploy/dispatchapi/**` (module `dispatch`, its image, the login job of D13, the store Secret and the broker Secret), the `deploy/dispatchapi` entry of `TREES` in `packages/migrate/tests/test_credentials.py`, and the `dispatch` entry of the reserve loop of `test_ci_infra_node_figures` in `scripts/cluster/test_budget.py` | D.1, D.2 | B.3, C.2, C.3 and R.1 for D.1, D.1 and the module of #8 for D.2 |
+| D Service and deployment | 1 | `wdf_dispatchapi/{service,smoke}/**`, `tests/service/**`, `deploy/dispatchapi/**` (module `dispatch`, its image, the login job of D13, the store Secret and the broker Secret), the `deploy/dispatchapi` entry of `TREES` in `packages/migrate/tests/test_credentials.py`, and the `dispatch` entry of the reserve loop of `test_ci_infra_node_figures` in `scripts/cluster/test_budget.py` | D.1, D.2 | B.3, C.2, C.3 and R.1 for D.1, D.1, the module of #8 and W.1 of `12-admission.md` for D.2 |
 
 Shared-file rules:
 
@@ -669,7 +669,7 @@ Lane D, tier T1 (Postgres and the dev server, marked `pair`, with the store fake
 
 ### D.2 Image and deployment
 
-Lane D, tier T2. Needs: D.1 and the `admission` module of #8. Blocks: the exit test.
+Lane D, tier T2. Needs: D.1, the `admission` module of #8 and W.1 of `12-admission.md`. Blocks: the exit test.
 
 - Scope: module `dispatch` as D16, its image on the `python` pin with the proton build stage, the login job for the four logins of D13 following `deploy/workflow/logins.py`, the store Secret of the `submit` identity, the broker Secret of the `dispatch` user from #7's password helper, two NodePort Services, readiness, the render tests, the `dispatch` line of `test_budget.py` (decision 24), and the smoke driver `python -m wdf_dispatchapi.smoke` with the scenarios `upload`, `submit`, `cancel-before-start`, `run`, `pause-resume`, `cancel-running` and `restart`, each printing the lines that section 7 expects. The `run` and `pause-resume` scenarios upload the workload library bundle and run on the pool workers of #10 as decision 25 says, `run` with the level 0 `echo` params of `contracts/workload/vectors/level0/echo/input.json`, and `pause-resume` with one simulate task of the level 1 `cpu_burn` workload whose plan sets `checkpoint`, long enough to still run when the pause arrives. The `restart` scenario also prints `dlq:`, the count of messages in `intake.dlq` that `python -m wdf_broker.dlq list` shows as the `operator` user, with its password from #7's helper.
 - Owns: `deploy/dispatchapi/**`, `wdf_dispatchapi/smoke/**`, the `TREES` entry, the `dispatch` entry of the reserve loop of `scripts/cluster/test_budget.py`.
@@ -693,8 +693,8 @@ Lane D, tier T2. Needs: D.1 and the `admission` module of #8. Blocks: the exit t
   After P.2 and B.1: B.2, then B.3 once E.3 has merged.
   After C.2, E.3 and B.1: C.3.
   After B.3, C.2, C.3 and R.1: D.1.
-  After D.1 and the admission module: D.2.
-- DAG: (0.1 ‖ E.1 ‖ E.3 ‖ S7), then 0.2, then (P.1 ‖ P.2 ‖ R.1 ‖ B.1), then (C.1 ‖ B.2), then (C.2 ‖ B.3), then C.3, then D.1, then D.2, then the exit test.
+  After D.1, the admission module and W.1 of `12-admission.md`: D.2.
+- DAG: (0.1 ‖ E.1 ‖ E.3 ‖ S7), then 0.2, then (P.1 ‖ P.2 ‖ R.1 ‖ B.1), then (C.1 ‖ B.2), then (C.2 ‖ B.3), then C.3, then D.1, then D.2 once W.1 of `12-admission.md` has merged, then the exit test.
 - Cluster work: D.2 and the exit test, each under the cluster lock, one at a time.
 
 Stubs:
@@ -724,6 +724,7 @@ Every command takes `nix develop -c`, and every Python command takes `uv run --f
 Rows 9 to 16 take the cluster lock for their whole sequence (`flock /tmp/wdf-cluster.lock env WDF_CLUSTER_LOCK_HELD=1 bash -c '<commands>'`), and rows 17 and 18 run outside it.
 `S` stands for `python -m wdf_dispatchapi.smoke --dispatch http://127.0.0.1:18081 --control http://127.0.0.1:18080 --kube-context kind-wdf`.
 Rows 12 and 13 run on the real pool workers of #10, on `main` since it closed (assumption A8, decision 25).
+W.1 of `12-admission.md` is on `main` before the run, because row 15 expects `dlq: 0` only from a claim that sets a missing receipt.
 The export has no git checkout, so row 9 sets `WDF_BUILD_ID` for `scripts/tilt/run.sh ci`, which the workflow module requires outside one (`deploy/workflow/Tiltfile.module:15-17`), as the exit runs of #7 and #10 did.
 
 | # | Command | Expected |
