@@ -1,0 +1,80 @@
+{
+  "vectors": [
+    {
+      "name": "defaults",
+      "input": {
+        "job_class": "short",
+        "manifest_sha256": "05b3abf2579a5eb66403cd78be557fd860633a1fe2103c7642030defe32c657f",
+        "parameters": {},
+        "priority_class": "standard",
+        "seed": 0
+      },
+      "canonical": "{\"job_class\":\"short\",\"manifest_sha256\":\"05b3abf2579a5eb66403cd78be557fd860633a1fe2103c7642030defe32c657f\",\"parameters\":{},\"priority_class\":\"standard\",\"seed\":0}",
+      "output": "2e395124a47173d868c944bce02dd7ef2cdc749f6c07eab697bd7383d4dda577"
+    },
+    {
+      "name": "seed-changes-the-fingerprint",
+      "input": {
+        "job_class": "short",
+        "manifest_sha256": "05b3abf2579a5eb66403cd78be557fd860633a1fe2103c7642030defe32c657f",
+        "parameters": {},
+        "priority_class": "standard",
+        "seed": 1
+      },
+      "canonical": "{\"job_class\":\"short\",\"manifest_sha256\":\"05b3abf2579a5eb66403cd78be557fd860633a1fe2103c7642030defe32c657f\",\"parameters\":{},\"priority_class\":\"standard\",\"seed\":1}",
+      "output": "8cf1bec795a047213d7105b3b50ae460a49afee94314797a96a0f6949915aae6"
+    },
+    {
+      "name": "nested-keys-are-sorted",
+      "input": {
+        "job_class": "short",
+        "manifest_sha256": "05b3abf2579a5eb66403cd78be557fd860633a1fe2103c7642030defe32c657f",
+        "parameters": {
+          "z": 1,
+          "a": {
+            "y": [
+              3,
+              1
+            ],
+            "b": "x"
+          }
+        },
+        "priority_class": "standard",
+        "seed": 42
+      },
+      "canonical": "{\"job_class\":\"short\",\"manifest_sha256\":\"05b3abf2579a5eb66403cd78be557fd860633a1fe2103c7642030defe32c657f\",\"parameters\":{\"a\":{\"b\":\"x\",\"y\":[3,1]},\"z\":1},\"priority_class\":\"standard\",\"seed\":42}",
+      "output": "4f7c7663ef85d0c4cf1a2a3f98c26bc0b4c40af68c0ab9eb74039d473388cfb4"
+    },
+    {
+      "name": "non-ascii-is-not-escaped",
+      "input": {
+        "job_class": "long",
+        "manifest_sha256": "05b3abf2579a5eb66403cd78be557fd860633a1fe2103c7642030defe32c657f",
+        "parameters": {
+          "label": "café ✓"
+        },
+        "priority_class": "standard",
+        "seed": 7
+      },
+      "canonical": "{\"job_class\":\"long\",\"manifest_sha256\":\"05b3abf2579a5eb66403cd78be557fd860633a1fe2103c7642030defe32c657f\",\"parameters\":{\"label\":\"café ✓\"},\"priority_class\":\"standard\",\"seed\":7}",
+      "output": "3f5b196ea5efed75f296a1fc50ab2a3e8edaa0230e67c3777e0b903ac2260726"
+    },
+    {
+      "name": "largest-seed-and-scalars",
+      "input": {
+        "job_class": "short",
+        "manifest_sha256": "05b3abf2579a5eb66403cd78be557fd860633a1fe2103c7642030defe32c657f",
+        "parameters": {
+          "rate": 0.25,
+          "flag": true,
+          "none": null,
+          "count": -3
+        },
+        "priority_class": "standard",
+        "seed": 9007199254740991
+      },
+      "canonical": "{\"job_class\":\"short\",\"manifest_sha256\":\"05b3abf2579a5eb66403cd78be557fd860633a1fe2103c7642030defe32c657f\",\"parameters\":{\"count\":-3,\"flag\":true,\"none\":null,\"rate\":0.25},\"priority_class\":\"standard\",\"seed\":9007199254740991}",
+      "output": "69fc15ea2a52e121c6e71cd0611ea46f444be249b8aa308ce733d3e1f1981bea"
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "$id": "urn:wdf:schema:api:batch-header:1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "The first line of a batch submit call.",
+  "properties": {
+    "batch_key": {
+      "maxLength": 200,
+      "minLength": 1,
+      "title": "Batch Key",
+      "type": "string"
+    },
+    "job_class": {
+      "default": "short",
+      "minLength": 1,
+      "title": "Job Class",
+      "type": "string"
+    },
+    "priority_class": {
+      "default": "standard",
+      "minLength": 1,
+      "title": "Priority Class",
+      "type": "string"
+    },
+    "template": {
+      "additionalProperties": true,
+      "description": "The job template document, once per batch.",
+      "title": "Template",
+      "type": "object"
+    }
+  },
+  "required": [
+    "batch_key",
+    "template"
+  ],
+  "title": "contracts/api batch-header",
+  "type": "object"
+}

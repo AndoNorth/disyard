@@ -1,0 +1,138 @@
+---
+# Control table. Schema: schemas/control.schema.json.
+# One cell per status, workflow case, action and patch case. A job at accepted has no workflow, a job at
+# admitted or running is treated as having one, and for any other status the gateway is asked.
+# patch: none when no patch is sent, same or other when one is, compared with the pending patch.
+# request: request_action(job_id, action) is called. moves: status moves in order, from the cell's status.
+# pending_patch: set-or-clear sets pending_patch_ref to the patch when one is sent and clears it otherwise.
+# Every write and event of a cell happens in one transaction, on the row read with lock_job.
+cells:
+  # A job that never started.
+  - status: [accepted]
+    workflow: without
+    action: cancel
+    outcome: applied
+    request: true
+    moves: [{to: cancelled, row_only: true}]
+    events: [job.cancel.requested, job.cancelled]
+  - status: [accepted]
+    workflow: without
+    action: terminate
+    outcome: applied
+    request: true
+    moves: [{to: terminated, row_only: true}]
+    events: [job.terminate.requested, job.terminated]
+  - status: [accepted]
+    workflow: without
+    action: pause
+    outcome: applied
+    request: true
+    moves: [{to: paused, row_only: true}]
+    events: [job.pause.requested, job.paused]
+  - {status: [accepted], workflow: without, action: resume, patch: [none, same, other], outcome: refused,
+     refusal: INVALID_HEADER}
+
+  # A job that was claimed, so the workflow or the retrier finishes the action.
+  - {status: [admitted, running], workflow: with, action: cancel, outcome: requested, request: true,
+     events: [job.cancel.requested]}
+  - {status: [admitted, running], workflow: with, action: terminate, outcome: requested, request: true,
+     events: [job.terminate.requested]}
+  - {status: [admitted, running], workflow: with, action: pause, outcome: requested, request: true,
+     events: [job.pause.requested]}
+  - {status: [admitted, running], workflow: with, action: resume, patch: [none, same, other], outcome: refused,
+     refusal: NOT_PAUSED}
+
+  # A job paused before it started.
+  - status: [paused]
+    workflow: without
+    action: cancel
+    outcome: applied
+    request: true
+    moves: [{to: cancelled}]
+    events: [job.cancel.requested, job.cancelled]
+  - status: [paused]
+    workflow: without
+    action: terminate
+    outcome: applied
+    request: true
+    moves: [{to: terminated}]
+    events: [job.terminate.requested, job.terminated]
+  - {status: [paused], workflow: without, action: pause, outcome: noop}
+  - status: [paused]
+    workflow: without
+    action: resume
+    outcome: applied
+    request: true
+    moves: [{to: resume-pending}, {to: accepted, row_only: true}]
+    events: [job.resume.requested, job.resumed]
+  - {status: [paused], workflow: without, action: resume, patch: [same, other], outcome: refused,
+     refusal: PATCH_NOT_STARTED}
+
+  # A paused job with a workflow, which admission resumes.
+  - {status: [paused], workflow: with, action: cancel, outcome: requested, request: true,
+     events: [job.cancel.requested]}
+  - {status: [paused], workflow: with, action: terminate, outcome: requested, request: true,
+     events: [job.terminate.requested]}
+  - {status: [paused], workflow: with, action: pause, outcome: noop}
+  - status: [paused]
+    workflow: with
+    action: resume
+    patch: [none, same, other]
+    outcome: requested
+    request: true
+    moves: [{to: resume-pending}]
+    pending_patch: set-or-clear
+    events: [job.resume.requested]
+
+  # A resume-pending job with no workflow, which the resume finisher returns to accepted.
+  - status: [resume-pending]
+    workflow: without
+    action: cancel
+    outcome: applied
+    request: true
+    moves: [{to: cancelled}]
+    events: [job.cancel.requested, job.cancelled]
+  - status: [resume-pending]
+    workflow: without
+    action: terminate
+    outcome: applied
+    request: true
+    moves: [{to: terminated}]
+    events: [job.terminate.requested, job.terminated]
+  - {status: [resume-pending], workflow: without, action: pause, outcome: refused, refusal: RESUME_PENDING}
+  - {status: [resume-pending], workflow: without, action: resume, outcome: noop}
+  - {status: [resume-pending], workflow: without, action: resume, patch: [same, other], outcome: refused,
+     refusal: PATCH_NOT_STARTED}
+
+  # A resume-pending job with a workflow, waiting for admission's resume.
+  - {status: [resume-pending], workflow: with, action: cancel, outcome: requested, request: true,
+     events: [job.cancel.requested]}
+  - {status: [resume-pending], workflow: with, action: terminate, outcome: requested, request: true,
+     events: [job.terminate.requested]}
+  - {status: [resume-pending], workflow: with, action: pause, outcome: refused, refusal: RESUME_PENDING}
+  - {status: [resume-pending], workflow: with, action: resume, patch: [none, same], outcome: noop}
+  - {status: [resume-pending], workflow: with, action: resume, patch: [other], outcome: refused,
+     refusal: PATCH_PENDING}
+
+  # A job that ended.
+  - {status: [succeeded, partial, failed, cancelled, terminated], workflow: either, action: cancel, outcome: noop}
+  - {status: [succeeded, partial, failed, cancelled, terminated], workflow: either, action: terminate,
+     outcome: noop}
+  - {status: [succeeded, partial, failed, cancelled, terminated], workflow: either, action: pause,
+     outcome: refused, refusal: ALREADY_ENDED}
+  - {status: [succeeded, partial, failed, cancelled, terminated], workflow: either, action: resume,
+     patch: [none, same, other], outcome: refused, refusal: ALREADY_ENDED}
+
+# What an action does while requested_action is outstanding, decided before the cells.
+# noop returns the outstanding control_seq, and table decides by the cells with the next control_seq.
+overlay:
+  - {outstanding: terminate, action: [cancel, terminate], rule: noop}
+  - {outstanding: terminate, action: [pause, resume], rule: refused, refusal: STOPPING}
+  - {outstanding: cancel, action: [cancel], rule: noop}
+  - {outstanding: cancel, action: [terminate], rule: table}
+  - {outstanding: cancel, action: [pause, resume], rule: refused, refusal: STOPPING}
+  - {outstanding: pause, action: [pause], rule: noop}
+  - {outstanding: pause, action: [cancel, terminate], rule: table}
+  - {outstanding: pause, action: [resume], rule: refused, refusal: PAUSE_IN_PROGRESS}
+  # A row with a resume outstanding is at resume-pending, whose cells decide.
+  - {outstanding: resume, action: [cancel, terminate, pause, resume], rule: table}

@@ -1,0 +1,10 @@
+{
+  "reference": {
+    "uri": "s3://wdf-sources/sha256/aa/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "size": 2048,
+    "name": "bundle.tar.gz",
+    "kind": "source"
+  },
+  "created": true
+}

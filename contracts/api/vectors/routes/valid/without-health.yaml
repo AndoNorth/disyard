@@ -1,0 +1,67 @@
+---
+# API routes. Schema: schemas/routes.schema.json.
+# Every path under /v1/tenants/{tenant} answers 404 UNKNOWN_TENANT, before any body is read,
+# for a tenant outside the tenancy profile. Models are the schema names under schemas/.
+routes:
+  - listeners: [dispatch-api]
+    method: PUT
+    path: /v1/tenants/{tenant}/objects/{kind}/{sha256}
+    values: {kind: [source, index]}
+    request: {body: bytes}
+    answer: {body: json, models: [object-answer]}
+    success: [201, 200]
+
+  - listeners: [dispatch-api]
+    method: POST
+    path: /v1/tenants/{tenant}/batches
+    request: {body: ndjson, models: [batch-header, batch-entry]}
+    answer: {body: ndjson, models: [entry-answer, summary-line, error-line]}
+    success: [200]
+
+  - listeners: [dispatch-api]
+    method: GET
+    path: /v1/tenants/{tenant}/batches/{batch_key}
+    request: {body: none}
+    answer: {body: json, models: [batch-summary]}
+    success: [200]
+
+  - listeners: [dispatch-api]
+    method: GET
+    path: /v1/tenants/{tenant}/batches/{batch_key}/jobs
+    query:
+      - {name: status, type: status}
+      - {name: after, type: job-id}
+      - {name: limit, type: integer, minimum: 1, maximum: 1000}
+    request: {body: none}
+    answer: {body: json, models: [job-page]}
+    success: [200]
+
+  - listeners: [dispatch-api]
+    method: GET
+    path: /v1/tenants/{tenant}/depth
+    request: {body: none}
+    answer: {body: json, models: [depth]}
+    success: [200]
+
+  - listeners: [control-api]
+    method: GET
+    path: /v1/tenants/{tenant}/jobs/{job_id}
+    request: {body: none}
+    answer: {body: json, models: [job-status]}
+    success: [200]
+
+  - listeners: [control-api]
+    method: POST
+    path: /v1/tenants/{tenant}/jobs/{job_id}/{action}
+    values: {action: [cancel, terminate, pause, resume]}
+    request: {body: json, models: [control-request]}
+    answer: {body: json, models: [control-answer]}
+    success: [200]
+
+  - listeners: [control-api]
+    method: POST
+    path: /v1/tenants/{tenant}/batches/{batch_key}/{action}
+    values: {action: [cancel, terminate, pause, resume]}
+    request: {body: json, models: [control-request]}
+    answer: {body: ndjson, models: [control-answer, entry-error, summary-line, error-line]}
+    success: [200]

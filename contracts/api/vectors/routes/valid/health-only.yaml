@@ -1,0 +1,15 @@
+---
+routes:
+  - listeners: [dispatch-api, control-api]
+    method: GET
+    path: /healthz
+    request: {body: none}
+    answer: {body: json, models: [health]}
+    success: [200]
+
+  - listeners: [dispatch-api, control-api]
+    method: GET
+    path: /readyz
+    request: {body: none}
+    answer: {body: json, models: [health]}
+    success: [200]

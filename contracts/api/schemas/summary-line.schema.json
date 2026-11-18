@@ -1,0 +1,92 @@
+{
+  "$defs": {
+    "ControlSummary": {
+      "additionalProperties": false,
+      "properties": {
+        "applied": {
+          "minimum": 0,
+          "title": "Applied",
+          "type": "integer"
+        },
+        "noop": {
+          "minimum": 0,
+          "title": "Noop",
+          "type": "integer"
+        },
+        "refused": {
+          "minimum": 0,
+          "title": "Refused",
+          "type": "integer"
+        },
+        "requested": {
+          "minimum": 0,
+          "title": "Requested",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "applied",
+        "requested",
+        "noop",
+        "refused"
+      ],
+      "title": "ControlSummary",
+      "type": "object"
+    },
+    "SubmitSummary": {
+      "additionalProperties": false,
+      "properties": {
+        "accepted": {
+          "minimum": 0,
+          "title": "Accepted",
+          "type": "integer"
+        },
+        "batch_id": {
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "title": "Batch Id",
+          "type": "string"
+        },
+        "duplicate": {
+          "minimum": 0,
+          "title": "Duplicate",
+          "type": "integer"
+        },
+        "rejected": {
+          "minimum": 0,
+          "title": "Rejected",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "batch_id",
+        "accepted",
+        "duplicate",
+        "rejected"
+      ],
+      "title": "SubmitSummary",
+      "type": "object"
+    }
+  },
+  "$id": "urn:wdf:schema:api:summary-line:1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "The last line of a batch submit or a batch control call that ran to its end.",
+  "properties": {
+    "summary": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/SubmitSummary"
+        },
+        {
+          "$ref": "#/$defs/ControlSummary"
+        }
+      ],
+      "title": "Summary"
+    }
+  },
+  "required": [
+    "summary"
+  ],
+  "title": "contracts/api summary-line",
+  "type": "object"
+}

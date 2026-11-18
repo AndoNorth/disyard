@@ -1,0 +1,1 @@
+{"index":2,"outcome":"rejected","job_id":"3a9617fa-df7c-5760-a644-42d559e0f433","reason":"INVALID_PARAMS","issues":[{"path":"/parameters/message","code":"param-type"}],"trace_id":"4bf92f3577b34da6a3ce929d0e0e4736"}

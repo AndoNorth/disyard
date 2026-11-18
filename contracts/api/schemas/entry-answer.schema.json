@@ -1,0 +1,144 @@
+{
+  "$defs": {
+    "ValidatorIssue": {
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "pattern": "^[a-z][a-z0-9-]*$",
+          "title": "Code",
+          "type": "string"
+        },
+        "path": {
+          "description": "A JSON Pointer into the entry.",
+          "title": "Path",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "code"
+      ],
+      "title": "ValidatorIssue",
+      "type": "object"
+    }
+  },
+  "$id": "urn:wdf:schema:api:entry-answer:1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "The answer to one entry, in request order.",
+  "properties": {
+    "index": {
+      "anyOf": [
+        {
+          "exclusiveMaximum": 100000,
+          "minimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Absent when the line did not parse that far.",
+      "title": "Index"
+    },
+    "issues": {
+      "anyOf": [
+        {
+          "items": {
+            "$ref": "#/$defs/ValidatorIssue"
+          },
+          "maxItems": 10,
+          "minItems": 1,
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "On INVALID_PARAMS only.",
+      "title": "Issues"
+    },
+    "job_id": {
+      "anyOf": [
+        {
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Absent when the line did not parse that far.",
+      "title": "Job Id"
+    },
+    "outcome": {
+      "enum": [
+        "accepted",
+        "duplicate",
+        "rejected"
+      ],
+      "title": "Outcome",
+      "type": "string"
+    },
+    "reason": {
+      "anyOf": [
+        {
+          "pattern": "^[A-Z][A-Z0-9_]*$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "On rejected only.",
+      "title": "Reason"
+    },
+    "status": {
+      "anyOf": [
+        {
+          "enum": [
+            "accepted",
+            "admitted",
+            "running",
+            "paused",
+            "resume-pending",
+            "succeeded",
+            "partial",
+            "failed",
+            "cancelled",
+            "terminated"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "The existing row's status, on duplicate.",
+      "title": "Status"
+    },
+    "trace_id": {
+      "anyOf": [
+        {
+          "pattern": "^[0-9a-f]{32}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Trace Id"
+    }
+  },
+  "required": [
+    "outcome"
+  ],
+  "title": "contracts/api entry-answer",
+  "type": "object"
+}

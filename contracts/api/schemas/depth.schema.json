@@ -1,0 +1,24 @@
+{
+  "$id": "urn:wdf:schema:api:depth:1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "depth": {
+      "additionalProperties": {
+        "additionalProperties": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "type": "object"
+      },
+      "description": "Rows at accepted, keyed by priority class then job class.",
+      "title": "Depth",
+      "type": "object"
+    }
+  },
+  "required": [
+    "depth"
+  ],
+  "title": "contracts/api depth",
+  "type": "object"
+}

@@ -1,0 +1,246 @@
+{
+  "$defs": {
+    "Cell": {
+      "additionalProperties": false,
+      "description": "What one action does to a job in one state.",
+      "properties": {
+        "action": {
+          "enum": [
+            "cancel",
+            "terminate",
+            "pause",
+            "resume"
+          ],
+          "title": "Action",
+          "type": "string"
+        },
+        "events": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Events",
+          "type": "array"
+        },
+        "moves": {
+          "default": [],
+          "description": "Status moves in order, from the cell's status.",
+          "items": {
+            "$ref": "#/$defs/Move"
+          },
+          "title": "Moves",
+          "type": "array"
+        },
+        "outcome": {
+          "enum": [
+            "applied",
+            "requested",
+            "noop",
+            "refused"
+          ],
+          "title": "Outcome",
+          "type": "string"
+        },
+        "patch": {
+          "default": [
+            "none"
+          ],
+          "description": "none: no patch sent; same or other: than the pending one.",
+          "items": {
+            "enum": [
+              "none",
+              "same",
+              "other"
+            ],
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Patch",
+          "type": "array"
+        },
+        "pending_patch": {
+          "default": "keep",
+          "enum": [
+            "keep",
+            "set-or-clear"
+          ],
+          "title": "Pending Patch",
+          "type": "string"
+        },
+        "refusal": {
+          "anyOf": [
+            {
+              "pattern": "^[A-Z][A-Z0-9_]*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Refusal"
+        },
+        "request": {
+          "default": false,
+          "description": "request_action(job_id, action) is called.",
+          "title": "Request",
+          "type": "boolean"
+        },
+        "status": {
+          "items": {
+            "enum": [
+              "accepted",
+              "admitted",
+              "running",
+              "paused",
+              "resume-pending",
+              "succeeded",
+              "partial",
+              "failed",
+              "cancelled",
+              "terminated"
+            ],
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Status",
+          "type": "array"
+        },
+        "workflow": {
+          "enum": [
+            "with",
+            "without",
+            "either"
+          ],
+          "title": "Workflow",
+          "type": "string"
+        }
+      },
+      "required": [
+        "status",
+        "workflow",
+        "action",
+        "outcome"
+      ],
+      "title": "Cell",
+      "type": "object"
+    },
+    "Move": {
+      "additionalProperties": false,
+      "properties": {
+        "row_only": {
+          "default": false,
+          "title": "Row Only",
+          "type": "boolean"
+        },
+        "to": {
+          "enum": [
+            "accepted",
+            "admitted",
+            "running",
+            "paused",
+            "resume-pending",
+            "succeeded",
+            "partial",
+            "failed",
+            "cancelled",
+            "terminated"
+          ],
+          "title": "To",
+          "type": "string"
+        }
+      },
+      "required": [
+        "to"
+      ],
+      "title": "Move",
+      "type": "object"
+    },
+    "OverlayRule": {
+      "additionalProperties": false,
+      "description": "What an action does while another is outstanding, decided before the cells.",
+      "properties": {
+        "action": {
+          "items": {
+            "enum": [
+              "cancel",
+              "terminate",
+              "pause",
+              "resume"
+            ],
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Action",
+          "type": "array"
+        },
+        "outstanding": {
+          "enum": [
+            "cancel",
+            "terminate",
+            "pause",
+            "resume"
+          ],
+          "title": "Outstanding",
+          "type": "string"
+        },
+        "refusal": {
+          "anyOf": [
+            {
+              "pattern": "^[A-Z][A-Z0-9_]*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Refusal"
+        },
+        "rule": {
+          "enum": [
+            "noop",
+            "refused",
+            "table"
+          ],
+          "title": "Rule",
+          "type": "string"
+        }
+      },
+      "required": [
+        "outstanding",
+        "action",
+        "rule"
+      ],
+      "title": "OverlayRule",
+      "type": "object"
+    }
+  },
+  "$id": "urn:wdf:schema:api:control:1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "cells": {
+      "items": {
+        "$ref": "#/$defs/Cell"
+      },
+      "minItems": 1,
+      "title": "Cells",
+      "type": "array"
+    },
+    "overlay": {
+      "items": {
+        "$ref": "#/$defs/OverlayRule"
+      },
+      "minItems": 1,
+      "title": "Overlay",
+      "type": "array"
+    }
+  },
+  "required": [
+    "cells",
+    "overlay"
+  ],
+  "title": "contracts/api control",
+  "type": "object"
+}

@@ -1,0 +1,47 @@
+{
+  "$id": "urn:wdf:schema:api:batch-summary:1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "batch_id": {
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+      "title": "Batch Id",
+      "type": "string"
+    },
+    "counts": {
+      "additionalProperties": {
+        "minimum": 0,
+        "type": "integer"
+      },
+      "description": "Jobs per status, statuses with none left out.",
+      "propertyNames": {
+        "enum": [
+          "accepted",
+          "admitted",
+          "running",
+          "paused",
+          "resume-pending",
+          "succeeded",
+          "partial",
+          "failed",
+          "cancelled",
+          "terminated"
+        ]
+      },
+      "title": "Counts",
+      "type": "object"
+    },
+    "total": {
+      "minimum": 0,
+      "title": "Total",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "batch_id",
+    "total",
+    "counts"
+  ],
+  "title": "contracts/api batch-summary",
+  "type": "object"
+}

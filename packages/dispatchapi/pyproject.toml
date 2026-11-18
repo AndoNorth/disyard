@@ -1,0 +1,47 @@
+[project]
+name = "wdf-dispatchapi"
+version = "0.0.0"
+requires-python = ">=3.13,<3.14"
+dependencies = [
+    "boto3",
+    "psycopg[binary]",
+    "pydantic",
+    "pyyaml",
+    "temporalio",
+    "wdf-artifactclient",
+    "wdf-artifactindex",
+    "wdf-broker",
+    "wdf-compile",
+    "wdf-events",
+    "wdf-eventstore",
+    "wdf-itest",
+    "wdf-jobcheck",
+    "wdf-jobpatch",
+    "wdf-jobstate",
+    "wdf-keys",
+    "wdf-plan",
+    "wdf-stages",
+    "wdf-temporal",
+    "wdf-workflow",
+]
+
+[tool.uv.sources]
+wdf-artifactclient = { workspace = true }
+wdf-artifactindex = { workspace = true }
+wdf-broker = { workspace = true }
+wdf-compile = { workspace = true }
+wdf-events = { workspace = true }
+wdf-eventstore = { workspace = true }
+wdf-itest = { workspace = true }
+wdf-jobcheck = { workspace = true }
+wdf-jobpatch = { workspace = true }
+wdf-jobstate = { workspace = true }
+wdf-keys = { workspace = true }
+wdf-plan = { workspace = true }
+wdf-stages = { workspace = true }
+wdf-temporal = { workspace = true }
+wdf-workflow = { workspace = true }
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

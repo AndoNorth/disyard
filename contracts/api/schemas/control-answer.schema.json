@@ -1,0 +1,78 @@
+{
+  "$id": "urn:wdf:schema:api:control-answer:1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "action": {
+      "enum": [
+        "cancel",
+        "terminate",
+        "pause",
+        "resume"
+      ],
+      "title": "Action",
+      "type": "string"
+    },
+    "control_seq": {
+      "maximum": 2147483647,
+      "minimum": 0,
+      "title": "Control Seq",
+      "type": "integer"
+    },
+    "job_id": {
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+      "title": "Job Id",
+      "type": "string"
+    },
+    "outcome": {
+      "enum": [
+        "applied",
+        "requested",
+        "noop"
+      ],
+      "title": "Outcome",
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "accepted",
+        "admitted",
+        "running",
+        "paused",
+        "resume-pending",
+        "succeeded",
+        "partial",
+        "failed",
+        "cancelled",
+        "terminated"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "view": {
+      "anyOf": [
+        {
+          "enum": [
+            "pausing",
+            "cancelling"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "View"
+    }
+  },
+  "required": [
+    "job_id",
+    "action",
+    "outcome",
+    "status",
+    "view",
+    "control_seq"
+  ],
+  "title": "contracts/api control-answer",
+  "type": "object"
+}

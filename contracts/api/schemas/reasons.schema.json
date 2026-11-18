@@ -1,0 +1,75 @@
+{
+  "$defs": {
+    "ReasonRow": {
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "pattern": "^[A-Z][A-Z0-9_]*$",
+          "title": "Code",
+          "type": "string"
+        },
+        "http": {
+          "anyOf": [
+            {
+              "maximum": 599,
+              "minimum": 400,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Null for a code carried only in an answer or error line.",
+          "title": "Http"
+        },
+        "scopes": {
+          "items": {
+            "enum": [
+              "call",
+              "entry",
+              "upload",
+              "control",
+              "read",
+              "any"
+            ],
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Scopes",
+          "type": "array"
+        },
+        "when": {
+          "minLength": 1,
+          "title": "When",
+          "type": "string"
+        }
+      },
+      "required": [
+        "code",
+        "scopes",
+        "http",
+        "when"
+      ],
+      "title": "ReasonRow",
+      "type": "object"
+    }
+  },
+  "$id": "urn:wdf:schema:api:reasons:1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "reasons": {
+      "items": {
+        "$ref": "#/$defs/ReasonRow"
+      },
+      "minItems": 1,
+      "title": "Reasons",
+      "type": "array"
+    }
+  },
+  "required": [
+    "reasons"
+  ],
+  "title": "contracts/api reasons",
+  "type": "object"
+}

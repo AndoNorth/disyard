@@ -1,0 +1,70 @@
+{
+  "$defs": {
+    "ContentReference": {
+      "additionalProperties": false,
+      "description": "A content-addressed object, which has no producer.",
+      "properties": {
+        "kind": {
+          "enum": [
+            "manifest",
+            "source",
+            "index",
+            "component",
+            "build-info"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "name": {
+          "maxLength": 255,
+          "minLength": 1,
+          "pattern": "^[^/]+$",
+          "title": "Name",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        },
+        "size": {
+          "minimum": 0,
+          "title": "Size",
+          "type": "integer"
+        },
+        "uri": {
+          "pattern": "^s3://wdf-(sources|components|results|checkpoints)/.+$",
+          "title": "Uri",
+          "type": "string"
+        }
+      },
+      "required": [
+        "uri",
+        "sha256",
+        "size",
+        "name",
+        "kind"
+      ],
+      "title": "ContentReference",
+      "type": "object"
+    }
+  },
+  "$id": "urn:wdf:schema:api:object-answer:1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "created": {
+      "title": "Created",
+      "type": "boolean"
+    },
+    "reference": {
+      "$ref": "#/$defs/ContentReference"
+    }
+  },
+  "required": [
+    "reference",
+    "created"
+  ],
+  "title": "contracts/api object-answer",
+  "type": "object"
+}
