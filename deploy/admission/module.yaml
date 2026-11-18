@@ -1,0 +1,29 @@
+name: admission
+group: control
+namespace: wdf-control
+artifact:
+  kind: image
+  pin: python
+resources:
+  admission:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 250m
+      memory: 128Mi
+  admission-logins:
+    requests:
+      cpu: 1m
+      memory: 1Mi
+    limits:
+      cpu: 1m
+      memory: 1Mi
+readiness:
+  resource: deployment/admission
+  condition: Available
+profiles: [dev, full, ci]
+depends_on:
+  - infra/appdb-migrate
+  - infra/temporal-bootstrap
+  - infra/rabbitmq
