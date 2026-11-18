@@ -1,8 +1,8 @@
 # Store contract
 
 Owner epic: #3 (durable state and artifact storage).
-Version: 3
-Consumers: artifacts (#12), the contract script of this epic, the object store module, characterization (#16, #17) and the observability epic (#13).
+Version: 4
+Consumers: artifacts (#12), the dispatch and control API (#24), the contract script of this epic, the object store module, characterization (#16, #17) and the observability epic (#13).
 
 This directory pins who may do what in the object store, which lifecycle rules each bucket carries and what each tested product is known not to do.
 The four bucket names are read from [../artifact/layout.yaml](../artifact/layout.yaml) and never retyped, and the loader fails when a bucket is missing or extra.
@@ -17,7 +17,7 @@ The actions are `get`, `put`, `list`, `multipart`, `delete`, `bucket` and `lifec
 | Role | Used by | Grants |
 | --- | --- | --- |
 | `admin` | the bootstrap, and no pod | `bucket` and `lifecycle` on every bucket |
-| `submit` | the submit path | writes `wdf-sources` |
+| `submit` | the submit path | reads and writes `wdf-sources` |
 | `indexer` | the aggregate index builder | writes `wdf-sources` and nothing else |
 | `compile` | the compile stage | reads `wdf-sources`, writes `wdf-components` and `wdf-results` (its log tail) |
 | `simulate` | the simulate stage | reads `wdf-components`, writes `wdf-results`, reads and writes `wdf-checkpoints` |
