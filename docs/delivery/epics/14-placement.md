@@ -5,7 +5,7 @@ Epic: https://github.com/AndoNorth/wasm-dag-forge/issues/9
 Architecture note: docs/architecture/11-placement-and-workers.drawio, which 0.2 (issue) refines, and docs/architecture/02-two-layers-of-scheduling.drawio, unchanged
 Verifier: none, per decision 1.
 Depends on (closed epics): Dev environment (#1), Fixed-resource cluster (#2), Job event envelope (#4), DAG configuration schema and validator (#5), Durable state and artifact storage (#3), Artifact passing (#12), Workload toolchain (#11), Workflow engine (#6), Broker (#7), Kubernetes workers (#10), and the closed revisits #380 (the simulate slot) of #2 and #374 (the harness queue prefix) of #6
-Depends on (open work): none. Admission (#8) is the active epic and keeps "no coupling in v1" with placement (`12-admission.md:43`, decision 13), and the dispatch API (#24) calls nothing of placement (`13-dispatch-api.md:363`, A9), so this epic opens when #8 closes and may run before, after or alongside #24, whose only shared file with this epic is `scripts/cluster/test_budget.py` (section 5).
+Depends on (open work): none. Admission (#8) is the active epic and keeps "no coupling in v1" with placement (`12-admission.md:43`, decision 13), and the dispatch API (#24) calls nothing of placement (`13-dispatch-api.md:363`, A9), so this epic opens when #8 closes and may run before, after or alongside #24, whose shared files with this epic are `scripts/cluster/test_budget.py` (section 5) and the `uv.lock` and root `pyproject.toml` hotspots, each under its rebase rule in section 3.
 
 Evidence marks: `[read]` means read on `main` at `96a9123` on 2026-11-17 while preparing this spec, and nothing was executed beyond read-only commands and `scripts/cluster/budget.sh ci`, which reads files only.
 `[review]` means read on `main` at `5146aa2` on 2026-11-18 while applying the captain's chosen findings of the spec review, and where a `[read]` fact and a `[review]` fact differ, the `[review]` one wins.
@@ -212,7 +212,7 @@ Shared-file rules:
 - The root `pyproject.toml` changes only in 0.2 (issue), by one `wdf-placement` line in `[tool.uv.sources]` and one in the dev dependency group.
 - `packages/placement/tests/conftest.py` is lane 0's, and a lane keeps its own fixtures in a `conftest.py` inside its own test directory.
 - `packages/workflow/src/wdf_workflow/service/__init__.py` changes only in W.1, by the placer choice of D10 and the move of its workflow worker onto the builder.
-- `packages/workflow/src/wdf_workflow/harness/__init__.py`, `packages/workflow/tests/workflow/conftest.py`, `packages/workflow/tests/versioning/test_versioning.py` and `packages/workflow/tests/replay/record.py` change only in W.1, by the move of their workflow worker onto the builder, and `packages/workflow/tests/test_placer_contract.py` only by its two `place` calls.
+- `packages/workflow/src/wdf_workflow/harness/__init__.py`, `packages/workflow/tests/workflow/conftest.py`, `packages/workflow/tests/versioning/test_versioning.py` and `packages/workflow/tests/replay/record.py` change only in W.1, by the move of their workflow worker onto the builder, and `packages/workflow/tests/test_placer_contract.py` only by its two `place` calls and the `asyncio` import they leave unused.
 - `deploy/workflow/Tiltfile.module` and `deploy/workflow/test_render.py` change only in D.1, by the one variable and its assertion.
 - `scripts/cluster/test_budget.py` changes only in D.1, by the two node lines and the infra memory total of D13.
 - `docs/delivery/spikes/README.md` gets one appended row from S12.
@@ -302,7 +302,7 @@ Lane K, tier T0. Needs: lane 0. Blocks: S.1.
 
 Lane W, tier T0 and T1 (the dev server through `wdf_itest`). Needs: lane 0. Blocks: S.1, D.1. Label: `revisit`, child of #6.
 
-- Scope: `ServicePlacer` and `PlaceCall` of D9 in `wdf_workflow.placement`, `place_activity` defining a plain function, the workflow worker builder of 0.4 and the five workflow workers of decision 17 moved onto it, `test_placer_contract.py`'s two `asyncio.run(ActivityEnvironment().run(place, ...))` calls made plain `ActivityEnvironment().run(place, ...)` calls, which return the value of a sync function (`temporalio/testing/_activity.py:230-232`), the optional `WDF_PLACEMENT_URL` of D10 in the `Config` and `ENV` of `service/__init__.py`, and the dated Closure addendum line of `08-workflow-engine.md` linking this issue.
+- Scope: `ServicePlacer` and `PlaceCall` of D9 in `wdf_workflow.placement`, `place_activity` defining a plain function, the workflow worker builder of 0.4 and the five workflow workers of decision 17 moved onto it, `test_placer_contract.py`'s two `asyncio.run(ActivityEnvironment().run(place, ...))` calls made plain `ActivityEnvironment().run(place, ...)` calls, which return the value of a sync function (`temporalio/testing/_activity.py:230-232`), with the `asyncio` import they leave unused removed, the optional `WDF_PLACEMENT_URL` of D10 in the `Config` and `ENV` of `service/__init__.py`, and the dated Closure addendum line of `08-workflow-engine.md` linking this issue.
 - Owns: lane W's globs.
 - Consumes / produces: temporal v3.
   Produces the client and the builder that S.1 and D.1 use.
@@ -365,6 +365,7 @@ Spike, tier T2. Needs: nothing. Blocks: nothing; its result informs D14, #15 and
 - Cluster work: S12, D.1's T2 rows and the exit test, each under the cluster lock, one at a time.
 - Overlap with #24: if this epic opens while #24 is active, both epics edit `scripts/cluster/test_budget.py`, owned by #2, a product file the method lets no two epics share without a reason stated here (`docs/delivery/method.md:232-233`).
   The reason is that the two edits are figures of one budget check on different lines, D.1's lines 42-43 and 64 and #24's `dispatch` reserve line (`13-dispatch-api.md:410`), so whichever lands later rebases onto the other, and this epic does not wait for #24 to close.
+  Both epics also edit the `uv.lock` and root `pyproject.toml` hotspots, each under its rebase rule in section 3.
 
 Stubs:
 
