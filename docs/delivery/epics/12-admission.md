@@ -1,6 +1,6 @@
 # Epic #8: Job admission scheduler (layer 1) - breakdown
 
-Status: draft, reconciled on 2026-11-17 with the built broker (#7) and workers (#10) on `main` at `331e013`, then on 2026-11-17 with the spec review on `main` at `2956cf1`: its findings are applied and the captain's answers to Q2 to Q5 are recorded, awaiting the captain's approval
+Status: closed 2026-11-18
 Epic: https://github.com/AndoNorth/wasm-dag-forge/issues/8
 Architecture note: docs/architecture/17-admission-cycle.drawio, added with this spec, and docs/architecture/10-intake-and-admission.drawio, which 0.1 (issue) refines
 Verifier: none, per decision 1.
@@ -565,7 +565,7 @@ Row 10's invariant check opens `kubectl --context kind-wdf -n wdf-infra port-for
 | 7 | `just up`, `WDF_BUILD_ID=exit-a scripts/tilt/run.sh ci`, `kubectl --context kind-wdf -n wdf-control get pods`, `kubectl --context kind-wdf -n wdf-control logs deploy/admission`, `just cluster-verify` | exit 0 with `rabbitmq`, `workflow-worker` and `admission` ready among every `ci` module, the log showing admission polling its queues, and an `ok` line for each check of `cluster-verify` |
 | 8 | `D smoke --jobs 500 --global-cap 20` | `queue_prefix:` with a fresh `h-<8 hex>-` prefix, `published: 500`, `finished: 500`, `failed: 0`, `max_live:` at most 20, `duplicates: 0` |
 | 9 | `D control --jobs 20` | `finished: 20`, `failed: 0`, `skipped: 5` (jobs paused before they started, skipped when their message was pulled), `readmitted: resumed-before-start 5 stuck-admitted 5` (the same five jobs resumed before they started, and five rows the driver left in `admitted` with no workflow), and `resumed: 5` (running jobs paused by signal and resumed through admission) |
-| 10 | `D deadletter`, then `python -m wdf_stateops.invariants --dsn <the superuser DSN over the row's forward>` | `dead_lettered: MALFORMED 1 UNSUPPORTED_VERSION 1`, `events: 2` (one `job.dead.lettered` per message that names a job), `rows: accepted 2`, and the invariants print nothing |
+| 10 | `D deadletter`, then `python -m wdf_stateops.invariants --dsn <the superuser DSN over the row's forward>` | `dead_lettered: MALFORMED 1 UNSUPPORTED_VERSION 1`, `events: 2` (one `job.dead.lettered` per message that names a job), `rows: accepted 2`, and the invariants exit 0 with no `invariant:` line, printing only `skipped: open-workflow-without-live-row` and `skipped: running-without-workflow` (the two checks that need `--open-workflows`) and, on stderr, the `RuntimeWarning` of `runpy` that `-m` gives because `wdf_stateops` imports `wdf_stateops.invariants` |
 | 11 | `D restart --jobs 200`, which deletes the admission pod twice during the run, once with its grace period and once with `--grace-period=0 --force`, then `kubectl --context kind-wdf -n wdf-control get deploy admission -o jsonpath='{.spec.template.spec.containers[0].env[*].name}'` | `finished: 200`, `failed: 0`, `restarts: 2`, `oom_killed: 0` over the two deleted pods and the last pod, read before the driver restores the deployment, and neither `WDF_ADMISSION_GLOBAL_CAP` nor `WDF_POOL_QUEUE_PREFIX` left on the deployment |
 | 12 | `just doctor`, then `just down`, then `just nuke` twice | exit 0 for each, and `just nuke` leaves nothing and repeats cleanly |
 | 13 | the `ci` workflow on `main` | one green run, the URL recorded in Closure |
@@ -583,9 +583,86 @@ Not provable by this epic: the real dispatch API and its reconciler (#24), real 
 - Estimates, not measurements, in worker-days: lane 0 (1.5), P.1 (2.5), C.1 (2.5), C.2 (3.5), S.1 (2), S.2 (2.5), M.1 (2.5), M.2 (2.5), V.1 (2.5), W.1 (1), exit test (2).
   That is about 25 worker-days of effort and about 19 days elapsed along 0.1, C.1, S.1, S.2, M.1, M.2, V.1, W.1 and the exit test (1.5 + 2.5 + 2 + 2.5 + 2.5 + 2.5 + 2.5 + 1 + 2), with the memory figure of D17 and cluster lock contention as the main sources of slip.
 
-## 9. Closure (filled at close)
+## 9. Closure
 
-<commit sha, exit test run, evidence path or CI run url, what was learned, what moved, which assumptions of section 2 held>
+Run on 2026-11-18 against `9e497bca5ac478887b6f83794c39ba1594f1f563`, the merge of W.1 and the last lane merge, from a `git archive origin/main` extracted into a scratch directory with no enclosing git repository.
+Every row passes, row 4 on its second attempt and row 10 as its wording is corrected in section 7.
+The pasted output of every row is in the pull request that records this run.
+
+Method of the run:
+
+- The worker that ran it wrote none of the lanes.
+- The host is the 20 GiB WSL2 VM with Docker running for the whole run.
+  The containers not started by the run (`open-webui` and the T1 containers of sibling worktrees' sessions) were left untouched, except `wdf-registry`, the cluster's own registry, which `just nuke` removed before row 7 and `just up` made again.
+- Rows 0 to 6 ran first in order, row 0 was repeated just before row 7, rows 7 to 12 ran in one sequence under the cluster lock (`flock /tmp/wdf-cluster.lock env WDF_CLUSTER_LOCK_HELD=1 bash <script>`), and rows 13 and 14 ran after the lock was released.
+- A stopped `wdf` cluster of preset `ci`, left by the driver reruns of V.1 with three workflow worker builds and `cf8eff3` current in Temporal, was removed with `just nuke` under the lock before row 7, so row 7 started from no cluster and the harness made `exit-a` current itself; with the leftover cluster, `cluster-verify` fails `drift` and the jobs would run on the old current build.
+- The export has no git checkout, so row 7 runs `scripts/tilt/run.sh ci` with `WDF_BUILD_ID=exit-a`, as the section says.
+- Each driver row ran as `timeout -s INT 1200 python -m wdf_admission.drive ...`, a 20 minute cap that no row came near.
+- Row 10's forward and DSN are as the section says, with the superuser password from `appdb.credential` passed through `PGPASSWORD`, so it is not in the evidence.
+- The first attempt at row 4 ran with `WDF_SLOT` unset, beside a sibling worktree's `just ci` whose T1 session also used slot 0, and 73 of its 131 tests errored at setup on `Bind for 127.0.0.1:19000 failed: port is already allocated` (filed as [#466](https://github.com/AndoNorth/wasm-dag-forge/issues/466)).
+  Rows 4 to 6 and 14 were then run with `WDF_SLOT=1`, the pool slot of the worktree the run was launched from.
+- Row 3's two diagrams were rendered to PNG with ImageMagick and read by eye.
+- A memory sampler read `MemAvailable` every 5 s through rows 7 to 12.
+
+Results:
+
+| # | Result | Evidence |
+| --- | --- | --- |
+| 0 | pass | `MemAvailable` 15,899,960 kB at the start and 16,628,472 kB just before row 7, both above the gate of 13,369,344 kB (`memory_mib` 12,032 of the `ci` preset plus 1,024 MiB) |
+| 1 | pass | `uv sync --frozen` exit 0, `uv lock --check` exit 0 with 73 packages resolved, the `uv.lock` SHA-256 `5d5e5753…` unchanged |
+| 2 | pass | `test_wheel` passed, 1 passed and 130 deselected |
+| 3 | pass | exit 0 for both commands, and diagram 10 shows `standard` as the only class, live jobs counted from the rows, `admitted` committed on the row before the workflow starts, and the two re-admission scans |
+| 4 | pass on the second attempt | 131 passed in 33 min 54 s with `WDF_SLOT=1` and no `SKIPPED` line; the first attempt, on slot 0, had 58 passed and 73 setup errors from the port clash above |
+| 5 | pass | 23 passed, each named test listed `PASSED`, `claim_and_mark_race_records_one_published` in both its `dispatch` and `claim` cases, and `-k` also matching `test_db_breaker_opens_and_closes` and `test_old_stuck_admitted_started` |
+| 6 | pass | 13 passed, 4 login and 9 render tests |
+| 7 | pass | `cluster wdf ready: preset ci, 6 nodes`, `SUCCESS. All workloads are healthy.`, `admission`, `dummy-control` and `workflow-worker-exit-a` `Running` in `wdf-control` with `rabbitmq` ready among the 17 modules, the log `polling intake.acme.standard in namespace wdf, global cap 1000`, and `cluster-verify ci: 10 ok, 0 failed` |
+| 8 | pass | `queue_prefix: h-ad6f6756-`, `published: 500`, `finished: 500`, `failed: 0`, `max_live: 20`, `duplicates: 0` in 391 s |
+| 9 | pass | `finished: 20`, `failed: 0`, `skipped: 5`, `readmitted: resumed-before-start 5 stuck-admitted 5`, `resumed: 5` in 105 s, with `published: 15` because the five rows left in `admitted` get no message |
+| 10 | pass, as corrected | `dead_lettered: MALFORMED 1 UNSUPPORTED_VERSION 1`, `events: 2`, `rows: accepted 2`, and the invariants exit 0 with no `invariant:` line, the two `skipped:` lines and the `runpy` warning |
+| 11 | pass | `finished: 200`, `failed: 0`, `restarts: 2`, `oom_killed: 0` in 168 s, and the deployment's env names are `WDF_BROKER_ADDRESS WDF_METRICS_ADDRESS WDF_READY_FILE WDF_TEMPORAL_ADDRESS WDF_TEMPORAL_NAMESPACE WDF_TENANCY_PROFILE` |
+| 12 | pass | exit 0 for `just doctor`, `just down` and both `just nuke`, and `kind get clusters` prints `No kind clusters found.` |
+| 13 | pass | the `ci` run [44338783713](https://github.com/AndoNorth/wasm-dag-forge/actions/runs/44338783713), success on `9e497bc` on `main`, full path, 2,839 passed in `just test` and 667 passed in `just itest`; no run on `main` holds this record yet, since it is the pull request that adds it |
+| 14 | pass | `just ci` exit 0 in the export with `WDF_SLOT=1`, `== ci path: full`, 2,839 passed in `just test` and 667 passed in `just itest` in 34 min 16 s, and `nix flake check` passed, 49 min 19 s in all |
+
+Row 10's wording: as first written, the row expected the invariants to "print nothing".
+With `--dsn` alone, `wdf_stateops.invariants` always prints the two `skipped:` lines of the checks that need `--open-workflows` (`packages/stateops/src/wdf_stateops/invariants.py:46-47,70-71`), and `python -m` prints a `RuntimeWarning` of `runpy` on stderr because `wdf_stateops/__init__.py` imports the module before `-m` runs it.
+Both driver reruns of V.1 and this run saw the same output, so section 7 now states it, and the check that matters, no `invariant:` line and exit 0, is unchanged.
+
+Memory figures:
+
+- Host: `MemTotal` 20,482,272 kB, `MemAvailable` 16,628,472 kB at the gate before row 7, a low of 13,660,124 kB during row 8 and 17,001,400 kB after row 12.
+- Admission (D17): M.1 measured a peak resident memory of 103.6 MiB through 2,000 admissions at T1, under the 112 MiB gate and the pod's 128 MiB limit, and row 11 found `oom_killed: 0` over the two deleted pods and the last one.
+- The `ci` infra node: `cluster-verify` printed `budget cpu: 2680m of 2900m free 220m; memory: 5002Mi of 5504Mi free 502Mi` and `drift live requests within the budget: infra 2280m/2680m 4362Mi/5002Mi`, which section 8 expected.
+
+What was learned:
+
+- Admission held the global cap exactly (`max_live: 20` over 500 jobs), released every job of the control and restart journeys, and lost and duplicated nothing across a graceful and a forced pod deletion.
+- The schema fix [#453](https://github.com/AndoNorth/wasm-dag-forge/pull/453) holds in the image: the unsupported major is dead-lettered as `UNSUPPORTED_VERSION`, not `MALFORMED`.
+- `just down` keeps the workflow worker builds of earlier runs and the current build in Temporal, so a T2 run that must test its own build starts from `just nuke`; the harness makes its build current only when no build is current.
+- The snapshot of D11 took 4.0 ms on 100,000 rows in S.2, so no `revisit` of #3 was filed.
+- Two T1 sessions on one host collide on ports when both leave `WDF_SLOT` at 0, even with separate lock files ([#466](https://github.com/AndoNorth/wasm-dag-forge/issues/466)).
+
+What the architecture note now shows: `docs/architecture/10-intake-and-admission.drawio` and `17-admission-cycle.drawio`, with their SVGs, are as 0.1 (issue) and the lanes left them, and were re-checked by eye in this run for row 3.
+Diagram 17's claim box does not yet show W.1's receipt write and its `job.published` from `/wdf/admission`.
+
+Which assumptions of section 2 held: A1 to A7 and A11 to A15 held on `main` at `9e497bc`, and rows 7 to 11 exercised A1 to A3, A6, A12 and A13 on the cluster.
+A8 to A10 stay assumptions about #24, which is not built, and the driver stood in for it as D19 says.
+
+What moved to which epic, unchanged from section 7:
+
+- the real dispatch API, its submit sequence and its reconciler (#24), with the state library additions of [#459](https://github.com/AndoNorth/wasm-dag-forge/issues/459)
+- real pool workers under admitted jobs, which the smoke of #17 reaches
+- a second priority class in the shipped configuration (decision 6)
+- the standard load of 100,000 queued jobs and the real caps (#16)
+- crash windows and outages beyond the breaker tests (#15)
+- long jobs with checkpoints holding slots for hours (#18)
+- the layer 2 backlog gate
+
+Follow-ups found:
+
+- [#466](https://github.com/AndoNorth/wasm-dag-forge/issues/466): T1 sessions with `WDF_SLOT` unset collide on host ports despite separate lock files.
+- Diagram 17's claim box omits the receipt write of W.1, not filed.
+- The `runpy` warning of `python -m wdf_stateops.invariants` goes away if `wdf_stateops/__init__.py` stops importing `invariants`, not filed, as it changes no result.
 
 Closure addenda, one dated line each, added after close when a `revisit` child issue is filed against this epic:
 
