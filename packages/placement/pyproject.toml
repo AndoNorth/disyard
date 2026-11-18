@@ -1,0 +1,14 @@
+[project]
+name = "wdf-placement"
+version = "0.0.0"
+requires-python = ">=3.13,<3.14"
+dependencies = [
+    "wdf-workflow",
+]
+
+[tool.uv.sources]
+wdf-workflow = { workspace = true }
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

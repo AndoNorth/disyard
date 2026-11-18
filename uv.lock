@@ -31,6 +31,7 @@ members = [
     "wdf-kernel",
     "wdf-keys",
     "wdf-migrate",
+    "wdf-placement",
     "wdf-plan",
     "wdf-runtime",
     "wdf-stages",
@@ -701,6 +702,7 @@ dev = [
     { name = "wdf-kernel" },
     { name = "wdf-keys" },
     { name = "wdf-migrate" },
+    { name = "wdf-placement" },
     { name = "wdf-plan" },
     { name = "wdf-runtime" },
     { name = "wdf-stages" },
@@ -739,6 +741,7 @@ dev = [
     { name = "wdf-kernel", editable = "packages/kernel" },
     { name = "wdf-keys", editable = "packages/keys" },
     { name = "wdf-migrate", editable = "packages/migrate" },
+    { name = "wdf-placement", editable = "packages/placement" },
     { name = "wdf-plan", editable = "packages/plan" },
     { name = "wdf-runtime", editable = "packages/runtime" },
     { name = "wdf-stages", editable = "packages/stages" },
@@ -1166,6 +1169,17 @@ requires-dist = [
     { name = "pytest" },
     { name = "wdf-itest", editable = "packages/itest" },
 ]
+
+[[package]]
+name = "wdf-placement"
+version = "0.0.0"
+source = { editable = "packages/placement" }
+dependencies = [
+    { name = "wdf-workflow" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "wdf-workflow", editable = "packages/workflow" }]
 
 [[package]]
 name = "wdf-plan"
