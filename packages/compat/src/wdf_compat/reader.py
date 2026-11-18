@@ -4,13 +4,13 @@ import json
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
 from datetime import UTC, date, datetime
-from pathlib import Path
+from importlib.resources.abc import Traversable
 from typing import Any
 
 from wdf_events import MAX_BYTES, Event, EventTooLarge, SchemaInvalid, UnsupportedMajor, from_bytes
 from wdf_events.metrics import registry as metrics
 from wdf_events.models import INTRODUCED
-from wdf_events.profile import CONTRACT_DIR, TYPE_RE, check_event, known_versions
+from wdf_events.profile import CONTRACT, TYPE_RE, check_event, known_versions
 
 from . import window
 
@@ -27,7 +27,7 @@ class Registry:
     `upgrades[(name, major)]` turns a decoded event of that major into a decoded event of the next.
     """
 
-    schemas_dir: Path
+    schemas_dir: Traversable
     introduced: Mapping[tuple[str, int], str]
     upgrades: Mapping[tuple[str, int], Upgrade] = field(default_factory=dict)
 
@@ -38,7 +38,7 @@ class Registry:
 # One upgrade function per major step is added here, next to the model of the new major.
 UPGRADES: dict[tuple[str, int], Upgrade] = {}
 
-CATALOGUE = Registry(CONTRACT_DIR / "schemas", INTRODUCED, UPGRADES)
+CATALOGUE = Registry(CONTRACT / "schemas", INTRODUCED, UPGRADES)
 
 
 def _upgrade(event: Event, registry: Registry, today: date) -> Event:

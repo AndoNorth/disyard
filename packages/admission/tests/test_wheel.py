@@ -8,8 +8,11 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[3]
 
 # What admission reads from its dependencies' package data: the tenancy profile and its intake
-# queues, and the start contract of the workflow.
+# queues, the event schemas its intake decodes with, and the start contract of the workflow.
 PROBE = """
+import sys
+from pathlib import Path
+
 import wdf_admission
 from wdf_broker.tenancy import load
 from wdf_broker.topology import intake_queues
@@ -23,7 +26,9 @@ assert profile.priority_classes == ["standard"]
 assert {queue.rsplit(".", 1)[1] for queue in intake_queues(profile)} == {"standard"}
 assert naming().workflow.type == "JobWorkflow"
 assert QUEUE_PREFIX_MEMO == "wdf_pool_queue_prefix"
+assert read_event(Path(sys.argv[1]).read_bytes()).type == "dev.wdf.job.accepted.v1"
 """
+ACCEPTED = ROOT / "contracts/events/vectors/accepted/valid/accepted.json"
 
 
 def workspace_closure(package: str) -> list[str]:
@@ -58,5 +63,7 @@ def test_wheel_in_a_clean_venv_imports_admission(tmp_path):
     run("uv", "pip", "install", "--python", str(python), *map(str, wheels.glob("*.whl")))
     work = tmp_path / "work"
     work.mkdir()
-    probe = subprocess.run([python, "-I", "-c", PROBE], capture_output=True, text=True, cwd=work)
+    probe = subprocess.run(
+        [python, "-I", "-c", PROBE, ACCEPTED], capture_output=True, text=True, cwd=work
+    )
     assert probe.returncode == 0, probe.stderr
