@@ -57,7 +57,7 @@ def test_emitters_follow_the_stage_split():
         }
         | CONTROL_MOVES
     )
-    assert emitted(stages, "admission") == {"job.admitted", "job.dead.lettered"}
+    assert emitted(stages, "admission") == {"job.admitted", "job.dead.lettered", "job.published"}
     assert emitted(stages, "placement") == emitted(stages, "worker") == set()
     others = {
         "task.requested",
@@ -94,6 +94,11 @@ def test_emitter_sources_agree_with_the_status_projection():
                 assert type_ in {e["type"] for e in owner["emits"]}
 
 
+def drop_published(stages: dict) -> None:
+    for name in ("dispatch", "admission"):
+        stages[name]["emits"] = [e for e in stages[name]["emits"] if e["type"] != "job.published"]
+
+
 @pytest.mark.parametrize(
     ("change", "reason"),
     [
@@ -104,7 +109,7 @@ def test_emitter_sources_agree_with_the_status_projection():
         ),
         (lambda s: s["placement"]["reads"]["data"].update({"task.nosuch": ["x"]}), "unknown-type"),
         (lambda s: s["dispatch"]["emits"][0].update(source="/wdf/control"), "source-mismatch"),
-        (lambda s: s["dispatch"]["emits"].pop(), "unemitted-type"),
+        (drop_published, "unemitted-type"),
         (lambda s: s["control"]["emits"][4].pop("when"), "duplicate-emitter"),
         (lambda s: s.pop("placement"), "schema-violation"),
     ],

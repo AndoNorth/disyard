@@ -1,7 +1,7 @@
 # State contract
 
 Owner epic: #3 (durable state and artifact storage).
-Version: 2
+Version: 3
 Consumers: dispatch (#24), admission (#8), workflow (#6), broker (#7), artifacts (#12), observability (#13) and the characterization and soak epics (#16, #17).
 
 This directory pins the shape of the three table families of the platform, the retention windows of the safety net and the loader of those windows.
@@ -155,7 +155,7 @@ A status value cannot be restricted by a grant, so the trigger and the library k
 | --- | --- | --- |
 | Insert the row and its accepted event, then set the receipt | the submit sequence of the dispatch API, role `wdf_dispatch` | `insert_accepted`, `insert_events`, `mark_published` |
 | Request cancel, pause, resume or terminate, and a row-only move of a job that never started | the control API, role `wdf_control` | `request_action`, `mark_delivered`, `transition(..., row_only=True)` and their events |
-| Claim a job | admission, role `wdf_admission` | `transition(accepted, admitted)` and `insert_events` for the admitted event |
+| Claim a job, and set its receipt when it is still missing as the job's message arrives | admission, role `wdf_admission` | `transition(accepted, admitted)`, `mark_published`, and `insert_events` for the admitted event and, when the claim set the receipt, the published event |
 | Project running, paused and the terminal statuses | the workflow, role `wdf_workflow` | `transition` and `insert_events` for every event except submit, control and admission events |
 | Index a committed reference and a cache entry, link a job to a blob, retire a cache entry | the artifact client, role `wdf_artifacts` | `index_reference`, `record_cache_entry`, `touch_cache_entry`, `link_use`, `invalidate_cache_entry` |
 | Soft delete an expired reference, expire cache entries, purge a tombstoned row, record progress | the reaper, role `wdf_reaper` | `mark_deleted`, `tombstone`, `expired_cache_entries`, `purge`, and the writes of `reaper_job` and `reaper_cursor` |

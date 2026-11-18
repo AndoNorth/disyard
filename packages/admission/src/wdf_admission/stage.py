@@ -11,11 +11,12 @@ SOURCE = "/wdf/admission"
 
 
 def admission(inbound: Any, facts: Facts) -> list[Event]:
-    """One event per type of `facts.emit`, `job.admitted` or `job.dead.lettered`, with the identity
-    of the accepted event `inbound` and the time of `facts`.
+    """One event per type of `facts.emit`, `job.admitted`, `job.published` or `job.dead.lettered`,
+    with the identity of the accepted event `inbound` and the time of `facts`.
 
-    `job.admitted` names the job's workflow, and the data of `job.dead.lettered` is the reason and
-    detail in `facts.data`, which overrides the contract's sample as `Facts` defines.
+    `job.admitted` names the job's workflow, `job.published` carries no data, and the data of
+    `job.dead.lettered` is the reason and detail in `facts.data`, which overrides the contract's
+    sample as `Facts` defines.
     """
     who = {
         "tenant": inbound.tenant,

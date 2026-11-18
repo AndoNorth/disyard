@@ -8,7 +8,9 @@ stages:
     reads: {attributes: [], data: {}}
     emits:
       - {type: job.accepted, source: /wdf/dispatch}
-      - {type: job.published, source: /wdf/dispatch}
+      - type: job.published
+        source: /wdf/dispatch
+        when: the dispatch stage set the receipt after the broker accepted its publish
 
   control:
     source: /wdf/control
@@ -34,6 +36,7 @@ stages:
       - {type: job.admitted, source: /wdf/admission}
       # Nothing is emitted for a message that does not parse far enough to name a job.
       - {type: job.dead.lettered, source: /wdf/admission, when: the rejected message names a job}
+      - {type: job.published, source: /wdf/admission, when: the claim set a missing receipt from a delivered message}
 
   workflow:
     source: /wdf/workflow

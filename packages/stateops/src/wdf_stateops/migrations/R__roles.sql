@@ -35,12 +35,13 @@ GRANT USAGE ON SCHEMA public TO
 GRANT SELECT ON accepted_job, job_transition TO wdf_dispatch, wdf_control, wdf_admission, wdf_workflow;
 GRANT SELECT ON job_status TO wdf_control, wdf_admission, wdf_workflow;
 
--- The submit sequence inserts the row at its defaults and sets the broker receipt.
+-- The submit sequence inserts the row at its defaults and sets the broker receipt, and admission's
+-- claim sets a receipt still missing when the message arrives.
 GRANT INSERT (
     job_id, tenant, submission_key, batch_id, priority_class, job_class, manifest_ref,
     schema_version, traceparent, tracestate, seed, parameters, fingerprint
 ) ON accepted_job TO wdf_dispatch;
-GRANT UPDATE (published_at) ON accepted_job TO wdf_dispatch;
+GRANT UPDATE (published_at) ON accepted_job TO wdf_dispatch, wdf_admission;
 
 -- A guarded move names the status, the terminal time and the requested action it may clear.
 GRANT UPDATE (status, terminal_at, requested_action) ON accepted_job TO

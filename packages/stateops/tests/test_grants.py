@@ -230,11 +230,18 @@ def test_control_role_writes_only_the_control_columns_and_row_only_moves(login, 
     refused(control, "DELETE FROM accepted_job")
 
 
-def test_admission_role_inserts_events_and_moves_to_admitted(login, seeded):
+def test_admission_role_inserts_events_moves_to_admitted_and_sets_the_receipt(login, seeded, appdb):
     admission = login("wdf_admission")
     assert insert_events(admission, [some_event()]).inserted == 1
+    mark_published(admission, seeded)
     assert transition(admission, seeded, "accepted", "admitted") == Moved("admitted")
-    refused(admission, "UPDATE accepted_job SET control_seq = control_seq")
+    with psycopg.connect(appdb) as admin:
+        names = columns(admin, "accepted_job")
+    for column in set(names) - {"status", "terminal_at", "requested_action", "published_at"}:
+        refused(admission, f"UPDATE accepted_job SET {column} = DEFAULT")
+    with pytest.raises(errors.InsufficientPrivilege):
+        insert_accepted(admission, [job_row()])
+    refused(admission, "DELETE FROM accepted_job")
     refused(admission, "UPDATE event SET type = type")
 
 

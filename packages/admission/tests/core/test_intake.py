@@ -15,6 +15,7 @@ from datetime import UTC, datetime
 import psycopg
 import pytest
 from psycopg.conninfo import conninfo_to_dict
+from psycopg.types.json import Jsonb
 from temporalio.service import RPCError, RPCStatusCode
 from wdf_admission.intake import IDLE_S, Intake, Work
 from wdf_admission.policy import Caps, Resume, Snapshot
@@ -24,7 +25,7 @@ from wdf_broker.models import Outcome
 from wdf_broker.tenancy import load
 from wdf_broker.testing.container import broker_container
 from wdf_events import build_event, to_bytes
-from wdf_jobstate import mark_published, transition
+from wdf_jobstate import transition
 
 pytestmark = [pytest.mark.integration, pytest.mark.pair]
 
@@ -472,28 +473,15 @@ def test_no_row_retried_then_admission_failed(
     ).fetchone() == (0,)
 
 
-def test_no_receipt_retried_then_admission_failed(
-    broker, make_intake, rows, starts, clock, seed_event, events, status
-):
-    event = seed_event(published=False)
-    broker.publish(event)
-    intake = make_intake()
-    run_until(
-        intake,
-        rows,
-        clock,
-        lambda: intake.counts["wdf_admission_dead_lettered_total", "ADMISSION_FAILED"],
-    )
-    assert broker.dead_letters(1) == [("ADMISSION_FAILED", f"no-receipt: {event.jobid}")]
-    assert starts.calls == []
-    assert DEAD_LETTERED not in events(event.jobid)
-    assert status(event.jobid) == "accepted"
-
-
 def test_dead_lettered_row_stays_accepted(
     broker, make_intake, rows, starts, clock, seed_event, status, db, tmp_path
 ):
-    event = seed_event(published=False)
+    """A row whose content the event schema refuses fails inside the claim's transaction, so every
+    delivery leaves it at `accepted`, and once repaired a replay of the dead letter admits it."""
+    event = seed_event()
+    move_manifest = "UPDATE accepted_job SET manifest_ref = %s WHERE job_id = %s"
+    elsewhere = {**event.data["manifest"], "uri": "http://elsewhere"}
+    db.execute(move_manifest, (Jsonb(elsewhere), event.jobid))
     broker.publish(event)
     intake = make_intake()
     run_until(
@@ -502,9 +490,11 @@ def test_dead_lettered_row_stays_accepted(
         clock,
         lambda: intake.counts["wdf_admission_dead_lettered_total", "ADMISSION_FAILED"],
     )
-    broker.dead_letters(1)
+    [(reason, detail)] = broker.dead_letters(1)
+    assert (reason, detail.split(": ")[0]) == ("ADMISSION_FAILED", "SchemaInvalid")
+    assert starts.calls == []
     assert status(event.jobid) == "accepted"
-    mark_published(db, event.jobid)
+    db.execute(move_manifest, (Jsonb(event.data["manifest"]), event.jobid))
     (tmp_path / "operator.password").write_text(broker.broker.passwords["operator"])
     replayed = dlq.main(
         ["replay", "--address", broker.broker.address, "--credentials-dir", str(tmp_path)]
