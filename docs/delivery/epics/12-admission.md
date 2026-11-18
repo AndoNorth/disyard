@@ -304,6 +304,7 @@ Departures from the method, stated so the review approves them knowingly:
 - No contract is pinned in lane 0, because the epic order gives #8 none (section 0.4).
 - Lane Needs run across lanes where a test over a stub would prove only the stub: the service runs the policy, the intake loop and the scans (M.1 after P.1, C.2 and S.2), the module needs the service (M.2), and the driver drives the deployed module (V.1 after M.2).
 - Lane W was added by #24's spec review of 2026-11-18, after lane C's issues merged, so it takes over `claim.py`, `stage.py` and their tests from lane C, and it changes the stage contract of #4 and the state contract and grants of #3 through a contract-change PR, as E.3 of #24 changes the state contract.
+  That contract-change PR also touches the stage contract test `packages/stages/tests/test_stages_contract.py`, where the method's cross-lane PR touches `contracts/` only.
 
 | Lane | Workers | Owns (exclusive) | Issues | Needs |
 | --- | --- | --- | --- | --- |
@@ -493,7 +494,7 @@ Lane W, tier T1 (Postgres and the dev server through `wdf_itest`). Needs: C.1, C
   The stage contract gives `job.published` to admission with source `/wdf/admission` and the `when` "the claim set a missing receipt from a delivered message", gives the dispatch entry the `when` "the dispatch stage set the receipt after the broker accepted its publish", updates the README's stage table and its note on types two stages emit, and bumps `VERSION` to 2.
   Admission's new entry leaves `job.published` emitted when dispatch's entry is removed, so the same PR rebuilds the two `unemitted-type` negative cases to remove `job.published` from both dispatch and admission: the `unemitted-type` case of `test_a_broken_table_names_its_reason` in `packages/stages/tests/test_stages_contract.py`, and the vector `contracts/stages/vectors/invalid/unemitted-type/job-published.yaml`.
   The state contract's writers table adds the receipt write to admission's row, and its `VERSION` takes the next number.
-  The status table needs no change, because `job.published` sets no status from either source (`contracts/status/README.md:36`).
+  The status table needs no change, because `job.published` sets no status from either source (`contracts/status/README.md:32`).
   Then the code PR: `GRANT UPDATE (published_at) ON accepted_job TO wdf_admission` in `R__roles.sql`, the claim of D9 in `claim.py`, `RETRIED` left with `no-row` alone, and `stage.admission` building `job.published`.
   `intake.py` is unchanged, because it reads `RETRIED`.
 - Owns: lane W's globs.
@@ -505,6 +506,8 @@ Lane W, tier T1 (Postgres and the dev server through `wdf_itest`). Needs: C.1, C
   - [ ] `pytest packages/admission -v -k "claim_sets_a_missing_receipt_once or claim_with_receipt_records_no_published or claim_and_mark_race_records_one_published or stage_contract_admission"` passes: a claim from a message whose row has no receipt sets it, admits the row and records one `job.published` from `/wdf/admission` with the receipt time; a claim of a row whose receipt is set records none; and a dispatch side emulated by the test, which sets the receipt in one atomic step, `UPDATE accepted_job SET published_at = now() WHERE job_id = %s AND published_at IS NULL RETURNING published_at`, and records `job.published` only when that statement returned a row, racing the claim of a message for one row leaves one receipt and one `job.published`, from whichever set it.
     The emulation keeps W.1 free of E.3 of #24, whose `mark_published` returns the receipt time, and the race with #24's own reconciler is covered by #24's tests.
     `test_claim_refuses_no_receipt` becomes the first of these, and `test_no_receipt_retried_then_admission_failed` is removed with the `no-receipt` dead letter.
+    `test_dead_lettered_row_stays_accepted` in `test_intake.py` dead-letters its row by the missing receipt, so it is rebuilt to dead-letter a row-bearing message by another cause: the recording start fake fails on every delivery up to the last, which is dead-lettered `ADMISSION_FAILED` under Q1's last-delivery rule.
+    The row still stays `accepted` and a replay still admits it, so C.2's criterion that this test passes and a replayed body is claimed and started stays true.
   - [ ] `pytest packages/admission -q -rs` passes with no `SKIPPED` line.
 - Verifier: `packages/admission/tests/core/test_claim.py`, `test_stage.py`, `packages/stateops/tests/test_grants.py`, `packages/stages/tests/test_stages_contract.py`.
 
