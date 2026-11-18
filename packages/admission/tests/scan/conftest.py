@@ -1,13 +1,13 @@
-"""Rows seeded as the dispatch API would, a login of admission's group, a dev server that knows the
-search attributes of naming.yaml, and a rig that runs the job workflow on it, whose `emit` writes
-the real job row, so a job pauses and resumes in the row that admission reads."""
+"""Rows seeded and moved as the dispatch and control APIs would, a login of admission's group, a dev
+server that knows the search attributes of naming.yaml, and a rig that runs the job workflow on it,
+whose `emit` writes the real job row, so a job pauses and resumes in the row admission reads."""
 
 import asyncio
 import os
 import time
 import uuid
 from concurrent.futures import ThreadPoolExecutor
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 import psycopg
 import pytest
@@ -22,7 +22,7 @@ from temporalio.worker import Worker, WorkerDeploymentConfig
 from wdf_events import build_event
 from wdf_eventstore import insert_events
 from wdf_jobdoc.plan_models import Plan
-from wdf_jobstate import JobRow, insert_accepted, mark_published
+from wdf_jobstate import JobRow, insert_accepted, mark_published, request_action, transition
 from wdf_temporal import event_data_converter, new_traceparent, tracing_interceptor
 from wdf_workflow import versioning
 from wdf_workflow.activities import Emitter
@@ -41,6 +41,18 @@ SHA = "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08"
 TYPES = {
     "keyword": IndexedValueType.INDEXED_VALUE_TYPE_KEYWORD,
     "datetime": IndexedValueType.INDEXED_VALUE_TYPE_DATETIME,
+}
+# The moves that take a freshly claimed row to each status, made as the workflow and control would.
+MOVES = {
+    "admitted": [],
+    "running": [("admitted", "running")],
+    "paused": [("admitted", "running"), ("running", "paused")],
+    "resume-pending": [
+        ("admitted", "running"),
+        ("running", "paused"),
+        ("paused", "resume-pending"),
+    ],
+    "succeeded": [("admitted", "running"), ("running", "succeeded")],
 }
 
 
@@ -91,14 +103,14 @@ def one_task(params: dict) -> LoadedPlan:
     return LoadedPlan(plan=plan, max_history_events=10_000)
 
 
-def accepted_event(job_id: str):
+def accepted_event(job_id: str, tenant: str = "acme", job_class: str = "short"):
     return build_event(
         "job.accepted",
         source="/wdf/dispatch",
-        tenant="acme",
+        tenant=tenant,
         jobid=job_id,
         priorityclass="standard",
-        jobclass="short",
+        jobclass=job_class,
         traceparent=new_traceparent(),
         tracestate="vendor=1",
         time=datetime.now(UTC),
@@ -135,36 +147,107 @@ def db(appdb):
 
 
 @pytest.fixture
-def admission_db(appdb, db):
-    """A connection of a fresh login in `wdf_admission`, the group of admission's service login."""
-    user = f"admission_{time.time_ns()}"
-    db.execute(
-        sql.SQL("CREATE ROLE {} LOGIN PASSWORD 'standin' IN ROLE wdf_admission").format(
-            sql.Identifier(user)
+def login(appdb, db):
+    """Connects fresh logins in `wdf_admission`, the group of admission's service login."""
+    users = []
+
+    def connected() -> psycopg.Connection:
+        user = f"admission_{time.time_ns()}"
+        db.execute(
+            sql.SQL("CREATE ROLE {} LOGIN PASSWORD 'standin' IN ROLE wdf_admission").format(
+                sql.Identifier(user)
+            )
         )
-    )
-    with psycopg.connect(
-        make_conninfo(appdb, user=user, password="standin"), autocommit=True
-    ) as connection:
+        users.append(user)
+        return psycopg.connect(make_conninfo(appdb, user=user, password="standin"), autocommit=True)
+
+    yield connected
+    for user in users:
+        db.execute(sql.SQL("DROP OWNED BY {}").format(sql.Identifier(user)))
+        db.execute(sql.SQL("DROP ROLE {}").format(sql.Identifier(user)))
+
+
+@pytest.fixture
+def admission_db(login):
+    with login() as connection:
         yield connection
-    db.execute(sql.SQL("DROP OWNED BY {}").format(sql.Identifier(user)))
-    db.execute(sql.SQL("DROP ROLE {}").format(sql.Identifier(user)))
 
 
 @pytest.fixture
 def seed(db):
-    """A row and its accepted event, inserted in one transaction and then marked published, as the
-    submit sequence does, and the job id."""
+    """Inserts a row and its accepted event in one transaction and marks it published, as the
+    submit sequence does, then moves it to `status`, and returns the job id. `published=False`
+    stops before the mark."""
 
-    def insert() -> str:
-        event = accepted_event(str(uuid.uuid4()))
+    def insert(
+        status: str = "accepted",
+        tenant: str = "acme",
+        job_class: str = "short",
+        published: bool = True,
+    ) -> str:
+        event = accepted_event(str(uuid.uuid4()), tenant, job_class)
+        job_id = event.jobid
         with db.transaction():
             insert_accepted(db, [row_of(event)])
             insert_events(db, [event])
-        mark_published(db, event.jobid)
-        return event.jobid
+        if published:
+            mark_published(db, job_id)
+        if status == "accepted":
+            return job_id
+        transition(db, job_id, "accepted", "admitted")
+        for expected, to in MOVES[status]:
+            if to == "paused":
+                request_action(db, job_id, "pause")
+            if to == "resume-pending":
+                request_action(db, job_id, "resume")
+            transition(db, job_id, expected, to)
+        return job_id
 
     return insert
+
+
+@pytest.fixture
+def resume_before_start(db):
+    """Pauses and resumes a job that never started, as the control API does with its row-only moves,
+    which leaves the row at `accepted` with a control sequence and no outstanding action."""
+
+    def resume(job_id: str) -> None:
+        request_action(db, job_id, "pause")
+        transition(db, job_id, "accepted", "paused", row_only=True)
+        request_action(db, job_id, "resume")
+        transition(db, job_id, "paused", "resume-pending")
+        transition(db, job_id, "resume-pending", "accepted", row_only=True)
+
+    return resume
+
+
+@pytest.fixture
+def age(db):
+    """Sets a row's `updated_at` that long ago, past the trigger that sets it on every update."""
+
+    def set_age(job_id: str, ago: timedelta) -> None:
+        with db.transaction():
+            db.execute("SET LOCAL session_replication_role = replica")
+            db.execute(
+                "UPDATE accepted_job SET updated_at = now() - %s WHERE job_id = %s", (ago, job_id)
+            )
+
+    return set_age
+
+
+@pytest.fixture
+def status(db):
+    return lambda job_id: db.execute(
+        "SELECT status FROM accepted_job WHERE job_id = %s", (job_id,)
+    ).fetchone()[0]
+
+
+@pytest.fixture
+def admitted_events(db):
+    return lambda job_id: db.execute(
+        "SELECT count(*) FROM event WHERE job_id = %s AND type = 'dev.wdf.job.admitted.v1'",
+        (job_id,),
+    ).fetchone()[0]
 
 
 @pytest.fixture(scope="module")
