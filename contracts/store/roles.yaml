@@ -9,7 +9,7 @@ roles:
     wdf-results: [bucket, lifecycle]
     wdf-checkpoints: [bucket, lifecycle]
   submit:
-    wdf-sources: [put, multipart]
+    wdf-sources: [get, list, put, multipart]
   indexer:
     wdf-sources: [put, multipart]
   compile:

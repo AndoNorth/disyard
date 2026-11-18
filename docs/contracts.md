@@ -26,7 +26,7 @@ Epic numbers link to the epic issues on GitHub.
 | [events](../contracts/events/README.md) | #4 | `packages/events` and `packages/keys` generate the data schemas and the key formulas | every epic | PoC-essential interface |
 | [job](../contracts/job/README.md) | #5 | `packages/jobdoc` and its sibling packages generate the schemas, registry and limits schema | #24, #6, #8, #9, #3, #14, #15, #17 | PoC-essential interface |
 | [artifact](../contracts/artifact/README.md) | #4, extended by #12 | the `wdf_artifactclient` models generate the failure, staging, retention and index schemas | #3, #4, #5, #6, #10, #11, #13, #15, #16, #17, #18, #24 | PoC-essential interface |
-| [store](../contracts/store/README.md) | #3 | `packages/storecheck` generates the schema from its models | #12, #13, #16, #17, the object store module and the store contract script | PoC-essential interface |
+| [store](../contracts/store/README.md) | #3 | `packages/storecheck` generates the schema from its models | #12, #13, #16, #17, #24, the object store module and the store contract script | PoC-essential interface |
 | [topology](../contracts/topology/README.md) | #2 | a hand-written table, validated by its schema | placement and workers, observability, load and chaos, and the cluster work of #2 | PoC-essential interface |
 | [module](../contracts/module/README.md) | #2 | each component ships its own `deploy/<component>/module.yaml` | the epics that ship an infrastructure component, and the Tilt skeleton | PoC-essential interface |
 | [activity](../contracts/activity/README.md) | #6 | the `wdf_workflow` models generate the task input, task result, failure details, heartbeat and failure class schemas | #9, #10, #13, #15, #18 | PoC-essential interface |
