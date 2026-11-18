@@ -34,14 +34,16 @@ TYPES = {
 }
 
 
-def accepted_event(job_id: str):
+def accepted_event(
+    job_id: str, tenant: str = "acme", priorityclass: str = "standard", jobclass: str = "short"
+):
     return build_event(
         "job.accepted",
         source="/wdf/dispatch",
-        tenant="acme",
+        tenant=tenant,
         jobid=job_id,
-        priorityclass="standard",
-        jobclass="short",
+        priorityclass=priorityclass,
+        jobclass=jobclass,
         traceparent=new_traceparent(),
         tracestate="vendor=1",
         time=datetime.now(UTC),
@@ -78,37 +80,47 @@ def db(appdb):
 
 
 @pytest.fixture
-def admission_db(appdb, db):
-    """A connection of a fresh login in `wdf_admission`, the group of admission's service login."""
+def admission_dsn(appdb, db):
+    """The DSN of a fresh login in `wdf_admission`, the group of admission's service login."""
     user = f"admission_{time.time_ns()}"
     db.execute(
         sql.SQL("CREATE ROLE {} LOGIN PASSWORD 'standin' IN ROLE wdf_admission").format(
             sql.Identifier(user)
         )
     )
-    with psycopg.connect(
-        make_conninfo(appdb, user=user, password="standin"), autocommit=True
-    ) as connection:
-        yield connection
+    yield make_conninfo(appdb, user=user, password="standin")
+    db.execute("SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE usename = %s", (user,))
     db.execute(sql.SQL("DROP OWNED BY {}").format(sql.Identifier(user)))
     db.execute(sql.SQL("DROP ROLE {}").format(sql.Identifier(user)))
 
 
 @pytest.fixture
-def seed(db):
-    """A row and its accepted event, inserted in one transaction and then marked published, as the
-    submit sequence does, and the job id. `published=False` stops before the mark."""
+def admission_db(admission_dsn):
+    with psycopg.connect(admission_dsn, autocommit=True) as connection:
+        yield connection
 
-    def insert(published: bool = True) -> str:
-        event = accepted_event(str(uuid.uuid4()))
+
+@pytest.fixture
+def seed_event(db):
+    """A row and its accepted event, inserted in one transaction and then marked published, as the
+    submit sequence does, and the event. `published=False` stops before the mark."""
+
+    def insert(published: bool = True, tenant: str = "acme", jobclass: str = "short"):
+        event = accepted_event(str(uuid.uuid4()), tenant=tenant, jobclass=jobclass)
         with db.transaction():
             insert_accepted(db, [row_of(event)])
             insert_events(db, [event])
         if published:
             mark_published(db, event.jobid)
-        return event.jobid
+        return event
 
     return insert
+
+
+@pytest.fixture
+def seed(seed_event):
+    """The job id of a row seeded by `seed_event`."""
+    return lambda published=True: seed_event(published).jobid
 
 
 @pytest.fixture
@@ -167,3 +179,9 @@ def client(server):
         )
 
     return connected
+
+
+@pytest.fixture
+def accepted_event_of():
+    """Builds an accepted event as dispatch would, for a job that may have no row."""
+    return accepted_event
