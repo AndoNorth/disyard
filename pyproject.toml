@@ -30,6 +30,7 @@ wdf-jobtools = { workspace = true }
 wdf-kernel = { workspace = true }
 wdf-keys = { workspace = true }
 wdf-migrate = { workspace = true }
+wdf-placement = { workspace = true }
 wdf-plan = { workspace = true }
 wdf-runtime = { workspace = true }
 wdf-stages = { workspace = true }
@@ -65,6 +66,7 @@ dev = [
     "wdf-kernel",
     "wdf-keys",
     "wdf-migrate",
+    "wdf-placement",
     "wdf-plan",
     "wdf-runtime",
     "wdf-stages",
