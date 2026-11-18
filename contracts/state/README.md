@@ -1,7 +1,7 @@
 # State contract
 
 Owner epic: #3 (durable state and artifact storage).
-Version: 3
+Version: 4
 Consumers: dispatch (#24), admission (#8), workflow (#6), broker (#7), artifacts (#12), observability (#13) and the characterization and soak epics (#16, #17).
 
 This directory pins the shape of the three table families of the platform, the retention windows of the safety net and the loader of those windows.
@@ -153,12 +153,21 @@ A status value cannot be restricted by a grant, so the trigger and the library k
 
 | Change | Writer | Statement |
 | --- | --- | --- |
-| Insert the row and its accepted event, then set the receipt | the submit sequence of the dispatch API, role `wdf_dispatch` | `insert_accepted`, `insert_events`, `mark_published` |
-| Request cancel, pause, resume or terminate, and a row-only move of a job that never started | the control API, role `wdf_control` | `request_action`, `mark_delivered`, `transition(..., row_only=True)` and their events |
+| Insert the row and its accepted event, then set the receipt and record the published event when it set it | the submit sequence of the dispatch API, role `wdf_dispatch` | `insert_accepted`, `insert_events`, `mark_published` |
+| Lock the row for a control decision, request cancel, pause, resume or terminate, set or clear the pending patch of a resume, and a row-only move of a job that never started | the control API, role `wdf_control` | `lock_job`, `request_action`, `mark_delivered`, `set_pending_patch`, `transition(..., row_only=True)` and their events |
 | Claim a job, and set its receipt when it is still missing as the job's message arrives | admission, role `wdf_admission` | `transition(accepted, admitted)`, `mark_published`, and `insert_events` for the admitted event and, when the claim set the receipt, the published event |
 | Project running, paused and the terminal statuses | the workflow, role `wdf_workflow` | `transition` and `insert_events` for every event except submit, control and admission events |
 | Index a committed reference and a cache entry, link a job to a blob, retire a cache entry | the artifact client, role `wdf_artifacts` | `index_reference`, `record_cache_entry`, `touch_cache_entry`, `link_use`, `invalidate_cache_entry` |
 | Soft delete an expired reference, expire cache entries, purge a tombstoned row, record progress | the reaper, role `wdf_reaper` | `mark_deleted`, `tombstone`, `expired_cache_entries`, `purge`, and the writes of `reaper_job` and `reaper_cursor` |
+
+`mark_published(conn, job_id)` sets the receipt only while it is null, and returns the receipt time when this call set it and `None` when a receipt was already there.
+Only the writer whose call returned a time records `job.published`, with that time, so a job gets one `job.published` whichever writer set its receipt.
+`lock_job(conn, job_id)` reads the row `FOR UPDATE` inside the caller's transaction and returns it, or `None` when no row has the id.
+A control decision is taken on the locked row and written in the same transaction, so it cannot interleave with a claim or with another control request, and a guarded move by another writer waits for the commit and then sees the committed status.
+`set_pending_patch(conn, job_id, control_seq, ref)` writes `pending_patch_ref`, or clears it when `ref` is `None`, only while `requested_action` is `resume` and `control_seq` equals the given sequence.
+It returns nothing when it wrote, and `Lost` with the row's status when the resume of that sequence is no longer outstanding, so a patch never lands under a newer request or after the resume was applied.
+`mark_published` and `set_pending_patch` raise `JobNotFound` when no row has the id, as the other calls of the library do.
+The grants refuse `set_pending_patch` to every role but `wdf_control`, the one role that updates `pending_patch_ref`.
 
 The artifact role holds `select` on `artifact` and `artifact_use`, `insert` on the columns of a reference and of a cache entry including `build_info_uri`, and `insert` on `artifact_use`.
 It updates `last_used_at`, `deleted_at`, `purged_at` and `cache_key` of `artifact`, which are a touch, a revive, a revive of a purged row and the retired key of an invalidation, and `last_linked_at` of `artifact_use`, which a retried link renews.
