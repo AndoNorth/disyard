@@ -313,7 +313,7 @@ Departures from the method, stated so the review approves them knowingly:
 | S Scans and resumes | 1 | `packages/admission/src/wdf_admission/{scan,resume}.py`, `packages/admission/tests/scan/**` | S.1, S.2 | C.1 |
 | M Service and module | 1 | `packages/admission/src/wdf_admission/service/**`, `packages/admission/tests/service/**`, `deploy/admission/**` (module `admission`, `Tiltfile.module`, `Dockerfile`, `image.sh`, `logins.py`, `logins.sh`, render and login tests, `README.md`), the `deploy/admission` entry of `TREES` in `packages/migrate/tests/test_credentials.py`, the `admission` entry of the reserve loop in `scripts/cluster/test_budget.py` (decision 21) | M.1, M.2 | P.1, C.2 and S.2 for M.1, M.1 for M.2 |
 | V Driver | 1 | `packages/admission/src/wdf_admission/drive/**`, `packages/admission/tests/drive/**` | V.1 | M.2 |
-| W Receipt from a delivered message | 1 | `contracts/stages/{stages.yaml,README.md,VERSION}` and each vector under `contracts/stages/vectors/` that copies the table, `contracts/state/{README.md,VERSION}` (shared with E.3 of #24), the `published_at` grant line of `packages/stateops/src/wdf_stateops/migrations/R__roles.sql`, the admission test of `packages/stateops/tests/test_grants.py`, and, taken over from lane C, `packages/admission/src/wdf_admission/{claim,stage}.py` and `packages/admission/tests/core/test_{claim,intake,stage}.py` | W.1 | C.1, C.2 and S.2, all merged |
+| W Receipt from a delivered message | 1 | `contracts/stages/{stages.yaml,README.md,VERSION}` and each vector under `contracts/stages/vectors/` that copies the table, the stage contract test `packages/stages/tests/test_stages_contract.py`, `contracts/state/{README.md,VERSION}` (shared with E.3 of #24), the `published_at` grant line of `packages/stateops/src/wdf_stateops/migrations/R__roles.sql`, the admission test of `packages/stateops/tests/test_grants.py`, and, taken over from lane C, `packages/admission/src/wdf_admission/{claim,stage}.py` and `packages/admission/tests/core/test_{claim,intake,stage}.py` | W.1 | C.1, C.2 and S.2, all merged |
 
 Shared-file rules:
 
@@ -327,7 +327,7 @@ Shared-file rules:
 - `contracts/state/{README.md,VERSION}` change in W.1 and in E.3 of #24 (`13-dispatch-api.md` section 3), so whichever lands second rebases onto the first and takes the next state version.
 - `scripts/cluster/test_budget.py` changes only in M.2, by moving `admission` out of the reserve loop of `test_ci_infra_node_figures` (decision 21).
 - No file under `deploy/admission/` other than `module.yaml` and Kubernetes manifests is YAML (D16).
-- `justfile`, `just/*.just`, `.github/**`, `nix/**`, `scripts/**` other than the line of decision 21, `docs/dev-setup.md`, `deploy/host/ports.yaml`, `deploy/versions.yaml`, `contracts/**` other than lane W's files, every other package except lane W's two lines of `packages/stateops`, and every other `deploy/` directory are not touched.
+- `justfile`, `just/*.just`, `.github/**`, `nix/**`, `scripts/**` other than the line of decision 21, `docs/dev-setup.md`, `deploy/host/ports.yaml`, `deploy/versions.yaml`, `contracts/**` other than lane W's files, every other package except lane W's two lines of `packages/stateops` and its stage contract test `packages/stages/tests/test_stages_contract.py`, and every other `deploy/` directory are not touched.
   Admission needs no host port: the driver reaches the cluster through `kubectl port-forward` bound to 127.0.0.1.
 - No tracked file holds a credential: the login password comes from the state directory, and the broker password from #7's helper (A6).
 
@@ -489,7 +489,7 @@ Lane V, tier T2. Needs: M.2. Blocks: the exit test.
 Lane W, tier T1 (Postgres and the dev server through `wdf_itest`). Needs: C.1, C.2 and S.2, all merged. Blocks: the exit test.
 
 - Scope: the claim of D9 for a row with no receipt, in two PRs.
-  First a contract-change PR, labelled `contract-change`, touching `contracts/` only, with a comment listing the consumers of the stage and state contracts.
+  First a contract-change PR, labelled `contract-change`, touching `contracts/` and `packages/stages/tests/test_stages_contract.py` only, with a comment listing the consumers of the stage and state contracts.
   The stage contract gives `job.published` to admission with source `/wdf/admission` and the `when` "the claim set a missing receipt from a delivered message", gives the dispatch entry the `when` "the dispatch stage set the receipt after the broker accepted its publish", updates the README's stage table and its note on types two stages emit, and bumps `VERSION` to 2.
   The state contract's writers table adds the receipt write to admission's row, and its `VERSION` takes the next number.
   The status table needs no change, because `job.published` sets no status from either source (`contracts/status/README.md:36`).
@@ -499,12 +499,13 @@ Lane W, tier T1 (Postgres and the dev server through `wdf_itest`). Needs: C.1, C
 - Consumes / produces: state v2, stages v1.
   Produces stages v2, the next state version, and `job.published` from `/wdf/admission`.
 - Acceptance criteria:
-  - [ ] `contracts/stages/check.sh contracts/stages/stages.yaml` exits 0, and `pytest packages/stages -q -rs` passes with no `SKIPPED` line.
+  - [ ] `contracts/stages/check.sh contracts/stages/stages.yaml` exits 0, and `pytest packages/stages -q -rs` passes with no `SKIPPED` line, with `test_emitters_follow_the_stage_split` expecting admission to emit `job.admitted`, `job.dead.lettered` and `job.published`.
   - [ ] `pytest packages/stateops -v -k admission_role` passes against Postgres: `wdf_admission` sets `published_at` and is still refused every column it could not write before.
-  - [ ] `pytest packages/admission -v -k "claim_sets_a_missing_receipt_once or claim_with_receipt_records_no_published or claim_and_mark_race_records_one_published or stage_contract_admission"` passes: a claim from a message whose row has no receipt sets it, admits the row and records one `job.published` from `/wdf/admission` with the receipt time; a claim of a row whose receipt is set records none; and dispatch's `mark_published`, as #24's reconciler calls it, racing the claim of a message for one row leaves one receipt and one `job.published`, from whichever set it.
+  - [ ] `pytest packages/admission -v -k "claim_sets_a_missing_receipt_once or claim_with_receipt_records_no_published or claim_and_mark_race_records_one_published or stage_contract_admission"` passes: a claim from a message whose row has no receipt sets it, admits the row and records one `job.published` from `/wdf/admission` with the receipt time; a claim of a row whose receipt is set records none; and a dispatch side emulated by the test, which calls `mark_published` and records `job.published` only when it read `published_at` null before the call and set after it, racing the claim of a message for one row leaves one receipt and one `job.published`, from whichever set it.
+    The emulation keeps W.1 free of E.3 of #24, whose `mark_published` returns the receipt time, and the race with #24's own reconciler is covered by #24's tests.
     `test_claim_refuses_no_receipt` becomes the first of these, and `test_no_receipt_retried_then_admission_failed` is removed with the `no-receipt` dead letter.
   - [ ] `pytest packages/admission -q -rs` passes with no `SKIPPED` line.
-- Verifier: `packages/admission/tests/core/test_claim.py`, `test_stage.py`, `packages/stateops/tests/test_grants.py`.
+- Verifier: `packages/admission/tests/core/test_claim.py`, `test_stage.py`, `packages/stateops/tests/test_grants.py`, `packages/stages/tests/test_stages_contract.py`.
 
 ## 5. Order, stubs and spikes
 
@@ -554,7 +555,7 @@ Row 10's invariant check opens `kubectl --context kind-wdf -n wdf-infra port-for
 | 2 | `pytest packages/admission -v -k wheel` | the wheel test passes, importing `wdf_admission` outside the repository |
 | 3 | `scripts/check-contracts-map.sh`, `scripts/export-diagrams.sh --check`, then diagrams 10 and 17 opened | exit 0 for each, and diagram 10 shows the refinements of 0.1 (issue), checked by eye because an export gives every file one time |
 | 4 | `pytest packages/admission -q -rs` | passes with no `SKIPPED` line |
-| 5 | `pytest packages/admission -v -k "claim_commits_before_start or already_started_is_duplicate or rebuilt_accepted_matches_stored or start_options_match_naming or stage_contract_admission or malformed_dead_lettered or unsupported_major_dead_lettered or last_delivery_admission_failed or outage_releases_uncounted or breaker_opens_and_closes or resume_sent_with_row_seq or resume_and_cancel_same_seq_cancel_wins or resumed_before_start_readmitted or stuck_admitted_started or service_caps_hold or service_restart_recovers or flooding_tenant_cannot_starve_quiet_one or claim_sets_a_missing_receipt_once or claim_with_receipt_records_no_published or claim_and_mark_race_records_one_published"` | each named test is listed `PASSED` |
+| 5 | `pytest packages/admission -v -k "claim_commits_before_start or already_started_is_duplicate or rebuilt_accepted_matches_stored or start_options_match_naming or stage_contract_admission or malformed_dead_lettered or unsupported_major_dead_lettered or last_delivery_admission_failed or outage_releases_uncounted or breaker_opens_and_closes or resume_sent_with_row_seq or resume_and_cancel_same_seq_cancel_wins or resumed_before_start_readmitted or stuck_admitted_started or service_caps_hold or service_restart_recovers or flooding_tenant_cannot_starve_quiet_one or claim_sets_a_missing_receipt_once or claim_with_receipt_records_no_published or claim_and_mark_race_records_one_published"` | each named test is listed `PASSED`, `claim_and_mark_race_records_one_published` with the dispatch side emulated as W.1 states |
 | 6 | `pytest deploy/admission -v` | the render and login tests pass |
 | 7 | `just up`, `WDF_BUILD_ID=exit-a scripts/tilt/run.sh ci`, `kubectl --context kind-wdf -n wdf-control get pods`, `kubectl --context kind-wdf -n wdf-control logs deploy/admission`, `just cluster-verify` | exit 0 with `rabbitmq`, `workflow-worker` and `admission` ready among every `ci` module, the log showing admission polling its queues, and an `ok` line for each check of `cluster-verify` |
 | 8 | `D smoke --jobs 500 --global-cap 20` | `queue_prefix:` with a fresh `h-<8 hex>-` prefix, `published: 500`, `finished: 500`, `failed: 0`, `max_live:` at most 20, `duplicates: 0` |
