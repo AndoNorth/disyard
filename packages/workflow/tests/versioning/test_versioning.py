@@ -21,8 +21,8 @@ from temporalio.api.enums.v1 import EventType, TaskQueueType, WorkflowTaskFailed
 from temporalio.api.taskqueue.v1 import TaskQueue
 from temporalio.api.workflowservice.v1 import DescribeTaskQueueRequest
 from temporalio.client import Client, WorkflowHandle, WorkflowQueryFailedError
-from temporalio.common import VersioningBehavior, WorkerDeploymentVersion
-from temporalio.worker import UnsandboxedWorkflowRunner, Worker, WorkerDeploymentConfig
+from temporalio.common import VersioningBehavior
+from temporalio.worker import UnsandboxedWorkflowRunner, Worker
 from temporalio.worker.workflow_sandbox import SandboxedWorkflowRunner
 from wdf_artifactreaper import schedule
 from wdf_events import Event, build_event
@@ -32,10 +32,11 @@ from wdf_keys import workflow_id
 from wdf_workflow import versioning
 from wdf_workflow.contract import naming
 from wdf_workflow.job import JobWorkflow
-from wdf_workflow.placement import StaticPlacer, place_activity
+from wdf_workflow.placement import StaticPlacer
 from wdf_workflow.service import Config, serve
 from wdf_workflow.testing import Fail, FakeControl, FakePool, Succeed, connect
 from wdf_workflow.testing.control import Emit, Emitted, LoadedPlan
+from wdf_workflow.worker import workflow_worker
 
 pytestmark = pytest.mark.integration
 
@@ -146,20 +147,17 @@ def plan(checkpoint: bool = False) -> Plan:
 
 def build_worker(client: Client, build_id: str, control: FakeControl, workflow_class=JobWorkflow):
     """The versioned workflow worker of a build, as the service runs it."""
-    return Worker(
+    return workflow_worker(
         client,
-        task_queue=naming().workflow.queue,
+        build_id,
+        StaticPlacer(),
+        control.emit,
         workflows=[workflow_class],
-        activities=[place_activity(StaticPlacer()), control.emit],
         # The unguarded build is defined in this module, which the sandbox cannot re-import.
         workflow_runner=(
             SandboxedWorkflowRunner()
             if workflow_class is JobWorkflow
             else UnsandboxedWorkflowRunner()
-        ),
-        deployment_config=WorkerDeploymentConfig(
-            version=WorkerDeploymentVersion(naming().workflow.deployment, build_id),
-            use_worker_versioning=True,
         ),
     )
 

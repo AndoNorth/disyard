@@ -1,8 +1,6 @@
 """StaticPlacer passes the placer contract, the contract refuses a placer that breaks it, and the
 `place` local activity answers with the placer's verdict."""
 
-import asyncio
-
 import pytest
 from temporalio.testing import ActivityEnvironment
 from wdf_workflow.contract import naming
@@ -111,8 +109,8 @@ def test_placer_contract_refuses_a_placer_that_breaks_it(change, message):
 def test_place_local_activity_answers_with_the_placer():
     assert ACTIVITY in {a.name for a in naming().activities.local}
     place = place_activity(StaticPlacer())
-    result = asyncio.run(ActivityEnvironment().run(place, SIMULATE, False))
+    result = ActivityEnvironment().run(place, SIMULATE, False)
     assert result == PlaceResult(StaticPlacer().place(SIMULATE))
     too_big = SIMULATE.model_copy(update={"memory_mib": 4096})
-    refused = asyncio.run(ActivityEnvironment().run(place, too_big, True))
+    refused = ActivityEnvironment().run(place, too_big, True)
     assert refused.root.failure == "insufficient_memory"

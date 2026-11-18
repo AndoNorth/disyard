@@ -20,8 +20,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from temporalio.client import Client, WorkflowHandle
-from temporalio.common import WorkerDeploymentVersion
-from temporalio.worker import Worker, WorkerDeploymentConfig
+from temporalio.worker import Worker
 from wdf_events import Event, build_event
 from wdf_events.models import JobParams
 from wdf_jobdoc.plan_models import Plan
@@ -32,10 +31,11 @@ from wdf_workflow import versioning
 from wdf_workflow.contract import naming
 from wdf_workflow.job import JobWorkflow
 from wdf_workflow.models import ControlSignal, ResumeSignal
-from wdf_workflow.placement import StaticPlacer, place_activity
+from wdf_workflow.placement import StaticPlacer
 from wdf_workflow.taskpath import control_queue
 from wdf_workflow.testing import Fail, FakeControl, FakePool, Hang, Succeed
 from wdf_workflow.testing.control import LoadedPlan
+from wdf_workflow.worker import workflow_worker
 
 CORPUS = Path(__file__).resolve().parents[2] / "corpus"
 HASH = "a" * 64
@@ -143,16 +143,7 @@ class Rig:
         self.control = FakeControl()
         self.scripts: dict[str, Callable] = {}
         self.workers = [
-            Worker(
-                client,
-                task_queue=naming().workflow.queue,
-                workflows=[JobWorkflow],
-                activities=[place_activity(StaticPlacer()), self.control.emit],
-                deployment_config=WorkerDeploymentConfig(
-                    version=WorkerDeploymentVersion(naming().workflow.deployment, build),
-                    use_worker_versioning=True,
-                ),
-            ),
+            workflow_worker(client, build, StaticPlacer(), self.control.emit),
             Worker(
                 client,
                 task_queue=control_queue(),
