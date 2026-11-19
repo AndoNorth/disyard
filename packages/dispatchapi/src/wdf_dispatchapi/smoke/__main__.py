@@ -6,7 +6,8 @@ host ports of the two listeners and the `kind-wdf` context by default. `upload` 
 and `already_present:`, `submit` prints `accepted:`, `duplicate_on_resend:` and `unknown_tenant:`,
 `cancel-before-start` prints `row_only:`, `status:` and `workflow:`, `run` prints `status:` and
 `results:`, `pause-resume` and `cancel-running` print `seen:`, and `restart` prints `rows:`,
-`accepted_events:`, `lost:`, `doubled:`, `dlq:` and `unpublished:`.
+`accepted_events:`, `lost:`, `doubled:`, `dlq:`, `unpublished_at:` as the backlog falls,
+`unpublished_rises:` and `unpublished:`.
 
 Exit 0 when the scenario showed what it expects, 1 when it did not or a call it relies on answered
 otherwise, 2 for a usage error or a cluster it cannot reach, with the reason on stderr.

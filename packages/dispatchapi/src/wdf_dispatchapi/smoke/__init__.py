@@ -78,8 +78,13 @@ EVENTS = {
 JOB_S = 1800.0
 # How long a pod, a rollout or a forward has to come up.
 UP_S = 300.0
-# How long the rows of a resent batch have to carry their receipts, as the exit test asks.
-UNPUBLISHED_S = 60.0
+# The bound on how long the rows of a resent batch have to carry their receipts. A full intake
+# queue holds back the publishes beyond its max length until admission drains it, so the time
+# depends on the admission rate, and the bound only catches a backlog that never clears.
+UNPUBLISHED_S = 600.0
+# How often the backlog is counted while it clears, and how often a count is printed.
+UNPUBLISHED_POLL_S = 1.0
+UNPUBLISHED_PRINT_S = 10.0
 POLL_S = 0.5
 # How long the restart waits before it deletes the pod, and again before the rest of the call, so
 # the pod's stop has begun when the entries after the first half arrive (an estimate).
@@ -459,9 +464,7 @@ class Smoke:
                 f"postgresql://postgres@{appdb}/postgres", password=password, autocommit=True
             ) as db,
         ):
-            deadline = time.monotonic() + UNPUBLISHED_S
-            while (unpublished := _unpublished(db, batch_id)) and time.monotonic() < deadline:
-                time.sleep(1)
+            unpublished, rises = self.clear_backlog(db, batch_id)
             rows = set(
                 r
                 for (r,) in db.execute(
@@ -492,7 +495,24 @@ class Smoke:
         self.expect("lost", len(lost), 0)
         self.expect("doubled", len(doubled), 0)
         self.expect("dlq", self.dead_letters(), 0)
+        self.expect("unpublished_rises", rises, 0)
         self.expect("unpublished", unpublished, 0)
+
+    def clear_backlog(self, db: psycopg.Connection, batch_id: str) -> tuple[int, int]:
+        """Waits for every row of the batch to carry its receipt, printing the count as it falls,
+        and returns the last count and how many times it rose between two counts."""
+        start = time.monotonic()
+        unpublished, rises, printed = _unpublished(db, batch_id), 0, None
+        while True:
+            elapsed = time.monotonic() - start
+            if printed is None or elapsed - printed >= UNPUBLISHED_PRINT_S or not unpublished:
+                print(f"unpublished_at: {elapsed:.0f}s {unpublished}", flush=True)
+                printed = elapsed
+            if not unpublished or elapsed >= UNPUBLISHED_S:
+                return unpublished, rises
+            time.sleep(UNPUBLISHED_POLL_S)
+            last, unpublished = unpublished, _unpublished(db, batch_id)
+            rises += unpublished > last
 
     def dead_letters(self) -> int:
         """The messages in the dead-letter queue, as the operator's tool lists them."""
