@@ -109,6 +109,26 @@ nodeRegistration:
 PATCH
 }
 
+# etcd_patch: the nodes share one host disk, and while a fresh cluster pulls images and starts its databases an etcd
+# write stalls for seconds. The API server's etcd health checks then time out, and Tilt takes a failed /livez or
+# /readyz as a dead cluster and stops. etcd skips fsync, which removes the longest stalls; the cluster is disposable,
+# so a host crash, the only event that loses unsynced writes, costs a just nuke and just up. The etcd checks wait
+# 8 s for the write stalls left, which stays under the 10 s Tilt allows one health request.
+etcd_patch() {
+    cat <<PATCH
+apiVersion: $KUBEADM_API
+kind: ClusterConfiguration
+etcd:
+  local:
+    extraArgs:
+      unsafe-no-fsync: "true"
+apiServer:
+  extraArgs:
+    etcd-healthcheck-timeout: 8s
+    etcd-readycheck-timeout: 8s
+PATCH
+}
+
 {
     cat <<HEAD
 apiVersion: ctlptl.dev/v1alpha1
@@ -151,6 +171,10 @@ NODE
             echo "      kubeadmConfigPatches:"
             echo "        - |"
             kubeadm_patch "$role" | indent
+            if [ "$role" = control-plane ]; then
+                echo "        - |"
+                etcd_patch | indent
+            fi
         done
     done < <(yq '.nodes | sort_by(.role == "control-plane" | not) | .[] | .role + " " + .count + " " + .memory_mib + " " + .cpus' "$preset")
 } >"$out/cluster.yaml"

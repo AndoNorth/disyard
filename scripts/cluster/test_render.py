@@ -79,6 +79,22 @@ def test_every_node_is_rendered_from_the_preset(preset, tmp_path):
 
 
 @pytest.mark.parametrize("preset", PRESETS)
+def test_only_the_control_plane_tolerates_etcd_write_stalls(preset, tmp_path):
+    cluster = (render(preset, tmp_path) / "cluster.yaml").read_text()
+    nodes = re.split(r"^    - role: ", cluster, flags=re.M)[1:]
+    etcd = (
+        "        - |\n          apiVersion: kubeadm.k8s.io/v1beta3\n"
+        "          kind: ClusterConfiguration\n          etcd:\n"
+        "            local:\n              extraArgs:\n"
+        '                unsafe-no-fsync: "true"\n'
+        "          apiServer:\n            extraArgs:\n"
+        "              etcd-healthcheck-timeout: 8s\n"
+        "              etcd-readycheck-timeout: 8s\n"
+    )
+    assert [etcd in node for node in nodes] == [n.startswith("control-plane") for n in nodes]
+
+
+@pytest.mark.parametrize("preset", PRESETS)
 def test_allocatable_is_node_size_minus_the_eviction_threshold(preset, tmp_path):
     out = render(preset, tmp_path)
     want = sorted(preset_nodes(preset), key=lambda n: n[0] != "control-plane")
