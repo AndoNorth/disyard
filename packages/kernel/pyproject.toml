@@ -1,6 +1,7 @@
 [project]
 name = "wdf-kernel"
 version = "0.0.0"
+license = "Apache-2.0"
 requires-python = ">=3.13"
 # Standard library only, so the same modules run on the host and inside a guest.
 dependencies = []
