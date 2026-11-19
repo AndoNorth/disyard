@@ -21,7 +21,15 @@ def temporal(t1):
     with t1.container(
         "temporalio/temporal",
         ports={0: 7233},
-        command=("server", "start-dev", "--ip", "0.0.0.0", "--headless"),
+        command=(
+            "server",
+            "start-dev",
+            "--ip",
+            "0.0.0.0",
+            "--headless",
+            "--namespace",
+            schedule.NAMESPACE,
+        ),
     ) as container:
         container.wait_ready(0)
         yield f"127.0.0.1:{container.host_ports[0]}"
@@ -48,10 +56,10 @@ class Passes:
         return REPORT
 
 
-async def connect(address: str) -> Client:
+async def connect(address: str, namespace: str = "default") -> Client:
     for _ in range(120):
         try:
-            return await Client.connect(address)
+            return await Client.connect(address, namespace=namespace)
         except RuntimeError:
             await asyncio.sleep(0.5)
     raise AssertionError("the Temporal server did not answer")
@@ -154,3 +162,30 @@ def test_paused_schedule_runs_nothing(temporal):
 
 def test_the_command_reports_an_unreachable_server():
     assert main(["schedule", "trigger", "--temporal-address", "127.0.0.1:1"]) == 3
+
+
+def test_the_command_finds_the_schedule_in_the_reaper_namespace(temporal, capsys):
+    """The commands default to the namespace the cluster keeps the Schedule in, and a namespace
+    without it ends in an exit code rather than a traceback."""
+
+    async def handle():
+        client = await connect(temporal, schedule.NAMESPACE)
+        return client.get_schedule_handle(schedule.SCHEDULE_ID)
+
+    async def described() -> str:
+        return (await (await handle()).describe()).id
+
+    async def delete() -> None:
+        await (await handle()).delete()
+
+    asyncio.run(handle())
+    assert main(["schedule", "ensure", "--temporal-address", temporal]) == 0
+    try:
+        assert asyncio.run(described()) == schedule.SCHEDULE_ID
+        assert (
+            main(["schedule", "trigger", "--temporal-address", temporal, "--namespace", "default"])
+            == 1
+        )
+        assert "temporal: NOT_FOUND" in capsys.readouterr().err
+    finally:
+        asyncio.run(delete())

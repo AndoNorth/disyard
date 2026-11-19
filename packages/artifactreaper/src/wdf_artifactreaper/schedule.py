@@ -32,6 +32,7 @@ from temporalio.worker import Worker
 
 STUBBED = ()
 
+NAMESPACE = "wdf"
 SCHEDULE_ID = "wdf-artifact-reaper"
 TASK_QUEUE = "wdf-artifact-reaper"
 WORKFLOW_ID = "wdf-artifact-reaper-pass"
@@ -165,26 +166,26 @@ async def trigger_schedule(client: Client) -> dict[str, Any] | None:
     ).result()
 
 
-def ensure(temporal_address: str) -> None:
+def ensure(temporal_address: str, namespace: str = NAMESPACE) -> None:
     async def run() -> None:
-        await ensure_schedule(await Client.connect(temporal_address))
+        await ensure_schedule(await Client.connect(temporal_address, namespace=namespace))
 
     asyncio.run(run())
 
 
-def trigger(temporal_address: str) -> dict[str, Any] | None:
+def trigger(temporal_address: str, namespace: str = NAMESPACE) -> dict[str, Any] | None:
     async def run() -> dict[str, Any] | None:
-        return await trigger_schedule(await Client.connect(temporal_address))
+        return await trigger_schedule(await Client.connect(temporal_address, namespace=namespace))
 
     return asyncio.run(run())
 
 
-def worker(temporal_address: str) -> None:
+def worker(temporal_address: str, namespace: str = NAMESPACE) -> None:
     """Serves the Schedule's task queue until interrupted."""
     run_pass = default_pass()
 
     async def run() -> None:
-        client = await Client.connect(temporal_address)
+        client = await Client.connect(temporal_address, namespace=namespace)
         with ThreadPoolExecutor(max_workers=1) as executor:
             await build_worker(client, run_pass, executor).run()
 

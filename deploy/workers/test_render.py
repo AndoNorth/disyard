@@ -16,6 +16,7 @@ from pathlib import Path
 import pytest
 import yaml
 from wdf_storecheck.s3 import Creds, dump_credentials
+from wdf_worker.config import ENV, MIRROR_ENV
 
 ROOT = Path(__file__).resolve().parents[2]
 POOLS = ("compile", "simulate", "aggregate")
@@ -124,8 +125,8 @@ def test_environment_has_no_database_prefix_or_build(rendered, pool):
     _, objects = rendered
     [container] = pod(objects, pool)["containers"]
     env = {e["name"]: e.get("value", e.get("valueFrom")) for e in container["env"]}
-    print(sorted(env))
     assert "envFrom" not in container
+    assert {*ENV.values(), *([MIRROR_ENV] if pool == "compile" else [])} <= set(env)
     assert not [n for n in env if n.startswith("WDF_") and n.endswith("_DSN")]
     assert "WDF_POOL_QUEUE_PREFIX" not in env
     assert not [n for n in env if "BUILD" in n or "DEPLOYMENT" in n]

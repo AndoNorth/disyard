@@ -1,8 +1,9 @@
 """Usage: python -m wdf_artifactreaper run-once --dsn DSN --endpoint URL --credentials FILE
                                               [--now ISO] [--dry-run]
 python -m wdf_artifactreaper schedule ensure|trigger|worker --temporal-address ADDR
+                                                          [--namespace NAME]
 
-Exit 0, 1 a failed pass, 2 usage, 3 database or Temporal unreachable.
+Exit 0, 1 a failed pass or a Temporal refusal, 2 usage, 3 database or Temporal unreachable.
 `run-once` and `schedule trigger` print one line per counter.
 `schedule worker` reads WDF_REAPER_DSN, WDF_REAPER_ENDPOINT and WDF_REAPER_CREDENTIALS.
 """
@@ -14,6 +15,7 @@ from datetime import UTC, datetime
 import psycopg
 from botocore.exceptions import BotoCoreError, ClientError
 from temporalio.client import WorkflowFailureError
+from temporalio.service import RPCError
 from wdf_storecheck.s3 import client as s3_client
 from wdf_storecheck.s3 import load_credentials
 
@@ -37,6 +39,7 @@ def parser() -> argparse.ArgumentParser:
     scheduled = commands.add_parser("schedule", help="the Temporal Schedule of the reaper")
     scheduled.add_argument("action", choices=("ensure", "trigger", "worker"))
     scheduled.add_argument("--temporal-address", required=True)
+    scheduled.add_argument("--namespace", default=schedule.NAMESPACE)
     return root
 
 
@@ -75,7 +78,7 @@ def run_once(args: argparse.Namespace) -> int:
 
 def run_schedule(args: argparse.Namespace) -> int:
     try:
-        result = getattr(schedule, args.action)(args.temporal_address)
+        result = getattr(schedule, args.action)(args.temporal_address, args.namespace)
     except KeyError as error:
         print(f"usage: missing environment variable {error}", file=sys.stderr)
         return USAGE
@@ -84,6 +87,9 @@ def run_schedule(args: argparse.Namespace) -> int:
         return UNREACHABLE
     except (WorkflowFailureError, TimeoutError) as error:
         print(f"failed: {type(error).__name__}: {error}", file=sys.stderr)
+        return FAILED
+    except RPCError as error:
+        print(f"temporal: {error.status.name}: {error}", file=sys.stderr)
         return FAILED
     if args.action == "trigger":
         if result is None:

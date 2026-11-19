@@ -90,7 +90,7 @@ k8s_yaml(encode_yaml({
                 "automountServiceAccountToken": False,
                 # Above the service's own drain of 25 s, so the chunk in flight is committed and answered before a kill.
                 "terminationGracePeriodSeconds": 30,
-                "securityContext": {"runAsNonRoot": True},
+                "securityContext": {"runAsNonRoot": True, "seccompProfile": {"type": "RuntimeDefault"}},
                 "containers": [{
                     "name": name,
                     "image": image,
@@ -107,7 +107,11 @@ k8s_yaml(encode_yaml({
                         "timeoutSeconds": 10,
                     },
                     "resources": res[name],
-                    "securityContext": {"allowPrivilegeEscalation": False, "readOnlyRootFilesystem": True},
+                    "securityContext": {
+                        "allowPrivilegeEscalation": False,
+                        "readOnlyRootFilesystem": True,
+                        "capabilities": {"drop": ["ALL"]},
+                    },
                     "volumeMounts": [
                         {"name": "store", "mountPath": "/etc/wdf/store", "readOnly": True},
                         {"name": "tmp", "mountPath": "/tmp"},
