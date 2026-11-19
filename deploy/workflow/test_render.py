@@ -152,3 +152,12 @@ def test_build_id_not_a_name_refused(tmp_path):
     run = tiltfile_result(tmp_path, "Exit_A")
     assert run.returncode != 0
     assert "is not a lower-case name" in run.stderr
+
+
+def test_drops_every_capability_under_the_runtime_seccomp_profile(rendered):
+    _, objects, _ = rendered
+    pod = objects["Deployment", "workflow-worker-exit-a"]["spec"]["template"]["spec"]
+    [container] = pod["containers"]
+    assert pod["securityContext"]["seccompProfile"] == {"type": "RuntimeDefault"}
+    assert container["securityContext"]["capabilities"] == {"drop": ["ALL"]}
+    assert container["securityContext"]["readOnlyRootFilesystem"] is True

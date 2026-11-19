@@ -177,3 +177,12 @@ def test_dockerfile_runs_the_service_as_non_root():
     dockerfile = (HERE / "Dockerfile").read_text()
     assert "USER 65532:65532" in dockerfile
     assert dockerfile.rstrip().endswith('ENTRYPOINT ["python", "-m", "wdf_placement"]')
+
+
+def test_drops_every_capability_under_the_runtime_seccomp_profile(rendered):
+    _, objects = rendered
+    pod = pod_of(objects)
+    [container] = pod["containers"]
+    assert pod["securityContext"]["seccompProfile"] == {"type": "RuntimeDefault"}
+    assert container["securityContext"]["capabilities"] == {"drop": ["ALL"]}
+    assert container["securityContext"]["readOnlyRootFilesystem"] is True

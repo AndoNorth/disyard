@@ -81,7 +81,7 @@ k8s_yaml(encode_yaml({
                 "automountServiceAccountToken": False,
                 # Above the service's own drain of 60 s, so the tasks in flight finish before a kill.
                 "terminationGracePeriodSeconds": 90,
-                "securityContext": {"runAsNonRoot": True},
+                "securityContext": {"runAsNonRoot": True, "seccompProfile": {"type": "RuntimeDefault"}},
                 "containers": [{
                     "name": name,
                     "image": image,
@@ -91,7 +91,11 @@ k8s_yaml(encode_yaml({
                     # The service writes the file once Temporal answers for its namespace and the workers have started.
                     "readinessProbe": {"exec": {"command": ["test", "-e", ready]}, "periodSeconds": 5},
                     "resources": res[name],
-                    "securityContext": {"allowPrivilegeEscalation": False, "readOnlyRootFilesystem": True},
+                    "securityContext": {
+                        "allowPrivilegeEscalation": False,
+                        "readOnlyRootFilesystem": True,
+                        "capabilities": {"drop": ["ALL"]},
+                    },
                     "volumeMounts": [
                         {"name": "store", "mountPath": "/etc/wdf/store", "readOnly": True},
                         {"name": "tmp", "mountPath": "/tmp"},

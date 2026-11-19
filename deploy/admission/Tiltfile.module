@@ -86,7 +86,7 @@ k8s_yaml(encode_yaml({
                 "automountServiceAccountToken": False,
                 # Above the service's own drain, so the messages it holds are released before a kill.
                 "terminationGracePeriodSeconds": 30,
-                "securityContext": {"runAsNonRoot": True},
+                "securityContext": {"runAsNonRoot": True, "seccompProfile": {"type": "RuntimeDefault"}},
                 "containers": [{
                     "name": name,
                     "image": image,
@@ -96,7 +96,11 @@ k8s_yaml(encode_yaml({
                     # The service writes the file once its cycle runs, and removes it when it starts to drain.
                     "readinessProbe": {"exec": {"command": ["test", "-e", ready]}, "periodSeconds": 5},
                     "resources": res[name],
-                    "securityContext": {"allowPrivilegeEscalation": False, "readOnlyRootFilesystem": True},
+                    "securityContext": {
+                        "allowPrivilegeEscalation": False,
+                        "readOnlyRootFilesystem": True,
+                        "capabilities": {"drop": ["ALL"]},
+                    },
                     "volumeMounts": [{"name": "tmp", "mountPath": "/tmp"}],
                 }],
                 "volumes": [{"name": "tmp", "emptyDir": {"sizeLimit": "16Mi"}}],

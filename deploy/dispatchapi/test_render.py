@@ -269,3 +269,12 @@ def test_dockerfile_builds_proton_in_a_build_stage():
     assert "COPY --from=proton /wheels" in runtime
     assert "--require-hashes" in runtime
     assert runtime.rstrip().endswith('ENTRYPOINT ["python", "-m", "wdf_dispatchapi.service"]')
+
+
+def test_drops_every_capability_under_the_runtime_seccomp_profile(rendered):
+    _, objects, _ = rendered
+    pod = pod_of(objects)
+    [container] = pod["containers"]
+    assert pod["securityContext"]["seccompProfile"] == {"type": "RuntimeDefault"}
+    assert container["securityContext"]["capabilities"] == {"drop": ["ALL"]}
+    assert container["securityContext"]["readOnlyRootFilesystem"] is True
