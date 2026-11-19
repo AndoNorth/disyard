@@ -29,6 +29,8 @@ LIMIT = topology().intake_policy.definition.delivery_limit
 MAX_LENGTH = topology().intake_policy.definition.max_length.value
 # Above the longest delayed retry, 1 s times the delivery count before a dead letter.
 TIMEOUT_S = 10
+# Above the drain of a full intake queue plus the longest delayed retry.
+EMPTY_TIMEOUT_S = 30
 
 
 @pytest.fixture(scope="module")
@@ -51,11 +53,19 @@ def open_as(broker):
     for connection in opened:
         connection.close()
     operator = connect(broker.address, Credentials("operator", broker.passwords["operator"]))
-    for queue in (QUEUE, DLQ):
-        consumer = operator.consumer(queue)
-        while got := consumer.drain(100, TIMEOUT_S):
-            for delivery in got:
+    consumers = [operator.consumer(queue) for queue in (QUEUE, DLQ)]
+
+    def emptied() -> list[int]:
+        for consumer in consumers:
+            for delivery in consumer.drain(100, TIMEOUT_S):
                 delivery.ack()
+        return held(broker)
+
+    # A closed connection hands back as failed deliveries what it held unsettled and what it acked
+    # too late for the broker to apply, and a failed delivery waits out its delayed retry where no
+    # drain sees it. So the queues are empty only once the broker holds nothing, and the operator
+    # closes only then, so that none of its own acks is lost.
+    assert eventually(emptied, [0, 0], EMPTY_TIMEOUT_S) == [0, 0], "the queues are not empty"
     operator.close()
 
 
@@ -80,6 +90,21 @@ def ready_and_unacked(broker) -> tuple[int, int]:
     )
     row = next(row for row in rows if row["name"] == QUEUE)
     return row["messages_ready"], row["messages_unacknowledged"]
+
+
+def held(broker) -> list[int]:
+    """The messages the intake queue and the dead-letter queue hold, ready, delivered and not yet
+    settled, waiting out a delayed retry or waiting for the dead-letter worker, read from the state
+    of each queue rather than from list_queues, which reports it late."""
+    names = ", ".join(f'<<"{queue}">>' for queue in (QUEUE, DLQ))
+    total = (
+        "[begin"
+        ' {ok, Q} = rabbit_amqqueue:lookup(rabbit_misc:r(<<"/">>, queue, Name)),'
+        " {ok, {_, N}, _} = rabbit_fifo_client:local_query("
+        "amqqueue:get_pid(Q), query_messages_total),"
+        f" N end || Name <- [{names}]]."
+    )
+    return json.loads(broker.ctl("eval", total))
 
 
 def fill(publisher: client.Connection) -> int:
