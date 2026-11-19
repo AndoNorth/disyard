@@ -8,7 +8,7 @@ while closing the session removes every container that carries its own label.
 
 Environment:
   WDF_SLOT              worker slot 0 to 9, default 0
-  WDF_RUN_ID            run id, default <UTC timestamp>-<slot>
+  WDF_RUN_ID            run id, default <UTC timestamp>-<slot>-<pid>
   WDF_T1_LOCK_DIR       directory of the two lock files, default /tmp
   WDF_T1_LOCK_TIMEOUT   seconds to wait for a free lock file, default 1800
 """

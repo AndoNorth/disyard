@@ -80,13 +80,14 @@ def test_three_containers_check_is_not_confused_by_a_reused_name(t1):
         assert running_under(t1.run_id) == 1
 
 
-def child(run_id, lock_dir, hold, containers):
+def child(run_id, lock_dir, hold, containers, session=2):
     env = {
         **os.environ,
         "WDF_RUN_ID": run_id,
         "WDF_T1_LOCK_DIR": str(lock_dir),
         "HOLD_SECONDS": str(hold),
         "HOLD_CONTAINERS": str(containers),
+        "HOLD_SESSION": str(session),
     }
     return subprocess.Popen(
         [sys.executable, str(CHILD)],
@@ -125,6 +126,29 @@ def test_two_sessions_that_each_want_two_hold_two_containers_between_them_one_af
         for out, _ in results
     )
     assert spans[0][1] <= spans[1][0], spans
+
+
+def test_two_sessions_in_the_same_slot_publish_on_different_host_ports(t1, tmp_path, monkeypatch):
+    # Two workers that both leave WDF_SLOT unset, each holding one of the two lock files at once.
+    monkeypatch.delenv("WDF_SLOT", raising=False)
+    ids = [f"itest-slot-{os.getpid()}-{i}" for i in range(2)]
+    children = [child(run_id, tmp_path, hold=5, containers=1, session=1) for run_id in ids]
+    try:
+        results = [c.communicate(timeout=120) for c in children]
+    finally:
+        for c in children:
+            if c.poll() is None:
+                c.kill()
+                c.wait()
+    for c, (_, err) in zip(children, results, strict=True):
+        assert c.returncode == 0, err
+    spans = [
+        (float(out.split("held ")[1].split()[0]), float(out.split("released ")[1].split()[0]))
+        for out, _ in results
+    ]
+    assert max(start for start, _ in spans) < min(end for _, end in spans), spans
+    ports = {out.split("port ")[1].split()[0] for out, _ in results}
+    assert ports == {"19000", "19005"}
 
 
 def test_a_session_opened_inside_a_session_shares_its_containers_and_ports(t1):

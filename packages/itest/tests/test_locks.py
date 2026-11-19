@@ -79,7 +79,7 @@ def test_two_sessions_that_each_want_two_never_hold_one_file_while_waiting(lock_
     def sleep(seconds):
         # A waiter that holds nothing leaves the second file free for anyone else to take.
         seen.append(session._acquire_locks("probe", 1, timeout=0))
-        for fd in seen[-1]:
+        for fd in seen[-1].values():
             os.close(fd)
 
     monkeypatch.setattr(session.time, "sleep", sleep)
@@ -88,5 +88,5 @@ def test_two_sessions_that_each_want_two_never_hold_one_file_while_waiting(lock_
             session._acquire_locks("run-b", 2, timeout=0.05)
         assert seen
     finally:
-        for fd in held:
+        for fd in held.values():
             os.close(fd)
