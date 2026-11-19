@@ -78,8 +78,11 @@ EVENTS = {
 JOB_S = 1800.0
 # How long a pod, a rollout or a forward has to come up.
 UP_S = 300.0
-# How long the rows of a resent batch have to carry their receipts, as the exit test asks.
-UNPUBLISHED_S = 60.0
+# How long the rows of a resent batch have to carry their receipts, as the exit test asks. A full
+# intake queue rejects the publishes beyond its max length, so the rest wait for admission to drain
+# it: (2,000 jobs - 1,000 max length) / about 10.6 jobs/s on `ci` is about 94 s, plus two
+# reconciler passes of up to 30 s each, rounded up.
+UNPUBLISHED_S = 180.0
 POLL_S = 0.5
 # How long the restart waits before it deletes the pod, and again before the rest of the call, so
 # the pod's stop has begun when the entries after the first half arrive (an estimate).
