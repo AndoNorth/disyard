@@ -1,0 +1,102 @@
+# Placement module: the placement service as one Deployment on the infra pool, configured from the environment only,
+# behind a ClusterIP Service that the workflow workers call. It is the one pod that mounts a service account token,
+# bound to a ClusterRole that only lists and gets nodes and pods, so it can read the pool snapshot.
+module = read_yaml("module.yaml")
+name = module["name"]
+namespace = module["namespace"]
+res = module["resources"]
+topology = read_yaml("../../contracts/topology/topology.yaml")
+pool = {"key": topology["pool_label"], "value": "infra"}
+role = "wdf-placement-read"
+port = 8080
+
+image = "wdf-" + name
+custom_build(
+    image,
+    os.path.abspath("image.sh"),
+    deps = ["../../packages", "../../uv.lock", "Dockerfile", "image.sh", "../versions.yaml"],
+)
+
+ready = "/tmp/wdf-ready"
+labels = {"app.kubernetes.io/name": name}
+env = {
+    "WDF_PLACEMENT_LISTEN": "0.0.0.0:%d" % port,
+    "WDF_READY_FILE": ready,
+}
+
+k8s_yaml(encode_yaml_stream([
+    {
+        "apiVersion": "v1",
+        "kind": "ServiceAccount",
+        "metadata": {"name": name, "namespace": namespace},
+    },
+    {
+        "apiVersion": "rbac.authorization.k8s.io/v1",
+        "kind": "ClusterRole",
+        "metadata": {"name": role},
+        # Nodes are cluster scoped, and the daemon pods on pool nodes count against them, so both lists are cluster wide.
+        "rules": [{"apiGroups": [""], "resources": ["nodes", "pods"], "verbs": ["get", "list"]}],
+    },
+    {
+        "apiVersion": "rbac.authorization.k8s.io/v1",
+        "kind": "ClusterRoleBinding",
+        "metadata": {"name": role},
+        "roleRef": {"apiGroup": "rbac.authorization.k8s.io", "kind": "ClusterRole", "name": role},
+        "subjects": [{"kind": "ServiceAccount", "name": name, "namespace": namespace}],
+    },
+    {
+        "apiVersion": "v1",
+        "kind": "Service",
+        "metadata": {"name": name, "namespace": namespace},
+        "spec": {"type": "ClusterIP", "selector": labels, "ports": [{"name": "http", "port": port, "targetPort": "http"}]},
+    },
+    {
+        "apiVersion": "apps/v1",
+        "kind": "Deployment",
+        "metadata": {"name": name, "namespace": namespace, "labels": labels},
+        "spec": {
+            # One stateless pod serves every workflow build, and a surge pod would not fit the infra node; place retries
+            # across the gap.
+            "replicas": 1,
+            "strategy": {"type": "Recreate"},
+            "selector": {"matchLabels": labels},
+            "template": {
+                "metadata": {"labels": labels},
+                "spec": {
+                    "nodeSelector": {pool["key"]: pool["value"]},
+                    "tolerations": [{
+                        "key": pool["key"],
+                        "operator": "Equal",
+                        "value": pool["value"],
+                        "effect": topology["taint_effect"],
+                    }],
+                    "serviceAccountName": name,
+                    "automountServiceAccountToken": True,
+                    "securityContext": {"runAsNonRoot": True},
+                    "containers": [{
+                        "name": name,
+                        "image": image,
+                        "env": [{"name": k, "value": v} for k, v in sorted(env.items())],
+                        "ports": [{"name": "http", "containerPort": port}],
+                        # The service writes the file once it listens, and removes it when it stops.
+                        "readinessProbe": {"exec": {"command": ["test", "-e", ready]}, "periodSeconds": 5},
+                        "resources": res[name],
+                        "securityContext": {"allowPrivilegeEscalation": False, "readOnlyRootFilesystem": True},
+                        "volumeMounts": [{"name": "tmp", "mountPath": "/tmp"}],
+                    }],
+                    "volumes": [{"name": "tmp", "emptyDir": {"sizeLimit": "16Mi"}}],
+                },
+            },
+        },
+    },
+]))
+
+k8s_resource(
+    name,
+    objects = [
+        "%s:serviceaccount:%s" % (name, namespace),
+        "%s:clusterrole" % role,
+        "%s:clusterrolebinding" % role,
+    ],
+    labels = [module["group"]],
+)
