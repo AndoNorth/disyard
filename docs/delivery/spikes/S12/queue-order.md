@@ -19,7 +19,8 @@ Spaced activities start in exactly the order they were scheduled, 0 inversions i
 Batched activities still fail at one partition, with a largest overtaking of 68 to 125, so the order inside one workflow task is lost before matching, where the server dispatches the 200 activity tasks of one workflow task, and one partition does not restore it.
 Starvation is not seen: every activity of every run started, the slowest run within 1.6 s.
 
-**D14 becomes a question to the captain:** whether the pool queues get one partition through #6's Temporal module, which gives first-in-first-out order between tasks scheduled in different workflow tasks, as tasks of different jobs and different layers of one job are, and leaves the order among the sibling tasks of one workflow task unordered.
+**D14 is decided as option (b):** the pool queues keep the server's default of 4 partitions, and start order across jobs on a pool queue is approximate, as recorded in D14 of the epic.
+One partition through #6's Temporal module stays the switch: it gives first-in-first-out order between tasks scheduled in different workflow tasks, as tasks of different jobs and different layers of one job are, and leaves the order among the sibling tasks of one workflow task unordered.
 
 ## Question
 
@@ -128,11 +129,13 @@ The other runs' orders are in the PR that recorded this result.
 
 ## Decision
 
-The spike settles D14 as a question to the captain, which this result does not answer:
+The captain decided D14 as option (b): keep the server's default of 4 partitions and record approximate start order as the rule.
 
-> Do the pool queues `wdf-compile`, `wdf-simulate` and `wdf-aggregate` get one partition, through `matching.numTaskqueueReadPartitions` and `matching.numTaskqueueWritePartitions` in `server.dynamicConfig` of `deploy/temporal/values.json` (#6's Temporal module)?
-
-- (a) One partition: tasks start in the order they were scheduled across jobs and layers (finding 2), the order inside one job's layer stays loose (finding 3), and the cost is one matching partition per pool queue, which on `ci`'s single matching pod changes where the backlog lives, not how many hosts serve it. Prefixed harness queues (`<prefix>-wdf-simulate`) are only covered if the keys are set for the namespace rather than per queue name.
-- (b) Keep the default and record approximate order: the epic's "first in, first out" becomes "roughly first in, first out, a task overtaken by at most about a quarter of the backlog behind it", and section 7's "not provable" entry stands as written.
-
-Until the answer, D14 stands as the default and every lane builds unchanged, since S12 gates no lane.
+- Start order across jobs on a pool queue is approximate: a task scheduled apart is overtaken by up to 51 of 200, siblings scheduled together by 146 to 157, and no task starved.
+- Correctness never depends on queue order: a task is ready only after every dependency is done (`settle` in `packages/workflow/src/wdf_workflow/ready.py`), so build before run holds under any order.
+- A batch finishes at the same time under either order, but the finish order of single jobs is not predictable.
+- The switch is one partition per pool queue, a Temporal dynamic config edit in #6's module, as the control run set `matching.numTaskqueueReadPartitions` and `matching.numTaskqueueWritePartitions` to 1.
+  It gives first-in-first-out between tasks scheduled in different workflow tasks and still leaves the sibling tasks of one workflow task unordered.
+- Move to it when something consumes each job's result as it finishes, or when several submitters share the pools and need a fair share per job.
+  Then rerun the code above with the setting and record the throughput, which is unmeasured.
+- Open for whoever makes the switch, and not verified here: whether the setting can be scoped to one queue, and how to lower the count safely on a queue with a backlog.

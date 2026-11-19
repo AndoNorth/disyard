@@ -73,7 +73,7 @@ Numbers marked as estimates are fixed by a lane's measurement, S12 or #16.
 | D11 | Metrics | No metrics endpoint in this pass. Placement latency, decisions per pool, unschedulable count, escalations and snapshot age are readable from the decision log and the view, and #13 adds the metrics | The workers epic made the same choice (`11-workers.md:76`, D14), and the names belong to #13's catalogue | S.1, section 2 |
 | D12 | Memory | S.1 measures the service's peak resident memory (`VmHWM` of `/proc/self/status`) at T0 over 1,000 `POST /place` calls and three snapshot reads from the fake API of K.1, and pastes it. A peak above 112 MiB (estimate, a margin under the 128 MiB limit) stops D.1 with a needs-decision status | The process imports `temporalio` and `pydantic` through `wdf_workflow`, and admission set the same bar for the same limit (`12-admission.md:152`, D17) | S.1, D.1 |
 | D13 | Budget | The module adds 50m and 128 MiB to the infra node: `scripts/cluster/budget.sh ci` goes from `2680m of 2900m, free 220m` and `5002Mi of 5504Mi, free 502Mi` to `2730m`, `free 170m` and `5130Mi`, `free 374Mi` (estimates, valid while the admission and dispatch modules keep their reserve figures), and D.1 edits the two asserting lines of `scripts/cluster/test_budget.py:42-43` and the infra memory total of `test_infra_node_of_5120_mib_is_over` at `:64`, which counts the module's full 128 MiB because `budget.sh` holds no `placement` reserve (`scripts/cluster/budget.sh:35-39`): `5002Mi of 4544Mi, OVER by 458Mi` becomes `5130Mi of 4544Mi, OVER by 586Mi` | [read: `budget.sh ci` output]. Admission's M.2 has landed and left these lines as they are (`test_budget.py:42-50`) [review]. Dispatch's D.2 moves the `dispatch` reserve line of the same test (`13-dispatch-api.md:410`), so whichever of D.2 and D.1 lands later rebases | D.1 |
-| D14 | Queue partitions | The pool queues keep the server's default partition count, and S12 measures the start order that gives | `deploy/temporal/` sets no partition key [read]. A change is a dynamic config edit of #6's Temporal module, which S12's result would justify as a question | S12 |
+| D14 | Queue partitions | Decided after S12: the pool queues keep the server's default of 4 partitions, and start order across jobs on a pool queue is approximate, as S12 measured: a task scheduled apart is overtaken by up to 51 of 200, siblings scheduled together by 146 to 157, and no task starved. Correctness never depends on queue order, because a task is ready only after every dependency is done (`settle` in `packages/workflow/src/wdf_workflow/ready.py`), so build before run holds under any order. A batch finishes at the same time under either order, but the finish order of single jobs is not predictable | `deploy/temporal/` sets no partition key [read]. The alternative is one partition per pool queue, a Temporal dynamic config edit in #6's module (S12's control run set `matching.numTaskqueueReadPartitions` and `matching.numTaskqueueWritePartitions` to 1), which gives first-in-first-out between tasks scheduled in different workflow tasks and still leaves the sibling tasks of one workflow task unordered. Move to it when something consumes each job's result as it finishes, or when several submitters share the pools and need a fair share per job, and then rerun the S12 code with the setting and record the throughput, which is unmeasured. Open for whoever makes the switch: whether the setting can be scoped to one queue, and how to lower the count safely on a queue with a backlog | S12 |
 | D15 | CI | No new CI workflow and no change to `.github/workflows/`. D.1 runs `scripts/tilt/run.sh ci` itself and pastes the output, and the exit test records a green run on `main` | The workers epic made the same choice (`11-workers.md:83`, D21) | D.1, section 7 |
 
 ### 0.4 Proposals the lanes pin
@@ -416,7 +416,7 @@ Rows 11 and 12 replace the placement pod, and its decision log and cgroup counte
 | 17 | `just ci` | exit 0, on the full path |
 | 18 | the `ci` and `state-modules` workflows on `main` | one green run of each, the URLs recorded in Closure |
 
-Not provable by this epic: an OOM escalation into a larger memory class and OOM classification at the pod limit (decision 18, #15), a usable-memory budget that refuses at submit a simulate task needing more than the 128 MiB guest cap (decision 15, #16), the eventual run of every task under a backlog whose wait passes the 12 h schedule-to-start ceiling (#16), strict first-in-first-out order across queue partitions (S12 measures it, nothing guarantees it), the layer 2 backlog numbers (#8's later gate), placement metrics and alerts (#13), a stale snapshot over a long API outage, a saturated pool under load and a placement outage long enough to fail a job through its history budget (#15, decision 3), the placement and validator budgets on the `dev` and `soak` presets, whose simulate slot is 384 MiB while `pools.yaml` holds the `ci` 512 MiB, and the `dev`, `full` and `soak` profiles with real pool workers.
+Not provable by this epic: an OOM escalation into a larger memory class and OOM classification at the pod limit (decision 18, #15), a usable-memory budget that refuses at submit a simulate task needing more than the 128 MiB guest cap (decision 15, #16), the eventual run of every task under a backlog whose wait passes the 12 h schedule-to-start ceiling (#16), strict first-in-first-out order across queue partitions (approximate by D14), the layer 2 backlog numbers (#8's later gate), placement metrics and alerts (#13), a stale snapshot over a long API outage, a saturated pool under load and a placement outage long enough to fail a job through its history budget (#15, decision 3), the placement and validator budgets on the `dev` and `soak` presets, whose simulate slot is 384 MiB while `pools.yaml` holds the `ci` 512 MiB, and the `dev`, `full` and `soak` profiles with real pool workers.
 
 ## 8. Parallelism and cost
 
@@ -490,8 +490,8 @@ What was learned:
   Row 4's T1 output puts a 127 s outage at 27 history events and an hour at 75.
 - The snapshot never decided anything and its staleness showed only in the view: row 9's first reading lagged a worker by under one cadence, as decision 19 intends, and the largest `snapshot_age_s` logged on a placement was 30.
 - The compile cache lookup runs before `place`, so the number of placements per job depends on the cache, which a count-based check has to allow for.
-- S12 failed its pass line at the server's default of 4 partitions (`docs/delivery/spikes/S12/queue-order.md`), so D14 is a question for the captain: one partition for the pool queues through #6's Temporal module, or approximate order recorded as the epic's rule.
-  No row depends on the answer, and strict order stays under "Not provable" in section 7.
+- S12 failed its pass line at the server's default of 4 partitions (`docs/delivery/spikes/S12/queue-order.md`), and the captain decided D14 as approximate order at the default: the pool queues keep 4 partitions, and one partition per pool queue through #6's Temporal module is the switch D14 names, with its triggers.
+  No row depends on the order, and strict order stays under "Not provable" in section 7.
 
 What the architecture note now shows: `docs/architecture/11-placement-and-workers.drawio` and its SVG are as 0.2 (issue) left them, and were re-checked by eye in this run for row 6.
 
@@ -503,7 +503,7 @@ What moved to which epic, unchanged from section 7:
 - an OOM escalation into a larger memory class and OOM classification at the pod limit (decision 18, #15)
 - a usable-memory budget that refuses at submit a simulate task needing more than the 128 MiB guest cap (decision 15, #16)
 - the eventual run of every task under a backlog near the 12 h schedule-to-start ceiling (#16)
-- strict first-in-first-out order across queue partitions (the open D14 question after S12)
+- strict first-in-first-out order across queue partitions (approximate by D14, with the switch and its triggers there)
 - the layer 2 backlog numbers (#8's later gate)
 - placement metrics and alerts (#13)
 - a stale snapshot over a long API outage, a saturated pool, and a placement outage long enough to fail a job through its history budget (#15)
@@ -512,7 +512,7 @@ What moved to which epic, unchanged from section 7:
 Follow-ups found:
 
 - [#512](https://github.com/AndoNorth/wasm-dag-forge/issues/512): the broker's `test_counters` failed once on `main` on an empty DLQ pull after the last retry, in the `ci` run of S.1's merge, outside this epic.
-- D14's question from S12 awaits the captain, not filed.
+- D14 is decided as approximate order at the default of 4 partitions, not filed.
 
 Closure addenda, one dated line each, added after close when a `revisit` child issue is filed against this epic:
 
