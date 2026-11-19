@@ -11,10 +11,8 @@ pools reads the results the jobs committed through the index and the `workflow` 
 import asyncio
 import json
 import os
-import socket
 import subprocess
 import sys
-import threading
 import time
 from collections.abc import AsyncIterator
 from contextlib import AsyncExitStack, asynccontextmanager
@@ -24,6 +22,18 @@ import psycopg
 from temporalio.client import Client, WorkflowHandle, WorkflowQueryFailedError
 from temporalio.service import RPCError
 from wdf_artifactclient.client import ArtifactClient
+from wdf_clusterkit import (
+    CONTROL,
+    INFRA,
+    UP_S,
+    WORKERS,
+    Forward,
+    appdb_password,
+    kubectl,
+    store_credentials,
+    until,
+)
+from wdf_clusterkit import state_dir as state_dir  # re-exported for the drivers
 from wdf_jobstate import (
     JobRow,
     Moved,
@@ -32,7 +42,6 @@ from wdf_jobstate import (
     status_vocabulary,
     transition,
 )
-from wdf_storecheck.s3 import load_credentials
 
 from .. import versioning
 from ..contract import naming
@@ -47,14 +56,10 @@ from . import (
     Pool,
     Refused,
     Scripts,
-    _until,
     matches_echo,
     search_attributes,
 )
 
-INFRA = "wdf-infra"
-CONTROL = versioning.KUBE_NAMESPACE
-WORKERS = "wdf-workers"
 # Each forward: the namespace, the resource and the port behind it.
 FORWARDS = {
     "temporal": (INFRA, "svc/temporal-frontend", 7233),
@@ -67,88 +72,6 @@ REGISTRY = "localhost:5001"
 IMAGE = f"wdf-{WORKFLOW_WORKER}"
 # Run from the root of the tree whose image a rollout builds.
 BUILD = Path("deploy/workflow/image.sh")
-# How long a restarted pod, a forward or a new build has to come up.
-UP_S = 300.0
-
-
-def state_dir() -> Path:
-    state = os.environ.get("WDF_STATE_DIR") or str(
-        Path(os.environ.get("XDG_STATE_HOME") or Path.home() / ".local/state") / "wasm-dag-forge"
-    )
-    return Path(state)
-
-
-def free_port() -> int:
-    with socket.socket() as probe:
-        probe.bind(("127.0.0.1", 0))
-        return probe.getsockname()[1]
-
-
-def _listening(port: int) -> bool:
-    with socket.socket() as probe:
-        probe.settimeout(0.5)
-        return probe.connect_ex(("127.0.0.1", port)) == 0
-
-
-class Forward:
-    """A `kubectl port-forward` on a fixed local port, so the clients that use it reconnect to the
-    same address once it is opened again after its pod restarted."""
-
-    def __init__(self, context: str, namespace: str, resource: str, remote: int):
-        self.argv = [
-            "kubectl",
-            f"--context={context}",
-            f"--namespace={namespace}",
-            "port-forward",
-            "--address=127.0.0.1",
-            resource,
-        ]
-        self.remote = remote
-        self.port = free_port()
-        self.process: subprocess.Popen | None = None
-        # The watchdog and a restart both open a forward again, each from its own thread.
-        self.lock = threading.Lock()
-
-    def _spawn(self) -> None:
-        self.process = subprocess.Popen(
-            [*self.argv, f"{self.port}:{self.remote}"],
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-        )
-
-    def open(self) -> None:
-        with self.lock:
-            self._close()
-            self._spawn()
-            deadline = time.monotonic() + UP_S
-            while not _listening(self.port):
-                if self.process.poll() is not None:
-                    # The resource is not up yet, as right after its pod restarted.
-                    self._spawn()
-                if time.monotonic() > deadline:
-                    self._close()
-                    raise TimeoutError(f"{' '.join(self.argv)} did not listen in {UP_S:.0f} s")
-                time.sleep(0.5)
-
-    @property
-    def alive(self) -> bool:
-        return self.process is not None and self.process.poll() is None
-
-    def _close(self) -> None:
-        if self.process is not None and self.process.poll() is None:
-            self.process.terminate()
-            self.process.wait()
-
-    def close(self) -> None:
-        with self.lock:
-            self._close()
-
-
-def kubectl(context: str, *args: str, capture: bool = True) -> str:
-    done = subprocess.run(
-        ["kubectl", f"--context={context}", *args], check=True, capture_output=capture, text=True
-    )
-    return done.stdout if capture else ""
 
 
 class Cluster:
@@ -180,9 +103,8 @@ class Cluster:
             for forward in self.forwards.values():
                 await asyncio.to_thread(forward.open)
             self._watch = asyncio.create_task(self._reopen())
-            state = state_dir()
-            self.credentials = load_credentials(state / "objectstore.credentials.json")
-            self.password = (state / "appdb.credential").read_text().strip()
+            self.credentials = store_credentials()
+            self.password = appdb_password()
             self.db = await asyncio.to_thread(self._connect)
             self.submit = ArtifactClient(self.endpoint, self.credentials["submit"])
             self.client = await connect(f"127.0.0.1:{self.forwards['temporal'].port}")
@@ -432,7 +354,7 @@ class Cluster:
             ended = status is not None and status.job_status in TERMINAL
             return status if simulating or ended else None
 
-        status = await _until(running, DEADLINE_S, f"simulate task of {job.job_id} running")
+        status = await until(running, DEADLINE_S, f"simulate task of {job.job_id} running")
         if status.job_status in TERMINAL:
             # The job ended before the pause could land while it ran.
             return False
@@ -443,7 +365,7 @@ class Cluster:
             status = await self._status(handle)
             return status is not None and status.job_status == "paused"
 
-        await _until(paused, DEADLINE_S, f"pause of {job.job_id}")
+        await until(paused, DEADLINE_S, f"pause of {job.job_id}")
 
         def request_resume() -> int:
             resume = request_action(self.db, job.job_id, "resume")

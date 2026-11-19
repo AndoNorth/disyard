@@ -16,6 +16,7 @@ wdf-artifactclient = { workspace = true }
 wdf-artifactindex = { workspace = true }
 wdf-artifactreaper = { workspace = true }
 wdf-broker = { workspace = true }
+wdf-clusterkit = { workspace = true }
 wdf-compat = { workspace = true }
 wdf-compile = { workspace = true }
 wdf-dispatchapi = { workspace = true }
@@ -52,6 +53,7 @@ dev = [
     "wdf-artifactindex",
     "wdf-artifactreaper",
     "wdf-broker",
+    "wdf-clusterkit",
     "wdf-compat",
     "wdf-compile",
     "wdf-dispatchapi",

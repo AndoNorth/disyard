@@ -19,7 +19,6 @@ for which the harness seeds rows, manifests and sources.
 
 import asyncio
 import hashlib
-import inspect
 import io
 import json
 import os
@@ -53,6 +52,7 @@ from temporalio.service import RPCError, RPCStatusCode
 from temporalio.worker import Worker
 from wdf_artifactclient.keys import content_key, uri_of
 from wdf_artifactreaper.schedule import SCHEDULE_ID
+from wdf_clusterkit import Refused, until
 from wdf_compile import bundle
 from wdf_events import Event, build_event
 from wdf_events.models import ContentReference, JobParams
@@ -135,10 +135,6 @@ TYPES = {
     IndexedValueType.INDEXED_VALUE_TYPE_KEYWORD: "keyword",
     IndexedValueType.INDEXED_VALUE_TYPE_DATETIME: "datetime",
 }
-
-
-class Refused(Exception):
-    """A command or scenario that this tier cannot run, which the command line exits 2 for."""
 
 
 def source_bundle(variant: str) -> bytes:
@@ -568,19 +564,6 @@ def _script(scenario: str | None, deaths: int, zombie_s: float) -> Scripts:
     return {"compile": succeed, "simulate": simulate, "aggregate": succeed}
 
 
-async def _until(check: Callable[[], Any], timeout_s: float, what: str, every_s: float = 0.5):
-    deadline = asyncio.get_running_loop().time() + timeout_s
-    while True:
-        value = check()
-        if inspect.isawaitable(value):
-            value = await value
-        if value:
-            return value
-        if asyncio.get_running_loop().time() > deadline:
-            raise TimeoutError(f"no {what} within {timeout_s:.0f} s")
-        await asyncio.sleep(every_s)
-
-
 async def start(client: Client, tier, job: Job, prefix: str = "") -> WorkflowHandle:
     return await client.start_workflow(
         naming().workflow.type,
@@ -740,11 +723,11 @@ async def run_jobs(
             ]
         if restart:
             if real:
-                in_flight = await _until(
+                in_flight = await until(
                     lambda: simulating(client, handles), DEADLINE_S, "simulate task in flight"
                 )
             else:
-                in_flight = await _until(
+                in_flight = await until(
                     lambda: fakes["simulate"].running, DEADLINE_S, "simulate task in flight"
                 )
             counters.extra["in_flight"] = in_flight
@@ -756,7 +739,7 @@ async def run_jobs(
         if drivers:
             counters.extra["paused_resumed"] = sum(await asyncio.gather(*drivers))
         if scenario == "zombie":
-            await _until(
+            await until(
                 lambda: len(fakes["simulate"].zombies) >= count, zombie_s * 4, "zombie completion"
             )
             counters.extra["zombie_commits"] = await tier.zombie_commits(fakes["simulate"].zombies)
@@ -797,7 +780,7 @@ async def rollout(tier, count: int, new: str, prefix: str = "") -> Counters:
     async with tier.running(serving, {}, prefix) as fakes:
         open_handles = await start_all(client, tier, opened, prefix)
         for handle in open_handles:
-            await _until(lambda h=handle: _simulating(client, h), DEADLINE_S, "simulate task")
+            await until(lambda h=handle: _simulating(client, h), DEADLINE_S, "simulate task")
         await tier.deploy(old, new)
         await versioning.set_current(client, new)
         later_handles = await start_all(client, tier, later, prefix)
@@ -818,7 +801,7 @@ async def rollout(tier, count: int, new: str, prefix: str = "") -> Counters:
         return (await versioning.drainage(client, old)).drained
 
     # Visibility follows a job's close by up to a few seconds.
-    await _until(drained, 300, f"drainage of {old}", every_s=2)
+    await until(drained, 300, f"drainage of {old}", every_s=2)
     counters.extra["drained"] = old
     for line in counters.lines():
         print(line, flush=True)

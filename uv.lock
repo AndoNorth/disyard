@@ -16,6 +16,7 @@ members = [
     "wdf-artifactindex",
     "wdf-artifactreaper",
     "wdf-broker",
+    "wdf-clusterkit",
     "wdf-compat",
     "wdf-compile",
     "wdf-dispatchapi",
@@ -687,6 +688,7 @@ dev = [
     { name = "wdf-artifactindex" },
     { name = "wdf-artifactreaper" },
     { name = "wdf-broker" },
+    { name = "wdf-clusterkit" },
     { name = "wdf-compat" },
     { name = "wdf-compile" },
     { name = "wdf-dispatchapi" },
@@ -726,6 +728,7 @@ dev = [
     { name = "wdf-artifactindex", editable = "packages/artifactindex" },
     { name = "wdf-artifactreaper", editable = "packages/artifactreaper" },
     { name = "wdf-broker", editable = "packages/broker" },
+    { name = "wdf-clusterkit", editable = "packages/clusterkit" },
     { name = "wdf-compat", editable = "packages/compat" },
     { name = "wdf-compile", editable = "packages/compile" },
     { name = "wdf-dispatchapi", editable = "packages/dispatchapi" },
@@ -902,6 +905,17 @@ requires-dist = [
     { name = "wdf-itest", editable = "packages/itest" },
     { name = "wdf-jobdoc", editable = "packages/jobdoc" },
 ]
+
+[[package]]
+name = "wdf-clusterkit"
+version = "0.0.0"
+source = { editable = "packages/clusterkit" }
+dependencies = [
+    { name = "wdf-storecheck" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "wdf-storecheck", editable = "packages/storecheck" }]
 
 [[package]]
 name = "wdf-compat"
@@ -1374,6 +1388,11 @@ dependencies = [
     { name = "wdf-temporal" },
 ]
 
+[package.optional-dependencies]
+cluster = [
+    { name = "wdf-clusterkit" },
+]
+
 [package.metadata]
 requires-dist = [
     { name = "psycopg", extras = ["binary"] },
@@ -1383,6 +1402,7 @@ requires-dist = [
     { name = "wdf-artifactclient", editable = "packages/artifactclient" },
     { name = "wdf-artifactindex", editable = "packages/artifactindex" },
     { name = "wdf-artifactreaper", editable = "packages/artifactreaper" },
+    { name = "wdf-clusterkit", marker = "extra == 'cluster'", editable = "packages/clusterkit" },
     { name = "wdf-compat", editable = "packages/compat" },
     { name = "wdf-compile", editable = "packages/compile" },
     { name = "wdf-events", editable = "packages/events" },
@@ -1397,6 +1417,7 @@ requires-dist = [
     { name = "wdf-stages", editable = "packages/stages" },
     { name = "wdf-temporal", editable = "packages/temporal" },
 ]
+provides-extras = ["cluster"]
 
 [[package]]
 name = "wdf-workloads"

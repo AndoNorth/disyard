@@ -1,0 +1,13 @@
+[project]
+name = "wdf-clusterkit"
+version = "0.0.0"
+license = "Apache-2.0"
+requires-python = ">=3.13,<3.14"
+dependencies = ["wdf-storecheck"]
+
+[tool.uv.sources]
+wdf-storecheck = { workspace = true }
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

@@ -18,6 +18,7 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
+import wdf_clusterkit
 from temporalio.api.common.v1 import SearchAttributes
 from temporalio.converter import encode_search_attributes
 from temporalio.service import RPCError, RPCStatusCode
@@ -25,6 +26,7 @@ from wdf_kernel import writer
 from wdf_kernel.expected import expected_blocks
 from wdf_keys import workflow_id
 from wdf_plan import plan_hash, read_plan
+from wdf_workflow import versioning
 from wdf_workflow.activities.cache import bundle_key
 from wdf_workflow.budgets import INFRA_RETRIES
 from wdf_workflow.contract import naming
@@ -99,6 +101,10 @@ def test_smoke_jobs_load_as_load_plan_reads_them():
             assert bundle_key(source, ENTRY) is not None
     # Every second job reuses one source, so its compile can hit the cache.
     assert jobs[0].source == jobs[2].source != jobs[1].source != jobs[3].source
+
+
+def test_the_drivers_control_namespace_is_the_one_versioning_deploys_to():
+    assert wdf_clusterkit.CONTROL == versioning.KUBE_NAMESPACE
 
 
 def test_start_options_encode_every_search_attribute():
