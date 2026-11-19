@@ -116,6 +116,7 @@ def test_service_configuration_from_env_and_secrets(rendered):
     env = {e["name"]: e["value"] for e in container["env"]}
     assert env["WDF_TEMPORAL_NAMESPACE"] == "wdf"
     assert env["WDF_TEMPORAL_ADDRESS"] == "temporal-frontend.wdf-infra.svc.cluster.local:7233"
+    assert env["WDF_PLACEMENT_URL"] == "http://placement.wdf-control.svc:8080"
     assert "WDF_BUILD_ID" not in env, "the image carries the build id"
     assert container["envFrom"] == [{"secretRef": {"name": "workflow-worker-logins"}}]
     assert set(objects["Secret", "workflow-worker-logins"]["stringData"]) == {

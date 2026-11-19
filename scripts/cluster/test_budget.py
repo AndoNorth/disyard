@@ -39,8 +39,8 @@ def test_every_preset_holds_its_modules(preset):
 
 def test_ci_infra_node_figures():
     run = budget("ci")
-    assert "node infra requests cpu: 2680m of 2900m, free 220m, fits" in run.stdout
-    assert "node infra requests memory: 5002Mi of 5504Mi, free 502Mi, fits" in run.stdout
+    assert "node infra requests cpu: 2730m of 2900m, free 170m, fits" in run.stdout
+    assert "node infra requests memory: 5130Mi of 5504Mi, free 374Mi, fits" in run.stdout
     assert "workflow-worker (workflow-worker, second build)" in run.stdout
     assert "temporal-schema (temporal)" in run.stdout
     assert "appdb-migrate" not in run.stdout
@@ -61,7 +61,7 @@ def test_infra_node_of_5120_mib_is_over():
     finally:
         target.write_text(original)
     assert run.returncode == 1
-    assert "node infra requests memory: 5002Mi of 4544Mi, OVER by 458Mi" in run.stdout
+    assert "node infra requests memory: 5130Mi of 4544Mi, OVER by 586Mi" in run.stdout
 
 
 def test_module_set_over_the_node_is_refused(tmp_path):
