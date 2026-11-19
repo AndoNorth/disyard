@@ -1,6 +1,6 @@
 # Epic #9: Task placement scheduler (layer 2) - breakdown
 
-Status: draft
+Status: closed 2026-11-19
 Epic: https://github.com/AndoNorth/wasm-dag-forge/issues/9
 Architecture note: docs/architecture/11-placement-and-workers.drawio, which 0.2 (issue) refines, and docs/architecture/02-two-layers-of-scheduling.drawio, unchanged
 Verifier: none, per decision 1.
@@ -405,8 +405,8 @@ Rows 11 and 12 replace the placement pod, and its decision log and cgroup counte
 | 6 | `scripts/check-contracts-map.sh`, `scripts/export-diagrams.sh --check`, `just versions --check`, `scripts/cluster/budget.sh ci`, then diagram 11 opened | exit 0 for each, the infra node lines `free 170m` and `free 374Mi` (D13), and the diagram showing the placement service, its service account and the `place` call |
 | 7 | `just up`, `WDF_BUILD_ID=exit-a scripts/tilt/run.sh ci`, `K -n wdf-control get pods -o wide`, `K -n wdf-control logs deploy/placement` | exit 0, `placement` `Running` on the infra node, and its log showing the listener and a first good snapshot |
 | 8 | `K auth can-i list pods --all-namespaces --as=system:serviceaccount:wdf-control:placement`, the same for `list nodes`, `create pods` and `get secrets -n wdf-control`, then `K auth can-i list nodes --as=system:serviceaccount:wdf-control:default` | `yes`, `yes`, `no`, `no`, then `no` |
-| 9 | `K -n wdf-control exec deploy/placement -- python -m wdf_placement.show` | three lines, `compile`, `simulate` and `aggregate`, each with its contract queue, its slot from `pools.yaml`, `ready_workers=1` and one image, and `snapshot_age_s` at most 60 |
-| 10 | `H smoke --pools real --jobs 10`, then `K -n wdf-control logs deploy/placement \| grep -c '^placed '` | `finished: 10`, `failed: 0`, `verified: 10`, then at least 40 (the four simulate tasks of each job) |
+| 9 | `K -n wdf-control exec deploy/placement -- python -m wdf_placement.show`, run at least one snapshot cadence (30 s) after row 7, so the snapshot read is newer than the last pool worker turning Ready | three lines, `compile`, `simulate` and `aggregate`, each with its contract queue, its slot from `pools.yaml`, `ready_workers=1` and one image, and `snapshot_age_s` at most 60 |
+| 10 | `H smoke --pools real --jobs 10`, then `K -n wdf-control logs deploy/placement \| grep -c '^placed '` | `finished: 10`, `failed: 0`, `verified: 10`, then at least 40 (the four simulate tasks of each job), `60` in the run of 2026-11-19, where each job also placed its `aggregate` task and its `compile` task missed the compile cache, which skips `place` on a hit |
 | 11 | `P pod-a`, `K -n wdf-control scale deploy/placement --replicas=0`, then `( sleep 120; K -n wdf-control scale deploy/placement --replicas=1 ) & H smoke --pools real --jobs 3` | the reading of the pod that served rows 7 to 10 saved, then `finished: 3`, `failed: 0`: a placement outage of two minutes, beyond the local retry threshold of 60 s, stalls the jobs and fails none |
 | 12 | `( sleep 20; P pod-b; K -n wdf-control delete pod -l app.kubernetes.io/name=placement --grace-period=0 --force ) & H smoke --pools real --jobs 10` | the reading of the pod that served row 11 saved just before the kill, `finished: 10`, `failed: 0`, and a new `placement` pod `Running` afterwards |
 | 13 | `grep -c '^unschedulable ' exit-test/pod-a.log exit-test/pod-b.log`, then `K -n wdf-control logs deploy/placement \| grep -c '^unschedulable '` | `0` for each of the three pods: no task of rows 10 to 12 was refused |
@@ -428,9 +428,91 @@ Not provable by this epic: an OOM escalation into a larger memory class and OOM 
   That is about 12.5 worker-days of effort and about 8.5 days elapsed along lane 0, K.1 or W.1, S.1, D.1 and the exit test (1.5 + 1.5 + 2 + 2.5 + 1).
   The main sources of slip are the image build of a `wdf-workflow` chain on the infra node's 128 MiB limit (D12), RBAC and TLS details of the in-cluster API read with the standard library, rebases of `scripts/cluster/test_budget.py` against #24, and cluster lock contention.
 
-## 9. Closure (filled at close)
+## 9. Closure
 
-<commit sha, CI run url, what was learned, what moved>
+Run on 2026-11-19 against `45e731878726af1315f4d8ac64a6849d84bb8c95`, the merge of D.1 and the last lane merge, from a `git archive origin/main` extracted into a scratch directory with no enclosing git repository.
+Every row passes, row 9 on its second reading and rows 9 and 10 as their wording is corrected in section 7.
+The pasted output of every row is in the pull request that records this run.
+
+Method of the run:
+
+- The worker that ran it wrote none of the lanes.
+- The host is the 20 GiB WSL2 VM with Docker running for the whole run.
+  The one container not started by the run (`open-webui`) was left untouched.
+- Rows 0 to 6 ran first in order, rows 7 to 16 ran in one sequence under the cluster lock (`flock /tmp/wdf-cluster.lock env WDF_CLUSTER_LOCK_HELD=1 bash <script>`) with row 0 repeated just before row 7, and rows 17 and 18 ran after the lock was released.
+- A stopped `wdf` cluster of preset `ci`, left by D.1's T2 rows, and its `wdf-registry` were removed with `just nuke` under the lock before row 0's repeat, so row 7 started from no cluster and the harness made `exit-a` current itself.
+- The export has no git checkout, so row 7 runs `scripts/tilt/run.sh ci` with `WDF_BUILD_ID=exit-a`, as the section says.
+- Each harness row ran as `timeout -s INT 1800 python -m wdf_workflow.harness ...`, a 30 minute cap that no row came near.
+- Rows 4 and 17 ran with `WDF_SLOT=2`, the pool slot of the worktree the run was launched from, so their T1 session could not share ports with a sibling's ([#466](https://github.com/AndoNorth/wasm-dag-forge/issues/466)).
+- Row 6's diagram was rendered to PNG with ImageMagick and read by eye.
+- A memory sampler read `MemAvailable` every 5 s through rows 7 to 16.
+
+Results:
+
+| # | Result | Evidence |
+| --- | --- | --- |
+| 0 | pass | `MemAvailable` 17,973,760 kB at the start and 18,035,288 kB just before row 7, both above the gate of 13,369,344 kB (`memory_mib` 12,032 of the `ci` preset plus 1,024 MiB) |
+| 1 | pass | `uv sync --frozen` exit 0, `uv lock --check` exit 0 with 75 packages resolved, the `uv.lock` SHA-256 unchanged |
+| 2 | pass | 54 passed in 20.5 s, no `SKIPPED` line |
+| 3 | pass | 80 passed and 398 deselected, each named test `PASSED`: `placer_contract` as `test_static_placer_passes_placer_contract` (`StaticPlacer`), `test_service_placer_passes_placer_contract` (the in-test server), `test_service_placer_contract_end_to_end` (the real service) and `test_policy_passes_placer_contract`, with `test_memory_peak`, `test_place_is_not_a_coroutine`, `test_workflow_worker_owns_the_executor`, `test_place_does_not_wait_for_snapshot`, the `snapshot_`, `snapshotter_`, `pools` and render tests |
+| 4 | pass | 404 passed in 8 min 38 s with `WDF_SLOT=2`, no `SKIPPED` line |
+| 5 | pass | `ok contracts/temporal/pools.yaml` and `3` |
+| 6 | pass | exit 0 for the four commands, the infra node lines `2730m of 2900m, free 170m` and `5130Mi of 5504Mi, free 374Mi`, and diagram 11 shows the placement service in `wdf-control`, its read-only service account listing nodes and pods every 30 s, and the `place` and `verdict` arrows from the workflow worker |
+| 7 | pass | `just up` in 46 s, `SUCCESS. All workloads are healthy.` after 185 s, `placement` `Running` on `wdf-worker`, the node of pool `infra`, beside `admission`, `dummy-control` and `workflow-worker-exit-a`, and the log `listening address=http://0.0.0.0:8080 snapshot_every_s=30.0` then `snapshot first_read=true ready_workers=compile:0,simulate:0,aggregate:0` |
+| 8 | pass | `yes`, `yes`, `no`, `no`, then `no` |
+| 9 | pass on the second reading, as corrected | the first reading, 1 s after Tilt's healthy line, printed `simulate ... ready_workers=0 ... images=none` with `snapshot_age_s=23`, because the simulate worker turned Ready at 05:29:05Z, after the snapshot was read; the second, at 05:29:39Z, printed the three pools on `wdf-compile`, `wdf-simulate` and `wdf-aggregate` with slots `1000m/1024Mi`, `250m/512Mi` and `1000m/1024Mi`, `ready_workers=1` and one image each, `snapshot_age_s=5` and `last_error=none` |
+| 10 | pass, as corrected | `finished: 10`, `failed: 0`, `verified: 10` in 377 s, then `60`: 10 `compile`, 40 `simulate` and 10 `aggregate` lines |
+| 11 | pass | pod-a saved from `placement-848dbb5774-6hjw6`, the deployment at 0 replicas from 05:35:25Z to 05:37:25Z, `finished: 3`, `failed: 0`, `verified: 3` in 154 s, and a new pod `Running` |
+| 12 | pass | pod-b saved from the pod that served row 11 20 s into the smoke, then force deleted, `finished: 10`, `failed: 0`, `verified: 10` in 39 s, and a new `placement` pod `Running` with 0 restarts |
+| 13 | pass | `0` for pod-a, pod-b and the live pod |
+| 14 | pass | `7` before, `finished: 20`, `failed: 0`, `queue_prefix: h-a94cd0b6-` in 18 s, `124` after on the same pod (117 above the first), and the `unschedulable` count still `0`; every `queue=` of the three pods' logs is a contract name (27 `wdf-compile`, 172 `wdf-simulate`, 43 `wdf-aggregate`) |
+| 15 | pass | `oom_kill 0` (and `oom 0`, `max 0`) in each of the three `memory.events`, a restart count of `0` for each pod, and `anon 43028480` |
+| 16 | pass | exit 0 for `just doctor`, `just down` and both `just nuke`, the second deleting no node, then `No kind clusters found.` with only `open-webui` running |
+| 17 | pass | `just ci` exit 0 in the export with `WDF_SLOT=2`, `== ci path: full`, 3,194 passed in `just test` in 15 min 54 s and 766 passed in `just itest` in 37 min 44 s, and `nix flake check` passed, 54 min 7 s in all |
+| 18 | pass | the `ci` run [44463425981](https://github.com/AndoNorth/wasm-dag-forge/actions/runs/44463425981), success on `45e7318` on `main`, full path, 3,194 passed in `just test` and 766 in `just itest`, and the `state-modules` run [44463425903](https://github.com/AndoNorth/wasm-dag-forge/actions/runs/44463425903), success on `45e7318`; no run on `main` holds this record yet, since it is the pull request that adds it |
+
+Row 9's wording: as first written, the row ran straight after row 7, but Tilt reports healthy as soon as the last pool worker is Ready, and the snapshot is read every 30 s (D5), so the view can show a pool's worker as not ready for up to one cadence.
+The row now runs at least one cadence after row 7, and the check that matters, `ready_workers=1` from the real API through the same reader, is unchanged.
+Row 10's wording: as first written, the row counted only the four simulate tasks of each job.
+The real count is 60, since each job also places its `aggregate` task and a `compile` task that misses the compile cache (`taskpath.py:310`), which skips `place` on a hit; rows 11 and 12 placed no `compile` task for that reason.
+The row keeps its floor of 40 and states the 60 of this run.
+
+Memory figures:
+
+- Host: `MemTotal` 20,482,272 kB, `MemAvailable` 18,035,288 kB at the gate before row 7, a low of 14,694,768 kB at 05:29:45Z as row 10 started, and 18,061,144 kB after row 16.
+- Placement (D12): S.1 measured `VmHWM` 62.7 MiB after 1,000 calls and three snapshot reads at T0, and row 15 found `anon` 43,028,480 bytes (41.0 MiB) in the pod that served rows 12 to 14, against D12's 112 MiB and the 128 MiB limit, with no OOM in any of the three pods.
+- The `ci` infra node: `budget.sh ci` printed D13's `free 170m` and `free 374Mi`.
+
+What was learned:
+
+- Placement answered every task of 43 jobs on three pods with no `unschedulable` line, on contract queue names only, including the 20 prefixed jobs of row 14 on fake pools, so the workflow alone adds the prefix (decision 9).
+- A placement outage of 120 s stalled three jobs and failed none, and a forced deletion mid-smoke cost no job: the local activity's retry carried both (decision 3).
+  Row 4's T1 output puts a 127 s outage at 27 history events and an hour at 75.
+- The snapshot never decided anything and its staleness showed only in the view: row 9's first reading lagged a worker by under one cadence, as decision 19 intends, and the largest `snapshot_age_s` logged on a placement was 30.
+- The compile cache lookup runs before `place`, so the number of placements per job depends on the cache, which a count-based check has to allow for.
+- S12 failed its pass line at the server's default of 4 partitions (`docs/delivery/spikes/S12/queue-order.md`), so D14 is a question for the captain: one partition for the pool queues through #6's Temporal module, or approximate order recorded as the epic's rule.
+  No row depends on the answer, and strict order stays under "Not provable" in section 7.
+
+What the architecture note now shows: `docs/architecture/11-placement-and-workers.drawio` and its SVG are as 0.2 (issue) left them, and were re-checked by eye in this run for row 6.
+
+Which assumptions of section 2 held: all five held on `main` at `45e7318`.
+#8 closed with its workflow start unchanged, and admission ran beside placement in rows 7 to 16; `packages/dispatchapi/` on `main` at `bedad93`, #24's D.1, names nothing of placement; the pool workers keep `app.kubernetes.io/name=<pool>-worker` (`deploy/workers/pool.star:48`), which row 9 read; row 4 ran #6's T1 tests on `StaticPlacer` with no `WDF_PLACEMENT_URL`; and D.1 landed after #8's M.2 with `test_budget.py` passing in row 17.
+
+What moved to which epic, unchanged from section 7:
+
+- an OOM escalation into a larger memory class and OOM classification at the pod limit (decision 18, #15)
+- a usable-memory budget that refuses at submit a simulate task needing more than the 128 MiB guest cap (decision 15, #16)
+- the eventual run of every task under a backlog near the 12 h schedule-to-start ceiling (#16)
+- strict first-in-first-out order across queue partitions (the open D14 question after S12)
+- the layer 2 backlog numbers (#8's later gate)
+- placement metrics and alerts (#13)
+- a stale snapshot over a long API outage, a saturated pool, and a placement outage long enough to fail a job through its history budget (#15)
+- the placement and validator budgets on the `dev` and `soak` presets, and the `dev`, `full` and `soak` profiles with real pool workers
+
+Follow-ups found:
+
+- [#512](https://github.com/AndoNorth/wasm-dag-forge/issues/512): the broker's `test_counters` failed once on `main` on an empty DLQ pull after the last retry, in the `ci` run of S.1's merge, outside this epic.
+- D14's question from S12 awaits the captain, not filed.
 
 Closure addenda, one dated line each, added after close when a `revisit` child issue is filed against this epic:
 
