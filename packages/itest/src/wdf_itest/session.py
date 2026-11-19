@@ -19,6 +19,9 @@ PORT_BASE = 19000
 MAX_SLOT = 9
 PORTS_PER_SLOT = 10
 LOCK_COUNT = 2
+# Each lock file owns its own share of the slot's ports, so sessions holding different files never
+# publish on the same host port, whatever slot they run in.
+PORTS_PER_LOCK = PORTS_PER_SLOT // LOCK_COUNT
 LOCK_TIMEOUT_SECONDS = 30 * 60
 MEMORY_CAP = "1g"
 
@@ -73,8 +76,8 @@ def _holders() -> str:
     return "; ".join(held)
 
 
-def _acquire_locks(run_id: str, count: int, timeout: float, poll: float = 0.5) -> list[int]:
-    """Takes `count` lock files together, or none of them.
+def _acquire_locks(run_id: str, count: int, timeout: float, poll: float = 0.5) -> dict[int, int]:
+    """Takes `count` lock files together, or none of them, and maps each index taken to its fd.
 
     A session that got fewer than it needs releases what it got before it sleeps, so two sessions
     that each want two never wait on each other while holding one, and the randomized sleep keeps
@@ -82,8 +85,8 @@ def _acquire_locks(run_id: str, count: int, timeout: float, poll: float = 0.5) -
     """
     deadline = time.monotonic() + timeout
     while True:
-        fds: list[int] = []
-        for path in lock_paths():
+        fds: dict[int, int] = {}
+        for index, path in enumerate(lock_paths()):
             if len(fds) == count:
                 break
             fd = os.open(path, os.O_RDWR | os.O_CREAT, 0o666)
@@ -92,13 +95,13 @@ def _acquire_locks(run_id: str, count: int, timeout: float, poll: float = 0.5) -
             except BlockingIOError:
                 os.close(fd)
                 continue
-            fds.append(fd)
+            fds[index] = fd
         if len(fds) == count:
-            for fd in fds:
+            for fd in fds.values():
                 os.ftruncate(fd, 0)
                 os.write(fd, f"pid={os.getpid()} run={run_id}\n".encode())
             return fds
-        for fd in fds:
+        for fd in fds.values():
             os.close(fd)
         if time.monotonic() >= deadline:
             raise LockTimeout(
@@ -108,7 +111,8 @@ def _acquire_locks(run_id: str, count: int, timeout: float, poll: float = 0.5) -
 
 
 def _acquire_lock(run_id: str, timeout: float, poll: float = 0.5) -> int:
-    return _acquire_locks(run_id, 1, timeout, poll)[0]
+    [fd] = _acquire_locks(run_id, 1, timeout, poll).values()
+    return fd
 
 
 def _docker(*args: str, timeout: float = 300) -> str:
@@ -168,6 +172,8 @@ class Session:
 
     `containers` is 1 or 2 and is both the number of lock files taken up front and the number of
     containers that may run at once.
+    Each running container publishes on the ports of one lock file the session holds, so two
+    sessions never share a host port even when they run in the same slot.
     A session opened while another is open in the same process shares that session's lock files,
     container cap and host ports, because the process already holds the host's share and a second
     request for files would wait on the process itself.
@@ -181,10 +187,10 @@ class Session:
         self.containers = containers
         self.slot = slot_from_env()
         stamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
-        self.run_id = os.environ.get("WDF_RUN_ID") or f"{stamp}-{self.slot}"
+        self.run_id = os.environ.get("WDF_RUN_ID") or f"{stamp}-{self.slot}-{os.getpid()}"
         self.timeout = float(os.environ.get("WDF_T1_LOCK_TIMEOUT", LOCK_TIMEOUT_SECONDS))
         self._outer: Session | None = None
-        self._fds: list[int] = []
+        self._fds: dict[int, int] = {}
         self._lanes: dict[str, int] = {}
         self._count = 0
 
@@ -229,9 +235,9 @@ class Session:
         try:
             self.remove_containers()
         finally:
-            for fd in self._fds:
+            for fd in self._fds.values():
                 os.close(fd)
-            self._fds = []
+            self._fds = {}
             atexit.unregister(self.close)
 
     def _remove_container(self, docker_name: str) -> None:
@@ -254,9 +260,9 @@ class Session:
 
         `name` identifies the container within the session, and a name that is running is refused.
         `ports` maps a port index k to a container port.
-        A session of one container publishes it on 127.0.0.1:<19000 + slot * 10 + k> for k below 10.
-        A session of two gives each running container half of the slot, so two containers that both
-        ask for index 0 get different host ports, and k is then below 5.
+        A container publishes on 127.0.0.1:<19000 + slot * 10 + lock * 5 + k> for k below 5, where
+        `lock` is the index of a lock file the session holds and no other running container uses,
+        so two containers that both ask for index 0 get different host ports, in one session or two.
         `tmpfs` maps a container path to the size cap in MiB of a memory-backed mount there,
         which counts against the memory cap of the container.
         `mounts` maps an existing host file or directory to a container path, mounted read-only.
@@ -276,14 +282,13 @@ class Session:
                 if self.containers == 1
                 else f"at most {self.containers} containers at a time, stop a running one first"
             )
-        width = PORTS_PER_SLOT // self.containers
-        lane = min(set(range(self.containers)) - set(self._lanes.values()))
+        lane = min(set(self._fds) - set(self._lanes.values()))
         for k in ports or {}:
-            if not 0 <= k < width:
-                raise ValueError(f"port index k must be 0 to {width - 1}, got {k}")
+            if not 0 <= k < PORTS_PER_LOCK:
+                raise ValueError(f"port index k must be 0 to {PORTS_PER_LOCK - 1}, got {k}")
         self._count += 1
         docker_name = f"wdf-{self.run_id}-{self._count}"
-        mapping = {k: host_port(self.slot, lane * width + k) for k in (ports or {})}
+        mapping = {k: host_port(self.slot, lane * PORTS_PER_LOCK + k) for k in (ports or {})}
         args = ["run", "-d", "--name", docker_name, "--label", f"{RUN_LABEL}={self.run_id}"]
         args += ["--memory", MEMORY_CAP, "--memory-swap", MEMORY_CAP]
         for k, container_port in (ports or {}).items():
