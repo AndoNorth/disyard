@@ -16,6 +16,7 @@ from pathlib import Path
 import pytest
 import yaml
 from wdf_storecheck.s3 import Creds, dump_credentials
+from wdf_workflow.service import ENV, READY_ENV, REAPER_ENV
 
 ROOT = Path(__file__).resolve().parents[2]
 MODULE = ROOT / "deploy/workflow"
@@ -119,11 +120,11 @@ def test_service_configuration_from_env_and_secrets(rendered):
     assert env["WDF_PLACEMENT_URL"] == "http://placement.wdf-control.svc:8080"
     assert "WDF_BUILD_ID" not in env, "the image carries the build id"
     assert container["envFrom"] == [{"secretRef": {"name": "workflow-worker-logins"}}]
-    assert set(objects["Secret", "workflow-worker-logins"]["stringData"]) == {
-        "WDF_WORKFLOW_DSN",
-        "WDF_ARTIFACTS_DSN",
-        "WDF_REAPER_DSN",
-    }
+    from_secrets = set(objects["Secret", "workflow-worker-logins"]["stringData"])
+    assert from_secrets == {"WDF_WORKFLOW_DSN", "WDF_ARTIFACTS_DSN", "WDF_REAPER_DSN"}
+    assert not from_secrets & set(env)
+    service = {*ENV.values(), *REAPER_ENV, READY_ENV} - {ENV["build_id"]}
+    assert service == set(env) | from_secrets
 
 
 def test_store_secret_holds_the_three_service_identities_only(rendered):
