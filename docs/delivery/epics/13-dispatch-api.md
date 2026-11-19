@@ -1,6 +1,6 @@
 # Epic #24: Dispatch and control API - breakdown
 
-Status: draft, reconciled on 2026-11-17 with the built broker (#7) and workers (#10), then on 2026-11-18 with the spec review on `main` at `15adba0`: its findings are applied as the captain decided, awaiting the captain's approval
+Status: exit test run on 2026-11-19 and red on row 15 ([#516](https://github.com/AndoNorth/wasm-dag-forge/issues/516)), so the epic stays open (section 9); draft, reconciled on 2026-11-17 with the built broker (#7) and workers (#10), then on 2026-11-18 with the spec review on `main` at `15adba0`: its findings are applied as the captain decided, awaiting the captain's approval
 Epic: https://github.com/AndoNorth/wasm-dag-forge/issues/24
 Architecture note: docs/architecture/04-intake-dedup-and-dead-letter.drawio, docs/architecture/10-intake-and-admission.drawio and docs/architecture/19-broker-intake-and-dead-letter.drawio today, and the submit and control path diagram `docs/architecture/NN-dispatch-and-control.drawio` that 0.2 (issue) draws, where `NN` is the next free number when it merges, 20 on `main` today because 17, 18 and 19 are the admission cycle, the pool worker and the broker
 Verifier: none, per decision 1.
@@ -760,7 +760,89 @@ Not provable by this epic: the `reconcile` command and 100,000 jobs per call on 
 - Estimates, not measurements, in worker-days: lane 0 (4: 0.1 2.5, 0.2 1.5), E.1 (0.5), E.2 (delivered), E.3 (2), S7 (1.5), P.1 (1.5), P.2 (1.5), B.1 (2), B.2 (4), B.3 (2.5), C.1 (3), C.2 (2.5), C.3 (2.5), R.1 (1.5), D.1 (2.5), D.2 (3), exit test (2).
   That is about 37 worker-days of effort and about 21 days elapsed along lane 0, P.1, C.1, C.2, C.3, D.1, D.2 and the exit test (4 + 1.5 + 3 + 2.5 + 2.5 + 2.5 + 3 + 2), with the admission module landing late, the cluster lock behind #8, and the Temporal client on a thread as the main sources of slip.
 
-## 9. Closure (filled at close)
+## 9. Closure
+
+The exit test ran on 2026-11-19 against `60fc6aab932653ecf3cfa3d7dbf563919ce0c4aa`, the merge of D.2 and the last lane merge, from a `git archive origin/main` extracted into a scratch directory with no enclosing git repository.
+Every row passes except row 15, which failed in the exit run and again in a rerun of row 15 alone, so the epic does not close on this run.
+Row 17 failed once on the broker flake [#512](https://github.com/AndoNorth/wasm-dag-forge/issues/512) and passed on its rerun.
+The pasted output of every row is in the pull request that records this run.
+
+Method of the run:
+
+- The worker that ran it wrote none of the lanes.
+- The host is the 20 GiB WSL2 VM with Docker running for the whole run.
+  The one container not started by the run (`open-webui`) was left untouched.
+- Rows 0 to 8 ran first, row 17 next, then rows 9 to 16 in one sequence under the cluster lock (`flock /tmp/wdf-cluster.lock env WDF_CLUSTER_LOCK_HELD=1 bash <script>`) with row 0 repeated just before row 9, then row 17 again and the rerun of row 15 under the lock.
+- A stopped `wdf` cluster of preset `ci`, left by D.2, and its `wdf-registry` were removed with `just nuke` under the lock before row 0's repeat, so row 9 started from no cluster.
+- The export has no git checkout, so row 9 runs `scripts/tilt/run.sh ci` with `WDF_BUILD_ID=exit-a`, as section 7 says.
+- Rows 5 to 8 and 17 ran with `WDF_SLOT=1`, the pool slot of the worktree the run was launched from ([#466](https://github.com/AndoNorth/wasm-dag-forge/issues/466)), except row 8, which ran on slot 0 and waited for row 5's T1 lock files.
+- Row 4's diagram was rendered to PNG with ImageMagick and read by eye.
+- A memory sampler read `MemAvailable` every 5 s through rows 9 to 16.
+
+Results:
+
+| # | Result | Evidence |
+| --- | --- | --- |
+| 0 | pass | `MemAvailable` 18,368,856 kB at the start and 18,344,728 kB just before row 9, both above the gate of 13,369,344 kB, with only `open-webui` and the stale `wdf-registry` running at the start |
+| 1 | pass | `uv sync --frozen` exit 0, `uv lock --check` exit 0 with 75 packages resolved, the `uv.lock` SHA-256 `c59367e8...` unchanged |
+| 2 | pass | no output from the six `--check` commands |
+| 3 | pass | 41 valid files, each exit 0, and 84 invalid files, each exit 1 with the `reason:` of its directory, over the reasons `schema-violation` (54), `reason-scope` (10), `unknown-reason` (6), `control-cell-missing` (4), `transition-not-allowed` (4), `fingerprint-mismatch` (3), `event-not-of-stage` (2) and `too-large` (1) |
+| 4 | pass | exit 0 for the three commands, `ok -- validation done` from `just versions --check`, and diagram 20 shows the two listeners on 18081 and 18080 in one process, the submit sequence of D8, the reconciler, the control table, the control retrier with its resume finisher, and admission alone sending `resume` with the pending patch |
+| 5 | pass | 910 passed and 2 deselected (the `slow` tests) in 22 min 33 s, no `SKIPPED` and no `XFAIL` line |
+| 6 | pass | 67 passed, each named test listed `PASSED`, `gateway_contract` as both `test_gateway_contract_holds_for_temporal` and the fake's own tests, and `function_equals_control_yaml` with its 37 broken-copy cases |
+| 7 | pass | `test_submit_10000` and `test_submit_100000` `PASSED`, 9 min 18 s for both |
+| 8 | pass | 17 passed, the 22 min 28 s of the run spent almost wholly waiting for row 5's T1 lock files |
+| 9 | pass | `just up` in 59 s, `SUCCESS. All workloads are healthy.` after 234 s, `rabbitmq-0` Running in `wdf-infra`, `admission`, `dispatch` and `workflow-worker-exit-a` Running in `wdf-control` beside `placement`, the three pool workers Running in `wdf-workers`, and `{"status":"ready"}` from both probes |
+| 10 | pass | `created: 1`, `already_present: 1`, then `accepted: 3`, `duplicate_on_resend: 3`, `unknown_tenant: 404` |
+| 11 | pass | `row_only: 1`, `status: cancelled`, `workflow: none` |
+| 12 | pass | `status: succeeded`, `results: 2` in 66 s |
+| 13 | pass | `seen: pausing,paused,resume-pending,running,succeeded` |
+| 14 | pass | `seen: cancelling,cancelled` |
+| 15 | fail | `answered_before_restart: 1000`, the stopping `TOO_MANY_CALLS` line, `resend: accepted 1000 duplicate 1000`, `rows: 2000`, `accepted_events: 2000`, `lost: 0`, `doubled: 0`, `dlq: 0`, then `unpublished: 365` against 0; the rerun of row 15 alone on a fresh cluster gave the same counts with `unpublished: 272` ([#516](https://github.com/AndoNorth/wasm-dag-forge/issues/516)) |
+| 16 | pass | exit 0 for `just down` and both `just nuke`, the second deleting no node, then `No kind clusters found.` with only `open-webui` running |
+| 17 | pass on the second run | the first run's `just test` passed 3,215, and its `just itest` ended `1 failed, 771 passed` on `test_counters` of the broker, the flake [#512](https://github.com/AndoNorth/wasm-dag-forge/issues/512); the second run exit 0 with `== ci path: full`, 3,215 passed in `just test` in 16 min 44 s, 772 passed in `just itest` in 40 min 26 s, and `all checks passed!` from `nix flake check` |
+| 18 | pass | the `ci` run [44497098135](https://github.com/AndoNorth/wasm-dag-forge/actions/runs/44497098135), success on `60fc6aa` on `main`, full path, 3,215 passed in `just test` and 772 in `just itest`, and the `state-modules` run [44497098049](https://github.com/AndoNorth/wasm-dag-forge/actions/runs/44497098049), success on `60fc6aa`; no run on `main` holds this record yet, since it is the pull request that adds it |
+
+Row 15's cause, from the rerun that sampled the intake queue and the job rows every 3 to 5 s:
+
+- Nothing was lost or doubled: the depth of `intake.acme.standard` tracked the published rows at `accepted` (982 messages against 998 rows at 12:22:38Z), and the DLQ stayed empty.
+- The queue sat at its `max-length` of 1,000 with `reject-publish` from 12:22:38Z to 12:23:55Z, so each publish beyond what admission had pulled was `REJECTED` and left to the reconciler, as decision 23 intends.
+- Admission moved jobs off `accepted` at about 10.6 jobs/s and never reached the `ci` global cap of 1,000, so 2,000 jobs do not fill the cap and the queue at once, as D.2 assumed: the queue alone bounds the run.
+- When the smoke's count began, 809 rows were unpublished, and publishing them needs admission to pull 809 messages first, at least 76 s at that rate, beyond the 60 s window.
+- The reconciler refilled the queue in steps 20 to 30 s apart, because a `REJECTED` publish does not end a pass and most of each pass went on rejected publishes.
+- The row's expectation, not the code, is what #516 asks to change: a window derived from the queue bound, or a smaller job count, with the reconciler's pass on `REJECTED` a question for #16.
+
+Memory figures:
+
+- Host: `MemTotal` 20,482,272 kB, `MemAvailable` 18,344,728 kB at the gate before row 9, a low of 15,189,248 kB at 11:17:20Z at the end of row 15, 18,292,304 kB after row 16's last `just nuke`, and 18,348,176 kB after the last `just nuke` of the row 15 rerun.
+
+What was learned:
+
+- The submit path, the publisher and the reconciler lost and doubled nothing across a pod deleted mid-call, twice, and the stopping pod ended the call with a line that says a resend is safe.
+- On `ci`, the intake queue's `max-length` of 1,000 and the admission rate bound how fast a large batch reaches the broker, so a count of unpublished rows within a fixed time needs a window derived from both.
+- A fresh `just up` leaves no current worker build, which the smoke driver sets itself (`smoke: made build exit-a current`), as the harness of #6 does.
+- Row 8's T1 tests waited behind row 5 for the host-wide T1 lock files, so rows that hold T1 sessions run one after another whatever their slots.
+
+What the architecture note now shows: `docs/architecture/20-dispatch-and-control.drawio` and its SVG are as 0.2 (issue) left them, and were re-checked by eye in this run for row 4.
+The notes `04-intake-dedup-and-dead-letter.drawio`, `10-intake-and-admission.drawio` and `19-broker-intake-and-dead-letter.drawio` are unchanged.
+
+Which assumptions of section 2 held: A1 to A6 and A10 as reconciled, A7 with the `admission` module Running in rows 9 to 15, A8 with rows 12 and 13 on the real pool workers, and A9 with `placement` Running beside the service and changing nothing it calls.
+Questions Q2, Q3 and Q4 shipped at their defaults (a).
+
+What moved to which epic, unchanged from section 7:
+
+- the `reconcile` command and 100,000 jobs per call on the cluster (#14, #16)
+- the replacement of the estimates of D6, D7, D10 and the module figures of D16, with S7's numbers as the first data point (#16)
+- the canonical end-to-end cases and the later pass with a patched resume from a checkpoint (#17, #18)
+- a dead letter from the real admission and its replay, and the re-admission scan (#8)
+- kills and outages beyond the service pod (#15)
+- the metric names of D15 in `metrics.yaml`, dashboards and alerts (#13)
+- several replicas, and a tenant that is not self-asserted
+
+Follow-ups found:
+
+- [#516](https://github.com/AndoNorth/wasm-dag-forge/issues/516): row 15 expects `unpublished: 0` within 60 s, beyond what a full intake queue drains on `ci`; the epic closes after it is settled and row 15 passes.
+- [#512](https://github.com/AndoNorth/wasm-dag-forge/issues/512): the broker's `test_counters` failed again in row 17's first run, outside this epic.
 
 Closure addenda, one dated line each, added after close when a `revisit` child issue is filed against this epic:
 
