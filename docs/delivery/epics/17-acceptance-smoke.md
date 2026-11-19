@@ -1,11 +1,11 @@
 # Epic #17 pass 1: Smoke gate - breakdown
 
-Status: draft, awaiting spec review
+Status: draft, review fixes applied, awaiting approval
 Epic: https://github.com/AndoNorth/wasm-dag-forge/issues/17
 Architecture note: none new, and `docs/architecture/01-system-context.drawio` is unchanged, because the gate adds a host-side test entry point and package but no deployed component, data path or contract; the ladder document of pass 2 is where the test levels are described
 Depends on (closed epics): #1, #2, #4, #5, #3, #12, #11, #6, #9, #10, #7, #8, #24
 
-Citations were checked on `main` at `5029157` on 2026-11-19, and all paths are relative to the repository root.
+Citations were checked on `main` at `a1e90ac` on 2026-11-19, and all paths are relative to the repository root.
 Tiers as in the sibling specs: T0 host Python with no runtime, T2 the cluster from `just up` plus `scripts/tilt/run.sh ci` on preset `ci`.
 Every command takes `nix develop -c`, and every T2 command runs under `/tmp/wdf-cluster.lock`.
 Figures marked "estimate" are proposals replaced by the first measured run.
@@ -34,10 +34,12 @@ Figures marked "estimate" are proposals replaced by the first measured run.
 | 16 | The ladder document is not written in this pass; it stays with pass 2 | captain, 2026-11-19, spec review |
 | 17 | `cluster-verify` runs inside the 300 s budget | captain, 2026-11-19, spec review |
 | 18 | The wrapper deliberately differs from `scripts/up.sh:19-21` on a lock-wait timeout: it exits 4 (refused), where `up.sh` and `cluster-verify.sh` exit 1 | captain, 2026-11-19, spec review |
+| 19 | The shared helper of decision 10 returns what it saw: the current build, the deployed builds and the build it made current, or none. R.1's acceptance asserts that result, and row 4 prints the deployed builds from it, so the gate needs no second listing of them | captain, 2026-11-19, post-fix review (option a) |
+| 20 | 0.1 declares the acceptance package's full dependency set up front: `temporalio`, `wdf-workflow`, `wdf-broker`, `wdf-kernel`, `wdf-workloads` and `wdf-clusterkit`, a departure from `method.md:84` that section 3 states | captain, 2026-11-19, post-fix review (option a) |
 
 ### 0.2 Questions for the captain
 
-None open: Q1 to Q5 are settled as decisions 10 to 14, and the spec review's choices as decisions 15 to 18.
+None open: Q1 to Q5 are settled as decisions 10 to 14, the spec review's choices as decisions 15 to 18, and the post-fix review's as decisions 19 and 20.
 
 ### 0.3 Defaults the lanes build on
 
@@ -89,7 +91,7 @@ Row 4 is the one exception to read-only: on the first run after a fresh deploy i
 | 1 | Cluster, modules, admission, pools, object store | `scripts/cluster-verify.sh` as a subprocess under the held lock, ended at 90 s (D6) | exit 0; its count line copied. Exit 4 or 2 ends the run with that exit and no other row. Exit 1 prints `FAIL cluster-verify` with its `FAIL` lines; the deadline prints `FAIL cluster-verify did not finish in 90 s` with the last check line it printed |
 | 2 | Dispatch API | `GET /readyz` on `127.0.0.1:18081` and `:18080` (readiness covers the logins, a store head and Temporal, `deploy/dispatchapi/README.md:88,94-95`) | both `200 {"status":"ready"}` |
 | 3 | Intake broker | `python -m wdf_broker.dlq list` as `operator` over a forward of `svc/rabbitmq:5672`; RabbitMQ has no management API (`packages/broker/src/wdf_broker/topology.py:173`) | exit 0; the dead-letter count is recorded as the baseline of row 10, and a non-zero count passes (decision 15) |
-| 4 | Temporal | client connect over a forward of `svc/temporal-frontend:7233`, describe namespace `wdf`, then the shared helper of decision 10 with its poller wait at 30 s | namespace answers and a deployed build is current; the row names the current build and the deployed builds, and says when it made the build current |
+| 4 | Temporal | client connect over a forward of `svc/temporal-frontend:7233`, describe namespace `wdf`, then the shared helper of decision 10 with its poller wait at 30 s | namespace answers and a deployed build is current; the row names the current build and the deployed builds from the helper's result (decision 19), and says when it made the build current |
 | 5 | Placement | `GET /pools` over a forward of `svc/placement:8080` (`packages/placement/src/wdf_placement/service.py:210-213`) | 200 and the three pools of `contracts/temporal/naming.yaml:16-19` listed |
 | - | Postgres | none: row 2's `/readyz` connects every login, and job row 7 reads status from the row; no direct SQL (D3) | no row |
 | - | Observability | none in pass 1 (decision 11) | no row |
@@ -155,7 +157,7 @@ The two `revisit` child issues this pass files against closed epics are listed l
 | --- | --- | --- | --- | --- |
 | #13, #14, #16, #18, pass 2 | `just smoke` | `just/acceptance.just` (recipe unchanged), `scripts/smoke.sh` | exit codes and summary below; preset from `WDF_PRESET` (default `ci`) | smoke recipe v1, replacing the stub's exit 3 |
 | pass 2 | small clients over the API, store, Temporal and broker | `packages/acceptance/src/wdf_acceptance/clients/api.py`, `store.py`, `temporal.py`, `broker.py` | `api`: `template`, `batch`, `Api(dispatch, control, tenant)` with `upload_source`, `submit_one`, `status`, `cancel_batch`; `store`: `fetch(uri, identity) -> bytes`; `temporal`: `connect(address) -> Client`; `broker`: `dead_letters(address) -> int`; documented in the package README | v0, extended by pass 2 |
-| the harness, the dispatch smoke driver, the gate | the shared helper of decision 10 | `packages/workflow/src/wdf_workflow/harness/cluster.py` | `async make_deployed_current(client, context, timeout_s=POLLERS_S) -> str \| None`: returns the build it made current, or `None` when the current build is one of the deployed builds; raises the harness's `Refused` when the current build is not deployed, or when no build is current and the deployed builds are not exactly one | in `wdf_workflow` from R.1 |
+| the harness, the dispatch smoke driver, the gate | the shared helper of decision 10 | `packages/workflow/src/wdf_workflow/harness/cluster.py` | `async make_deployed_current(client, context, timeout_s=POLLERS_S) -> CurrentBuild`, where `CurrentBuild` is a frozen dataclass of `current: str`, `deployed: tuple[str, ...]` and `made: str \| None` (decision 19): `current` is the build current when the helper returns, `deployed` the deployed builds it listed, and `made` the build it made current, or `None` when it wrote nothing; raises the harness's `Refused` when the current build is not deployed, or when no build is current and the deployed builds are not exactly one | in `wdf_workflow` from R.1 |
 | every driver | a deadline on a forward | `packages/clusterkit/src/wdf_clusterkit/__init__.py` | `Forward.open(timeout_s: float = UP_S)`, the default unchanged | from 0.1 |
 
 Recipe contract (replaces the stub's exit 3):
@@ -173,7 +175,7 @@ Summary, one line per row in `cluster-verify`'s format so both read alike, then 
 ok cluster-verify ci: 10 ok, 0 failed
 ok api dispatch and control /readyz ready
 ok broker 0 dead letters before the job
-ok temporal namespace wdf, build exit-a made current
+ok temporal namespace wdf, build exit-a current (made current), deployed exit-a
 ok placement 3 pools
 ok job-submit accepted 0b6e2f0a-...
 ok job-run succeeded, build ran (attempt 1)
@@ -191,13 +193,19 @@ Postgres and observability have no row (section 1.2), so they print nothing and 
 
 | Lane | Worker count | Owns (path globs, exclusive) | Issues | Needs |
 | --- | --- | --- | --- | --- |
-| 0 | 1 | `packages/acceptance/*`, `packages/acceptance/src/wdf_acceptance/*.py`, `packages/acceptance/tests/*.py`, `scripts/smoke.sh`, `packages/clusterkit/src/wdf_clusterkit/__init__.py` (`Forward.open` only), `packages/clusterkit/tests/test_clusterkit.py`, root `pyproject.toml` (the `wdf-acceptance` lines only), `uv.lock` (rerun rule) | 0.1 | none |
-| C | 1 (the same worker) | `packages/acceptance/src/wdf_acceptance/clients/**`, `packages/acceptance/tests/clients/**` | C.1 | lane 0 |
+| 0 | 1 | `packages/acceptance/*`, `packages/acceptance/src/wdf_acceptance/*.py`, `packages/acceptance/tests/*.py`, `scripts/smoke.sh`, `packages/clusterkit/src/wdf_clusterkit/__init__.py` (`Forward.open` only), `packages/clusterkit/tests/test_clusterkit.py`, root `pyproject.toml` (the `wdf-acceptance` lines only), `uv.lock` (rerun rule); `packages/acceptance/*` includes the package's `pyproject.toml` and with it the whole dependency set (decision 20) | 0.1 | none |
+| C | 1 (the same worker) | `packages/acceptance/src/wdf_acceptance/clients/**`, `packages/acceptance/tests/clients/**`; no dependency line, because 0.1 declares every one the clients import (decision 20) | C.1 | lane 0 |
 | R | 1 (the same worker) | `packages/workflow/src/wdf_workflow/harness/cluster.py`, `packages/workflow/src/wdf_workflow/versioning.py` (`set_current` only), `packages/workflow/tests/harness/test_make_current.py`, `packages/dispatchapi/src/wdf_dispatchapi/smoke/__init__.py`, `packages/dispatchapi/pyproject.toml` (the `cluster` extra only), `uv.lock` (rerun rule) | R.1, R.2 | lane 0; R.2 also C.1 |
-| G | 1 (the same worker) | `packages/acceptance/src/wdf_acceptance/smoke/**`, `packages/acceptance/tests/smoke/**` | G.1, G.2 | lane 0, C.1, R.1; G.2 also R.2 |
+| G | 1 (the same worker) | `packages/acceptance/src/wdf_acceptance/smoke/**`, `packages/acceptance/tests/smoke/**`; no dependency line, because 0.1 declares every one the gate imports (decision 20) | G.1, G.2 | lane 0, C.1, R.1; G.2 also R.2 |
 
-Shared-file rules: `uv.lock` is touched by 0.1 (the new package) and R.2 (the driver's new dependency); a conflict is never resolved by hand, `uv lock` is rerun after rebase (`method.md:84`).
+Shared-file rules: `uv.lock` is touched by 0.1 (the new package with its full dependency set, decision 20) and R.2 (the driver's new dependency), and by no C or G issue, since `packages/acceptance/pyproject.toml` is lane 0's alone; a conflict is never resolved by hand, `uv lock` is rerun after rebase (`method.md:84`).
 No other file is shared: R owns the dispatch smoke driver alone, and the gate's lanes never edit it.
+
+Departures from the method, stated so that the captain approves them knowingly:
+
+- 0.1 declares the acceptance package's full dependency set (decision 20) before C.1 and G write the code that imports it, where `method.md:84` says a dependency lands in the PR that needs it.
+  Why: each package's `pyproject.toml` is owned by one lane (`method.md:83`), and C and G own only their own modules, so an added dependency in C.1 or G would be an out-of-lane edit (`method.md:94`).
+  Lanes 0, C, R and G are one worker in sequence, so declaring the set early costs nothing, and the 0.1 wheel test resolves only declared dependencies, so a later undeclared import fails there rather than hiding in the dev venv.
 
 ## 4. Issues
 
@@ -209,7 +217,7 @@ Every pytest command runs from the repository root under `nix develop -c`.
 
 Lane 0, tier T0. Needs: none. Blocks: C.1, R.1, G.1.
 
-- Scope: the package `wdf_acceptance` (pyproject on `wdf_clusterkit`, README, `report.py` holding the row and count-line format and the exit mapping of section 2), added to the root dev group; `scripts/smoke.sh` as section 1.4 says; and the `timeout_s` parameter of `Forward.open` (section 2, Produces).
+- Scope: the package `wdf_acceptance` (pyproject declaring the full dependency set of decision 20: `temporalio`, `wdf-workflow`, `wdf-broker`, `wdf-kernel`, `wdf-workloads` and `wdf-clusterkit`, README, `report.py` holding the row and count-line format and the exit mapping of section 2), added to the root dev group; `scripts/smoke.sh` as section 1.4 says; and the `timeout_s` parameter of `Forward.open` (section 2, Produces).
 - Owns: lane 0's globs.
 - Consumes / produces: `cluster-verify` (exit codes only).
   Produces the smoke recipe v1 contract of section 2 and `Forward.open(timeout_s)`.
@@ -217,7 +225,7 @@ Lane 0, tier T0. Needs: none. Blocks: C.1, R.1, G.1.
   - [ ] `pytest packages/acceptance -v -k "count_line_buckets or row_line_format or exit_mapping or wheel"` passes; `test_count_line_buckets` prints `smoke ci: 8 ok, 1 failed, 1 skipped, 94 s` for the rows of section 2's example.
   - [ ] `pytest packages/acceptance/tests/test_wrapper.py -v` passes, running `scripts/smoke.sh` with fake `kind`, `kubectl`, `flock`, `timeout` and `uv` first on `PATH`: `WDF_PRESET=dev` exits 2 with the preset reason; a missing `kubectl` exits 2; a `flock` that fails exits 4 with `refused: could not take /tmp/wdf-cluster.lock in 900 s`; a driver exit of 0, 1, 2 and 4 passes through; a `timeout` exit of 124 gives exit 1, and of 137 gives exit 1 with `FAIL budget` printed by the wrapper.
   - [ ] `pytest packages/clusterkit -v -k forward_open_deadline` passes: with a fake `kubectl` that exits at once, `Forward.open(timeout_s=1)` raises `TimeoutError` within 2 s, and `Forward.open()` still uses `UP_S`.
-  - [ ] `uv lock --check` exits 0.
+  - [ ] `packages/acceptance/pyproject.toml` lists the six dependencies of decision 20, and `uv lock --check` exits 0.
 - Verifier: `packages/acceptance/tests/test_report.py`, `test_wrapper.py`, `test_wheel.py`, `packages/clusterkit/tests/test_clusterkit.py`.
 
 ### C.1 Clients
@@ -246,7 +254,7 @@ Lane R, tier T0. Needs: 0.1. Blocks: R.2, G.1. Label: `revisit`, child of #6.
   Produces the helper that R.2 and G.1 call.
 - Consumer epics affected, listed in the issue: #17 (this gate), #15 and #16 (the harness at T2).
 - Acceptance criteria:
-  - [ ] `pytest packages/workflow/tests/harness/test_make_current.py -v` passes over a fake Temporal client and a fake `kubectl`: current `a` with `a` deployed returns `None` and writes nothing; current `a` with `a` and `b` deployed returns `None`; current `a` with only `b` deployed raises `Refused` naming `a` and `b`; no current build with `b` alone deployed returns `b` and writes once; no current build with zero or two deployed builds raises `Refused` naming them; a build made current during the poller wait is returned and not overwritten.
+  - [ ] `pytest packages/workflow/tests/harness/test_make_current.py -v` passes over a fake Temporal client and a fake `kubectl`: current `a` with `a` deployed returns `CurrentBuild(current="a", deployed=("a",), made=None)` and writes nothing; current `a` with `a` and `b` deployed returns `CurrentBuild(current="a", deployed=("a", "b"), made=None)`; current `a` with only `b` deployed raises `Refused` naming `a` and `b`; no current build with `b` alone deployed returns `CurrentBuild(current="b", deployed=("b",), made="b")` and writes once; no current build with zero or two deployed builds raises `Refused` naming them; a build `b` made current during the poller wait returns `CurrentBuild(current="b", deployed=("b",), made=None)` and is not overwritten.
   - [ ] `pytest packages/workflow -q -rs` passes with no `SKIPPED` line, and the PR's diff removes or changes no `assert` line of the existing tests.
 - Verifier: `packages/workflow/tests/harness/test_make_current.py` and the existing workflow tests.
 
@@ -335,7 +343,7 @@ Risks:
 - A dead pool worker makes row 1 end at its 90 s deadline naming the last check line, not the pool, because each pool's readiness rule waits up to 300 s (`deploy/workers/compile/module.yaml:16-24`); shortening that wait is a change to #10's modules, not taken in this pass.
 - A cold first compile is the budget's swing factor (epic risks); 66 s is one measurement.
 - Row 4 passes on whichever build is current as long as it is still deployed.
-  After a redeploy beside a current build, both builds are deployed and the old one stays current, so the job runs on the old build; the row line names the current and the deployed builds, so a reader sees which build ran, and making the new build current is the rollout's job (`deploy/workflow/README.md:26-28`), not the gate's.
+  After a redeploy beside a current build, both builds are deployed and the old one stays current, so the job runs on the old build; the row line names the current and the deployed builds from the helper's result (decision 19), so a reader sees which build ran, and making the new build current is the rollout's job (`deploy/workflow/README.md:26-28`), not the gate's.
   The gate is not purely read-only: the helper writes only when no build is current and exactly one is deployed, refuses a current build that is no longer deployed, and never overwrites a build made current during its poller wait.
 - Open intake issues may make the job late, not wrong: https://github.com/AndoNorth/wasm-dag-forge/issues/520 (reconciler left rows unpublished for about 195 s) would push row 7 past the budget if the single job's publish takes the reconciler path.
 - Fresh `ci` clusters fail `tilt ci` with `cluster did not pass liveness check` in about 4 of 20 cycles (https://github.com/AndoNorth/wasm-dag-forge/issues/528), so exit rows 2 and 4 can fail before the gate runs.
