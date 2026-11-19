@@ -33,7 +33,6 @@ from wdf_clusterkit import (
     store_credentials,
     until,
 )
-from wdf_clusterkit import state_dir as state_dir  # re-exported for the drivers
 from wdf_jobstate import (
     JobRow,
     Moved,

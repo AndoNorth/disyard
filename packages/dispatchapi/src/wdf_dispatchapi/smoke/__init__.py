@@ -41,11 +41,12 @@ import psycopg
 import wdf_keys
 from temporalio.client import Client
 from wdf_broker.tenancy import load
+from wdf_clusterkit import Forward, Refused, kubectl, state_dir
 from wdf_jobstate import status_vocabulary
 from wdf_workflow import versioning
 from wdf_workflow.contract import naming
-from wdf_workflow.harness import REAL_ENTRY, Refused, echo_params, source_bundle
-from wdf_workflow.harness.cluster import WORKER_LABEL, Forward, kubectl, state_dir
+from wdf_workflow.harness import REAL_ENTRY, echo_params, source_bundle
+from wdf_workflow.harness.cluster import WORKER_LABEL
 
 from ..gateway import TemporalGateway
 

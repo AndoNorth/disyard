@@ -41,6 +41,7 @@ from wdf_broker.contract import topology
 from wdf_broker.dlq import DLQ, PASS_LIMIT, PASS_TIMEOUT_S, Letter
 from wdf_broker.models import Outcome
 from wdf_broker.tenancy import load
+from wdf_clusterkit import Forward, Refused
 from wdf_events import Event, build_event, to_bytes
 from wdf_eventstore import insert_events
 from wdf_jobstate import (
@@ -61,7 +62,6 @@ from wdf_workflow.harness import (
     HOLD_S,
     PARAMS,
     Job,
-    Refused,
     content,
     smoke_plan,
     source_bundle,
@@ -681,7 +681,7 @@ def leave_admitted(db, job_id: str) -> None:
 
 
 async def drive(context: str, counters: Counters, passwords: dict[str, str]) -> Counters:
-    from wdf_workflow.harness.cluster import Cluster, Forward
+    from wdf_workflow.harness.cluster import Cluster
 
     cluster = Cluster(context)
     cluster.forwards["rabbitmq"] = Forward(context, INFRA, "svc/rabbitmq", BROKER_PORT)

@@ -26,10 +26,15 @@ dependencies = [
     "wdf-workflow",
 ]
 
+# The drivers of a deployed cluster, which no image runs.
+[project.optional-dependencies]
+cluster = ["wdf-clusterkit"]
+
 [tool.uv.sources]
 wdf-artifactclient = { workspace = true }
 wdf-artifactindex = { workspace = true }
 wdf-broker = { workspace = true }
+wdf-clusterkit = { workspace = true }
 wdf-compile = { workspace = true }
 wdf-events = { workspace = true }
 wdf-eventstore = { workspace = true }

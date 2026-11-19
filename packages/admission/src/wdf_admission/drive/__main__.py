@@ -18,7 +18,8 @@ import os
 import sys
 import traceback
 
-from wdf_workflow.harness import Refused, fresh_prefix
+from wdf_clusterkit import Refused
+from wdf_workflow.harness import fresh_prefix
 
 from . import (
     CLEARED,
