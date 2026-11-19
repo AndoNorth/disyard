@@ -65,19 +65,28 @@ class Publisher:
         self._lock = threading.Lock()
         self.stopped = False
 
-    def publish(self, conn: psycopg.Connection, events: Iterable[Event]) -> bool:
+    def publish(
+        self, conn: psycopg.Connection, events: Iterable[Event], full: set[str] | None = None
+    ) -> bool:
         """Publishes each event in order and records the receipt of each accepted one on `conn`, a
         connection of the dispatch login in autocommit mode.
+
+        `full`, when given, gains the routing key of each `REJECTED` publish, and an event whose
+        routing key it holds is skipped, because a quorum queue that rejected a publish rejects
+        every publish until it falls well below its length limit.
 
         Returns False when the run ended early, after which the caller publishes nothing more.
         """
         for event in events:
             if self.stopped:
                 return False
+            key = routing_key(event)
+            if full is not None and key in full:
+                continue
             connection = None
             try:
                 connection = self._connected()
-                outcome = connection.publish(routing_key(event), to_bytes(event), self.timeout_s)
+                outcome = connection.publish(key, to_bytes(event), self.timeout_s)
             except PublishTimeout:
                 return False
             except BrokerUnavailable as error:
@@ -90,8 +99,10 @@ class Publisher:
                 return False
             if outcome is Outcome.ACCEPTED:
                 self._receipt(conn, event)
+            elif outcome is Outcome.REJECTED and full is not None:
+                full.add(key)
             elif outcome is Outcome.UNROUTABLE:
-                log.error("job %s: no intake queue %s", event.jobid, routing_key(event))
+                log.error("job %s: no intake queue %s", event.jobid, key)
         return not self.stopped
 
     def _receipt(self, conn: psycopg.Connection, event: Event) -> None:

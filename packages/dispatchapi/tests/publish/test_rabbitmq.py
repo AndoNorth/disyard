@@ -1,16 +1,19 @@
 """The publisher and the reconciler against Postgres and the pinned RabbitMQ, publishing as the
 broker user `dispatch` with wdf_broker's own client."""
 
+import time
 from datetime import timedelta
 
 import psycopg
 import pytest
 from wdf_broker.client import Credentials, connect
+from wdf_broker.contract import topology
 from wdf_broker.testing.container import broker_container
 from wdf_dispatchapi.publish import Publisher
 from wdf_dispatchapi.reconciler import Reconciler
 from wdf_dispatchapi.submit import SCHEMA_VERSION, accepted_event
 from wdf_events import to_bytes
+from wdf_events.metrics import registry
 from wdf_eventstore import insert_events
 from wdf_jobstate import JobRow, get_job, insert_accepted
 from wdf_keys import batch_id, job_id
@@ -105,3 +108,53 @@ def test_publish_rabbitmq(rabbitmq, dispatch, db):
     ).fetchone()[0]
     assert count == 5
     assert to_bytes(events[0]) in bodies
+
+
+def test_reconciler_against_a_full_queue(rabbitmq, dispatch):
+    """A quorum queue that went over its length limit rejects every publish until its ready
+    messages fall to 80 % of the limit, whatever room it has above that. A pass then makes one
+    rejected publish there and keeps the rest of its rows, and the first pass after the queue
+    falls that far publishes them."""
+    rabbitmq.ctl("purge_queue", QUEUE)
+    limit = topology().intake_policy.definition.max_length.value
+    reconciler = Reconciler(
+        Publisher(
+            connect, rabbitmq.address, Credentials("dispatch", rabbitmq.passwords["dispatch"])
+        ),
+        grace=timedelta(0),
+    )
+    seed(dispatch, "backlog", limit + 100)
+
+    def unpublished() -> int:
+        return dispatch.execute(
+            "SELECT count(*) FROM accepted_job WHERE published_at IS NULL"
+        ).fetchone()[0]
+
+    def rejected_by_pass() -> int:
+        before = registry.count("wdf_broker_publish_total", outcome="rejected")
+        reconciler.run_pass(dispatch)
+        return registry.count("wdf_broker_publish_total", outcome="rejected") - before
+
+    assert rejected_by_pass() == 1
+    queued = limit + 100 - unpublished()
+    assert queued == limit + 1
+    admission = connect(rabbitmq.address, Credentials("admission", rabbitmq.passwords["admission"]))
+    try:
+        consumer = admission.consumer(QUEUE)
+
+        def take(n: int) -> None:
+            deliveries = consumer.pull(n, 10)
+            assert len(deliveries) == n
+            for delivery in deliveries:
+                delivery.ack()
+
+        take(queued - int(limit * 0.8) - 1)
+        assert rejected_by_pass() == 1
+        assert unpublished() == limit + 100 - queued
+        take(1)
+        deadline = time.monotonic() + 5
+        while unpublished() and time.monotonic() < deadline:
+            reconciler.run_pass(dispatch)
+        assert unpublished() == 0
+    finally:
+        admission.close()
