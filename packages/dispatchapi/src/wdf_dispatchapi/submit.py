@@ -5,7 +5,9 @@ The template is validated, compiled and stored as the batch manifest once per ca
 it names is indexed once. Then each chunk of entries runs the same sequence: check each entry, link
 every object to each job on the artifacts login and commit, insert the rows and one `job.accepted`
 per inserted row on the dispatch login and commit, and answer each entry. A link exists before its
-row, so the reaper never sees a job whose objects it may take. Publishing follows the answer.
+row, so the reaper never sees a job whose objects it may take. Then the chunk's new rows are
+published, so the answer is bounded by Postgres and never by the broker, until a publish ends the
+run, after which the call publishes nothing more and leaves its rows to the reconciler.
 """
 
 import json
@@ -91,7 +93,8 @@ class _Job:
 
 class Submit:
     """The submit route over a store client and a resolver of the `submit` identity, the limits
-    profile that checks a template and the tenancy profile that names tenants and classes."""
+    profile that checks a template and the tenancy profile that names tenants and classes, and the
+    publisher of the accepted events, without which every row waits for the reconciler."""
 
     def __init__(
         self,
@@ -100,9 +103,11 @@ class Submit:
         profile,
         tenancy: TenancyProfile,
         limits: Limits | None = None,
+        publisher=None,
     ):
         self.store, self.resolver, self.profile, self.tenancy = store, resolver, profile, tenancy
         self.limits = limits or Limits()
+        self.publisher = publisher
         self.slots = CallSlots(self.limits)
 
     def call(
@@ -142,6 +147,7 @@ class _Call:
         self.seen = bytearray(ENTRIES_MAX // 8 + 1)
         self.counts = {"accepted": 0, "duplicate": 0, "rejected": 0}
         self.manifest_retried = False
+        self.publishing = submit.publisher is not None
 
     def run(self, reader: Reader) -> SubmitSummary | None:
         try:
@@ -242,6 +248,7 @@ class _Call:
     def _chunk(self, items: list[BatchEntry | Rejected]) -> None:
         answers: list[EntryAnswer | None] = []
         jobs: dict[int, _Job] = {}
+        self.accepted: list[Event] = []
         for item in items:
             checked = self._check(item)
             if isinstance(checked, _Job):
@@ -256,6 +263,8 @@ class _Call:
         for answer in answers:
             self.counts[answer.outcome] += 1
         self._write(*answers)
+        if self.publishing and self.accepted:
+            self.publishing = self.submit.publisher.publish(self.dispatch, self.accepted)
 
     def _check(self, item: BatchEntry | Rejected) -> _Job | EntryAnswer:
         if isinstance(item, Rejected):
@@ -335,7 +344,8 @@ class _Call:
                 else:
                     existing.append(next(duplicates))
             new = [job for job, found in zip(jobs, existing, strict=True) if found is None]
-            insert_events(self.dispatch, [accepted_event(job.row, now) for job in new])
+            self.accepted = [accepted_event(job.row, now) for job in new]
+            insert_events(self.dispatch, self.accepted)
             traces = self._traces([found.job_id for found in existing if found is not None])
         return [self._answer(job, found, traces) for job, found in zip(jobs, existing, strict=True)]
 
