@@ -1,0 +1,1128 @@
+{
+    "apiVersion": "v1",
+    "kind": "List",
+    "items": [
+        {
+            "apiVersion": "v1",
+            "kind": "Node",
+            "metadata": {
+                "name": "wdf-control-plane",
+                "labels": {
+                    "beta.kubernetes.io/arch": "amd64",
+                    "beta.kubernetes.io/os": "linux",
+                    "kubernetes.io/arch": "amd64",
+                    "kubernetes.io/hostname": "wdf-control-plane",
+                    "kubernetes.io/os": "linux",
+                    "node-role.kubernetes.io/control-plane": ""
+                }
+            },
+            "spec": {
+                "podCIDR": "10.244.0.0/24"
+            },
+            "status": {
+                "allocatable": {
+                    "cpu": "900m",
+                    "ephemeral-storage": "1055762868Ki",
+                    "hugepages-2Mi": "0",
+                    "memory": "966656Ki",
+                    "pods": "110"
+                },
+                "capacity": {
+                    "cpu": "16",
+                    "ephemeral-storage": "1055762868Ki",
+                    "hugepages-2Mi": "0",
+                    "memory": "20494600Ki",
+                    "pods": "110"
+                },
+                "conditions": [
+                    {
+                        "type": "Ready",
+                        "status": "True",
+                        "reason": "KubeletReady"
+                    }
+                ]
+            }
+        },
+        {
+            "apiVersion": "v1",
+            "kind": "Node",
+            "metadata": {
+                "name": "wdf-worker",
+                "labels": {
+                    "beta.kubernetes.io/arch": "amd64",
+                    "beta.kubernetes.io/os": "linux",
+                    "kubernetes.io/arch": "amd64",
+                    "kubernetes.io/hostname": "wdf-worker",
+                    "kubernetes.io/os": "linux",
+                    "wdf.dev/pool": "infra"
+                }
+            },
+            "spec": {
+                "podCIDR": "10.244.0.0/24",
+                "taints": [
+                    {
+                        "effect": "NoSchedule",
+                        "key": "wdf.dev/pool",
+                        "value": "infra"
+                    }
+                ]
+            },
+            "status": {
+                "allocatable": {
+                    "cpu": "2900m",
+                    "ephemeral-storage": "1055762868Ki",
+                    "hugepages-2Mi": "0",
+                    "memory": "5636096Ki",
+                    "pods": "110"
+                },
+                "capacity": {
+                    "cpu": "16",
+                    "ephemeral-storage": "1055762868Ki",
+                    "hugepages-2Mi": "0",
+                    "memory": "20494600Ki",
+                    "pods": "110"
+                },
+                "conditions": [
+                    {
+                        "type": "Ready",
+                        "status": "True",
+                        "reason": "KubeletReady"
+                    }
+                ]
+            }
+        },
+        {
+            "apiVersion": "v1",
+            "kind": "Node",
+            "metadata": {
+                "name": "wdf-worker2",
+                "labels": {
+                    "beta.kubernetes.io/arch": "amd64",
+                    "beta.kubernetes.io/os": "linux",
+                    "kubernetes.io/arch": "amd64",
+                    "kubernetes.io/hostname": "wdf-worker2",
+                    "kubernetes.io/os": "linux",
+                    "wdf.dev/pool": "obs"
+                }
+            },
+            "spec": {
+                "podCIDR": "10.244.0.0/24",
+                "taints": [
+                    {
+                        "effect": "NoSchedule",
+                        "key": "wdf.dev/pool",
+                        "value": "obs"
+                    }
+                ]
+            },
+            "status": {
+                "allocatable": {
+                    "cpu": "400m",
+                    "ephemeral-storage": "1055762868Ki",
+                    "hugepages-2Mi": "0",
+                    "memory": "352256Ki",
+                    "pods": "110"
+                },
+                "capacity": {
+                    "cpu": "16",
+                    "ephemeral-storage": "1055762868Ki",
+                    "hugepages-2Mi": "0",
+                    "memory": "20494600Ki",
+                    "pods": "110"
+                },
+                "conditions": [
+                    {
+                        "type": "Ready",
+                        "status": "True",
+                        "reason": "KubeletReady"
+                    }
+                ]
+            }
+        },
+        {
+            "apiVersion": "v1",
+            "kind": "Node",
+            "metadata": {
+                "name": "wdf-worker3",
+                "labels": {
+                    "beta.kubernetes.io/arch": "amd64",
+                    "beta.kubernetes.io/os": "linux",
+                    "kubernetes.io/arch": "amd64",
+                    "kubernetes.io/hostname": "wdf-worker3",
+                    "kubernetes.io/os": "linux",
+                    "wdf.dev/pool": "compile"
+                }
+            },
+            "spec": {
+                "podCIDR": "10.244.0.0/24",
+                "taints": [
+                    {
+                        "effect": "NoSchedule",
+                        "key": "wdf.dev/pool",
+                        "value": "compile"
+                    }
+                ]
+            },
+            "status": {
+                "allocatable": {
+                    "cpu": "1400m",
+                    "ephemeral-storage": "1055762868Ki",
+                    "hugepages-2Mi": "0",
+                    "memory": "1212416Ki",
+                    "pods": "110"
+                },
+                "capacity": {
+                    "cpu": "16",
+                    "ephemeral-storage": "1055762868Ki",
+                    "hugepages-2Mi": "0",
+                    "memory": "20494600Ki",
+                    "pods": "110"
+                },
+                "conditions": [
+                    {
+                        "type": "Ready",
+                        "status": "True",
+                        "reason": "KubeletReady"
+                    }
+                ]
+            }
+        },
+        {
+            "apiVersion": "v1",
+            "kind": "Node",
+            "metadata": {
+                "name": "wdf-worker4",
+                "labels": {
+                    "beta.kubernetes.io/arch": "amd64",
+                    "beta.kubernetes.io/os": "linux",
+                    "kubernetes.io/arch": "amd64",
+                    "kubernetes.io/hostname": "wdf-worker4",
+                    "kubernetes.io/os": "linux",
+                    "wdf.dev/pool": "simulate"
+                }
+            },
+            "spec": {
+                "podCIDR": "10.244.0.0/24",
+                "taints": [
+                    {
+                        "effect": "NoSchedule",
+                        "key": "wdf.dev/pool",
+                        "value": "simulate"
+                    }
+                ]
+            },
+            "status": {
+                "allocatable": {
+                    "cpu": "400m",
+                    "ephemeral-storage": "1055762868Ki",
+                    "hugepages-2Mi": "0",
+                    "memory": "598016Ki",
+                    "pods": "110"
+                },
+                "capacity": {
+                    "cpu": "16",
+                    "ephemeral-storage": "1055762868Ki",
+                    "hugepages-2Mi": "0",
+                    "memory": "20494600Ki",
+                    "pods": "110"
+                },
+                "conditions": [
+                    {
+                        "type": "Ready",
+                        "status": "True",
+                        "reason": "KubeletReady"
+                    }
+                ]
+            }
+        },
+        {
+            "apiVersion": "v1",
+            "kind": "Node",
+            "metadata": {
+                "name": "wdf-worker5",
+                "labels": {
+                    "beta.kubernetes.io/arch": "amd64",
+                    "beta.kubernetes.io/os": "linux",
+                    "kubernetes.io/arch": "amd64",
+                    "kubernetes.io/hostname": "wdf-worker5",
+                    "kubernetes.io/os": "linux",
+                    "wdf.dev/pool": "aggregate"
+                }
+            },
+            "spec": {
+                "podCIDR": "10.244.0.0/24",
+                "taints": [
+                    {
+                        "effect": "NoSchedule",
+                        "key": "wdf.dev/pool",
+                        "value": "aggregate"
+                    }
+                ]
+            },
+            "status": {
+                "allocatable": {
+                    "cpu": "1400m",
+                    "ephemeral-storage": "1055762868Ki",
+                    "hugepages-2Mi": "0",
+                    "memory": "1212416Ki",
+                    "pods": "110"
+                },
+                "capacity": {
+                    "cpu": "16",
+                    "ephemeral-storage": "1055762868Ki",
+                    "hugepages-2Mi": "0",
+                    "memory": "20494600Ki",
+                    "pods": "110"
+                },
+                "conditions": [
+                    {
+                        "type": "Ready",
+                        "status": "True",
+                        "reason": "KubeletReady"
+                    }
+                ]
+            }
+        },
+        {
+            "apiVersion": "v1",
+            "kind": "Pod",
+            "metadata": {
+                "name": "etcd-wdf-control-plane",
+                "namespace": "kube-system",
+                "labels": {}
+            },
+            "spec": {
+                "nodeName": "wdf-control-plane",
+                "containers": [
+                    {
+                        "name": "etcd",
+                        "image": "registry.k8s.io/etcd:3.5.16-0",
+                        "resources": {
+                            "requests": {
+                                "cpu": "100m",
+                                "memory": "100Mi"
+                            }
+                        }
+                    }
+                ]
+            },
+            "status": {
+                "phase": "Running",
+                "conditions": [
+                    {
+                        "type": "Ready",
+                        "status": "True"
+                    },
+                    {
+                        "type": "PodScheduled",
+                        "status": "True"
+                    }
+                ]
+            }
+        },
+        {
+            "apiVersion": "v1",
+            "kind": "Pod",
+            "metadata": {
+                "name": "kube-apiserver-wdf-control-plane",
+                "namespace": "kube-system",
+                "labels": {}
+            },
+            "spec": {
+                "nodeName": "wdf-control-plane",
+                "containers": [
+                    {
+                        "name": "kube-apiserver",
+                        "image": "registry.k8s.io/kube-apiserver:v1.32.2",
+                        "resources": {
+                            "requests": {
+                                "cpu": "250m"
+                            }
+                        }
+                    }
+                ]
+            },
+            "status": {
+                "phase": "Running",
+                "conditions": [
+                    {
+                        "type": "Ready",
+                        "status": "True"
+                    },
+                    {
+                        "type": "PodScheduled",
+                        "status": "True"
+                    }
+                ]
+            }
+        },
+        {
+            "apiVersion": "v1",
+            "kind": "Pod",
+            "metadata": {
+                "name": "coredns-668d6bf9bc-7sx2l",
+                "namespace": "kube-system",
+                "labels": {
+                    "k8s-app": "kube-dns"
+                }
+            },
+            "spec": {
+                "nodeName": "wdf-control-plane",
+                "containers": [
+                    {
+                        "name": "coredns",
+                        "image": "registry.k8s.io/coredns/coredns:v1.11.3",
+                        "resources": {
+                            "limits": {
+                                "memory": "170Mi"
+                            },
+                            "requests": {
+                                "cpu": "100m",
+                                "memory": "70Mi"
+                            }
+                        }
+                    }
+                ]
+            },
+            "status": {
+                "phase": "Running",
+                "conditions": [
+                    {
+                        "type": "Ready",
+                        "status": "True"
+                    },
+                    {
+                        "type": "PodScheduled",
+                        "status": "True"
+                    }
+                ]
+            }
+        },
+        {
+            "apiVersion": "v1",
+            "kind": "Pod",
+            "metadata": {
+                "name": "kindnet-4x7kq",
+                "namespace": "kube-system",
+                "labels": {
+                    "app": "kindnet"
+                }
+            },
+            "spec": {
+                "nodeName": "wdf-control-plane",
+                "containers": [
+                    {
+                        "name": "kindnet-cni",
+                        "image": "docker.io/kindest/kindnetd:v20250214-acbabc1a",
+                        "resources": {
+                            "limits": {
+                                "cpu": "100m",
+                                "memory": "50Mi"
+                            },
+                            "requests": {
+                                "cpu": "100m",
+                                "memory": "50Mi"
+                            }
+                        }
+                    }
+                ]
+            },
+            "status": {
+                "phase": "Running",
+                "conditions": [
+                    {
+                        "type": "Ready",
+                        "status": "True"
+                    },
+                    {
+                        "type": "PodScheduled",
+                        "status": "True"
+                    }
+                ]
+            }
+        },
+        {
+            "apiVersion": "v1",
+            "kind": "Pod",
+            "metadata": {
+                "name": "kube-proxy-qk7x4",
+                "namespace": "kube-system",
+                "labels": {
+                    "k8s-app": "kube-proxy"
+                }
+            },
+            "spec": {
+                "nodeName": "wdf-control-plane",
+                "containers": [
+                    {
+                        "name": "kube-proxy",
+                        "image": "registry.k8s.io/kube-proxy:v1.32.2",
+                        "resources": {}
+                    }
+                ]
+            },
+            "status": {
+                "phase": "Running",
+                "conditions": [
+                    {
+                        "type": "Ready",
+                        "status": "True"
+                    },
+                    {
+                        "type": "PodScheduled",
+                        "status": "True"
+                    }
+                ]
+            }
+        },
+        {
+            "apiVersion": "v1",
+            "kind": "Pod",
+            "metadata": {
+                "name": "kindnet-b2m9d",
+                "namespace": "kube-system",
+                "labels": {
+                    "app": "kindnet"
+                }
+            },
+            "spec": {
+                "nodeName": "wdf-worker",
+                "containers": [
+                    {
+                        "name": "kindnet-cni",
+                        "image": "docker.io/kindest/kindnetd:v20250214-acbabc1a",
+                        "resources": {
+                            "limits": {
+                                "cpu": "100m",
+                                "memory": "50Mi"
+                            },
+                            "requests": {
+                                "cpu": "100m",
+                                "memory": "50Mi"
+                            }
+                        }
+                    }
+                ]
+            },
+            "status": {
+                "phase": "Running",
+                "conditions": [
+                    {
+                        "type": "Ready",
+                        "status": "True"
+                    },
+                    {
+                        "type": "PodScheduled",
+                        "status": "True"
+                    }
+                ]
+            }
+        },
+        {
+            "apiVersion": "v1",
+            "kind": "Pod",
+            "metadata": {
+                "name": "kube-proxy-d9m2b",
+                "namespace": "kube-system",
+                "labels": {
+                    "k8s-app": "kube-proxy"
+                }
+            },
+            "spec": {
+                "nodeName": "wdf-worker",
+                "containers": [
+                    {
+                        "name": "kube-proxy",
+                        "image": "registry.k8s.io/kube-proxy:v1.32.2",
+                        "resources": {}
+                    }
+                ]
+            },
+            "status": {
+                "phase": "Running",
+                "conditions": [
+                    {
+                        "type": "Ready",
+                        "status": "True"
+                    },
+                    {
+                        "type": "PodScheduled",
+                        "status": "True"
+                    }
+                ]
+            }
+        },
+        {
+            "apiVersion": "v1",
+            "kind": "Pod",
+            "metadata": {
+                "name": "kindnet-q8w5n",
+                "namespace": "kube-system",
+                "labels": {
+                    "app": "kindnet"
+                }
+            },
+            "spec": {
+                "nodeName": "wdf-worker2",
+                "containers": [
+                    {
+                        "name": "kindnet-cni",
+                        "image": "docker.io/kindest/kindnetd:v20250214-acbabc1a",
+                        "resources": {
+                            "limits": {
+                                "cpu": "100m",
+                                "memory": "50Mi"
+                            },
+                            "requests": {
+                                "cpu": "100m",
+                                "memory": "50Mi"
+                            }
+                        }
+                    }
+                ]
+            },
+            "status": {
+                "phase": "Running",
+                "conditions": [
+                    {
+                        "type": "Ready",
+                        "status": "True"
+                    },
+                    {
+                        "type": "PodScheduled",
+                        "status": "True"
+                    }
+                ]
+            }
+        },
+        {
+            "apiVersion": "v1",
+            "kind": "Pod",
+            "metadata": {
+                "name": "kube-proxy-n5w8q",
+                "namespace": "kube-system",
+                "labels": {
+                    "k8s-app": "kube-proxy"
+                }
+            },
+            "spec": {
+                "nodeName": "wdf-worker2",
+                "containers": [
+                    {
+                        "name": "kube-proxy",
+                        "image": "registry.k8s.io/kube-proxy:v1.32.2",
+                        "resources": {}
+                    }
+                ]
+            },
+            "status": {
+                "phase": "Running",
+                "conditions": [
+                    {
+                        "type": "Ready",
+                        "status": "True"
+                    },
+                    {
+                        "type": "PodScheduled",
+                        "status": "True"
+                    }
+                ]
+            }
+        },
+        {
+            "apiVersion": "v1",
+            "kind": "Pod",
+            "metadata": {
+                "name": "kindnet-h6t2r",
+                "namespace": "kube-system",
+                "labels": {
+                    "app": "kindnet"
+                }
+            },
+            "spec": {
+                "nodeName": "wdf-worker3",
+                "containers": [
+                    {
+                        "name": "kindnet-cni",
+                        "image": "docker.io/kindest/kindnetd:v20250214-acbabc1a",
+                        "resources": {
+                            "limits": {
+                                "cpu": "100m",
+                                "memory": "50Mi"
+                            },
+                            "requests": {
+                                "cpu": "100m",
+                                "memory": "50Mi"
+                            }
+                        }
+                    }
+                ]
+            },
+            "status": {
+                "phase": "Running",
+                "conditions": [
+                    {
+                        "type": "Ready",
+                        "status": "True"
+                    },
+                    {
+                        "type": "PodScheduled",
+                        "status": "True"
+                    }
+                ]
+            }
+        },
+        {
+            "apiVersion": "v1",
+            "kind": "Pod",
+            "metadata": {
+                "name": "kube-proxy-r2t6h",
+                "namespace": "kube-system",
+                "labels": {
+                    "k8s-app": "kube-proxy"
+                }
+            },
+            "spec": {
+                "nodeName": "wdf-worker3",
+                "containers": [
+                    {
+                        "name": "kube-proxy",
+                        "image": "registry.k8s.io/kube-proxy:v1.32.2",
+                        "resources": {}
+                    }
+                ]
+            },
+            "status": {
+                "phase": "Running",
+                "conditions": [
+                    {
+                        "type": "Ready",
+                        "status": "True"
+                    },
+                    {
+                        "type": "PodScheduled",
+                        "status": "True"
+                    }
+                ]
+            }
+        },
+        {
+            "apiVersion": "v1",
+            "kind": "Pod",
+            "metadata": {
+                "name": "kindnet-z9c3v",
+                "namespace": "kube-system",
+                "labels": {
+                    "app": "kindnet"
+                }
+            },
+            "spec": {
+                "nodeName": "wdf-worker4",
+                "containers": [
+                    {
+                        "name": "kindnet-cni",
+                        "image": "docker.io/kindest/kindnetd:v20250214-acbabc1a",
+                        "resources": {
+                            "limits": {
+                                "cpu": "100m",
+                                "memory": "50Mi"
+                            },
+                            "requests": {
+                                "cpu": "100m",
+                                "memory": "50Mi"
+                            }
+                        }
+                    }
+                ]
+            },
+            "status": {
+                "phase": "Running",
+                "conditions": [
+                    {
+                        "type": "Ready",
+                        "status": "True"
+                    },
+                    {
+                        "type": "PodScheduled",
+                        "status": "True"
+                    }
+                ]
+            }
+        },
+        {
+            "apiVersion": "v1",
+            "kind": "Pod",
+            "metadata": {
+                "name": "kube-proxy-v3c9z",
+                "namespace": "kube-system",
+                "labels": {
+                    "k8s-app": "kube-proxy"
+                }
+            },
+            "spec": {
+                "nodeName": "wdf-worker4",
+                "containers": [
+                    {
+                        "name": "kube-proxy",
+                        "image": "registry.k8s.io/kube-proxy:v1.32.2",
+                        "resources": {}
+                    }
+                ]
+            },
+            "status": {
+                "phase": "Running",
+                "conditions": [
+                    {
+                        "type": "Ready",
+                        "status": "True"
+                    },
+                    {
+                        "type": "PodScheduled",
+                        "status": "True"
+                    }
+                ]
+            }
+        },
+        {
+            "apiVersion": "v1",
+            "kind": "Pod",
+            "metadata": {
+                "name": "kindnet-m4p7s",
+                "namespace": "kube-system",
+                "labels": {
+                    "app": "kindnet"
+                }
+            },
+            "spec": {
+                "nodeName": "wdf-worker5",
+                "containers": [
+                    {
+                        "name": "kindnet-cni",
+                        "image": "docker.io/kindest/kindnetd:v20250214-acbabc1a",
+                        "resources": {
+                            "limits": {
+                                "cpu": "100m",
+                                "memory": "50Mi"
+                            },
+                            "requests": {
+                                "cpu": "100m",
+                                "memory": "50Mi"
+                            }
+                        }
+                    }
+                ]
+            },
+            "status": {
+                "phase": "Running",
+                "conditions": [
+                    {
+                        "type": "Ready",
+                        "status": "True"
+                    },
+                    {
+                        "type": "PodScheduled",
+                        "status": "True"
+                    }
+                ]
+            }
+        },
+        {
+            "apiVersion": "v1",
+            "kind": "Pod",
+            "metadata": {
+                "name": "kube-proxy-s7p4m",
+                "namespace": "kube-system",
+                "labels": {
+                    "k8s-app": "kube-proxy"
+                }
+            },
+            "spec": {
+                "nodeName": "wdf-worker5",
+                "containers": [
+                    {
+                        "name": "kube-proxy",
+                        "image": "registry.k8s.io/kube-proxy:v1.32.2",
+                        "resources": {}
+                    }
+                ]
+            },
+            "status": {
+                "phase": "Running",
+                "conditions": [
+                    {
+                        "type": "Ready",
+                        "status": "True"
+                    },
+                    {
+                        "type": "PodScheduled",
+                        "status": "True"
+                    }
+                ]
+            }
+        },
+        {
+            "apiVersion": "v1",
+            "kind": "Pod",
+            "metadata": {
+                "name": "temporal-frontend-7d9c5b6f4-2kq8x",
+                "namespace": "wdf-infra",
+                "labels": {
+                    "app.kubernetes.io/name": "temporal-frontend"
+                }
+            },
+            "spec": {
+                "nodeName": "wdf-worker",
+                "containers": [
+                    {
+                        "name": "temporal-frontend",
+                        "image": "temporalio/server:1.27.2",
+                        "resources": {
+                            "limits": {
+                                "cpu": "200m",
+                                "memory": "192Mi"
+                            },
+                            "requests": {
+                                "cpu": "200m",
+                                "memory": "192Mi"
+                            }
+                        }
+                    }
+                ]
+            },
+            "status": {
+                "phase": "Running",
+                "conditions": [
+                    {
+                        "type": "Ready",
+                        "status": "True"
+                    },
+                    {
+                        "type": "PodScheduled",
+                        "status": "True"
+                    }
+                ]
+            }
+        },
+        {
+            "apiVersion": "v1",
+            "kind": "Pod",
+            "metadata": {
+                "name": "temporal-schema-6x2vp",
+                "namespace": "wdf-infra",
+                "labels": {
+                    "job-name": "temporal-schema"
+                }
+            },
+            "spec": {
+                "nodeName": "wdf-worker",
+                "containers": [
+                    {
+                        "name": "temporal-schema",
+                        "image": "temporalio/admin-tools:1.27.2",
+                        "resources": {
+                            "limits": {
+                                "cpu": "50m",
+                                "memory": "128Mi"
+                            },
+                            "requests": {
+                                "cpu": "50m",
+                                "memory": "128Mi"
+                            }
+                        }
+                    }
+                ]
+            },
+            "status": {
+                "phase": "Succeeded",
+                "conditions": [
+                    {
+                        "type": "Ready",
+                        "status": "False"
+                    },
+                    {
+                        "type": "PodScheduled",
+                        "status": "True"
+                    }
+                ]
+            }
+        },
+        {
+            "apiVersion": "v1",
+            "kind": "Pod",
+            "metadata": {
+                "name": "admission-5f8b7c9d6-r4t7w",
+                "namespace": "wdf-control",
+                "labels": {
+                    "app.kubernetes.io/name": "admission"
+                }
+            },
+            "spec": {
+                "nodeName": "wdf-worker",
+                "containers": [
+                    {
+                        "name": "admission",
+                        "image": "wdf-admission:tilt-1b7e4c2a9d03f6e5",
+                        "resources": {
+                            "limits": {
+                                "cpu": "250m",
+                                "memory": "128Mi"
+                            },
+                            "requests": {
+                                "cpu": "50m",
+                                "memory": "128Mi"
+                            }
+                        }
+                    }
+                ]
+            },
+            "status": {
+                "phase": "Running",
+                "conditions": [
+                    {
+                        "type": "Ready",
+                        "status": "True"
+                    },
+                    {
+                        "type": "PodScheduled",
+                        "status": "True"
+                    }
+                ]
+            }
+        },
+        {
+            "apiVersion": "v1",
+            "kind": "Pod",
+            "metadata": {
+                "name": "compile-worker-7b5d9c8f6d-h6t2r",
+                "namespace": "wdf-workers",
+                "labels": {
+                    "app.kubernetes.io/name": "compile-worker",
+                    "pod-template-hash": "7b5d9c8f6d"
+                }
+            },
+            "spec": {
+                "nodeName": "wdf-worker3",
+                "containers": [
+                    {
+                        "name": "compile-worker",
+                        "image": "wdf-compile-worker:tilt-6c1f2b9e0a4d7e31",
+                        "resources": {
+                            "limits": {
+                                "cpu": "1",
+                                "memory": "1Gi"
+                            },
+                            "requests": {
+                                "cpu": "1",
+                                "memory": "1Gi"
+                            }
+                        }
+                    }
+                ]
+            },
+            "status": {
+                "phase": "Running",
+                "conditions": [
+                    {
+                        "type": "Ready",
+                        "status": "True"
+                    },
+                    {
+                        "type": "PodScheduled",
+                        "status": "True"
+                    }
+                ]
+            }
+        },
+        {
+            "apiVersion": "v1",
+            "kind": "Pod",
+            "metadata": {
+                "name": "simulate-worker-7b5d9c8f6d-z9c3v",
+                "namespace": "wdf-workers",
+                "labels": {
+                    "app.kubernetes.io/name": "simulate-worker",
+                    "pod-template-hash": "7b5d9c8f6d"
+                }
+            },
+            "spec": {
+                "nodeName": "wdf-worker4",
+                "containers": [
+                    {
+                        "name": "simulate-worker",
+                        "image": "wdf-simulate-worker:tilt-0d5a8e3c7b2f1946",
+                        "resources": {
+                            "limits": {
+                                "cpu": "250m",
+                                "memory": "512Mi"
+                            },
+                            "requests": {
+                                "cpu": "250m",
+                                "memory": "512Mi"
+                            }
+                        }
+                    }
+                ]
+            },
+            "status": {
+                "phase": "Running",
+                "conditions": [
+                    {
+                        "type": "Ready",
+                        "status": "True"
+                    },
+                    {
+                        "type": "PodScheduled",
+                        "status": "True"
+                    }
+                ]
+            }
+        },
+        {
+            "apiVersion": "v1",
+            "kind": "Pod",
+            "metadata": {
+                "name": "aggregate-worker-7b5d9c8f6d-m4p7s",
+                "namespace": "wdf-workers",
+                "labels": {
+                    "app.kubernetes.io/name": "aggregate-worker",
+                    "pod-template-hash": "7b5d9c8f6d"
+                }
+            },
+            "spec": {
+                "nodeName": "wdf-worker5",
+                "containers": [
+                    {
+                        "name": "aggregate-worker",
+                        "image": "wdf-aggregate-worker:tilt-9e4b1c7f2a6d0853",
+                        "resources": {
+                            "limits": {
+                                "cpu": "1",
+                                "memory": "1Gi"
+                            },
+                            "requests": {
+                                "cpu": "1",
+                                "memory": "1Gi"
+                            }
+                        }
+                    }
+                ]
+            },
+            "status": {
+                "phase": "Running",
+                "conditions": [
+                    {
+                        "type": "Ready",
+                        "status": "True"
+                    },
+                    {
+                        "type": "PodScheduled",
+                        "status": "True"
+                    }
+                ]
+            }
+        }
+    ],
+    "metadata": {
+        "resourceVersion": ""
+    }
+}
