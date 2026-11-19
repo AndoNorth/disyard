@@ -23,23 +23,20 @@ from pathlib import Path
 
 from temporalio.api.workflowservice.v1 import DescribeNamespaceRequest
 from temporalio.client import Client
-from temporalio.common import WorkerDeploymentVersion
 from temporalio.runtime import PrometheusConfig, Runtime, TelemetryConfig
-from temporalio.worker import Worker, WorkerDeploymentConfig
+from temporalio.worker import Worker
 from wdf_artifactreaper import schedule
 from wdf_artifactreaper.schedule import RunPass
 from wdf_temporal import event_data_converter, tracing_interceptor
 
 from ..contract import naming
-from ..job import JobWorkflow
-from ..placement import StaticPlacer, place_activity
+from ..placement import Placer, ServicePlacer, StaticPlacer
+from ..worker import THREADS, workflow_worker
 
 log = logging.getLogger(__name__)
 
 # How long the tasks in flight have to finish after a stop, below the pod's grace period.
 DRAIN = timedelta(seconds=60)
-# The threads of each worker's blocking activities, and so its database connections at once.
-THREADS = 8
 # The workflow tasks run at once. A task takes tens of milliseconds of CPU, so on the pod's half
 # core more of them at once only queue inside the process until they pass their timeout.
 WORKFLOW_TASKS = 8
@@ -61,7 +58,10 @@ ENV = {
     # Credentials files of wdf_storecheck.s3.load_credentials holding the role of each name.
     "workflow_credentials": "WDF_WORKFLOW_CREDENTIALS",
     "indexer_credentials": "WDF_INDEXER_CREDENTIALS",
+    # Optional: the address of the placement service, StaticPlacer when unset.
+    "placement_url": "WDF_PLACEMENT_URL",
 }
+OPTIONAL = {"placement_url"}
 # Read by the reaper's own pass, with its login in wdf_reaper and the `reaper` store identity.
 REAPER_ENV = (schedule.ENV_DSN, schedule.ENV_ENDPOINT, schedule.ENV_CREDENTIALS)
 # Optional: the file that marks the service ready.
@@ -86,14 +86,19 @@ class Config:
     store_endpoint: str
     workflow_credentials: str
     indexer_credentials: str
+    placement_url: str | None = None
 
     @classmethod
     def from_env(cls, environ: Mapping[str, str]) -> "Config":
         """The configuration of `environ`, or MissingEnv naming every variable that is unset or
-        empty, the reaper's included, before anything connects."""
-        if missing := [name for name in [*ENV.values(), *REAPER_ENV] if not environ.get(name)]:
+        empty, the reaper's included and the optional ones left out, before anything connects."""
+        required = [name for key, name in ENV.items() if key not in OPTIONAL]
+        if missing := [name for name in [*required, *REAPER_ENV] if not environ.get(name)]:
             raise MissingEnv(missing)
-        return cls(**{key: environ[name] for key, name in ENV.items()})
+        return cls(**{key: environ.get(name) or None for key, name in ENV.items()})
+
+    def placer(self) -> Placer:
+        return ServicePlacer(self.placement_url) if self.placement_url else StaticPlacer()
 
 
 def real_control(config: Config) -> tuple[list[Callable], Callable]:
@@ -166,28 +171,16 @@ async def serve(
         await client.workflow_service.describe_namespace(
             DescribeNamespaceRequest(namespace=config.namespace)
         )
-        with (
-            ThreadPoolExecutor(THREADS) as local,
-            ThreadPoolExecutor(THREADS) as control,
-            ThreadPoolExecutor(1) as reaper,
-        ):
+        with ThreadPoolExecutor(THREADS) as control, ThreadPoolExecutor(1) as reaper:
             workers = [
-                Worker(
+                workflow_worker(
                     client,
-                    task_queue=naming().workflow.queue,
-                    workflows=[JobWorkflow],
-                    activities=[place_activity(StaticPlacer()), emit],
-                    activity_executor=local,
+                    config.build_id,
+                    config.placer(),
+                    emit,
                     max_cached_workflows=CACHED_WORKFLOWS,
                     max_concurrent_workflow_tasks=WORKFLOW_TASKS,
-                    max_concurrent_local_activities=THREADS,
                     graceful_shutdown_timeout=DRAIN,
-                    deployment_config=WorkerDeploymentConfig(
-                        version=WorkerDeploymentVersion(
-                            naming().workflow.deployment, config.build_id
-                        ),
-                        use_worker_versioning=True,
-                    ),
                 ),
                 Worker(
                     client,

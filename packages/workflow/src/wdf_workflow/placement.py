@@ -1,7 +1,9 @@
-"""Where a task runs: the placer interface, the static placer over pool table v0 and the `place`
-local activity that records its answer in the workflow history."""
+"""Where a task runs: the placer interface, the static placer over the pool table, the client of
+the placement service and the `place` local activity that records its answer in the workflow
+history."""
 
 import json
+import urllib.request
 from functools import cache
 from typing import Annotated, Literal, Protocol
 
@@ -53,6 +55,13 @@ class PlaceResult(RootModel[Annotated[Placement | Unschedulable, Field(discrimin
     """The answer of the `place` local activity, one payload whichever verdict it carries."""
 
 
+class PlaceCall(_Model):
+    """The body of a call to the placement service."""
+
+    request: PlacementRequest
+    escalate: StrictBool = False
+
+
 class Placer(Protocol):
     def place(self, request: PlacementRequest, escalate: bool = False) -> Placement | Unschedulable:
         """The placement of a task, or why it can never run.
@@ -71,7 +80,7 @@ def task_pools() -> dict[str, str]:
 
 
 class StaticPlacer:
-    """Places each task on the queue of its registry pool with the timeouts of pool table v0.
+    """Places each task on the queue of its registry pool with the timeouts of the pool table.
 
     The table has one memory class per pool, so an escalation is never offered.
     """
@@ -107,11 +116,39 @@ class StaticPlacer:
         )
 
 
+class ServicePlacer:
+    """Asks the placement service at `url` for each answer.
+
+    A network error, a timeout or a status other than 200 raises, so the `place` local activity
+    retries the call, which is harmless since the service's answer depends on the request only.
+    """
+
+    def __init__(self, url: str, timeout_s: float = 5):
+        self.url = url.rstrip("/") + "/place"
+        self.timeout_s = timeout_s
+
+    def place(self, request: PlacementRequest, escalate: bool = False) -> Placement | Unschedulable:
+        call = urllib.request.Request(
+            self.url,
+            data=PlaceCall(request=request, escalate=escalate).model_dump_json().encode(),
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        with urllib.request.urlopen(call, timeout=self.timeout_s) as response:
+            if response.status != 200:
+                raise RuntimeError(f"{self.url} answered {response.status}")
+            return PlaceResult.model_validate_json(response.read()).root
+
+
 def place_activity(placer: Placer):
-    """The `place` local activity over a placer, to register on the workflow worker."""
+    """The `place` local activity over a placer, to register on the workflow worker.
+
+    A placer may block on the network, so the activity is a plain function that the worker runs on
+    its activity executor, off the event loop.
+    """
 
     @activity.defn(name=ACTIVITY)
-    async def place(request: PlacementRequest, escalate: bool) -> PlaceResult:
+    def place(request: PlacementRequest, escalate: bool) -> PlaceResult:
         return PlaceResult(placer.place(request, escalate))
 
     return place

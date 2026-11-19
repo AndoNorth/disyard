@@ -19,10 +19,9 @@ from temporalio.api.workflowservice.v1 import (
     SetWorkerDeploymentCurrentVersionRequest,
 )
 from temporalio.client import Client
-from temporalio.common import WorkerDeploymentVersion
 from temporalio.runtime import MetricBuffer, Runtime, TelemetryConfig
 from temporalio.service import RPCError
-from temporalio.worker import Worker, WorkerDeploymentConfig
+from temporalio.worker import Worker
 from wdf_events import Event, build_event
 from wdf_events.models import JobParams
 from wdf_jobdoc.plan_models import Plan
@@ -30,7 +29,7 @@ from wdf_keys import workflow_id
 from wdf_temporal import event_data_converter, tracing_interceptor
 from wdf_workflow.contract import naming
 from wdf_workflow.models import TaskInput
-from wdf_workflow.placement import StaticPlacer, place_activity
+from wdf_workflow.placement import StaticPlacer
 from wdf_workflow.testing import FakeControl, FakePool, Succeed, connect
 from wdf_workflow.testing.control import Commit, Emit, Emitted, LoadedPlan
 
@@ -39,6 +38,7 @@ BUILD_ID = os.environ[naming().workflow.build_id_env]
 
 from wdf_workflow.job import JobWorkflow  # noqa: E402
 from wdf_workflow.taskpath import control_queue  # noqa: E402
+from wdf_workflow.worker import workflow_worker  # noqa: E402
 
 HASH = "a" * 64
 SOURCE = {
@@ -245,16 +245,12 @@ def _rig(
     wdf_temporal."""
     scripts = {pool: lambda task: Succeed() for pool in naming().pools} | (scripts or {})
     this = Rig(client, control or RecordingControl(), placer or CountingPlacer())
-    workflow_worker = Worker(
+    workflow = workflow_worker(
         client,
-        task_queue=naming().workflow.queue,
-        workflows=[JobWorkflow],
-        activities=[place_activity(this.placer), this.control.emit],
+        BUILD_ID,
+        this.placer,
+        this.control.emit,
         interceptors=[tracing_interceptor()],
-        deployment_config=WorkerDeploymentConfig(
-            version=WorkerDeploymentVersion(naming().workflow.deployment, BUILD_ID),
-            use_worker_versioning=True,
-        ),
     )
     control_worker = Worker(
         client,
@@ -265,7 +261,7 @@ def _rig(
     pools = {pool: FakePool(client, pool, script) for pool, script in scripts.items()}
     this.pools = {pool: fake for pool, fake in pools.items() if pool not in idle}
     this.idle = {pool: fake for pool, fake in pools.items() if pool in idle}
-    return Running(this, [workflow_worker, control_worker, *this.pools.values()])
+    return Running(this, [workflow, control_worker, *this.pools.values()])
 
 
 class Running:

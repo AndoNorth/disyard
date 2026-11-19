@@ -47,11 +47,10 @@ from temporalio.common import (
     SearchAttributeKey,
     SearchAttributePair,
     TypedSearchAttributes,
-    WorkerDeploymentVersion,
     WorkflowIDReusePolicy,
 )
 from temporalio.service import RPCError, RPCStatusCode
-from temporalio.worker import Worker, WorkerDeploymentConfig
+from temporalio.worker import Worker
 from wdf_artifactclient.keys import content_key, uri_of
 from wdf_artifactreaper.schedule import SCHEDULE_ID
 from wdf_compile import bundle
@@ -71,7 +70,7 @@ from ..budgets import INFRA_RETRIES
 from ..contract import naming
 from ..contract import pools as pools_table
 from ..models import QUEUE, StatusQuery, TaskInput, TaskResult
-from ..placement import StaticPlacer, place_activity
+from ..placement import StaticPlacer
 from ..service import control_queue
 from ..taskpath import QUEUE_PREFIX_MEMO
 from ..testing import Die, FakeControl, FakePool, Succeed, Zombie
@@ -438,18 +437,9 @@ class Local:
         return {}
 
     def _workflow_worker(self) -> Worker:
-        from ..job import JobWorkflow
+        from ..worker import workflow_worker
 
-        return Worker(
-            self.client,
-            task_queue=naming().workflow.queue,
-            workflows=[JobWorkflow],
-            activities=[place_activity(StaticPlacer()), self.rows.emit],
-            deployment_config=WorkerDeploymentConfig(
-                version=WorkerDeploymentVersion(naming().workflow.deployment, self.build_id),
-                use_worker_versioning=True,
-            ),
-        )
+        return workflow_worker(self.client, self.build_id, StaticPlacer(), self.rows.emit)
 
     def _start_workflow_worker(self) -> None:
         worker = self._workflow_worker()
