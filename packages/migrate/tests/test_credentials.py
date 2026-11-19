@@ -15,6 +15,7 @@ TREES = (
     "deploy/workflow",
     "deploy/workers",
     "deploy/admission",
+    "deploy/dispatchapi",
     "scripts/storage",
     "contracts/state",
     "contracts/store",

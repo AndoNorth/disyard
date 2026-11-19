@@ -1,0 +1,30 @@
+name: dispatch
+group: control
+namespace: wdf-control
+artifact:
+  kind: image
+  pin: python
+resources:
+  dispatch:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi
+  dispatch-logins:
+    requests:
+      cpu: 1m
+      memory: 1Mi
+    limits:
+      cpu: 1m
+      memory: 1Mi
+readiness:
+  resource: deployment/dispatch
+  condition: Available
+profiles: [dev, full, ci]
+depends_on:
+  - infra/appdb-migrate
+  - infra/objectstore-bootstrap
+  - infra/temporal-bootstrap
+  - infra/rabbitmq
