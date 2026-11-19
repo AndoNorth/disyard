@@ -18,10 +18,12 @@ import os
 import sys
 import traceback
 
-from wdf_workflow.harness import Refused, fresh_prefix
+from wdf_clusterkit import CONTROL, Refused, reachable
+from wdf_workflow.harness import fresh_prefix
 
 from . import (
     CLEARED,
+    DEPLOYMENT,
     DISPATCH,
     JOURNEYS,
     OPERATOR,
@@ -29,7 +31,6 @@ from . import (
     drive,
     env_args,
     password,
-    reachable,
     set_env,
     split,
 )
@@ -69,7 +70,7 @@ def main(argv: list[str] | None = None) -> int:
         return 2
     context = args.kube_context
     try:
-        reachable(context)
+        reachable(context, CONTROL, f"deployment/{DEPLOYMENT}")
         passwords = {user: password(user) for user in (DISPATCH, OPERATOR)}
     except Refused as refused:
         print(f"drive: refused: {refused}", file=sys.stderr)
