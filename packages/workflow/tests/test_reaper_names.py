@@ -30,3 +30,7 @@ def test_reaper_names_mismatch_is_caught(key):
     names = naming().schedules["artifact_reaper"]
     changed = names.model_copy(update={key: f"{getattr(names, key)}-x"})
     assert mismatches(changed) == [key]
+
+
+def test_reaper_namespace_equals_the_contract():
+    assert schedule.NAMESPACE == naming().namespace

@@ -42,7 +42,8 @@ An unknown name raises.
 
 The Schedule `wdf-artifact-reaper` starts a workflow every 15 minutes, with overlap policy skip and a catch-up window of 1 hour.
 The workflow has one activity that runs a pass with a heartbeat per batch and retries a failure up to 5 times with backoff.
-The task queue, the Schedule id, the workflow and the activity are pinned in `contracts/temporal/naming.yaml`.
+The namespace, the task queue, the Schedule id, the workflow and the activity are pinned in `contracts/temporal/naming.yaml`.
+Each command connects to the namespace `wdf` unless `--namespace NAME` names another, and a refusal from Temporal, such as a missing Schedule, exits 1.
 
 | Command | Does |
 | --- | --- |
