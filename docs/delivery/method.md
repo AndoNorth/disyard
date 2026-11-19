@@ -224,9 +224,9 @@ That is the only place a contract is pinned before its owner epic.
 Exactly three, each with a rule that keeps it small:
 
 1. #1 and #2 share one issue: the `kind smoke` CI job moves to #2's exit and is that epic's acceptance, and #1 closes with the lint, test and flake-check jobs.
-2. #17 is delivered in three passes.
+2. #17 is delivered in two passes.
    Pass 1 (smoke) is the gate and pass 2 (e2e) follows #13.
-   The ladder document and pytest harness skeleton exist as lane 0 of #1, since the `test` and `itest` recipes are #1's.
+   The ladder document and pytest harness skeleton were planned as lane 0 of #1 and were not delivered; pass 2 of #17 owns them ([smoke gate spec](epics/17-acceptance-smoke.md#1-goal-and-non-goals)).
 3. The spike block and pulled-forward contracts are allowed because they touch only `docs/delivery/spikes/` and `contracts/`, never product code.
 
 An epic may not overlap another on product files.
