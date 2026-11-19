@@ -48,7 +48,8 @@ def test_ci_infra_node_figures():
     assert "rabbitmq (reserve)" not in run.stdout
     assert "item wdf-control admission (admission): cpu 50m/250m, memory 128Mi/128Mi" in run.stdout
     assert "admission (reserve)" not in run.stdout
-    assert "dispatch (reserve)" in run.stdout
+    assert "item wdf-control dispatch (dispatch): cpu 100m/500m, memory 256Mi/256Mi" in run.stdout
+    assert "dispatch (reserve)" not in run.stdout
 
 
 def test_infra_node_of_5120_mib_is_over():
