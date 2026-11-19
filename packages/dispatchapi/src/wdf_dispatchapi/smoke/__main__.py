@@ -18,7 +18,9 @@ import os
 import sys
 import traceback
 
-from . import SCENARIOS, Failed, Refused, Smoke, reachable
+from wdf_clusterkit import CONTROL, Refused, reachable
+
+from . import DEPLOYMENT, SCENARIOS, Failed, Smoke
 
 # The jobs of each scenario when --jobs is not given.
 JOBS = {"submit": 3, "restart": 2000}
@@ -51,7 +53,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"smoke: {args.scenario} takes no --jobs", file=sys.stderr)
         return 2
     try:
-        reachable(args.kube_context)
+        reachable(args.kube_context, CONTROL, f"deployment/{DEPLOYMENT}")
     except Refused as refused:
         print(f"smoke: refused: {refused}", file=sys.stderr)
         return 2

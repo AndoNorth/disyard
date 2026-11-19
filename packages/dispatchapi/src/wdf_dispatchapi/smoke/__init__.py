@@ -41,7 +41,15 @@ import psycopg
 import wdf_keys
 from temporalio.client import Client
 from wdf_broker.tenancy import load
-from wdf_clusterkit import Forward, Refused, kubectl, state_dir
+from wdf_clusterkit import (
+    CONTROL,
+    INFRA,
+    UP_S,
+    Forward,
+    appdb_password,
+    kubectl,
+    state_dir,
+)
 from wdf_jobstate import status_vocabulary
 from wdf_workflow import versioning
 from wdf_workflow.contract import naming
@@ -60,8 +68,6 @@ SCENARIOS = (
     "restart",
 )
 PROFILE = "ci"
-INFRA = "wdf-infra"
-CONTROL = "wdf-control"
 DEPLOYMENT = "dispatch"
 ADMISSION = "admission"
 TERMINAL = status_vocabulary().terminal
@@ -77,8 +83,6 @@ EVENTS = {
 }
 # How long a job on the real pools has to reach a state, a compile of the workload library first.
 JOB_S = 1800.0
-# How long a pod, a rollout or a forward has to come up.
-UP_S = 300.0
 # The bound on how long the rows of a resent batch have to carry their receipts. A full intake
 # queue holds back the publishes beyond its max length until admission drains it, so the time
 # depends on the admission rate, and the bound only catches a backlog that never clears.
@@ -457,7 +461,7 @@ class Smoke:
     def count(self, batch_key: str, job_ids: list[str]) -> None:
         """What the restart left in the rows, the event history, Temporal and the dead-letter
         queue."""
-        password = (state_dir() / "appdb.credential").read_text().strip()
+        password = appdb_password()
         batch_id = wdf_keys.batch_id(self.tenant, batch_key)
         with (
             self.forward(INFRA, "pod/appdb-0", 5432) as appdb,
@@ -607,21 +611,3 @@ async def _first_current(address: str, context: str) -> str | None:
         raise Failed(f"no current build, and the deployed builds are {builds}")
     await versioning.set_current(client, builds[0])
     return builds[0]
-
-
-def reachable(context: str) -> None:
-    """Refuses a context whose cluster does not answer or has no dispatch deployment."""
-    try:
-        kubectl(
-            context,
-            "--request-timeout=10s",
-            f"--namespace={CONTROL}",
-            "get",
-            f"deploy/{DEPLOYMENT}",
-        )
-    except FileNotFoundError:
-        raise Refused("kubectl is not on PATH") from None
-    except subprocess.CalledProcessError as error:
-        raise Refused(
-            f"no deployment/{DEPLOYMENT} in {CONTROL} on {context}: {error.stderr.strip()}"
-        ) from None

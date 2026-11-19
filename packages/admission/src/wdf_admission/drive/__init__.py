@@ -41,7 +41,7 @@ from wdf_broker.contract import topology
 from wdf_broker.dlq import DLQ, PASS_LIMIT, PASS_TIMEOUT_S, Letter
 from wdf_broker.models import Outcome
 from wdf_broker.tenancy import load
-from wdf_clusterkit import Forward, Refused
+from wdf_clusterkit import CONTROL, INFRA, UP_S, Forward, Refused, kubectl, oom_killed, ready, until
 from wdf_events import Event, build_event, to_bytes
 from wdf_eventstore import insert_events
 from wdf_jobstate import (
@@ -74,8 +74,6 @@ from ..service.metrics import READMITTED
 
 JOURNEYS = ("smoke", "control", "deadletter", "restart")
 PROFILE = "ci"
-INFRA = "wdf-infra"
-CONTROL = "wdf-control"
 DEPLOYMENT = "admission"
 POD_LABEL = f"app.kubernetes.io/name={DEPLOYMENT}"
 METRICS_PORT = 9464
@@ -84,8 +82,6 @@ BROKER_PORT = 5672
 HELPER = Path("deploy/rabbitmq/config.py")
 DISPATCH = "dispatch"
 OPERATOR = "operator"
-# How long a rollout, or a deleted pod's replacement, has to become ready.
-UP_S = 300.0
 # How long the two dead letters have to reach the dead-letter queue, which the first delivery of
 # each message sends there.
 DEAD_LETTER_S = 120.0
@@ -96,35 +92,6 @@ DEAD_LETTERED = "dev.wdf.job.dead.lettered.v1"
 TERMINAL = status_vocabulary().terminal
 SAMPLE = re.compile(r"^(wdf_admission_\w+)(?:\{([^}]*)\})? (\S+)$")
 LABEL = re.compile(r'(\w+)="([^"]*)"')
-
-
-def kubectl(context: str, *args: str) -> str:
-    """Runs kubectl on the context and returns its output, raising CalledProcessError with the
-    error it printed."""
-    done = subprocess.run(
-        ["kubectl", f"--context={context}", *args], check=True, capture_output=True, text=True
-    )
-    return done.stdout
-
-
-def reachable(context: str) -> None:
-    """Refuses a context whose cluster does not answer or has no admission deployment."""
-    try:
-        kubectl(
-            context,
-            "--request-timeout=10s",
-            f"--namespace={CONTROL}",
-            "get",
-            f"deployment/{DEPLOYMENT}",
-            "-o",
-            "name",
-        )
-    except FileNotFoundError:
-        raise Refused("kubectl is not on PATH") from None
-    except subprocess.CalledProcessError as error:
-        raise Refused(
-            f"no deployment/{DEPLOYMENT} in {CONTROL} on {context}: {error.stderr.strip()}"
-        ) from None
 
 
 def password(user: str) -> str:
@@ -163,22 +130,6 @@ def split(jobs: int) -> tuple[int, int, int]:
     they run, a quarter each, the rest running plain."""
     quarter = jobs // 4
     return quarter, quarter, quarter
-
-
-def oom_killed(pod: dict) -> bool:
-    """Whether a container of the pod was last terminated, or is terminated, by the OOM killer."""
-    for status in pod.get("status", {}).get("containerStatuses", []):
-        for state in (status.get("lastState", {}), status.get("state", {})):
-            if state.get("terminated", {}).get("reason") == "OOMKilled":
-                return True
-    return False
-
-
-def ready(pod: dict) -> bool:
-    if pod["metadata"].get("deletionTimestamp"):
-        return False
-    conditions = pod.get("status", {}).get("conditions", [])
-    return any(c["type"] == "Ready" and c["status"] == "True" for c in conditions)
 
 
 def parse_metrics(text: str) -> dict[tuple[str, tuple[tuple[str, str], ...]], float]:
@@ -344,19 +295,6 @@ def unsupported(event: Event) -> bytes:
     return json.dumps(document).encode()
 
 
-async def until(check: Callable[[], Any], timeout_s: float, what: str, every_s: float = 1.0):
-    deadline = time.monotonic() + timeout_s
-    while True:
-        value = check()
-        if asyncio.iscoroutine(value):
-            value = await value
-        if value:
-            return value
-        if time.monotonic() > deadline:
-            raise TimeoutError(f"no {what} within {timeout_s:.0f} s")
-        await asyncio.sleep(every_s)
-
-
 class Driver:
     """One journey on the cluster of the harness's `Cluster`, whose forwards, database connection,
     store client and Temporal client it uses, plus a forward to the broker and one to the admission
@@ -444,7 +382,7 @@ class Driver:
             return all(s in TERMINAL for s in (await self.statuses(jobs)).values())
 
         try:
-            await until(done, DEADLINE_S, "end of every job")
+            await until(done, DEADLINE_S, "end of every job", 1.0)
         except TimeoutError:
             pass
         ended = await self.statuses(jobs)
@@ -481,7 +419,7 @@ class Driver:
 
     async def run(self) -> None:
         # The first scrape is the baseline, taken before anything is published.
-        await until(self.scraped, UP_S, "scrape of the admission metrics")
+        await until(self.scraped, UP_S, "scrape of the admission metrics", 1.0)
         sampler = asyncio.create_task(self.sample())
         try:
             await getattr(self, self.counters.journey)()
@@ -519,7 +457,7 @@ class Driver:
             pauses = [asyncio.create_task(self.pause_while_running(j)) for j in while_running]
             # One queue holds every message in publish order, so once each job published after the
             # paused ones has left `accepted`, admission has pulled and skipped the paused ones.
-            await until(lambda: self.left_accepted(after), DEADLINE_S, "pull of every message")
+            await until(lambda: self.left_accepted(after), DEADLINE_S, "pull of every message", 1.0)
             for job in before:
                 await self.db(resume_before_start, job.job_id)
             await asyncio.gather(*pauses)
@@ -574,7 +512,7 @@ class Driver:
             self.counters.dead_lettered = await asyncio.to_thread(self.dead_letters, ids)
             return sum(self.counters.dead_lettered.values()) >= len(ids)
 
-        await until(dead_lettered, DEAD_LETTER_S, "dead letters")
+        await until(dead_lettered, DEAD_LETTER_S, "dead letters", 1.0)
 
         def events(db) -> int:
             return db.execute(
@@ -610,10 +548,14 @@ class Driver:
         first, second = jobs[: len(jobs) // 2], jobs[len(jobs) // 2 :]
         async with self.pools({"simulate": HOLD_S}):
             await self.publish(first)
-            await until(lambda: self.left_accepted(first, every=False), UP_S, "first admission")
+            await until(
+                lambda: self.left_accepted(first, every=False), UP_S, "first admission", 1.0
+            )
             await asyncio.to_thread(self.delete_pod, False)
             await self.publish(second)
-            await until(lambda: self.left_accepted(second, every=False), UP_S, "admission again")
+            await until(
+                lambda: self.left_accepted(second, every=False), UP_S, "admission again", 1.0
+            )
             await asyncio.to_thread(self.delete_pod, True)
             await self.ended(jobs)
         [last] = await asyncio.to_thread(self.pods)

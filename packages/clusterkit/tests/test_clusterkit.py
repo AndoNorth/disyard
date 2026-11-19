@@ -10,6 +10,8 @@ from wdf_clusterkit import (
     Forward,
     appdb_password,
     free_port,
+    oom_killed,
+    ready,
     state_dir,
     store_credentials,
     until,
@@ -46,6 +48,22 @@ def test_free_port_can_be_bound():
     port = free_port()
     with socket.socket() as probe:
         probe.bind(("127.0.0.1", port))
+
+
+def test_oom_killed_and_ready_pods():
+    pod = {
+        "metadata": {"name": "admission-1"},
+        "status": {"conditions": [], "containerStatuses": []},
+    }
+    assert not oom_killed(pod) and not ready(pod)
+    pod["status"]["conditions"] = [{"type": "Ready", "status": "True"}]
+    assert ready(pod)
+    pod["status"]["containerStatuses"] = [
+        {"lastState": {"terminated": {"reason": "OOMKilled"}}, "state": {"running": {}}}
+    ]
+    assert oom_killed(pod)
+    pod["metadata"]["deletionTimestamp"] = "2026-11-18T00:00:00Z"
+    assert not ready(pod)
 
 
 class FakeProcess:

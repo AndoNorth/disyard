@@ -16,9 +16,7 @@ from wdf_admission.drive import (
     accepted,
     env_args,
     malformed,
-    oom_killed,
     parse_metrics,
-    ready,
     split,
     unsupported,
 )
@@ -237,22 +235,6 @@ def test_run_environment_replaces_what_an_earlier_run_left(tmp_path):
     assert set_env_locally(tmp_path, left, CLEARED) == [
         {"name": "WDF_TENANCY_PROFILE", "value": "ci"}
     ]
-
-
-def test_oom_killed_and_ready_pods():
-    pod = {
-        "metadata": {"name": "admission-1"},
-        "status": {"conditions": [], "containerStatuses": []},
-    }
-    assert not oom_killed(pod) and not ready(pod)
-    pod["status"]["conditions"] = [{"type": "Ready", "status": "True"}]
-    assert ready(pod)
-    pod["status"]["containerStatuses"] = [
-        {"lastState": {"terminated": {"reason": "OOMKilled"}}, "state": {"running": {}}}
-    ]
-    assert oom_killed(pod)
-    pod["metadata"]["deletionTimestamp"] = "2026-11-18T00:00:00Z"
-    assert not ready(pod)
 
 
 def test_refused_messages_name_their_job():
