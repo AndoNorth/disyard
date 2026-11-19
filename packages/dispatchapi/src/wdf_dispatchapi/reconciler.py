@@ -55,8 +55,9 @@ class Reconciler:
     def run_pass(self, conn: psycopg.Connection) -> None:
         """One pass, oldest row first and at most `rows_per_s` rows a second, on a connection of
         the dispatch login in autocommit mode. The pass ends at its first page that is not full or
-        when the publisher ends a run."""
-        after = START
+        when the publisher ends a run, and offers an intake queue no more rows once it rejected
+        one."""
+        after, full = START, set()
         while not self._stop.is_set():
             started = time.monotonic()
             with conn.cursor(row_factory=dict_row) as cur:
@@ -64,7 +65,7 @@ class Reconciler:
                 rows = [JobRow(**found) for found in cur.fetchall()]
             events = [accepted_event(row, row.created_at) for row in rows]
             insert_events(conn, events)
-            if not self.publisher.publish(conn, events) or len(rows) < self.rows_per_s:
+            if not self.publisher.publish(conn, events, full) or len(rows) < self.rows_per_s:
                 return
             after = (rows[-1].created_at, rows[-1].job_id)
             self._stop.wait(max(0.0, 1 - (time.monotonic() - started)))

@@ -9,7 +9,7 @@ from datetime import timedelta
 
 import pytest
 from wdf_broker.contract import topology
-from wdf_broker.models import TopologyError
+from wdf_broker.models import Outcome, TopologyError
 from wdf_dispatchapi import submit as submit_module
 from wdf_dispatchapi.reconciler import Reconciler
 from wdf_dispatchapi.submit import accepted_event
@@ -220,6 +220,30 @@ def test_reconciler_waits_out_the_grace(
 
     reconcile()
     assert len(broker.queues[QUEUE]) == 3 and receipts(db) == 3
+
+
+def test_reconciler_stops_offering_a_queue_that_rejected(
+    make_publisher, make_submit, call, template, entries, tenancy, db, reconcile
+):
+    """A pass offers a queue that rejected a publish none of its later rows, and still publishes
+    the rows of another queue that follow them."""
+    offered = Counter()
+
+    class Full:
+        def publish(self, routing_key, body, timeout_s=5.0):
+            offered[routing_key] += 1
+            return Outcome.REJECTED if routing_key == QUEUE else Outcome.ACCEPTED
+
+    gold = tenancy.model_copy(update={"priority_classes": ["standard", "gold"]})
+    call(make_submit(tenancy=gold), body(template, entries, batch_key="full"))
+    call(
+        make_submit(tenancy=gold), body(template, entries, batch_key="gold", priority_class="gold")
+    )
+
+    reconcile(make_publisher(lambda address, credentials: Full()))
+
+    assert offered == {QUEUE: 1, "intake.acme.gold": 3}
+    assert receipts(db) == 3
 
 
 def test_publish_timeout_ends_the_call_and_the_pass(
