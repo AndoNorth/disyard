@@ -17,3 +17,7 @@ Source and re-render steps: [docs/animations/](docs/animations/README.md).
 ## Getting started
 
 See [docs/dev-setup.md](docs/dev-setup.md).
+
+## License
+
+Licensed under the [Apache License 2.0](LICENSE).
