@@ -5,27 +5,35 @@ the rest still print; a refusal or usage exit of `cluster-verify` ends the run w
 no other row. The job rows run only when every boundary row is ok.
 
 Run by `scripts/smoke.sh` from the repository root, which holds the cluster lock and the budget
-timer; the timer's SIGINT ends the run with a `FAIL budget` row and the count line.
+timer; the timer's SIGINT ends the run with a `FAIL budget` row and the count line. When a job row
+fails, or the budget runs out, after the job was submitted, the run cancels its batch before the
+count line, so a late job does not hold the pools into the next run.
 """
 
 import asyncio
 import contextlib
+import hashlib
 import json
 import os
 import signal
 import subprocess
+import sys
+import tempfile
 import threading
 import time
 from collections.abc import Callable, Iterator
 from pathlib import Path
 
 from temporalio.api.workflowservice.v1 import DescribeNamespaceRequest
-from wdf_clusterkit import CONTROL, INFRA, Forward
+from wdf_clusterkit import CONTROL, INFRA, Forward, until
 from wdf_workflow.contract import naming
-from wdf_workflow.harness.cluster import make_deployed_current
+from wdf_workflow.harness import ECHO, echo_params
+from wdf_workflow.harness.cluster import TERMINAL, make_deployed_current
+from wdf_workflow.ready import DONE
+from wdf_workloads import bundle
 
 from .. import report
-from ..clients import api, broker, temporal
+from ..clients import api, broker, store, temporal
 
 CONTEXT = "kind-wdf"
 VERIFY = Path("scripts/cluster-verify.sh")
@@ -38,7 +46,12 @@ VERIFY_S = 90.0
 PROBE_S = 15.0
 # How long the shared helper waits for the deployed build's pollers before it makes it current.
 POLLERS_S = 30.0
-JOB_ROWS = ("job-submit", "job-run", "job-result", "job-aggregate", "dead-letters")
+# Kept back from the job's wait for the result rows, the dead-letter row and the cancel.
+KEEP_S = 30.0
+# Short enough that a cancel after the budget ran out ends before the timer's kill, 10 s later.
+CANCEL_S = 5.0
+# The first tenant of the ci preset.
+TENANT = "acme"
 
 
 class Gate:
@@ -51,13 +64,18 @@ class Gate:
         self.dead_letters: int | None = None
         # The row running now, which the budget names when it runs out.
         self.at = "cluster-verify"
+        self.started = time.monotonic()
+        # The batch key and job id once the job was accepted, and its last status once it ended.
+        self.batch: str | None = None
+        self.job_id: str | None = None
+        self.ended: dict = {}
 
     def add(self, row: report.Row) -> None:
         self.rows.append(row)
         print(row.line, flush=True)
 
     def probe(self, name: str, check: Callable[[], str]) -> None:
-        """Runs one boundary row: `check` returns its pass detail or raises with what it saw."""
+        """Runs one row: `check` returns its pass detail or raises with what it saw."""
         self.at = name
         try:
             self.add(report.ok(name, check()))
@@ -72,11 +90,37 @@ class Gate:
         self.probe("broker", self.count_dead_letters)
         self.probe("temporal", lambda: asyncio.run(temporal_row()))
         self.probe("placement", placement)
-        self.at = "job rows"
         failed = next((row.name for row in self.rows if row.verdict != report.OK), None)
-        reason = f"after {failed} failed" if failed else "job rows not written yet"
-        for name in JOB_ROWS:
-            self.add(report.skip(name, reason))
+        client = api.Api(DISPATCH, CONTROL_API, TENANT, PROBE_S)
+        rows = (
+            ("job-submit", lambda: self.submit(client)),
+            ("job-run", lambda: self.run_job(client)),
+            ("job-result", self.result),
+            ("job-aggregate", self.aggregate),
+        )
+        for name, check in rows:
+            if failed:
+                self.add(report.skip(name, f"after {failed} failed"))
+                continue
+            self.probe(name, check)
+            if self.rows[-1].verdict != report.OK:
+                failed = name
+        # Whatever the job did, a job that was submitted is checked for dead letters.
+        if self.batch is None:
+            self.add(report.skip("dead-letters", f"after {failed} failed"))
+        else:
+            self.probe("dead-letters", self.no_rise)
+
+    def cancel(self) -> None:
+        """Cancels the batch when a row failed after the job was submitted; a cancel that fails is
+        reported and does not change the verdict, which the failed row already holds."""
+        if self.batch is None or all(row.verdict == report.OK for row in self.rows):
+            return
+        try:
+            summary = api.Api(DISPATCH, CONTROL_API, TENANT, CANCEL_S).cancel_batch(self.batch)
+            print(f"cleanup: cancelled batch {self.batch}: {summary}", file=sys.stderr, flush=True)
+        except Exception as error:
+            print(f"cleanup: the cancel of batch {self.batch} failed: {error}", file=sys.stderr)
 
     def cluster_verify(self) -> None:
         """Row 1: runs cluster-verify under the held lock and copies its count line, or its FAIL
@@ -123,6 +167,84 @@ class Gate:
             self.dead_letters = broker.dead_letters(address, timeout_s=deadline - time.monotonic())
         return f"{self.dead_letters} dead letters before the job"
 
+    def submit(self, client: api.Api) -> str:
+        """Row 6: uploads the workload library bundle and submits one echo job in a fresh batch."""
+        with tempfile.TemporaryDirectory(prefix="wdf-smoke-") as work:
+            source = client.upload_source(bundle.write(Path(work)).read_bytes())
+        key = api.batch_key()
+        self.job_id = client.submit_one(api.template(source, echo_params()), key)
+        self.batch = key
+        return f"accepted {self.job_id}"
+
+    def run_job(self, client: api.Api) -> str:
+        """Row 7: the job runs and ends succeeded, and a sample taken while it ran shows its compile
+        done. The detail is null once the job ends, so the compile is read from the running
+        samples."""
+        timeout_s = BUDGET_S - KEEP_S - (time.monotonic() - self.started)
+        builds: list[dict] = []
+        last = {"status": "unread"}
+
+        def ended() -> dict | None:
+            last.update(client.status(self.job_id))
+            if last["status"] == "running":
+                tasks = (last["detail"] or {}).get("tasks", [])
+                builds.extend(t for t in tasks if t["id"] == "build" and t["state"] in DONE)
+            return dict(last) if last["status"] in TERMINAL else None
+
+        try:
+            self.ended = asyncio.run(until(ended, timeout_s, "end"))
+        except TimeoutError:
+            raise TimeoutError(f"no end in {timeout_s:.0f} s, last {last['status']}") from None
+        if self.ended["status"] != "succeeded":
+            raise RuntimeError(f"ended {self.ended['status']}")
+        if not builds:
+            raise RuntimeError("ended succeeded, but no running sample showed build done")
+        build = builds[-1]
+        how = "hit the cache" if build["state"] == "skipped" else "ran"
+        return f"succeeded, build {how} (attempt {build['task_attempt']})"
+
+    def result(self) -> str:
+        """Row 8: the simulate result holds the known answer of the level 0 echo vector."""
+        data = fetched(self.ended, "sim")
+        with tempfile.NamedTemporaryFile(prefix="wdf-smoke-", suffix=".xml") as file:
+            file.write(data)
+            file.flush()
+            checked = subprocess.run(
+                [
+                    sys.executable,
+                    "-m",
+                    "wdf_kernel.check",
+                    "results",
+                    "--input",
+                    str(ECHO / "input.json"),
+                    "--results",
+                    file.name,
+                ],
+                capture_output=True,
+                text=True,
+                timeout=PROBE_S,
+            )
+        if checked.returncode != 0:
+            raise RuntimeError(
+                f"wdf_kernel.check exited {checked.returncode}: {checked.stderr.strip()}"
+            )
+        return f"echo result matches, {checked.stdout.strip()}"
+
+    def aggregate(self) -> str:
+        """Row 9: the aggregate's summary is stored as its reference says, by digest only."""
+        fetched(self.ended, "agg")
+        return "summary present and matching"
+
+    def no_rise(self) -> str:
+        """Row 10: the job left no dead letter beyond the count before it."""
+        if self.dead_letters is None:
+            raise RuntimeError("no count before the job")
+        before = self.dead_letters
+        self.count_dead_letters()
+        if self.dead_letters > before:
+            raise RuntimeError(f"{self.dead_letters}, above {before} before the job")
+        return f"{self.dead_letters}, no rise"
+
 
 @contextlib.contextmanager
 def forwarded(namespace: str, resource: str, port: int) -> Iterator[str]:
@@ -133,6 +255,23 @@ def forwarded(namespace: str, resource: str, port: int) -> Iterator[str]:
         yield f"127.0.0.1:{forward.port}"
     finally:
         forward.close()
+
+
+def fetched(status: dict, task: str) -> bytes:
+    """The bytes of the task's last result in the job's status, read as the export identity, whose
+    sha256 must match its reference."""
+    references = [r for r in status.get("results", []) if r["producer"]["task"] == task]
+    if not references:
+        raise RuntimeError(f"no result of {task} in the status")
+    reference = references[-1]
+    with forwarded(INFRA, "svc/objectstore", 8333) as address:
+        data = store.fetch(reference["uri"], "export", f"http://{address}")
+    sha256 = hashlib.sha256(data).hexdigest()
+    if sha256 != reference["sha256"]:
+        raise RuntimeError(
+            f"{reference['uri']} has sha256 {sha256}, its reference {reference['sha256']}"
+        )
+    return data
 
 
 def ready_apis() -> str:
@@ -178,7 +317,6 @@ def placement() -> str:
 
 
 def main() -> int:
-    started = time.monotonic()
     gate = Gate(os.environ.get("WDF_PRESET", "ci"))
     try:
         gate.run()
@@ -186,5 +324,6 @@ def main() -> int:
         gate.add(report.fail("budget", f"{BUDGET_S} s ran out in {gate.at}"))
     if gate.passed_through is not None:
         return report.exit_code(gate.rows, gate.passed_through)
-    print(report.count_line(gate.preset, gate.rows, time.monotonic() - started), flush=True)
+    gate.cancel()
+    print(report.count_line(gate.preset, gate.rows, time.monotonic() - gate.started), flush=True)
     return report.exit_code(gate.rows)
