@@ -1,34 +1,34 @@
 [project]
-name = "wdf-worker"
+name = "wft-worker"
 version = "0.0.0"
 license = "Apache-2.0"
 requires-python = ">=3.13,<3.14"
 dependencies = [
     "temporalio",
-    "wdf-artifactclient",
-    "wdf-events",
-    "wdf-keys",
-    "wdf-stages",
-    "wdf-temporal",
-    "wdf-workflow",
+    "wft-artifactclient",
+    "wft-events",
+    "wft-keys",
+    "wft-stages",
+    "wft-temporal",
+    "wft-workflow",
 ]
 
 # One extra per pool image: the library its child processes run, and the binary it needs on PATH.
 [project.optional-dependencies]
-compile = ["uv==0.11.21", "wdf-compile"]
-simulate = ["wdf-runtime"]
-aggregate = ["wdf-aggregate"]
+compile = ["uv==0.11.21", "wft-compile"]
+simulate = ["wft-runtime"]
+aggregate = ["wft-aggregate"]
 
 [tool.uv.sources]
-wdf-aggregate = { workspace = true }
-wdf-artifactclient = { workspace = true }
-wdf-compile = { workspace = true }
-wdf-events = { workspace = true }
-wdf-keys = { workspace = true }
-wdf-runtime = { workspace = true }
-wdf-stages = { workspace = true }
-wdf-temporal = { workspace = true }
-wdf-workflow = { workspace = true }
+wft-aggregate = { workspace = true }
+wft-artifactclient = { workspace = true }
+wft-compile = { workspace = true }
+wft-events = { workspace = true }
+wft-keys = { workspace = true }
+wft-runtime = { workspace = true }
+wft-stages = { workspace = true }
+wft-temporal = { workspace = true }
+wft-workflow = { workspace = true }
 
 [build-system]
 requires = ["hatchling"]

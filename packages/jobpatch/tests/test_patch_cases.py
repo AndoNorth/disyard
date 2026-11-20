@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 import yaml
-from wdf_jobpatch import patch_check
+from wft_jobpatch import patch_check
 
 ROOT = Path(__file__).resolve().parents[3]
 VECTORS = ROOT / "contracts/job/vectors/patch"

@@ -36,7 +36,7 @@
           "type": "integer"
         },
         "uri": {
-          "pattern": "^s3://wdf-(sources|components|results|checkpoints)/.+$",
+          "pattern": "^s3://wft-(sources|components|results|checkpoints)/.+$",
           "title": "Uri",
           "type": "string"
         }
@@ -111,7 +111,7 @@
           "type": "string"
         },
         "schema": {
-          "const": "wdf.artifact.index/1",
+          "const": "wft.artifact.index/1",
           "title": "Schema",
           "type": "string"
         },
@@ -165,7 +165,7 @@
       "type": "object"
     }
   },
-  "$id": "urn:wdf:schema:artifact:index:3",
+  "$id": "urn:wft:schema:artifact:index:3",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "anyOf": [
     {

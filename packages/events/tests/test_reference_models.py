@@ -7,9 +7,9 @@ from typing import Annotated, get_args
 
 import pytest
 from pydantic import Field, ValidationError
-from wdf_compat import breaking_changes
-from wdf_events import layout
-from wdf_events.models import (
+from wft_compat import breaking_changes
+from wft_events import layout
+from wft_events.models import (
     AttemptReference,
     CheckpointReference,
     ContentReference,
@@ -18,8 +18,8 @@ from wdf_events.models import (
     TaskRequestData,
     reference_models,
 )
-from wdf_events.profile import CONTRACT_DIR
-from wdf_events.schemagen import render_reference
+from wft_events.profile import CONTRACT_DIR
+from wft_events.schemagen import render_reference
 
 ROOT = CONTRACT_DIR.parents[1]
 HASH = "ab" * 32
@@ -28,9 +28,9 @@ PRODUCER = {"job": "0b9c6b1e-4f0a-4f6e-9d57-1c2f4f3a8a11", "task": "sim", "attem
 
 def extended() -> dict:
     doc = copy.deepcopy(layout())
-    doc["buckets"].append("wdf-traces")
+    doc["buckets"].append("wft-traces")
     doc["kinds"]["sbom"] = {**doc["kinds"]["source"]}
-    doc["kinds"]["trace"] = {**doc["kinds"]["output"], "bucket": "wdf-traces"}
+    doc["kinds"]["trace"] = {**doc["kinds"]["output"], "bucket": "wft-traces"}
     return doc
 
 
@@ -47,11 +47,11 @@ def reference(kind: str, bucket: str, **extra) -> dict:
 
 def test_kinds_come_from_the_layout():
     content, attempt = reference_models(extended())
-    content.model_validate(reference("sbom", "wdf-sources"))
-    attempt.model_validate(reference("trace", "wdf-traces", producer=PRODUCER))
+    content.model_validate(reference("sbom", "wft-sources"))
+    attempt.model_validate(reference("trace", "wft-traces", producer=PRODUCER))
     for model, bad in ((ContentReference, "sbom"), (AttemptReference, "trace")):
         with pytest.raises(ValidationError):
-            model.model_validate(reference(bad, "wdf-traces", producer=PRODUCER))
+            model.model_validate(reference(bad, "wft-traces", producer=PRODUCER))
 
 
 def test_the_models_name_every_kind_of_the_layout_once():
@@ -83,7 +83,7 @@ def test_narrowings_name_existing_kinds(narrowing, klass):
     for name in names:
         assert kinds[name]["class"] == klass
     # A narrowing that pins its bucket pins the bucket of each kind it names.
-    pinned = re.match(r"^\^s3://(wdf-[a-z]+)/", narrowing.model_fields["uri"].metadata[0].pattern)
+    pinned = re.match(r"^\^s3://(wft-[a-z]+)/", narrowing.model_fields["uri"].metadata[0].pattern)
     if pinned:
         assert {kinds[n]["bucket"] for n in names} == {pinned[1]}
 

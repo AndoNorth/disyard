@@ -17,7 +17,7 @@ LANES = {
     "__main__": "A",
     "probe": "A",
 }
-MODULES = {name: importlib.import_module(f"wdf_worker.{name}") for name in LANES}
+MODULES = {name: importlib.import_module(f"wft_worker.{name}") for name in LANES}
 
 
 def defined(module) -> dict:

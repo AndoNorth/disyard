@@ -5,10 +5,10 @@ import hashlib
 import pytest
 from hypothesis import given, settings
 from hypothesis import strategies as st
-from wdf_artifactclient.keys import InvalidKey, attempt_key, bucket_of, content_key, uri_of
-from wdf_artifactindex.reference import validate
-from wdf_events import layout
-from wdf_events.models import ProducerRef
+from wft_artifactclient.keys import InvalidKey, attempt_key, bucket_of, content_key, uri_of
+from wft_artifactindex.reference import validate
+from wft_events import layout
+from wft_events.models import ProducerRef
 
 JOB = "123e4567-e89b-42d3-a456-426614174000"
 OTHER_JOB = "123e4567-e89b-42d3-a456-426614174001"

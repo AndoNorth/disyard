@@ -6,7 +6,7 @@ import inspect
 import pytest
 
 LANES = {"build": "C", "bundle": "C", "__main__": "C", "heavy": "C"}
-MODULES = {name: importlib.import_module(f"wdf_compile.{name}") for name in LANES}
+MODULES = {name: importlib.import_module(f"wft_compile.{name}") for name in LANES}
 
 
 @pytest.mark.parametrize("module", MODULES)

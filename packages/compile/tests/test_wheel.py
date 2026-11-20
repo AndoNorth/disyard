@@ -9,9 +9,9 @@ import pytest
 ROOT = Path(__file__).resolve().parents[3]
 
 PROBE = """
-import wdf_compile.__main__, wdf_compile.build, wdf_compile.bundle, wdf_compile.heavy
+import wft_compile.__main__, wft_compile.build, wft_compile.bundle, wft_compile.heavy
 from importlib.metadata import version
-from wdf_runtime.pins import COMPONENTIZE_PY_VERSION
+from wft_runtime.pins import COMPONENTIZE_PY_VERSION
 
 assert version("componentize-py") == COMPONENTIZE_PY_VERSION
 """
@@ -28,13 +28,13 @@ def clean_python(tmp_path_factory) -> Path:
     work = tmp_path_factory.mktemp("wheel")
     wheels = work / "wheels"
     for package in (
-        "wdf-compile",
-        "wdf-jobcheck",
-        "wdf-jobdoc",
-        "wdf-kernel",
-        "wdf-keys",
-        "wdf-plan",
-        "wdf-runtime",
+        "wft-compile",
+        "wft-jobcheck",
+        "wft-jobdoc",
+        "wft-kernel",
+        "wft-keys",
+        "wft-plan",
+        "wft-runtime",
     ):
         run("uv", "build", "--wheel", "--package", package, "-o", str(wheels), cwd=ROOT)
     venv = work / "venv"

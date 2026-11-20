@@ -4,15 +4,15 @@ import re
 import subprocess
 
 import pytest
-from wdf_storecheck.checks import contract_gaps
-from wdf_storecheck.fullness import (
+from wft_storecheck.checks import contract_gaps
+from wft_storecheck.fullness import (
     GAP,
     SEAWEEDFS_SHELL,
     free_outside_s3,
     observe_full_disk,
     vacuum_through,
 )
-from wdf_storecheck.s3 import ALLOWED
+from wft_storecheck.s3 import ALLOWED
 
 pytestmark = pytest.mark.integration
 

@@ -5,15 +5,15 @@ from datetime import UTC, datetime, timedelta
 
 import psycopg
 import pytest
-from wdf_events import build_event
-from wdf_eventstore import insert_events
-from wdf_jobstate import JobRow, insert_accepted
-from wdf_keys import batch_id, job_id
-from wdf_temporal import new_traceparent
+from wft_events import build_event
+from wft_eventstore import insert_events
+from wft_jobstate import JobRow, insert_accepted
+from wft_keys import batch_id, job_id
+from wft_temporal import new_traceparent
 
 SHA = "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08"
 MANIFEST = {
-    "uri": f"s3://wdf-sources/sha256/9f/{SHA}",
+    "uri": f"s3://wft-sources/sha256/9f/{SHA}",
     "sha256": SHA,
     "size": 2048,
     "name": "manifest.json",
@@ -48,7 +48,7 @@ def seed(db):
                 priority_class="standard",
                 job_class=job_class,
                 manifest_ref=MANIFEST,
-                schema_version="urn:wdf:schema:job.accepted:1.0",
+                schema_version="urn:wft:schema:job.accepted:1.0",
                 traceparent=new_traceparent(),
                 seed=index,
                 parameters={"n": index},

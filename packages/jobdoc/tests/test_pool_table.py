@@ -4,8 +4,8 @@ import shutil
 
 import pytest
 import yaml
-from wdf_jobdoc.profile import SlotsIncomplete, parse_cpu_milli, parse_memory_mib
-from wdf_jobdoc.profile_files import load_profile
+from wft_jobdoc.profile import SlotsIncomplete, parse_cpu_milli, parse_memory_mib
+from wft_jobdoc.profile_files import load_profile
 
 
 @pytest.fixture

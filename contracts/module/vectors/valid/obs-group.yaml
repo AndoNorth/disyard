@@ -1,6 +1,6 @@
 name: vector
 group: obs
-namespace: wdf-obs
+namespace: wft-obs
 artifact:
   kind: image
   pin: fixture-image

@@ -1,5 +1,5 @@
 {
-  "schema": "wdf.summary/1",
+  "schema": "wft.summary/1",
   "aggregation": "summary_stats",
   "args": {
     "blocks": [

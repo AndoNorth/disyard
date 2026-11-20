@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 import yaml
-from wdf_artifactindex.gen import KINDS_SQL, LAYOUT, SCHEMAS
+from wft_artifactindex.gen import KINDS_SQL, LAYOUT, SCHEMAS
 
 ROOT = Path(__file__).resolve().parents[3]
 ROW_SCHEMA = "contracts/state/schemas/artifact-row/2.json"
@@ -18,7 +18,7 @@ GENERATED = [*map(str, SCHEMAS), str(KINDS_SQL)]
 
 def run(*args):
     return subprocess.run(
-        [sys.executable, "-m", "wdf_artifactindex.gen", *args], capture_output=True, text=True
+        [sys.executable, "-m", "wft_artifactindex.gen", *args], capture_output=True, text=True
     )
 
 
@@ -47,7 +47,7 @@ def test_a_kind_added_to_the_layout_is_reported_against_the_kinds_file(tmp_path)
     scratch(tmp_path)
     path = tmp_path / LAYOUT
     layout = yaml.safe_load(path.read_text())
-    layout["kinds"]["extra"] = {"bucket": "wdf-sources", "class": "content-addressed", "key": "k"}
+    layout["kinds"]["extra"] = {"bucket": "wft-sources", "class": "content-addressed", "key": "k"}
     path.write_text(yaml.safe_dump(layout))
     result = run("--check", "--root", str(tmp_path))
     assert result.returncode == 1
@@ -69,10 +69,10 @@ def test_a_renamed_column_is_reported_against_the_row_schema(tmp_path):
     scratch(tmp_path)
     package = tmp_path / "src"
     shutil.copytree(ROOT / "packages/artifactindex/src", package)
-    models = package / "wdf_artifactindex/models.py"
+    models = package / "wft_artifactindex/models.py"
     models.write_text(models.read_text().replace("    wit_version:", "    wit_release:"))
     result = subprocess.run(
-        [sys.executable, "-m", "wdf_artifactindex.gen", "--check", "--root", str(tmp_path)],
+        [sys.executable, "-m", "wft_artifactindex.gen", "--check", "--root", str(tmp_path)],
         capture_output=True,
         text=True,
         env=os.environ | {"PYTHONPATH": str(package)},

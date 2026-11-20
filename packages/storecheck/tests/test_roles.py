@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 
 import yaml
-from wdf_storecheck.models import ACTIONS, ROLES
+from wft_storecheck.models import ACTIONS, ROLES
 
 ROOT = Path(__file__).resolve().parents[3]
 STORE = ROOT / "contracts/store"
@@ -56,7 +56,7 @@ def test_only_the_reaper_deletes_and_only_admin_provisions():
 
 def test_sources_and_components_carry_no_age_rule():
     rules = load(STORE / "lifecycle.yaml")["buckets"]
-    for bucket in ("wdf-sources", "wdf-components"):
+    for bucket in ("wft-sources", "wft-components"):
         assert {r["kind"] for r in rules[bucket]["rules"]} == {"abort-incomplete-multipart"}
 
 

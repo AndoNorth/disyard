@@ -6,10 +6,10 @@ import subprocess
 import sys
 
 import pytest
-from wdf_workflow.activities.cache import bundle_key
-from wdf_workloads import bundle
+from wft_workflow.activities.cache import bundle_key
+from wft_workloads import bundle
 
-ENTRY = "wdf_workloads.main"
+ENTRY = "wft_workloads.main"
 
 
 @pytest.mark.slow
@@ -20,7 +20,7 @@ def test_cache_key_matches_build_info(tmp_path):
         [
             sys.executable,
             "-m",
-            "wdf_compile",
+            "wft_compile",
             "build",
             "--bundle",
             str(path),

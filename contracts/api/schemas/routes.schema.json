@@ -172,7 +172,7 @@
       "type": "object"
     }
   },
-  "$id": "urn:wdf:schema:api:routes:1",
+  "$id": "urn:wft:schema:api:routes:1",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
   "properties": {

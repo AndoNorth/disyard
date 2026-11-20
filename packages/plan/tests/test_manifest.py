@@ -5,9 +5,9 @@ from pathlib import Path
 
 import yaml
 from pydantic import TypeAdapter
-from wdf_events.models import ArtifactReference, TaskRequestData
-from wdf_jobdoc.registry import TASK_TYPES
-from wdf_plan import (
+from wft_events.models import ArtifactReference, TaskRequestData
+from wft_jobdoc.registry import TASK_TYPES
+from wft_plan import (
     canonical_bytes,
     manifest_reference,
     plan_hash,
@@ -44,9 +44,9 @@ def reference_for(task_type, output, producer):
     kind = TASK_TYPES[task_type]["outputs"][output]
     base = {"sha256": "b" * 64, "size": 1, "name": output}
     if kind in ("component", "build-info"):
-        return base | {"uri": f"s3://wdf-components/sha256/bb/{'b' * 64}", "kind": kind}
+        return base | {"uri": f"s3://wft-components/sha256/bb/{'b' * 64}", "kind": kind}
     return base | {
-        "uri": f"s3://wdf-results/t/b/{JOB}/1/{producer}/r0a1/{output}",
+        "uri": f"s3://wft-results/t/b/{JOB}/1/{producer}/r0a1/{output}",
         "kind": kind,
         "producer": {"job": JOB, "task": producer, "attempt": "r0a1"},
     }

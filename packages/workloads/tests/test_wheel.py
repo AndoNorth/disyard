@@ -9,7 +9,7 @@ import pytest
 ROOT = Path(__file__).resolve().parents[3]
 
 PROBE = """
-import wdf_workloads.bundle, wdf_workloads.main
+import wft_workloads.bundle, wft_workloads.main
 """
 
 
@@ -24,8 +24,8 @@ def clean_python(tmp_path_factory) -> Path:
     work = tmp_path_factory.mktemp("wheel")
     wheels = work / "wheels"
     for package in (
-        "wdf-workloads",
-        "wdf-kernel",
+        "wft-workloads",
+        "wft-kernel",
     ):
         run("uv", "build", "--wheel", "--package", package, "-o", str(wheels), cwd=ROOT)
     venv = work / "venv"

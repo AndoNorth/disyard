@@ -4,17 +4,17 @@ import io
 import json
 
 import pytest
-from wdf_artifactindex import Deleted, Purged, purge, tombstone
-from wdf_dispatchapi.objects import Refused
-from wdf_events.models import ContentReference
-from wdf_jobstate import transition
-from wdf_keys import batch_id, job_id
-from wdf_storecheck.provision import ADMIN
-from wdf_storecheck.s3 import client as s3_client
+from wft_artifactindex import Deleted, Purged, purge, tombstone
+from wft_dispatchapi.objects import Refused
+from wft_events.models import ContentReference
+from wft_jobstate import transition
+from wft_keys import batch_id, job_id
+from wft_storecheck.provision import ADMIN
+from wft_storecheck.s3 import client as s3_client
 
 pytestmark = [pytest.mark.integration, pytest.mark.pair]
 
-ACCEPTED = "dev.wdf.job.accepted.v1"
+ACCEPTED = "dev.wft.job.accepted.v1"
 
 
 def line(data: dict) -> bytes:
@@ -188,7 +188,7 @@ def test_purged_object_stops_the_call(make_submit, call, template, source, shelf
             (now,) = db.execute("SELECT now()").fetchone()
             assert isinstance(purge(db, uri, now, now - now, now - now), Purged)
             s3 = s3_client(shelf.endpoint, shelf.credentials[ADMIN])
-            s3.delete_object(Bucket="wdf-sources", Key=uri.split("/", 3)[3])
+            s3.delete_object(Bucket="wft-sources", Key=uri.split("/", 3)[3])
 
     body = Paused([header(template) + entry(0), entry(1)], reap)
     answers = call(submit, io.BufferedReader(body, buffer_size=1 << 20))

@@ -36,7 +36,7 @@
     },
     "source": {
       "type": "string",
-      "pattern": "^/wdf/[a-z][a-z0-9-]*$"
+      "pattern": "^/wft/[a-z][a-z0-9-]*$"
     },
     "type": {
       "type": "string",
@@ -46,7 +46,7 @@
           "x-reason": "type-without-major"
         },
         {
-          "pattern": "^dev\\.wdf\\.(job|task)(\\.[a-z0-9]+)+\\.v[1-9][0-9]*$"
+          "pattern": "^dev\\.wft\\.(job|task)(\\.[a-z0-9]+)+\\.v[1-9][0-9]*$"
         }
       ]
     },
@@ -59,7 +59,7 @@
     },
     "dataschema": {
       "type": "string",
-      "pattern": "^urn:wdf:schema:[a-z0-9]+(\\.[a-z0-9]+)*:[0-9]+\\.[0-9]+$"
+      "pattern": "^urn:wft:schema:[a-z0-9]+(\\.[a-z0-9]+)*:[0-9]+\\.[0-9]+$"
     },
     "subject": {
       "type": "string",

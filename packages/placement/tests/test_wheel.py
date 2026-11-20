@@ -10,10 +10,10 @@ ROOT = Path(__file__).resolve().parents[3]
 # What placement reads from its dependency's package data: the pool table and the pool queues that
 # the static placer answers from, and the conformance test that a placer passes.
 PROBE = """
-import wdf_placement
-from wdf_workflow.contract import naming, pools
-from wdf_workflow.placement import StaticPlacer
-from wdf_workflow.testing import placer_contract
+import wft_placement
+from wft_workflow.contract import naming, pools
+from wft_workflow.placement import StaticPlacer
+from wft_workflow.testing import placer_contract
 
 assert set(naming().pools) == {"compile", "simulate", "aggregate"}
 assert pools().estimate is False
@@ -45,7 +45,7 @@ def run(*cmd, **kwargs) -> subprocess.CompletedProcess:
 def test_wheel_in_a_clean_venv_imports_placement(tmp_path):
     """Runs isolated from a directory with no repository above it, so a path into the tree fails."""
     wheels = tmp_path / "wheels"
-    for package in workspace_closure("wdf-placement"):
+    for package in workspace_closure("wft-placement"):
         run("uv", "build", "--wheel", "--package", package, "-o", str(wheels), cwd=ROOT)
     venv = tmp_path / "venv"
     run("uv", "venv", "--python", sys.executable, str(venv))

@@ -5,10 +5,10 @@ import json
 from pathlib import Path
 
 import pytest
-import wdf_aggregate.__main__ as cli
-from wdf_aggregate.read import max_bytes
-from wdf_kernel.rows import blocks
-from wdf_kernel.writer import write
+import wft_aggregate.__main__ as cli
+from wft_aggregate.read import max_bytes
+from wft_kernel.rows import blocks
+from wft_kernel.writer import write
 
 ROOT = Path(__file__).resolve().parents[3]
 VECTORS = ROOT / "contracts/workload/vectors/results/invalid"
@@ -20,7 +20,7 @@ LAUGHS = HEAD + (
     b'  <!ENTITY l0 "lol">\n'
     + b"".join(f'  <!ENTITY l{i} "{f"&l{i - 1};" * 10}">\n'.encode() for i in range(1, 11))
     + b"]>\n"
-    b'<results schema="wdf.sim.v1" seed="7">\n'
+    b'<results schema="wft.sim.v1" seed="7">\n'
     b'  <block id="b" kind="echo">\n'
     b'    <row key="k" value="&l10;"/>\n'
     b"  </block>\n"

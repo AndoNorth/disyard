@@ -1,8 +1,8 @@
 """The service logins of the workflow worker, and the Secrets of its logins and store identities.
 
 The group roles of the app database cannot log in, so each writer the service runs gets a login in
-its group: `emit` in `wdf_workflow`, the artifact activities in `wdf_artifacts` and the reaper in
-`wdf_reaper`. Their passwords are generated on first use into the state directory of the cluster
+its group: `emit` in `wft_workflow`, the artifact activities in `wft_artifacts` and the reaper in
+`wft_reaper`. Their passwords are generated on first use into the state directory of the cluster
 scripts and never committed.
 Usage: logins.py render STORE_CREDENTIALS | apply DSN | check DSN
 `render` prints the two Secrets of the module, the DSNs of the logins and the store identities of
@@ -23,18 +23,18 @@ from psycopg import sql
 
 # Each login and the one group role it is a member of, keyed by the environment variable of its DSN.
 LOGINS = {
-    "WDF_WORKFLOW_DSN": ("workflow_worker_workflow", "wdf_workflow"),
-    "WDF_ARTIFACTS_DSN": ("workflow_worker_artifacts", "wdf_artifacts"),
-    "WDF_REAPER_DSN": ("workflow_worker_reaper", "wdf_reaper"),
+    "WFT_WORKFLOW_DSN": ("workflow_worker_workflow", "wft_workflow"),
+    "WFT_ARTIFACTS_DSN": ("workflow_worker_artifacts", "wft_artifacts"),
+    "WFT_REAPER_DSN": ("workflow_worker_reaper", "wft_reaper"),
 }
 STORE_ROLES = ("workflow", "indexer", "reaper")
-NAMESPACE = "wdf-control"
-DATABASE = "appdb.wdf-infra.svc.cluster.local:5432/postgres"
+NAMESPACE = "wft-control"
+DATABASE = "appdb.wft-infra.svc.cluster.local:5432/postgres"
 CREDENTIALS_FILE = "credentials.json"
 
 
 def state_file() -> Path:
-    state = os.environ.get("WDF_STATE_DIR") or str(
+    state = os.environ.get("WFT_STATE_DIR") or str(
         Path(os.environ.get("XDG_STATE_HOME") or Path.home() / ".local/state") / "wasm-dag-forge"
     )
     return Path(state) / "workflow-worker.logins.json"

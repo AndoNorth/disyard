@@ -1,6 +1,6 @@
 name: temporal-bootstrap
 group: infra
-namespace: wdf-infra
+namespace: wft-infra
 artifact:
   kind: image
   pin: temporalio/server

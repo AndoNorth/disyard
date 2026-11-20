@@ -7,7 +7,7 @@ Storage (#3), validator (#5), workflow (#6), broker (#7), admission (#8), placem
 
 Every platform event is a CloudEvent 1.0 in structured mode with the JSON event format, and the same bytes travel on every hop.
 This directory pins the profile, the schema of each data type, the vectors and the key formulas.
-The code lives in `packages/events/` (import `wdf_events`) and `packages/keys/` (import `wdf_keys`).
+The code lives in `packages/events/` (import `wft_events`) and `packages/keys/` (import `wft_keys`).
 
 ## Profile
 
@@ -18,11 +18,11 @@ The code lives in `packages/events/` (import `wdf_events`) and `packages/keys/` 
 | --- | --- |
 | `specversion` | `1.0` |
 | `id` | A string without `#`, derived by `cloudevent_id` below |
-| `source` | `/wdf/<component>`, one source per component and never per pod or per tenant |
-| `type` | `dev.wdf.<job or task>.<name>.v<major>`, where `dev.wdf` is a placeholder prefix |
+| `source` | `/wft/<component>`, one source per component and never per pod or per tenant |
+| `type` | `dev.wft.<job or task>.<name>.v<major>`, where `dev.wft` is a placeholder prefix |
 | `time` | Required, UTC, exactly six fractional digits and a `Z` suffix |
 | `datacontenttype` | `application/json` |
-| `dataschema` | `urn:wdf:schema:<type without the prefix and the major>:<major>.<minor>` |
+| `dataschema` | `urn:wft:schema:<type without the prefix and the major>:<major>.<minor>` |
 | `subject` | The job id for a job type, and `<job id>/<task id>` for a task type |
 | `tenant`, `jobid`, `priorityclass`, `jobclass`, `traceparent` | Required on every event |
 | `taskid` | Required on a task type, and the `subject` is built from it |
@@ -37,7 +37,7 @@ Sensitive values never go in a context attribute.
 ### `time`
 
 `time` is the time of the fact being recorded and never a write-time clock.
-It always carries exactly six fractional digits, zero padded by producers (`wdf_events.format_time`), so that the event store key `<source>#<id>` plus `time` survives a `timestamptz` round trip and a replay inserts nothing new.
+It always carries exactly six fractional digits, zero padded by producers (`wft_events.format_time`), so that the event store key `<source>#<id>` plus `time` survives a `timestamptz` round trip and a replay inserts nothing new.
 
 ### `jobclass`
 
@@ -53,7 +53,7 @@ A reader compares the media type and the charset case-insensitively, so the `cha
 ## Data schemas and the reader rule
 
 `schemas/<type without the prefix and the major>/<major>.<minor>.json` holds one JSON Schema file per type and minor.
-The files are generated from the Python models by `python -m wdf_events.schemagen`, checked by `python -m wdf_events.schemagen --check`, and never edited by hand.
+The files are generated from the Python models by `python -m wft_events.schemagen`, checked by `python -m wft_events.schemagen --check`, and never edited by hand.
 `dataschema` is a stable identifier mapped to a file by the path rule above, and it is not a resolvable URL.
 
 A reader resolves an event like this:
@@ -93,7 +93,7 @@ The pair therefore never repeats for a task, and two runs of one task never shar
 `vectors/keys.json` pins this under `workflow_retries`.
 The `entry` is the module of the source bundle that the compile task builds, so two entries over one bundle are two builds and two keys.
 The workflow and the compile worker both import `compile_cache_key` and compute it nowhere else.
-`wdf_keys` holds stubs that raise `NotImplementedError("not implemented: owned by lane K")` until the owning lane replaces them, and `packages/keys/tests/test_vectors.py` lists the stubbed names in `STUBBED`.
+`wft_keys` holds stubs that raise `NotImplementedError("not implemented: owned by lane K")` until the owning lane replaces them, and `packages/keys/tests/test_vectors.py` lists the stubbed names in `STUBBED`.
 A vector that the real functions disagree with is fixed by a contract-change PR.
 
 ## Loader

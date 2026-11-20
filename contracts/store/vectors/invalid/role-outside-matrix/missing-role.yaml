@@ -1,4 +1,4 @@
 ---
 roles:
-  admin: {wdf-sources: [bucket]}
-  submit: {wdf-sources: [put]}
+  admin: {wft-sources: [bucket]}
+  submit: {wft-sources: [put]}

@@ -4,36 +4,36 @@ before anything connects."""
 from pathlib import Path
 
 import pytest
-from wdf_worker.config import ENV, MIRROR_ENV, PREFIX_ENV, load
+from wft_worker.config import ENV, MIRROR_ENV, PREFIX_ENV, load
 
 COMPLETE = {
-    ENV["temporal_address"]: "temporal-frontend.wdf-infra:7233",
-    ENV["namespace"]: "wdf",
-    ENV["store_endpoint"]: "http://objectstore.wdf-infra:8333",
-    ENV["store_credentials"]: "/etc/wdf/store/credentials.json",
+    ENV["temporal_address"]: "temporal-frontend.wft-infra:7233",
+    ENV["namespace"]: "wft",
+    ENV["store_endpoint"]: "http://objectstore.wft-infra:8333",
+    ENV["store_credentials"]: "/etc/wft/store/credentials.json",
     ENV["slot_memory_mib"]: "384",
-    ENV["scratch"]: "/var/wdf/task",
-    ENV["ready_file"]: "/var/wdf/ready",
+    ENV["scratch"]: "/var/wft/task",
+    ENV["ready_file"]: "/var/wft/ready",
 }
 
 
 @pytest.mark.parametrize("pool", ["simulate", "aggregate"])
 def test_complete_environment_polls_the_contract_queue(pool):
     config = load(pool, COMPLETE)
-    assert config.queue == f"wdf-{pool}"
+    assert config.queue == f"wft-{pool}"
     assert config.slot_memory_mib == 384
-    assert config.scratch == Path("/var/wdf/task")
+    assert config.scratch == Path("/var/wft/task")
     assert config.mirror is None
 
 
 def test_compile_reads_the_mirror():
-    config = load("compile", {**COMPLETE, MIRROR_ENV: "http://mirror.wdf-infra/simple"})
-    assert (config.queue, config.mirror) == ("wdf-compile", "http://mirror.wdf-infra/simple")
+    config = load("compile", {**COMPLETE, MIRROR_ENV: "http://mirror.wft-infra/simple"})
+    assert (config.queue, config.mirror) == ("wft-compile", "http://mirror.wft-infra/simple")
 
 
 def test_prefix_goes_in_front_of_the_queue():
     config = load("simulate", {**COMPLETE, PREFIX_ENV: "h-1a2b3c4d-"})
-    assert config.queue == "h-1a2b3c4d-wdf-simulate"
+    assert config.queue == "h-1a2b3c4d-wft-simulate"
 
 
 def test_other_pools_ignore_the_mirror():

@@ -55,7 +55,7 @@
       },
       "sha256": "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08",
       "size": 8192,
-      "uri": "s3://wdf-results/acme/b/j/7/echo/r0a2/result.bin"
+      "uri": "s3://wft-results/acme/b/j/7/echo/r0a2/result.bin"
     }
   ],
   "dead_letter": null

@@ -1,6 +1,6 @@
 name: vector
 group: workers
-namespace: wdf-workers
+namespace: wft-workers
 artifact:
   kind: image
   pin: fixture-image

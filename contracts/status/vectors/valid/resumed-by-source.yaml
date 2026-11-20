@@ -8,8 +8,8 @@ projection:
   job.accepted: [{sets: accepted}]
   job.started: [{sets: running}]
   job.resumed:
-    - {when: {source: /wdf/workflow}, sets: running}
-    - {when: {source: /wdf/control}, sets: accepted}
+    - {when: {source: /wft/workflow}, sets: running}
+    - {when: {source: /wft/control}, sets: accepted}
   job.succeeded: [{sets: succeeded}]
   job.pause.requested: [{sets: null}]
   job.cancel.requested: [{sets: null}]

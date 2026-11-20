@@ -1,6 +1,6 @@
 """A store and a database for the reaper tests, and a small world of jobs and objects in them.
 
-The reaper's database login is a stand-in member of `wdf_reaper`, and the store clients are the
+The reaper's database login is a stand-in member of `wft_reaper`, and the store clients are the
 credentials of the roles of the contract. The store and the database are the two containers that a
 session holds, each for the length of a test module.
 """
@@ -15,18 +15,18 @@ import psycopg
 import pytest
 from psycopg import sql
 from psycopg.conninfo import make_conninfo
-from wdf_artifactclient import cache as cache_module
-from wdf_artifactclient import client as client_module
-from wdf_artifactclient import commit as commit_module
-from wdf_artifactclient.checkpoint import write_checkpoint
-from wdf_artifactclient.client import ArtifactClient, RetryPolicy
-from wdf_artifactindex import index_reference
-from wdf_artifactreaper.content import CONTENT_BUCKETS
-from wdf_artifactreaper.reap import load_windows, reap_once
-from wdf_events.models import ProducerRef
-from wdf_jobstate import JobRow, insert_accepted
-from wdf_storecheck.fixtures import running
-from wdf_storecheck.s3 import client as s3_client
+from wft_artifactclient import cache as cache_module
+from wft_artifactclient import client as client_module
+from wft_artifactclient import commit as commit_module
+from wft_artifactclient.checkpoint import write_checkpoint
+from wft_artifactclient.client import ArtifactClient, RetryPolicy
+from wft_artifactindex import index_reference
+from wft_artifactreaper.content import CONTENT_BUCKETS
+from wft_artifactreaper.reap import load_windows, reap_once
+from wft_events.models import ProducerRef
+from wft_jobstate import JobRow, insert_accepted
+from wft_storecheck.fixtures import running
+from wft_storecheck.s3 import client as s3_client
 
 NOW = datetime(2026, 11, 20, 12, 0, tzinfo=UTC)
 WINDOWS = load_windows()
@@ -84,7 +84,7 @@ def login(appdb, db):
 
 @pytest.fixture
 def reaper(login):
-    return login("wdf_reaper")
+    return login("wft_reaper")
 
 
 class Counting:
@@ -161,13 +161,13 @@ class World:
             priority_class="standard",
             manifest_ref=manifest
             or {
-                "uri": f"s3://wdf-sources/sha256/aa/{SHA}",
+                "uri": f"s3://wft-sources/sha256/aa/{SHA}",
                 "sha256": SHA,
                 "size": 7,
                 "name": "m",
                 "kind": "manifest",
             },
-            schema_version="urn:wdf:schema:job.accepted:1.0",
+            schema_version="urn:wft:schema:job.accepted:1.0",
             traceparent=TRACE,
             seed=3,
             parameters={"a": 1},
@@ -204,7 +204,7 @@ class World:
     def zombie(self, job: str, attempt: str = "r0a1", task: str = "sim", seed: int = 0) -> str:
         """An attempt's object that no row names, as a late zombie upload leaves it."""
         key = f"{self.tenant}/{self.batch}/{job}/{seed}/{task}/{attempt}/result.xml"
-        self.admin.put_object(Bucket="wdf-results", Key=key, Body=b"late")
+        self.admin.put_object(Bucket="wft-results", Key=key, Body=b"late")
         return key
 
     def summary(self, job: str):
@@ -240,7 +240,7 @@ class World:
 
         def put(n: int) -> None:
             self.admin.put_object(
-                Bucket="wdf-results", Key=f"{prefix}/{n}/sim/r0a1/result.xml", Body=b"x"
+                Bucket="wft-results", Key=f"{prefix}/{n}/sim/r0a1/result.xml", Body=b"x"
             )
 
         with ThreadPoolExecutor(16) as pool:
@@ -298,7 +298,7 @@ def clock(monkeypatch):
 @pytest.fixture
 def artifacts(login):
     """The login of the dispatch API and of the workflow's record activity."""
-    return login("wdf_artifacts")
+    return login("wft_artifacts")
 
 
 @pytest.fixture

@@ -13,7 +13,7 @@ SCHEMA = "contracts/job/schemas/job/1.0.json"
 
 def run(*args):
     return subprocess.run(
-        [sys.executable, "-m", "wdf_jobdoc.schemagen", *args], capture_output=True, text=True
+        [sys.executable, "-m", "wft_jobdoc.schemagen", *args], capture_output=True, text=True
     )
 
 
@@ -59,8 +59,8 @@ def test_generation_rewrites_a_drifted_file(tree):
 
 def test_the_schema_names_its_version(contract):
     schema = json.loads((contract / "schemas/job/1.0.json").read_text())
-    assert schema["$id"] == "urn:wdf:schema:job:1.0"
-    assert schema["properties"]["schema"]["const"] == "urn:wdf:schema:job:1.0"
+    assert schema["$id"] == "urn:wft:schema:job:1.0"
+    assert schema["properties"]["schema"]["const"] == "urn:wft:schema:job:1.0"
 
 
 def test_a_valid_document_satisfies_the_exported_schema(contract, good):

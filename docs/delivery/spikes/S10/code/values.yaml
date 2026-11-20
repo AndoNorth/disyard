@@ -6,9 +6,9 @@ server:
   image:
     tag: 1.32.2@sha256:7bf69188a6232fea14869b9cef3d94aa82a1601d99517f7e86c71f22da4e0670
   nodeSelector:
-    wdf.dev/pool: infra
+    wft.dev/pool: infra
   tolerations:
-    - {key: wdf.dev/pool, operator: Equal, value: infra, effect: NoSchedule}
+    - {key: wft.dev/pool, operator: Equal, value: infra, effect: NoSchedule}
   config:
     logLevel: info
     persistence:
@@ -19,7 +19,7 @@ server:
             pluginName: postgres12
             driverName: postgres12
             databaseName: temporal
-            connectAddr: temporaldb.wdf-infra.svc:5432
+            connectAddr: temporaldb.wft-infra.svc:5432
             connectProtocol: tcp
             user: postgres
             existingSecret: temporaldb
@@ -60,9 +60,9 @@ admintools:
   image:
     tag: 1.32.2@sha256:4a95866efba29d7e17ab012df5232795e8b0ad0f7d5f9d1ec4df321f7792a754
   nodeSelector:
-    wdf.dev/pool: infra
+    wft.dev/pool: infra
   tolerations:
-    - {key: wdf.dev/pool, operator: Equal, value: infra, effect: NoSchedule}
+    - {key: wft.dev/pool, operator: Equal, value: infra, effect: NoSchedule}
 web:
   enabled: false
 schema:

@@ -19,7 +19,7 @@ if len(build_id) > 40 or not build_id.replace("-", "").isalnum() or build_id != 
     fail("build id %r is not a lower-case name of at most 40 letters, digits and inner dashes" % build_id)
 deployment = "%s-%s" % (name, build_id)
 
-image = "wdf-" + name
+image = "wft-" + name
 custom_build(
     image,
     os.path.abspath("image.sh"),
@@ -41,22 +41,22 @@ local_resource(
     labels = [module["group"]],
 )
 
-svc = lambda service, port: "%s.wdf-infra.svc.cluster.local:%d" % (service, port)
+svc = lambda service, port: "%s.wft-infra.svc.cluster.local:%d" % (service, port)
 store_endpoint = "http://" + svc("objectstore", 8333)
-credentials = "/etc/wdf/store/credentials.json"
-ready = "/tmp/wdf-ready"
-labels = {"app.kubernetes.io/name": name, "wdf.dev/build-id": build_id}
+credentials = "/etc/wft/store/credentials.json"
+ready = "/tmp/wft-ready"
+labels = {"app.kubernetes.io/name": name, "wft.dev/build-id": build_id}
 env = {
-    "WDF_TEMPORAL_ADDRESS": svc("temporal-frontend", 7233),
-    "WDF_TEMPORAL_NAMESPACE": naming["namespace"],
-    "WDF_METRICS_ADDRESS": "0.0.0.0:9464",
-    "WDF_STORE_ENDPOINT": store_endpoint,
-    "WDF_WORKFLOW_CREDENTIALS": credentials,
-    "WDF_INDEXER_CREDENTIALS": credentials,
-    "WDF_REAPER_ENDPOINT": store_endpoint,
-    "WDF_REAPER_CREDENTIALS": credentials,
-    "WDF_READY_FILE": ready,
-    "WDF_PLACEMENT_URL": "http://placement.wdf-control.svc:8080",
+    "WFT_TEMPORAL_ADDRESS": svc("temporal-frontend", 7233),
+    "WFT_TEMPORAL_NAMESPACE": naming["namespace"],
+    "WFT_METRICS_ADDRESS": "0.0.0.0:9464",
+    "WFT_STORE_ENDPOINT": store_endpoint,
+    "WFT_WORKFLOW_CREDENTIALS": credentials,
+    "WFT_INDEXER_CREDENTIALS": credentials,
+    "WFT_REAPER_ENDPOINT": store_endpoint,
+    "WFT_REAPER_CREDENTIALS": credentials,
+    "WFT_READY_FILE": ready,
+    "WFT_PLACEMENT_URL": "http://placement.wft-control.svc:8080",
 }
 
 k8s_yaml(encode_yaml({
@@ -97,7 +97,7 @@ k8s_yaml(encode_yaml({
                         "capabilities": {"drop": ["ALL"]},
                     },
                     "volumeMounts": [
-                        {"name": "store", "mountPath": "/etc/wdf/store", "readOnly": True},
+                        {"name": "store", "mountPath": "/etc/wft/store", "readOnly": True},
                         {"name": "tmp", "mountPath": "/tmp"},
                     ],
                 }],

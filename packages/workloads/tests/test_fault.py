@@ -5,12 +5,12 @@ from pathlib import Path
 
 import pytest
 import yaml
-from wdf_compile.build import build
-from wdf_runtime.classify import Facts, classify
-from wdf_runtime.contract import canonical
-from wdf_runtime.models import CONTRACT
-from wdf_runtime.run import run, warm
-from wdf_workloads import bundle, fault
+from wft_compile.build import build
+from wft_runtime.classify import Facts, classify
+from wft_runtime.contract import canonical
+from wft_runtime.models import CONTRACT
+from wft_runtime.run import run, warm
+from wft_workloads import bundle, fault
 
 MEMORY_MIB = 384
 TIMEOUT_S = 30
@@ -28,7 +28,7 @@ SIMULATE = {row["class"] for row in EXIT_CLASSES["pools"]["simulate"]["classes"]
 def component(tmp_path_factory) -> tuple[Path, Path]:
     """The workload component and a module cache it is already warm in."""
     work = tmp_path_factory.mktemp("workloads")
-    built = build(bundle.write(work), "wdf_workloads.main", work / "built").component
+    built = build(bundle.write(work), "wft_workloads.main", work / "built").component
     warm(built, work / "cache")
     return built, work / "cache"
 

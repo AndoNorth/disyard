@@ -14,15 +14,15 @@ from pathlib import Path
 import pytest
 from temporalio.exceptions import ApplicationError
 from temporalio.testing import ActivityEnvironment
-from wdf_artifactclient.client import ArtifactClient
-from wdf_worker.pools import Context, compile
-from wdf_workflow.contract import check_task_result
-from wdf_workflow.models import REASON_MAX
+from wft_artifactclient.client import ArtifactClient
+from wft_worker.pools import Context, compile
+from wft_workflow.contract import check_task_result
+from wft_workflow.models import REASON_MAX
 
 pytestmark = pytest.mark.integration
 
 # Children inherit it, so each process a task started is found by it in /proc.
-MARK = "WDF_TEST_TASK"
+MARK = "WFT_TEST_TASK"
 
 
 @pytest.fixture
@@ -102,7 +102,7 @@ def test_missing_entry_compile_failed_not_retried(given, context):
     assert error.type == "compile_failed"
     assert error.non_retryable
     assert error.details[0].deterministic
-    assert "wdf_workloads.missing is not a module of the bundle" in error.details[0].reason
+    assert "wft_workloads.missing is not a module of the bundle" in error.details[0].reason
 
 
 def test_library_error_is_worker_shutdown(given, context, monkeypatch):

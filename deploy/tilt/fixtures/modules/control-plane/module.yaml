@@ -1,6 +1,6 @@
 name: control-plane
 group: control
-namespace: wdf-control
+namespace: wft-control
 artifact: {kind: image, pin: pause}
 resources:
   control-plane:

@@ -11,17 +11,17 @@ import asyncio
 import pytest
 import yaml
 from temporalio.client import WorkflowExecutionStatus
-from wdf_dispatchapi.control import control_job
-from wdf_dispatchapi.gateway import TemporalGateway
-from wdf_dispatchapi.models import CONTRACT, ControlRequest
-from wdf_dispatchapi.retrier import Retrier
-from wdf_events import from_bytes
-from wdf_eventstore import events_for_job
-from wdf_jobstate import get_job
-from wdf_stages.recording import type_name
-from wdf_workflow.job import JobWorkflow
-from wdf_workflow.models import ResumeSignal
-from wdf_workflow.testing import connect
+from wft_dispatchapi.control import control_job
+from wft_dispatchapi.gateway import TemporalGateway
+from wft_dispatchapi.models import CONTRACT, ControlRequest
+from wft_dispatchapi.retrier import Retrier
+from wft_events import from_bytes
+from wft_eventstore import events_for_job
+from wft_jobstate import get_job
+from wft_stages.recording import type_name
+from wft_workflow.job import JobWorkflow
+from wft_workflow.models import ResumeSignal
+from wft_workflow.testing import connect
 
 pytestmark = [pytest.mark.integration, pytest.mark.pair]
 

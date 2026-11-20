@@ -27,7 +27,7 @@
           "type": "integer"
         },
         "uri": {
-          "pattern": "^s3://wdf-sources/.+$",
+          "pattern": "^s3://wft-sources/.+$",
           "title": "Uri",
           "type": "string"
         }
@@ -43,10 +43,10 @@
       "type": "object"
     }
   },
-  "$id": "urn:wdf:schema:job.accepted:1.0",
+  "$id": "urn:wft:schema:job.accepted:1.0",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
-  "description": "Data of dev.wdf.job.accepted.v1: a pointer to the job and never the job.",
+  "description": "Data of dev.wft.job.accepted.v1: a pointer to the job and never the job.",
   "properties": {
     "batch_id": {
       "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",

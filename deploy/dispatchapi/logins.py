@@ -2,8 +2,8 @@
 identity.
 
 The group roles of the app database cannot log in, so each group the service writes or reads as
-gets a login in it: the submit sequence in `wdf_dispatch`, control in `wdf_control`, the index and
-link rows in `wdf_artifacts` and the reads of event payloads in `wdf_reader`. Their passwords are
+gets a login in it: the submit sequence in `wft_dispatch`, control in `wft_control`, the index and
+link rows in `wft_artifacts` and the reads of event payloads in `wft_reader`. Their passwords are
 generated on first use into the state directory of the cluster scripts and never committed.
 Usage: logins.py render STORE_CREDENTIALS | apply DSN | check DSN
 `render` prints the two Secrets of the module, the DSNs of the logins and the `submit` store
@@ -24,19 +24,19 @@ from psycopg import sql
 
 # Each login and the one group role it is a member of, keyed by the environment variable of its DSN.
 LOGINS = {
-    "WDF_DISPATCH_DSN": ("dispatch_dispatch", "wdf_dispatch"),
-    "WDF_CONTROL_DSN": ("dispatch_control", "wdf_control"),
-    "WDF_ARTIFACTS_DSN": ("dispatch_artifacts", "wdf_artifacts"),
-    "WDF_READER_DSN": ("dispatch_reader", "wdf_reader"),
+    "WFT_DISPATCH_DSN": ("dispatch_dispatch", "wft_dispatch"),
+    "WFT_CONTROL_DSN": ("dispatch_control", "wft_control"),
+    "WFT_ARTIFACTS_DSN": ("dispatch_artifacts", "wft_artifacts"),
+    "WFT_READER_DSN": ("dispatch_reader", "wft_reader"),
 }
 STORE_ROLES = ("submit",)
-NAMESPACE = "wdf-control"
-DATABASE = "appdb.wdf-infra.svc.cluster.local:5432/postgres"
+NAMESPACE = "wft-control"
+DATABASE = "appdb.wft-infra.svc.cluster.local:5432/postgres"
 CREDENTIALS_FILE = "credentials.json"
 
 
 def state_file() -> Path:
-    state = os.environ.get("WDF_STATE_DIR") or str(
+    state = os.environ.get("WFT_STATE_DIR") or str(
         Path(os.environ.get("XDG_STATE_HOME") or Path.home() / ".local/state") / "wasm-dag-forge"
     )
     return Path(state) / "dispatch.logins.json"

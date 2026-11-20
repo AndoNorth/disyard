@@ -65,7 +65,7 @@ The pass line is binary, so the verdict is fail.
    Node allocatable is 944 MiB and 900m by the preset rule, and kindnet takes 50 MiB and 100m of it on every worker, so a pod must fit in 894 MiB and 800m.
    Both pods stay Pending with `Insufficient cpu` and `Insufficient memory`.
    `scripts/cluster/slots.sh` reports the slot against the allocatable of the node but does not subtract the daemon requests.
-2. The `wdf-infra` quota rejects the third infra stand-in in run A.
+2. The `wft-infra` quota rejects the third infra stand-in in run A.
    The quota is 2,252 MiB of requests and limits, and Temporal, its Postgres and the object store ask for 2,314 MiB.
    The same limits would be rejected for real components with limits at the sized figures.
 3. The host cannot hold the five stand-ins at the sized figures above the 1 GiB floor.

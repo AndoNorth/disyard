@@ -13,7 +13,7 @@ INVALID = sorted((VECTORS / "invalid").glob("*/*.yaml"))
 
 def check(path: Path) -> subprocess.CompletedProcess:
     return subprocess.run(
-        [sys.executable, "-m", "wdf_stateops.inputs", "--check", str(path)],
+        [sys.executable, "-m", "wft_stateops.inputs", "--check", str(path)],
         capture_output=True,
         text=True,
     )

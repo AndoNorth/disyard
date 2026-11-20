@@ -9,10 +9,10 @@ import subprocess
 import time
 
 import pytest
-from wdf_artifactclient import faults, staging
-from wdf_artifactclient.checkpoint import verify_checkpoint, write_checkpoint
-from wdf_artifactclient.client import ArtifactClient, RetryPolicy
-from wdf_artifactclient.errors import (
+from wft_artifactclient import faults, staging
+from wft_artifactclient.checkpoint import verify_checkpoint, write_checkpoint
+from wft_artifactclient.client import ArtifactClient, RetryPolicy
+from wft_artifactclient.errors import (
     ArtifactCorrupt,
     ArtifactLost,
     ArtifactNotFound,
@@ -21,9 +21,9 @@ from wdf_artifactclient.errors import (
     StoreForbidden,
     StoreUnavailable,
 )
-from wdf_events.models import ProducerRef
-from wdf_storecheck.fixtures import running
-from wdf_storecheck.s3 import Creds, dump_credentials
+from wft_events.models import ProducerRef
+from wft_storecheck.fixtures import running
+from wft_storecheck.s3 import Creds, dump_credentials
 
 pytestmark = [pytest.mark.integration, pytest.mark.isolated]
 

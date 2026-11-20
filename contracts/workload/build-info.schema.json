@@ -127,13 +127,13 @@
       "type": "object"
     }
   },
-  "$id": "urn:wdf:schema:workload:build-info:1",
+  "$id": "urn:wft:schema:workload:build-info:1",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
   "description": "build-info.json: what a compile task built, from what and with which tools.",
   "properties": {
     "cache_key": {
-      "description": "wdf_keys.compile_cache_key over the inputs.",
+      "description": "wft_keys.compile_cache_key over the inputs.",
       "pattern": "^[0-9a-f]{64}$",
       "title": "Cache Key",
       "type": "string"
@@ -161,7 +161,7 @@
       "$ref": "#/$defs/KeyInputs"
     },
     "schema": {
-      "const": "wdf.build-info/1",
+      "const": "wft.build-info/1",
       "title": "Schema",
       "type": "string"
     },

@@ -6,18 +6,18 @@ import sys
 from pathlib import Path
 
 import pytest
-from wdf_artifactclient.staging import collect_outputs, contract
-from wdf_artifactclient.testing import make_scratch
-from wdf_compile import bundle
-from wdf_compile.build import build
-from wdf_kernel.reader import read
-from wdf_runtime.command import MIB, PAGE, warm_up
-from wdf_runtime.contract import canonical
-from wdf_runtime.contract import check as check_contract
-from wdf_runtime.pins import GUEST_MIN_PAGES, GUEST_OVERHEAD_MIB
-from wdf_runtime.run import copy_input, input_digest, run, warm, warmed
+from wft_artifactclient.staging import collect_outputs, contract
+from wft_artifactclient.testing import make_scratch
+from wft_compile import bundle
+from wft_compile.build import build
+from wft_kernel.reader import read
+from wft_runtime.command import MIB, PAGE, warm_up
+from wft_runtime.contract import canonical
+from wft_runtime.contract import check as check_contract
+from wft_runtime.pins import GUEST_MIN_PAGES, GUEST_OVERHEAD_MIB
+from wft_runtime.run import copy_input, input_digest, run, warm, warmed
 
-# A guest that writes a wdf.sim.v1 document listing the environment and /in it sees, and, by its
+# A guest that writes a wft.sim.v1 document listing the environment and /in it sees, and, by its
 # workload name, writes a results.xml just above args.mib MiB, changes its input, or fails.
 GUEST = """\
 import json
@@ -65,7 +65,7 @@ class Run(exports.Run):
         rows = row("environ", sorted(os.environ)) + row("in", sorted(os.listdir("/in")))
         with open("/out/results.xml", "w") as f:
             f.write(
-                f'<results schema="wdf.sim.v1" seed="{params["seed"]}">'
+                f'<results schema="wft.sim.v1" seed="{params["seed"]}">'
                 f'<block id="seen" kind="echo">{rows}</block></results>\\n'
             )
 """
@@ -97,11 +97,11 @@ def seen(results: Path) -> dict:
 
 
 def test_run_minimal_guest(component, tmp_path, monkeypatch):
-    monkeypatch.setenv("WDF_UNSET_IN_GUEST", "visible-to-the-host")
+    monkeypatch.setenv("WFT_UNSET_IN_GUEST", "visible-to-the-host")
     out = tmp_path / "out"
     argv = ["run", "--component", str(component), "--input", str(write_input(tmp_path / "i.json"))]
     done = subprocess.run(
-        [sys.executable, "-m", "wdf_runtime", *argv, "--out", str(out)],
+        [sys.executable, "-m", "wft_runtime", *argv, "--out", str(out)],
         capture_output=True,
         text=True,
     )

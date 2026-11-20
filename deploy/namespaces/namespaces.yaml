@@ -3,15 +3,15 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: wdf-infra
+  name: wft-infra
   labels:
-    wdf.dev/group: infra
+    wft.dev/group: infra
 ---
 apiVersion: v1
 kind: LimitRange
 metadata:
   name: defaults
-  namespace: wdf-infra
+  namespace: wft-infra
 spec:
   limits:
     - type: Container
@@ -25,15 +25,15 @@ spec:
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: wdf-control
+  name: wft-control
   labels:
-    wdf.dev/group: control
+    wft.dev/group: control
 ---
 apiVersion: v1
 kind: LimitRange
 metadata:
   name: defaults
-  namespace: wdf-control
+  namespace: wft-control
 spec:
   limits:
     - type: Container
@@ -47,15 +47,15 @@ spec:
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: wdf-workers
+  name: wft-workers
   labels:
-    wdf.dev/group: workers
+    wft.dev/group: workers
 ---
 apiVersion: v1
 kind: LimitRange
 metadata:
   name: defaults
-  namespace: wdf-workers
+  namespace: wft-workers
 spec:
   limits:
     - type: Container
@@ -69,15 +69,15 @@ spec:
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: wdf-obs
+  name: wft-obs
   labels:
-    wdf.dev/group: obs
+    wft.dev/group: obs
 ---
 apiVersion: v1
 kind: LimitRange
 metadata:
   name: defaults
-  namespace: wdf-obs
+  namespace: wft-obs
 spec:
   limits:
     - type: Container

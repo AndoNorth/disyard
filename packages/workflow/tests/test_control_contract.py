@@ -9,13 +9,13 @@ from pathlib import Path
 import pytest
 from temporalio import activity
 from temporalio.exceptions import ApplicationError
-from wdf_artifactclient.models import IndexEntry
-from wdf_events import from_bytes
-from wdf_events.models import ContentReference, JobParams, ManifestReference
-from wdf_plan import read_plan
-from wdf_workflow.contract import naming
-from wdf_workflow.models import FailureDetails, TaskResult
-from wdf_workflow.testing.control import (
+from wft_artifactclient.models import IndexEntry
+from wft_events import from_bytes
+from wft_events.models import ContentReference, JobParams, ManifestReference
+from wft_plan import read_plan
+from wft_workflow.contract import naming
+from wft_workflow.models import FailureDetails, TaskResult
+from wft_workflow.testing.control import (
     SIGNATURES,
     BuildIndex,
     CacheInvalidate,
@@ -42,7 +42,7 @@ def reference(kind: str, name: str, digit: str) -> dict:
     sha256 = digit * 64
     bucket = {"source": "sources", "manifest": "sources"}.get(kind, "components")
     return {
-        "uri": f"s3://wdf-{bucket}/sha256/{sha256[:2]}/{sha256}",
+        "uri": f"s3://wft-{bucket}/sha256/{sha256[:2]}/{sha256}",
         "sha256": sha256,
         "size": 10,
         "name": name,
@@ -90,7 +90,7 @@ def cases() -> list[ControlCase]:
         ControlCase(
             "load_plan",
             LoadPlan(
-                manifest=MANIFEST.model_copy(update={"uri": "s3://wdf-sources/missing"}),
+                manifest=MANIFEST.model_copy(update={"uri": "s3://wft-sources/missing"}),
                 params=JobParams(seed=7, parameters={}),
             ),
             raises="ARTIFACT_LOST",

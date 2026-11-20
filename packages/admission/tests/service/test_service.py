@@ -15,35 +15,35 @@ import urllib.request
 import psycopg
 import pytest
 from temporalio.api.enums.v1 import EventType
-from wdf_admission import service
-from wdf_admission.service import ENV, GLOBAL_CAP_ENV, PREFIX_ENV, READY_ENV, Config, ConfigError
-from wdf_admission.service.metrics import COUNTERS, GAUGES, HISTOGRAMS
-from wdf_broker.tenancy import load
-from wdf_broker.testing import FakeBroker
-from wdf_broker.topology import intake_queues
-from wdf_jobstate import request_action, transition
-from wdf_keys import workflow_id
-from wdf_workflow.models import StatusQuery
+from wft_admission import service
+from wft_admission.service import ENV, GLOBAL_CAP_ENV, PREFIX_ENV, READY_ENV, Config, ConfigError
+from wft_admission.service.metrics import COUNTERS, GAUGES, HISTOGRAMS
+from wft_broker.tenancy import load
+from wft_broker.testing import FakeBroker
+from wft_broker.topology import intake_queues
+from wft_jobstate import request_action, transition
+from wft_keys import workflow_id
+from wft_workflow.models import StatusQuery
 
 [QUEUE] = intake_queues(load("ci"))
 LIMIT_S = 600
 # Every variable the service needs, with values it refuses or never reaches before it connects.
 FULL = {
-    "WDF_TEMPORAL_ADDRESS": "127.0.0.1:1",
-    "WDF_TEMPORAL_NAMESPACE": "wdf",
-    "WDF_ADMISSION_DSN": "postgresql://admission@127.0.0.1:1/appdb",
-    "WDF_BROKER_ADDRESS": "127.0.0.1:1",
-    "WDF_BROKER_PASSWORD": "standin",
-    "WDF_TENANCY_PROFILE": "ci",
-    "WDF_METRICS_ADDRESS": "127.0.0.1:1",
+    "WFT_TEMPORAL_ADDRESS": "127.0.0.1:1",
+    "WFT_TEMPORAL_NAMESPACE": "wft",
+    "WFT_ADMISSION_DSN": "postgresql://admission@127.0.0.1:1/appdb",
+    "WFT_BROKER_ADDRESS": "127.0.0.1:1",
+    "WFT_BROKER_PASSWORD": "standin",
+    "WFT_TENANCY_PROFILE": "ci",
+    "WFT_METRICS_ADDRESS": "127.0.0.1:1",
 }
 
 
 def run_service(env: dict[str, str]) -> subprocess.CompletedProcess:
-    """Runs `python -m wdf_admission.service` with only `env` of the WDF variables."""
-    base = {name: value for name, value in os.environ.items() if not name.startswith("WDF_")}
+    """Runs `python -m wft_admission.service` with only `env` of the WFT variables."""
+    base = {name: value for name, value in os.environ.items() if not name.startswith("WFT_")}
     return subprocess.run(
-        [sys.executable, "-m", "wdf_admission.service"],
+        [sys.executable, "-m", "wft_admission.service"],
         env={**base, **env},
         capture_output=True,
         text=True,
@@ -68,10 +68,10 @@ def test_config_from_env():
 
 def test_service_missing_env_exit_2(tmp_path):
     env = {**FULL, **stale_ready(tmp_path)}
-    del env["WDF_ADMISSION_DSN"], env["WDF_BROKER_PASSWORD"]
+    del env["WFT_ADMISSION_DSN"], env["WFT_BROKER_PASSWORD"]
     done = run_service(env)
     assert done.returncode == 2, done.stderr
-    assert "missing environment: WDF_ADMISSION_DSN, WDF_BROKER_PASSWORD" in done.stderr
+    assert "missing environment: WFT_ADMISSION_DSN, WFT_BROKER_PASSWORD" in done.stderr
     assert not (tmp_path / "ready").exists()
 
 
@@ -90,7 +90,7 @@ def test_service_bad_global_cap_exit_2(cap):
 
 
 def test_service_refuses_bad_profile(tmp_path):
-    done = run_service({**FULL, **stale_ready(tmp_path), "WDF_TENANCY_PROFILE": "nope"})
+    done = run_service({**FULL, **stale_ready(tmp_path), "WFT_TENANCY_PROFILE": "nope"})
     assert done.returncode == 1, done.stderr
     assert "unknown tenancy profile 'nope'" in done.stderr
     assert not (tmp_path / "ready").exists()
@@ -306,13 +306,13 @@ def test_metrics_named(config, runtime, metrics_port, submit):
         run = Service(config(), broker, runtime, start=recording)
         submit(publisher(broker), 1)
         await until(lambda: calls, 30)
-        text = await until(lambda: "wdf_admission_wait_seconds_count" in scrape() and scrape(), 30)
+        text = await until(lambda: "wft_admission_wait_seconds_count" in scrape() and scrape(), 30)
         await run.stopped()
         return text
 
     text = asyncio.run(body())
     served = {line.split("{")[0].split(" ")[0] for line in text.splitlines() if line[:1] != "#"}
     names = [*COUNTERS, *GAUGES, *(f"{name}_count" for name in HISTOGRAMS)]
-    print("\n" + "\n".join(name for name in sorted(served) if name.startswith("wdf_admission")))
+    print("\n" + "\n".join(name for name in sorted(served) if name.startswith("wft_admission")))
     assert [name for name in names if name not in served] == []
     assert "tenant=" not in text and calls[0] not in text

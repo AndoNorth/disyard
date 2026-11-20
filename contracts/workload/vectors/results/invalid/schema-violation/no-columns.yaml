@@ -1,4 +1,4 @@
-schema: wdf.sim.v1
+schema: wft.sim.v1
 kinds:
   scalar:
     columns: []

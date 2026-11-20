@@ -1,14 +1,14 @@
 [project]
-name = "wdf-runtime"
+name = "wft-runtime"
 version = "0.0.0"
 license = "Apache-2.0"
 requires-python = ">=3.13,<3.14"
-dependencies = ["pydantic", "pyyaml", "wdf-jobdoc", "wdf-kernel", "wdf-keys"]
+dependencies = ["pydantic", "pyyaml", "wft-jobdoc", "wft-kernel", "wft-keys"]
 
 [tool.uv.sources]
-wdf-jobdoc = { workspace = true }
-wdf-kernel = { workspace = true }
-wdf-keys = { workspace = true }
+wft-jobdoc = { workspace = true }
+wft-kernel = { workspace = true }
+wft-keys = { workspace = true }
 
 [build-system]
 requires = ["hatchling"]

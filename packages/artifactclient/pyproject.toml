@@ -1,5 +1,5 @@
 [project]
-name = "wdf-artifactclient"
+name = "wft-artifactclient"
 version = "0.0.0"
 license = "Apache-2.0"
 requires-python = ">=3.13,<3.14"
@@ -8,20 +8,20 @@ dependencies = [
     "pydantic",
     "pytest",
     "pyyaml",
-    "wdf-artifactindex",
-    "wdf-compat",
-    "wdf-events",
-    "wdf-storecheck",
+    "wft-artifactindex",
+    "wft-compat",
+    "wft-events",
+    "wft-storecheck",
 ]
 
 [project.entry-points.pytest11]
-wdf_artifactclient = "wdf_artifactclient.testing"
+wft_artifactclient = "wft_artifactclient.testing"
 
 [tool.uv.sources]
-wdf-artifactindex = { workspace = true }
-wdf-compat = { workspace = true }
-wdf-events = { workspace = true }
-wdf-storecheck = { workspace = true }
+wft-artifactindex = { workspace = true }
+wft-compat = { workspace = true }
+wft-events = { workspace = true }
+wft-storecheck = { workspace = true }
 
 [build-system]
 requires = ["hatchling"]

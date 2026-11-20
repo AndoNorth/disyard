@@ -4,14 +4,14 @@ import hashlib
 
 import psycopg
 import pytest
-from wdf_artifactclient.checkpoint import verify_checkpoint, write_checkpoint
-from wdf_artifactclient.client import ArtifactClient
-from wdf_artifactclient.errors import CheckpointCorrupt
-from wdf_artifactclient.keys import split_uri
-from wdf_artifactindex import checkpoints_of, index_reference, previous_checkpoint
-from wdf_events.models import CheckpointReference, ProducerRef
-from wdf_storecheck.fixtures import running
-from wdf_storecheck.s3 import client as s3_client
+from wft_artifactclient.checkpoint import verify_checkpoint, write_checkpoint
+from wft_artifactclient.client import ArtifactClient
+from wft_artifactclient.errors import CheckpointCorrupt
+from wft_artifactclient.keys import split_uri
+from wft_artifactindex import checkpoints_of, index_reference, previous_checkpoint
+from wft_events.models import CheckpointReference, ProducerRef
+from wft_storecheck.fixtures import running
+from wft_storecheck.s3 import client as s3_client
 
 pytestmark = [pytest.mark.integration, pytest.mark.pair]
 

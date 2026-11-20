@@ -141,7 +141,7 @@
       "type": "object"
     }
   },
-  "$id": "urn:wdf:schema:job-limits:1",
+  "$id": "urn:wft:schema:job-limits:1",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
   "description": "limits.yaml: the numbers of every profile.",

@@ -1,12 +1,12 @@
 [project]
-name = "wdf-plan"
+name = "wft-plan"
 version = "0.0.0"
 license = "Apache-2.0"
 requires-python = ">=3.13,<3.14"
-dependencies = ["wdf-jobdoc"]
+dependencies = ["wft-jobdoc"]
 
 [tool.uv.sources]
-wdf-jobdoc = { workspace = true }
+wft-jobdoc = { workspace = true }
 
 [build-system]
 requires = ["hatchling"]

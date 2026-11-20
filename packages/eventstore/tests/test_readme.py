@@ -3,7 +3,7 @@
 import re
 from pathlib import Path
 
-from wdf_eventstore.models import EventRow
+from wft_eventstore.models import EventRow
 
 README = (Path(__file__).resolve().parents[3] / "contracts/state/README.md").read_text()
 

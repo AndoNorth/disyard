@@ -4,7 +4,7 @@ import subprocess
 import sys
 
 import pytest
-from wdf_acceptance.clients import Failed, broker
+from wft_acceptance.clients import Failed, broker
 
 # `dlq list` prints one line per dead letter, then one count line per reason.
 LISTED = """\
@@ -23,7 +23,7 @@ count delivery_limit 2
 @pytest.fixture
 def ran(tmp_path, monkeypatch):
     """Answers the next `dlq list` with the canned (exit, stdout, stderr), and records its argv."""
-    monkeypatch.setenv("WDF_STATE_DIR", str(tmp_path))
+    monkeypatch.setenv("WFT_STATE_DIR", str(tmp_path))
     calls, answer = [], {}
 
     def run(argv, **kwargs):
@@ -47,7 +47,7 @@ def test_dead_letters_count(ran, tmp_path):
             [
                 sys.executable,
                 "-m",
-                "wdf_broker.dlq",
+                "wft_broker.dlq",
                 "list",
                 "--address",
                 "127.0.0.1:5672",

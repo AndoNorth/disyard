@@ -3,8 +3,8 @@
 from datetime import UTC, datetime
 
 import pytest
-from wdf_events import EventTooLarge, build_event
-from wdf_eventstore import insert_events
+from wft_events import EventTooLarge, build_event
+from wft_eventstore import insert_events
 
 
 class NoDatabase:
@@ -15,7 +15,7 @@ class NoDatabase:
 def event(data):
     return build_event(
         "job.started",
-        source="/wdf/workflow",
+        source="/wft/workflow",
         tenant="acme",
         jobid="3a9617fa-df7c-5760-a644-42d559e0f433",
         priorityclass="standard",

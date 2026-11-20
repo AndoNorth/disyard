@@ -2,9 +2,9 @@
 
 from dataclasses import replace
 
-from wdf_events.models import CheckpointReference
-from wdf_jobdoc.plan_models import Plan
-from wdf_workflow.budgets import (
+from wft_events.models import CheckpointReference
+from wft_jobdoc.plan_models import Plan
+from wft_workflow.budgets import (
     INFRA_RETRIES,
     fresh,
     infra_backoff_s,
@@ -12,7 +12,7 @@ from wdf_workflow.budgets import (
     remember,
     resumed,
 )
-from wdf_workflow.contract import pools
+from wft_workflow.contract import pools
 
 JOB = "0b7e3f4a-5c6d-4e8f-9a0b-1c2d3e4f5a6b"
 
@@ -46,7 +46,7 @@ def task(retries: int):
 
 def checkpoint(attempt: int) -> CheckpointReference:
     return CheckpointReference(
-        uri=f"s3://wdf-checkpoints/acme/b/{JOB}/7/sim/r0a{attempt}/0/checkpoint.json",
+        uri=f"s3://wft-checkpoints/acme/b/{JOB}/7/sim/r0a{attempt}/0/checkpoint.json",
         sha256=f"{attempt:064x}",
         size=1,
         name="checkpoint.json",

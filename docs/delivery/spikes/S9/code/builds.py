@@ -13,7 +13,7 @@ from datetime import timedelta
 from temporalio import activity, workflow
 from temporalio.common import VersioningBehavior
 
-POOL_QUEUE = "wdf-pool-simulate"
+POOL_QUEUE = "wft-pool-simulate"
 served: Counter[str] = Counter()
 
 

@@ -6,8 +6,8 @@ The [Consumers](#consumers) section names who reads each part.
 
 Temporal owns the state of every job.
 This directory pins the names that the workflow, its workers and its callers share, the pool table, the control signals and the status query.
-The schemas are generated from the models of `wdf_workflow.models` and never edited by hand.
-The payload of each signal and query is canonical JSON, as `wdf_temporal.converter` writes a model.
+The schemas are generated from the models of `wft_workflow.models` and never edited by hand.
+The payload of each signal and query is canonical JSON, as `wft_temporal.converter` writes a model.
 
 ## Naming
 
@@ -15,16 +15,16 @@ The payload of each signal and query is canonical JSON, as `wdf_temporal.convert
 
 | Key | v1 value | Rule |
 | --- | --- | --- |
-| `namespace` | `wdf` | retention 1 day, set by the Temporal bootstrap |
-| `workflow` | type `JobWorkflow`, queue `wdf-workflow`, id `wdf_keys.workflow_id(job_id)` with reuse policy `REJECT_DUPLICATE`, versioning behaviour `PINNED`, deployment `wdf-workflow-worker` with the build id of `WDF_BUILD_ID` | the only versioned queue, so every job finishes on the build that started it |
-| `control_queue` | `wdf-control-<build id>`, with the build id of `WDF_BUILD_ID` | one control queue per build, unversioned, served only by that build's worker service |
-| `pools` | `compile: wdf-compile`, `simulate: wdf-simulate`, `aggregate: wdf-aggregate` | the keys equal the pools of `contracts/job/registry.json`, and every pool queue is unversioned |
+| `namespace` | `wft` | retention 1 day, set by the Temporal bootstrap |
+| `workflow` | type `JobWorkflow`, queue `wft-workflow`, id `wft_keys.workflow_id(job_id)` with reuse policy `REJECT_DUPLICATE`, versioning behaviour `PINNED`, deployment `wft-workflow-worker` with the build id of `WFT_BUILD_ID` | the only versioned queue, so every job finishes on the build that started it |
+| `control_queue` | `wft-control-<build id>`, with the build id of `WFT_BUILD_ID` | one control queue per build, unversioned, served only by that build's worker service |
+| `pools` | `compile: wft-compile`, `simulate: wft-simulate`, `aggregate: wft-aggregate` | the keys equal the pools of `contracts/job/registry.json`, and every pool queue is unversioned |
 | `activities.pool` | `run_task`, a single attempt, cancellation type `WAIT_CANCELLATION_COMPLETED` | the workflow runs the retry loop, and a task leaves `running` only when its activity returns |
 | `activities.control` | `load_plan`, `cache_lookup`, `cache_record`, `cache_invalidate`, `commit`, `index_checkpoint`, `build_index`, each with at most 5 attempts and backoff from 1 s doubling to 60 s | regular activities on the control queue |
 | `activities.local` | `place` and `emit`, each with no attempt limit and backoff from 1 s doubling to 600 s | local activities, so a database or scheduler outage stalls a job and fails nothing |
 | `signals` and `queries` | `cancel`, `terminate`, `pause`, `resume`; `status` | the signal and query shapes below |
-| `search_attributes` | `WdfTenant`, `WdfPriorityClass`, `WdfJobClass` and `WdfJobId` (keyword) and `WdfSubmittedAt` (datetime) | set by admission at the start |
-| `schedules.artifact_reaper` | id `wdf-artifact-reaper`, queue `wdf-artifact-reaper`, workflow `ReapWorkflow`, workflow id `wdf-artifact-reaper-pass`, activity `reap_pass` | as `wdf_artifactreaper.schedule` delivers them, created in namespace `wdf` |
+| `search_attributes` | `WftTenant`, `WftPriorityClass`, `WftJobClass` and `WftJobId` (keyword) and `WftSubmittedAt` (datetime) | set by admission at the start |
+| `schedules.artifact_reaper` | id `wft-artifact-reaper`, queue `wft-artifact-reaper`, workflow `ReapWorkflow`, workflow id `wft-artifact-reaper-pass`, activity `reap_pass` | as `wft_artifactreaper.schedule` delivers them, created in namespace `wft` |
 
 A retry policy is written with Temporal's own fields, `maximum_attempts`, `initial_interval_s`, `backoff_coefficient` and `maximum_interval_s`, where `maximum_attempts` 0 means no limit, as in Temporal.
 The estimates among them are fixed by the performance epic.
@@ -57,7 +57,7 @@ Each timeout follows a formula, and the table below names its measured terms.
 
 `ControlSignal`, the argument of `cancel`, `terminate` and `pause`, is `{control_seq, reason}`, with schema [control-signal.schema.json](control-signal.schema.json).
 `control_seq` is an integer from 1 to 2,147,483,647, the job row's `control_seq`, and `reason` is a string of at most 1,024 characters or null, the reason of the control request.
-`ResumeSignal`, the argument of `resume`, is `{control_seq, manifest}`, with schema [resume-signal.schema.json](resume-signal.schema.json), where `manifest` is the row's `pending_patch_ref` as a `wdf_events.models.ManifestReference`, or null without a patch.
+`ResumeSignal`, the argument of `resume`, is `{control_seq, manifest}`, with schema [resume-signal.schema.json](resume-signal.schema.json), where `manifest` is the row's `pending_patch_ref` as a `wft_events.models.ManifestReference`, or null without a patch.
 `pause` and `resume` share one last-applied `control_seq`, and one whose `control_seq` is not above it is ignored.
 `cancel` and `terminate` are applied whenever they arrive unless the job has ended, and a repeat does nothing.
 A caller sends `resume` only while the row's `requested_action` is `resume`, with the row's `control_seq`.
@@ -93,11 +93,11 @@ The schema bounds the query by its 524,288 bytes, and the `max_tasks` of the pla
 
 ## Loader
 
-`contracts/temporal/check.sh <file> [--as NAME]` runs `python -m wdf_workflow.contract --check <file> [--as NAME]`, the loader of both this contract and the activity contract.
+`contracts/temporal/check.sh <file> [--as NAME]` runs `python -m wft_workflow.contract --check <file> [--as NAME]`, the loader of both this contract and the activity contract.
 `NAME` is a schema: `naming`, `pools`, `control-signal`, `resume-signal` or `status-query`.
 Without `--as`, the name is the directory under `vectors/` that holds the file, or else the file's stem, so `naming.yaml` is checked as `naming`.
 It exits 0 when valid, 1 with `reason: <code>: <detail>` on stderr when not, and 2 on usage.
-The loader reads `registry.json`, `status.yaml` and the pinned failure class table through the package data of `wdf_workflow`.
+The loader reads `registry.json`, `status.yaml` and the pinned failure class table through the package data of `wft_workflow`.
 
 The first failing check wins, in this order.
 

@@ -7,11 +7,11 @@ import json
 
 import pytest
 from temporalio.exceptions import ApplicationError
-from wdf_artifactclient.keys import split_uri
-from wdf_events.models import JobParams, ManifestReference
-from wdf_plan import read_plan
-from wdf_workflow.activities import PlanLoader
-from wdf_workflow.testing.control import ControlCase, LoadPlan, control_activity_contract
+from wft_artifactclient.keys import split_uri
+from wft_events.models import JobParams, ManifestReference
+from wft_plan import read_plan
+from wft_workflow.activities import PlanLoader
+from wft_workflow.testing.control import ControlCase, LoadPlan, control_activity_contract
 
 pytestmark = [pytest.mark.integration, pytest.mark.pair]
 
@@ -79,7 +79,7 @@ def test_manifest_hash_mismatch_refused(loader, golden, put_manifest, admin):
     # test's own, since the store and its content-addressed objects are shared by the module.
     digest = hashlib.sha256(b"poisoned " + manifest).hexdigest()
     poisoned = loose.model_copy(
-        update={"uri": f"s3://wdf-sources/sha256/{digest[:2]}/{digest}", "sha256": digest}
+        update={"uri": f"s3://wft-sources/sha256/{digest[:2]}/{digest}", "sha256": digest}
     )
     bucket, key = split_uri(poisoned.uri)
     admin.put_object(Bucket=bucket, Key=key, Body=manifest)
@@ -99,7 +99,7 @@ def test_load_plan_refuses_what_can_never_load(loader, golden, put_manifest):
 
     digest = hashlib.sha256(b"never stored").hexdigest()
     missing = reference.model_copy(
-        update={"uri": f"s3://wdf-sources/sha256/{digest[:2]}/{digest}", "sha256": digest}
+        update={"uri": f"s3://wft-sources/sha256/{digest[:2]}/{digest}", "sha256": digest}
     )
     assert refused(loader, LoadPlan(manifest=missing, params=params)).type == "ARTIFACT_LOST"
 
@@ -107,7 +107,7 @@ def test_load_plan_refuses_what_can_never_load(loader, golden, put_manifest):
 def test_load_plan_passes_control_contract(loader, golden, put_manifest):
     manifest, params, _ = golden("batch-template")
     reference = put_manifest(manifest)
-    other = reference.model_copy(update={"uri": "s3://wdf-sources/sha256/00/missing"})
+    other = reference.model_copy(update={"uri": "s3://wft-sources/sha256/00/missing"})
     cases = [
         ControlCase("load_plan", LoadPlan(manifest=reference, params=params)),
         ControlCase("load_plan", LoadPlan(manifest=other, params=params), raises="ARTIFACT_LOST"),

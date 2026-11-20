@@ -12,12 +12,12 @@ import time
 from pathlib import Path
 
 import pytest
-from wdf_broker.client import Credentials, connect
-from wdf_broker.models import Outcome
-from wdf_broker.tenancy import load
-from wdf_broker.testing.container import broker_container
-from wdf_broker.topology import intake_queues
-from wdf_workflow.contract import naming
+from wft_broker.client import Credentials, connect
+from wft_broker.models import Outcome
+from wft_broker.tenancy import load
+from wft_broker.testing.container import broker_container
+from wft_broker.topology import intake_queues
+from wft_workflow.contract import naming
 
 pytestmark = [pytest.mark.integration, pytest.mark.pair]
 
@@ -38,18 +38,18 @@ def rabbitmq(t1):
 
 
 def test_service_peak_memory(rabbitmq, appdb, admission_dsn, submit, counts, free_port, tmp_path):
-    base = {name: value for name, value in os.environ.items() if not name.startswith("WDF_")}
+    base = {name: value for name, value in os.environ.items() if not name.startswith("WFT_")}
     env = {
         **base,
-        "WDF_TEMPORAL_ADDRESS": f"127.0.0.1:{free_port()}",
-        "WDF_TEMPORAL_NAMESPACE": naming().namespace,
-        "WDF_ADMISSION_DSN": admission_dsn,
-        "WDF_BROKER_ADDRESS": rabbitmq.address,
-        "WDF_BROKER_PASSWORD": rabbitmq.passwords["admission"],
-        "WDF_TENANCY_PROFILE": "ci",
-        "WDF_METRICS_ADDRESS": f"127.0.0.1:{free_port()}",
-        "WDF_READY_FILE": str(tmp_path / "ready"),
-        "WDF_TEST_SUPERUSER_DSN": appdb,
+        "WFT_TEMPORAL_ADDRESS": f"127.0.0.1:{free_port()}",
+        "WFT_TEMPORAL_NAMESPACE": naming().namespace,
+        "WFT_ADMISSION_DSN": admission_dsn,
+        "WFT_BROKER_ADDRESS": rabbitmq.address,
+        "WFT_BROKER_PASSWORD": rabbitmq.passwords["admission"],
+        "WFT_TENANCY_PROFILE": "ci",
+        "WFT_METRICS_ADDRESS": f"127.0.0.1:{free_port()}",
+        "WFT_READY_FILE": str(tmp_path / "ready"),
+        "WFT_TEST_SUPERUSER_DSN": appdb,
     }
     log = tmp_path / "service.log"
     with log.open("w") as stderr:

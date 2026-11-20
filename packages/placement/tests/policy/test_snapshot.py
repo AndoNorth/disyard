@@ -9,17 +9,17 @@ from datetime import UTC, datetime
 from decimal import Decimal
 
 import pytest
-from wdf_placement.snapshot import PoolCapacity, quantity, read
-from wdf_workflow.contract import naming
+from wft_placement.snapshot import PoolCapacity, quantity, read
+from wft_workflow.contract import naming
 
 IMAGES = {
-    "compile": "wdf-compile-worker:tilt-6c1f2b9e0a4d7e31",
-    "simulate": "wdf-simulate-worker:tilt-0d5a8e3c7b2f1946",
-    "aggregate": "wdf-aggregate-worker:tilt-9e4b1c7f2a6d0853",
+    "compile": "wft-compile-worker:tilt-6c1f2b9e0a4d7e31",
+    "simulate": "wft-simulate-worker:tilt-0d5a8e3c7b2f1946",
+    "aggregate": "wft-aggregate-worker:tilt-9e4b1c7f2a6d0853",
 }
 CI = {
     "compile": PoolCapacity(
-        nodes=["wdf-worker3"],
+        nodes=["wft-worker3"],
         allocatable_cpu_milli=1400,
         allocatable_memory_mib=1184,
         requested_cpu_milli=1100,
@@ -28,7 +28,7 @@ CI = {
         images=[IMAGES["compile"]],
     ),
     "simulate": PoolCapacity(
-        nodes=["wdf-worker4"],
+        nodes=["wft-worker4"],
         allocatable_cpu_milli=400,
         allocatable_memory_mib=584,
         requested_cpu_milli=350,
@@ -37,7 +37,7 @@ CI = {
         images=[IMAGES["simulate"]],
     ),
     "aggregate": PoolCapacity(
-        nodes=["wdf-worker5"],
+        nodes=["wft-worker5"],
         allocatable_cpu_milli=1400,
         allocatable_memory_mib=1184,
         requested_cpu_milli=1100,
@@ -79,13 +79,13 @@ def test_snapshot_sums_pool_nodes(cluster, topology):
     assert (simulate.free_cpu_milli, simulate.free_memory_mib) == (50, 22)
 
     second = copy.deepcopy(
-        next(n for n in nodes["items"] if n["metadata"]["name"] == "wdf-worker4")
+        next(n for n in nodes["items"] if n["metadata"]["name"] == "wft-worker4")
     )
-    second["metadata"]["name"] = "wdf-worker6"
+    second["metadata"]["name"] = "wft-worker6"
     nodes["items"].append(second)
-    pods["items"].append(pod("kindnet-x2j8f", "wdf-worker6", "100m", "50Mi"))
+    pods["items"].append(pod("kindnet-x2j8f", "wft-worker6", "100m", "50Mi"))
     simulate = read(nodes, pods, topology).pools["simulate"]
-    assert simulate.nodes == ["wdf-worker4", "wdf-worker6"]
+    assert simulate.nodes == ["wft-worker4", "wft-worker6"]
     assert (simulate.allocatable_cpu_milli, simulate.allocatable_memory_mib) == (800, 1168)
     assert (simulate.requested_cpu_milli, simulate.requested_memory_mib) == (450, 612)
 
@@ -102,13 +102,13 @@ def test_snapshot_counts_daemon_requests(cluster, topology):
 def test_snapshot_skips_finished_pods(cluster, topology):
     nodes, pods = cluster
     pods["items"] += [
-        pod("done", "wdf-worker4", "4", "4Gi", phase="Succeeded"),
-        pod("crashed", "wdf-worker4", "4", "4Gi", phase="Failed"),
+        pod("done", "wft-worker4", "4", "4Gi", phase="Succeeded"),
+        pod("crashed", "wft-worker4", "4", "4Gi", phase="Failed"),
         pod("unbound", None, "4", "4Gi", phase="Pending"),
     ]
     assert read(nodes, pods, topology).pools == CI
 
-    pods["items"].append(pod("starting", "wdf-worker4", "10m", "1Mi", phase="Pending"))
+    pods["items"].append(pod("starting", "wft-worker4", "10m", "1Mi", phase="Pending"))
     simulate = read(nodes, pods, topology).pools["simulate"]
     assert (simulate.requested_cpu_milli, simulate.requested_memory_mib) == (360, 563)
 
@@ -121,12 +121,12 @@ def test_snapshot_ready_workers_and_images(cluster, topology):
 
     rolled = copy.deepcopy(worker(pods, "simulate"))
     rolled["metadata"]["name"] = "simulate-worker-5c9f7d6b4a-k3n8p"
-    rolled["spec"]["containers"][0]["image"] = "wdf-simulate-worker:tilt-1f2e3d4c5b6a7980"
+    rolled["spec"]["containers"][0]["image"] = "wft-simulate-worker:tilt-1f2e3d4c5b6a7980"
     pods["items"].append(rolled)
     simulate = read(nodes, pods, topology).pools["simulate"]
     assert simulate.ready_workers == 2
     assert simulate.images == [
-        "wdf-simulate-worker:tilt-0d5a8e3c7b2f1946",
+        "wft-simulate-worker:tilt-0d5a8e3c7b2f1946",
         rolled["spec"]["containers"][0]["image"],
     ]
 
@@ -142,10 +142,10 @@ def test_snapshot_ignores_unlabelled_nodes(cluster, topology):
     nodes, pods = cluster
     roles = {n["metadata"]["labels"].get(topology["pool_label"]) for n in nodes["items"]}
     assert {None, "infra", "obs"} <= roles
-    stray = copy.deepcopy(next(n for n in nodes["items"] if n["metadata"]["name"] == "wdf-worker"))
-    stray["metadata"].update(name="wdf-stray", labels={})
+    stray = copy.deepcopy(next(n for n in nodes["items"] if n["metadata"]["name"] == "wft-worker"))
+    stray["metadata"].update(name="wft-stray", labels={})
     nodes["items"].append(stray)
-    pods["items"].append(pod("busy", "wdf-stray", "1", "1Gi"))
+    pods["items"].append(pod("busy", "wft-stray", "1", "1Gi"))
 
     snapshot = read(nodes, pods, topology)
     assert set(snapshot.pools) == set(naming().pools) == {"compile", "simulate", "aggregate"}
@@ -155,7 +155,7 @@ def test_snapshot_ignores_unlabelled_nodes(cluster, topology):
 def test_snapshot_pool_without_nodes_is_empty(cluster, topology):
     """A cluster with no simulate node shows the pool with nothing in it."""
     nodes, pods = cluster
-    nodes["items"] = [n for n in nodes["items"] if n["metadata"]["name"] != "wdf-worker4"]
+    nodes["items"] = [n for n in nodes["items"] if n["metadata"]["name"] != "wft-worker4"]
     pods["items"].remove(worker(pods, "simulate"))
     assert read(nodes, pods, topology).pools["simulate"] == PoolCapacity(
         nodes=[],

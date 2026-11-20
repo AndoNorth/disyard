@@ -2,7 +2,7 @@
   "parameters": {
     "seed": "seed"
   },
-  "schema": "urn:wdf:schema:job:1.0",
+  "schema": "urn:wft:schema:job:1.0",
   "tasks": {
     "agg": {
       "cpu": 1,
@@ -32,7 +32,7 @@
           "name": "bundle.tar.gz",
           "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
           "size": 2048,
-          "uri": "s3://wdf-sources/sha256/aa/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          "uri": "s3://wft-sources/sha256/aa/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
         }
       },
       "type": "compile"

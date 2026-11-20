@@ -5,14 +5,14 @@ runs on the contract names as before."""
 import asyncio
 
 import pytest
-from wdf_events.models import JobParams
-from wdf_keys import workflow_id
-from wdf_stages.recording import type_name
-from wdf_workflow.contract import naming
-from wdf_workflow.job import JobWorkflow
-from wdf_workflow.taskpath import QUEUE_PREFIX_MEMO
-from wdf_workflow.testing import FakePool, Succeed, connect
-from wdf_workflow.testing.control import LoadedPlan
+from wft_events.models import JobParams
+from wft_keys import workflow_id
+from wft_stages.recording import type_name
+from wft_workflow.contract import naming
+from wft_workflow.job import JobWorkflow
+from wft_workflow.taskpath import QUEUE_PREFIX_MEMO
+from wft_workflow.testing import FakePool, Succeed, connect
+from wft_workflow.testing.control import LoadedPlan
 
 pytestmark = pytest.mark.integration
 
@@ -24,7 +24,7 @@ HASH = "b" * 64
 # A source of its own for the second job, so its compile does not hit the entry the first recorded.
 OTHER = {
     "source": {
-        "uri": f"s3://wdf-sources/sha256/bb/{HASH}",
+        "uri": f"s3://wft-sources/sha256/bb/{HASH}",
         "sha256": HASH,
         "size": 2048,
         "name": "bundle.tar.gz",

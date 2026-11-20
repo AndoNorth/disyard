@@ -5,7 +5,7 @@
 # Relative paths resolve against the calling module's directory.
 
 # The scratch volume and what lives on it: task scratch, the wasmtime module cache, HOME, the caches and the ready file.
-SCRATCH = "/var/wdf"
+SCRATCH = "/var/wft"
 SCRATCH_ENV = {
     "HOME": SCRATCH + "/home",
     "TMPDIR": SCRATCH + "/tmp",
@@ -13,20 +13,20 @@ SCRATCH_ENV = {
     "UV_CACHE_DIR": SCRATCH + "/cache/uv",
 }
 READY = SCRATCH + "/ready"
-CREDENTIALS = "/etc/wdf/store/credentials.json"
+CREDENTIALS = "/etc/wft/store/credentials.json"
 # The user every pool image runs as.
 USER = 65532
-MIRROR = "http://mirror.wdf-infra.svc.cluster.local"
+MIRROR = "http://mirror.wft-infra.svc.cluster.local"
 
 # The pods each pool may reach, as namespace, pod labels and target port. Every pool needs DNS, the Temporal frontend
 # and the object store, and the compile pool also the package mirror for its dependency fetch.
 DNS = ("kube-system", {"k8s-app": "kube-dns"}, 53)
-TEMPORAL = ("wdf-infra", {"app.kubernetes.io/name": "temporal", "app.kubernetes.io/component": "frontend"}, 7233)
-STORE = ("wdf-infra", {"app": "objectstore"}, 8333)
-MIRROR_POD = ("wdf-infra", {"app": "mirror"}, 8080)
+TEMPORAL = ("wft-infra", {"app.kubernetes.io/name": "temporal", "app.kubernetes.io/component": "frontend"}, 7233)
+STORE = ("wft-infra", {"app": "objectstore"}, 8333)
+MIRROR_POD = ("wft-infra", {"app": "mirror"}, 8080)
 
 def _svc(service, port):
-    return "%s.wdf-infra.svc.cluster.local:%d" % (service, port)
+    return "%s.wft-infra.svc.cluster.local:%d" % (service, port)
 
 def _egress(peer, protocols = ["TCP"]):
     namespace, labels, port = peer
@@ -47,7 +47,7 @@ def pool_worker(pool):
     naming = read_yaml("../../../contracts/temporal/naming.yaml")
     labels = {"app.kubernetes.io/name": name}
 
-    image = "wdf-" + name
+    image = "wft-" + name
     custom_build(
         image,
         [os.path.abspath("../image.sh"), pool],
@@ -66,17 +66,17 @@ def pool_worker(pool):
 
     egress = [_egress(DNS, ["UDP", "TCP"]), _egress(TEMPORAL), _egress(STORE)]
     env = {
-        "WDF_TEMPORAL_ADDRESS": _svc("temporal-frontend", TEMPORAL[2]),
-        "WDF_NAMESPACE": naming["namespace"],
-        "WDF_STORE_ENDPOINT": "http://" + _svc("objectstore", STORE[2]),
-        "WDF_STORE_CREDENTIALS": CREDENTIALS,
-        "WDF_SCRATCH": SCRATCH,
-        "WDF_READY_FILE": READY,
+        "WFT_TEMPORAL_ADDRESS": _svc("temporal-frontend", TEMPORAL[2]),
+        "WFT_NAMESPACE": naming["namespace"],
+        "WFT_STORE_ENDPOINT": "http://" + _svc("objectstore", STORE[2]),
+        "WFT_STORE_CREDENTIALS": CREDENTIALS,
+        "WFT_SCRATCH": SCRATCH,
+        "WFT_READY_FILE": READY,
     }
     env.update(SCRATCH_ENV)
     if pool == "compile":
         egress.append(_egress(MIRROR_POD))
-        env["WDF_MIRROR"] = MIRROR
+        env["WFT_MIRROR"] = MIRROR
 
     k8s_yaml(encode_yaml({
         "apiVersion": "networking.k8s.io/v1",
@@ -138,7 +138,7 @@ def pool_worker(pool):
                         "name": name,
                         "image": image,
                         "env": [{"name": k, "value": v} for k, v in sorted(env.items())] + [{
-                            "name": "WDF_SLOT_MEMORY_MIB",
+                            "name": "WFT_SLOT_MEMORY_MIB",
                             "valueFrom": {"resourceFieldRef": {"resource": "limits.memory", "divisor": "1Mi"}},
                         }],
                         # The service creates the file once it polls, and removes it when it starts to drain.

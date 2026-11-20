@@ -1,7 +1,7 @@
 """Writes a stand-in bundle tree for componentize-py.
 
-The tree holds `wdf_workloads/main.py` with the `Run` export class and generated source of about
-N MiB in K modules `wdf_kernel/gen<k>.py`, imported at the top of the entry.
+The tree holds `wft_workloads/main.py` with the `Run` export class and generated source of about
+N MiB in K modules `wft_kernel/gen<k>.py`, imported at the top of the entry.
 
     python3 gen.py --size-mib N [--modules K] [--hold-mib H] --out DIR
 
@@ -24,7 +24,7 @@ from xml.sax.saxutils import quoteattr
 
 from wit_world import exports
 
-from wdf_kernel import gen0 as gen
+from wft_kernel import gen0 as gen
 {imports}
 
 class Run(exports.Run):
@@ -34,7 +34,7 @@ class Run(exports.Run):
         seed = params["seed"]
         acc = gen.f0(seed)
         digest = hashlib.sha256(struct.pack(">Q", acc & 0xFFFFFFFFFFFFFFFF)).hexdigest()
-        root = ET.Element("results", schema="wdf.sim.v1", seed=str(seed))
+        root = ET.Element("results", schema="wft.sim.v1", seed=str(seed))
         ET.SubElement(ET.SubElement(root, "block", id="d", kind="digest"), "row", value=digest)
         with open("/out/results.xml", "wb") as f:
             f.write(ET.tostring(root, xml_declaration=True, encoding="utf-8"))
@@ -75,22 +75,22 @@ def main():
     parser.add_argument("--out", required=True)
     args = parser.parse_args()
     out = Path(args.out)
-    (out / "wdf_workloads").mkdir(parents=True)
-    (out / "wdf_kernel").mkdir()
-    (out / "wdf_workloads" / "__init__.py").write_text("")
-    (out / "wdf_kernel" / "__init__.py").write_text("")
+    (out / "wft_workloads").mkdir(parents=True)
+    (out / "wft_kernel").mkdir()
+    (out / "wft_workloads" / "__init__.py").write_text("")
+    (out / "wft_kernel" / "__init__.py").write_text("")
     imports = "".join(
-        f"from wdf_kernel import gen{k}  # noqa: F401\n" for k in range(1, args.modules)
+        f"from wft_kernel import gen{k}  # noqa: F401\n" for k in range(1, args.modules)
     )
-    (out / "wdf_workloads" / "main.py").write_text(ENTRY.replace("{imports}", imports))
+    (out / "wft_workloads" / "main.py").write_text(ENTRY.replace("{imports}", imports))
     target = int(args.size_mib * MIB / args.modules)
     state, i = 1, 0
     for k in range(args.modules):
-        state, i = write_module(out / "wdf_kernel" / f"gen{k}.py", target, state, i)
+        state, i = write_module(out / "wft_kernel" / f"gen{k}.py", target, state, i)
     if args.hold_mib:
-        with open(out / "wdf_kernel" / "gen0.py", "a") as f:
+        with open(out / "wft_kernel" / "gen0.py", "a") as f:
             f.write(f'HELD = len(b"\\x01" * {args.hold_mib * MIB})\n')
-    modules = (out / "wdf_kernel").glob("gen*.py")
+    modules = (out / "wft_kernel").glob("gen*.py")
     print(f"functions {i} source_bytes {sum(p.stat().st_size for p in modules)}")
 
 

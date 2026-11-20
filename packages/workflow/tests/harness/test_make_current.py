@@ -6,10 +6,10 @@ import asyncio
 from types import SimpleNamespace
 
 import pytest
-from wdf_clusterkit import Refused
-from wdf_workflow.contract import naming
-from wdf_workflow.harness import cluster
-from wdf_workflow.harness.cluster import CurrentBuild, make_deployed_current
+from wft_clusterkit import Refused
+from wft_workflow.contract import naming
+from wft_workflow.harness import cluster
+from wft_workflow.harness.cluster import CurrentBuild, make_deployed_current
 
 
 class Service:
@@ -45,10 +45,10 @@ class Service:
 def run(monkeypatch, current: str, deployed: list[str], raced: str | None = None):
     """The helper's result, or the Refused it raised, and the builds it wrote as current."""
     service = Service(current, raced)
-    client = SimpleNamespace(namespace="wdf", identity="test", workflow_service=service)
+    client = SimpleNamespace(namespace="wft", identity="test", workflow_service=service)
     monkeypatch.setattr(cluster, "kubectl", lambda context, *args: " ".join(deployed))
     try:
-        result = asyncio.run(make_deployed_current(client, "kind-wdf", timeout_s=1))
+        result = asyncio.run(make_deployed_current(client, "kind-wft", timeout_s=1))
     except Refused as refused:
         result = refused
     return result, service.writes

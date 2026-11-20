@@ -6,7 +6,7 @@ import inspect
 import pytest
 
 LANES = {"expected": "K", "check": "K"}
-MODULES = {name: importlib.import_module(f"wdf_kernel.{name}") for name in LANES}
+MODULES = {name: importlib.import_module(f"wft_kernel.{name}") for name in LANES}
 
 
 @pytest.mark.parametrize("module", MODULES)

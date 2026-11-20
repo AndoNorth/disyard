@@ -1,11 +1,11 @@
 ---
 metrics:
-  wdf_example_bytes:
+  wft_example_bytes:
     type: histogram
     unit: bytes
     help: Size of something.
     labels: {}
-  wdf_example_total:
+  wft_example_total:
     type: counter
     help: Things counted.
     labels:

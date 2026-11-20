@@ -1,5 +1,5 @@
 [project]
-name = "wdf-admission"
+name = "wft-admission"
 version = "0.0.0"
 license = "Apache-2.0"
 requires-python = ">=3.13,<3.14"
@@ -7,32 +7,32 @@ dependencies = [
     "psycopg[binary]",
     "pydantic",
     "temporalio",
-    "wdf-broker",
-    "wdf-compat",
-    "wdf-events",
-    "wdf-eventstore",
-    "wdf-jobstate",
-    "wdf-keys",
-    "wdf-stages",
-    "wdf-temporal",
-    "wdf-workflow",
+    "wft-broker",
+    "wft-compat",
+    "wft-events",
+    "wft-eventstore",
+    "wft-jobstate",
+    "wft-keys",
+    "wft-stages",
+    "wft-temporal",
+    "wft-workflow",
 ]
 
 # The drivers of a deployed cluster, which no image runs.
 [project.optional-dependencies]
-cluster = ["wdf-clusterkit"]
+cluster = ["wft-clusterkit"]
 
 [tool.uv.sources]
-wdf-broker = { workspace = true }
-wdf-clusterkit = { workspace = true }
-wdf-compat = { workspace = true }
-wdf-events = { workspace = true }
-wdf-eventstore = { workspace = true }
-wdf-jobstate = { workspace = true }
-wdf-keys = { workspace = true }
-wdf-stages = { workspace = true }
-wdf-temporal = { workspace = true }
-wdf-workflow = { workspace = true }
+wft-broker = { workspace = true }
+wft-clusterkit = { workspace = true }
+wft-compat = { workspace = true }
+wft-events = { workspace = true }
+wft-eventstore = { workspace = true }
+wft-jobstate = { workspace = true }
+wft-keys = { workspace = true }
+wft-stages = { workspace = true }
+wft-temporal = { workspace = true }
+wft-workflow = { workspace = true }
 
 [build-system]
 requires = ["hatchling"]

@@ -1,10 +1,10 @@
 # Package mirror
 
-A static file server in `wdf-infra` that serves the `wheelhouse/` directory, enabled by the `ci` profile only.
+A static file server in `wft-infra` that serves the `wheelhouse/` directory, enabled by the `ci` profile only.
 The directory reaches the pod as a ConfigMap, so the fixture stays under 1 MiB and wheels beyond it come from the toolchain epic with a contract-change PR for the shape.
 
 The fixture is one hash-pinned wheel, and `fixture-requirements.txt` carries its hash.
-A consumer installs with `--no-index --find-links http://mirror.wdf-infra.svc --trusted-host mirror.wdf-infra.svc --require-hashes`.
+A consumer installs with `--no-index --find-links http://mirror.wft-infra.svc --trusted-host mirror.wft-infra.svc --require-hashes`.
 The `--trusted-host` flag is what lets pip use a plain HTTP index.
 A wheel that does not match its pinned hash is refused.
 

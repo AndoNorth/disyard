@@ -5,8 +5,8 @@ import json
 
 import pytest
 from jsonschema import Draft202012Validator
-from wdf_events import SchemaInvalid, from_bytes
-from wdf_events.profile import CONTRACT_DIR
+from wft_events import SchemaInvalid, from_bytes
+from wft_events.profile import CONTRACT_DIR
 
 DIR = CONTRACT_DIR / "vectors/types/task.result.ready"
 VALID = json.loads((DIR / "valid.json").read_text())
@@ -23,7 +23,7 @@ def read(edit) -> object:
 
 def test_the_valid_vector_reads_and_its_reference_validates():
     event = from_bytes((DIR / "valid.json").read_bytes())
-    assert (event.type, event.attempt) == ("dev.wdf.task.result.ready.v1", 2)
+    assert (event.type, event.attempt) == ("dev.wft.task.result.ready.v1", 2)
     Draft202012Validator(REFERENCE).validate(event.data["result"])
 
 

@@ -1,5 +1,5 @@
 {
-  "$id": "urn:wdf:schema:api:error:1",
+  "$id": "urn:wft:schema:api:error:1",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
   "description": "Every error answer, and the error of an ErrorLine.",

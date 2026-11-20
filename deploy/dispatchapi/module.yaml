@@ -1,6 +1,6 @@
 name: dispatch
 group: control
-namespace: wdf-control
+namespace: wft-control
 artifact:
   kind: image
   pin: python

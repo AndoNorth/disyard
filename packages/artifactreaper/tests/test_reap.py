@@ -4,10 +4,10 @@ import threading
 from datetime import timedelta
 
 import pytest
-from wdf_artifactclient.checkpoint import verify_checkpoint
-from wdf_artifactindex import CacheEntry, index_reference, lookup_cache_entry, record_cache_entry
-from wdf_artifactreaper.reap import load_windows
-from wdf_events.models import ContentReference
+from wft_artifactclient.checkpoint import verify_checkpoint
+from wft_artifactindex import CacheEntry, index_reference, lookup_cache_entry, record_cache_entry
+from wft_artifactreaper.reap import load_windows
+from wft_events.models import ContentReference
 
 pytestmark = [pytest.mark.integration, pytest.mark.pair]
 
@@ -22,14 +22,14 @@ def test_paused_and_admitted_jobs_are_never_touched_by_any_pass(world, reap, ago
         world.summary(job)
         for segment in range(WINDOWS.checkpoint_keep + 3):
             world.checkpoint(job, segment)
-    results = world.keys("wdf-results")
-    checkpoints = world.keys("wdf-checkpoints")
+    results = world.keys("wft-results")
+    checkpoints = world.keys("wft-checkpoints")
 
     report = reap(timedelta(days=400))
 
     assert report.counters() == dict.fromkeys(report.counters(), 0)
-    assert world.keys("wdf-results") == results
-    assert world.keys("wdf-checkpoints") == checkpoints
+    assert world.keys("wft-results") == results
+    assert world.keys("wft-checkpoints") == checkpoints
     assert all(world.deleted_rows(job) == 0 for job in jobs.values())
 
 
@@ -39,11 +39,11 @@ def test_results_and_checkpoint_windows_apply_separately(world, reap, ago):
     world.checkpoint(job, 0)
 
     reap(timedelta(days=2))
-    assert world.keys("wdf-checkpoints") == []
-    assert len(world.keys("wdf-results")) == 1
+    assert world.keys("wft-checkpoints") == []
+    assert len(world.keys("wft-results")) == 1
 
     reap(timedelta(days=8))
-    assert world.keys("wdf-results") == []
+    assert world.keys("wft-results") == []
 
 
 def test_failed_job_is_kept_longer_than_a_succeeded_one(world, reap, ago):
@@ -52,11 +52,11 @@ def test_failed_job_is_kept_longer_than_a_succeeded_one(world, reap, ago):
     world.result(failed)
 
     reap(timedelta(days=8))
-    assert [k for k in world.keys("wdf-results") if failed in k]
-    assert not [k for k in world.keys("wdf-results") if succeeded in k]
+    assert [k for k in world.keys("wft-results") if failed in k]
+    assert not [k for k in world.keys("wft-results") if succeeded in k]
 
     reap(timedelta(days=15))
-    assert world.keys("wdf-results") == []
+    assert world.keys("wft-results") == []
 
 
 @pytest.mark.parametrize("status", sorted(WINDOWS.statuses))
@@ -68,23 +68,23 @@ def test_window_boundaries_by_status(world, reap, ago, status):
     ):
         job = world.job(status, ago(days, seconds=-1))
         world.result(job) if bucket == "results" else world.checkpoint(job, 0)
-        before = world.keys(f"wdf-{bucket}")
+        before = world.keys(f"wft-{bucket}")
         assert reap().results_jobs + reap().checkpoint_jobs == 0
-        assert world.keys(f"wdf-{bucket}") == before
+        assert world.keys(f"wft-{bucket}") == before
 
         reap(timedelta(seconds=1))
-        assert world.keys(f"wdf-{bucket}") == []
+        assert world.keys(f"wft-{bucket}") == []
 
 
 def test_zombie_prefix_of_a_terminal_job_is_removed(world, reap, ago):
     job = world.job("failed", ago(20))
     world.result(job, attempt="r0a2")
     zombie = world.zombie(job, attempt="r0a1")
-    assert zombie in world.keys("wdf-results")
+    assert zombie in world.keys("wft-results")
 
     report = reap()
 
-    assert world.keys("wdf-results") == []
+    assert world.keys("wft-results") == []
     assert report.deleted_objects == 2
     assert world.live_rows(job) == 0
 
@@ -96,7 +96,7 @@ def test_summary_under_the_aggregate_prefix_is_removed(world, reap, ago):
 
     reap()
 
-    assert world.keys("wdf-results") == []
+    assert world.keys("wft-results") == []
     assert world.live_rows(job) == 0
 
 
@@ -121,7 +121,7 @@ def test_running_job_is_pruned_to_the_keep_count_and_keeps_its_newest(world, rea
     assert live == [r.uri for r in references[-2:]]
     for kept in references[-2:] + [spare]:
         verify_checkpoint(world.worker, kept)
-    gone = [key for key in world.keys("wdf-checkpoints") if f"/{job}/" in key]
+    gone = [key for key in world.keys("wft-checkpoints") if f"/{job}/" in key]
     assert len(gone) == 4
     assert world.deleted_rows(job) == 3
 
@@ -138,14 +138,14 @@ def test_pass_after_a_crash_between_mark_and_delete_completes(world, reap, ago, 
         reap()
 
     assert world.deleted_rows(job) == 2
-    assert len(world.keys("wdf-results")) == 2
+    assert len(world.keys("wft-results")) == 2
     assert world.db.execute(
         "SELECT count(*) FROM reaper_job WHERE job_id = %s", (job,)
     ).fetchone() == (0,)
 
     report = reap()
 
-    assert world.keys("wdf-results") == []
+    assert world.keys("wft-results") == []
     assert (report.results_jobs, report.deleted_objects) == (1, 2)
     assert world.db.execute(
         "SELECT results_done_at FROM reaper_job WHERE job_id = %s", (job,)
@@ -172,7 +172,7 @@ def test_selection_excludes_jobs_beyond_the_hard_expiry(world, reap, ago, store)
     report = reap()
 
     assert (report.results_jobs, store.lists) == (0, 0)
-    assert len(world.keys("wdf-results")) == 1
+    assert len(world.keys("wft-results")) == 1
 
 
 def test_heartbeat_is_sent_per_batch_of_objects(world, reap, ago):
@@ -184,7 +184,7 @@ def test_heartbeat_is_sent_per_batch_of_objects(world, reap, ago):
 
     assert report.deleted_objects == 5000
     assert len(beats) >= 10
-    assert world.keys("wdf-results") == []
+    assert world.keys("wft-results") == []
 
 
 def test_two_overlapping_runs_do_not_double_work(world, reap, ago, login):
@@ -204,7 +204,7 @@ def test_two_overlapping_runs_do_not_double_work(world, reap, ago, login):
     runner.start()
     assert started.wait(60)
     try:
-        second = reap(conn=login("wdf_reaper"))
+        second = reap(conn=login("wft_reaper"))
     finally:
         release.set()
         runner.join(60)
@@ -212,7 +212,7 @@ def test_two_overlapping_runs_do_not_double_work(world, reap, ago, login):
     assert not second.ran
     assert second.counters() == dict.fromkeys(second.counters(), 0)
     assert reports["first"].deleted_objects == 1200
-    assert world.keys("wdf-results") == []
+    assert world.keys("wft-results") == []
     assert reap().ran
 
 
@@ -223,7 +223,7 @@ def test_cache_entries_expire_by_last_use(world, reap, ago):
         for kind in ("component", "build-info"):
             sha = (label + kind).encode().hex().ljust(64, "0")[:64]
             ref = ContentReference(
-                uri=f"s3://wdf-components/sha256/{sha[:2]}/{sha}",
+                uri=f"s3://wft-components/sha256/{sha[:2]}/{sha}",
                 sha256=sha,
                 size=1,
                 name=kind,

@@ -4,33 +4,33 @@
 # admin provisions buckets and lifecycle rules for the bootstrap and is used by no pod.
 roles:
   admin:
-    wdf-sources: [bucket, lifecycle]
-    wdf-components: [bucket, lifecycle]
-    wdf-results: [bucket, lifecycle]
-    wdf-checkpoints: [bucket, lifecycle]
+    wft-sources: [bucket, lifecycle]
+    wft-components: [bucket, lifecycle]
+    wft-results: [bucket, lifecycle]
+    wft-checkpoints: [bucket, lifecycle]
   submit:
-    wdf-sources: [get, list, put, multipart]
+    wft-sources: [get, list, put, multipart]
   indexer:
-    wdf-sources: [put, multipart]
+    wft-sources: [put, multipart]
   compile:
-    wdf-sources: [get, list]
-    wdf-components: [put, multipart]
-    wdf-results: [put, multipart]
+    wft-sources: [get, list]
+    wft-components: [put, multipart]
+    wft-results: [put, multipart]
   simulate:
-    wdf-components: [get, list]
-    wdf-results: [put, multipart]
-    wdf-checkpoints: [get, list, put, multipart]
+    wft-components: [get, list]
+    wft-results: [put, multipart]
+    wft-checkpoints: [get, list, put, multipart]
   aggregate:
-    wdf-sources: [get]
-    wdf-results: [get, list, put, multipart]
+    wft-sources: [get]
+    wft-results: [get, list, put, multipart]
   workflow:
-    wdf-sources: [get, list]
-    wdf-components: [get, list]
-    wdf-results: [get, list]
+    wft-sources: [get, list]
+    wft-components: [get, list]
+    wft-results: [get, list]
   export:
-    wdf-results: [get, list]
+    wft-results: [get, list]
   reaper:
-    wdf-sources: [list, delete]
-    wdf-components: [list, delete]
-    wdf-results: [list, delete]
-    wdf-checkpoints: [list, delete]
+    wft-sources: [list, delete]
+    wft-components: [list, delete]
+    wft-results: [list, delete]
+    wft-checkpoints: [list, delete]

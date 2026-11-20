@@ -5,7 +5,7 @@
 # Tilt treats every kind-* context as local, so the guard below pins the one cluster this repository owns.
 # Each Tiltfile.module registers its own resources, labelled with the module's group.
 
-CONTEXT = 'kind-wdf'
+CONTEXT = 'kind-wft'
 
 config.define_string('profile')
 config.define_string('modules_dir')
@@ -25,8 +25,8 @@ groups = profiles[profile]['groups']
 module_profile = profiles[profile].get('modules', profile)
 
 # Library functions read the mode from the environment because a loaded file cannot see Tiltfile globals.
-os.putenv('WDF_LIVE_UPDATE', '1' if profiles[profile].get('live_update', False) else '0')
-os.putenv('WDF_TILT_PROFILE', profile)
+os.putenv('WFT_LIVE_UPDATE', '1' if profiles[profile].get('live_update', False) else '0')
+os.putenv('WFT_TILT_PROFILE', profile)
 
 # Components sit at most two levels down (deploy/dummy/<group>), so fixtures under deploy/tilt are skipped.
 root = os.path.abspath(modules_dir) + '/'

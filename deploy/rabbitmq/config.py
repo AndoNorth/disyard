@@ -1,6 +1,6 @@
 """The manifests of the broker module, and the password of each broker user.
 
-The broker configuration is rendered by `wdf_broker.topology` from the broker contract and the
+The broker configuration is rendered by `wft_broker.topology` from the broker contract and the
 tenancy profile that the Tilt profile maps to. The passwords and the Erlang cookie are generated on
 first use into `rabbitmq/` under the state directory of the cluster scripts, one file per user named
 `<user>.password` and `erlang.cookie`, readable by their owner only and never committed.
@@ -19,10 +19,10 @@ import sys
 from pathlib import Path
 
 import yaml
-from wdf_broker import topology
-from wdf_broker.contract import tenancy
-from wdf_broker.contract import topology as spec
-from wdf_broker.tenancy import load
+from wft_broker import topology
+from wft_broker.contract import tenancy
+from wft_broker.contract import topology as spec
+from wft_broker.tenancy import load
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
@@ -35,7 +35,7 @@ RABBITMQ_ID = 999
 
 
 def credentials_dir() -> Path:
-    state = os.environ.get("WDF_STATE_DIR") or str(
+    state = os.environ.get("WFT_STATE_DIR") or str(
         Path(os.environ.get("XDG_STATE_HOME") or Path.home() / ".local/state") / "wasm-dag-forge"
     )
     return Path(state) / "rabbitmq"
@@ -132,8 +132,8 @@ def render(tilt_profile: str, profile=None) -> list[dict]:
                         # A changed configuration or secret rolls the pod, because the broker reads
                         # both only at boot.
                         "annotations": {
-                            "wdf.dev/config-digest": digest,
-                            "wdf.dev/tenancy-profile": profile_name,
+                            "wft.dev/config-digest": digest,
+                            "wft.dev/tenancy-profile": profile_name,
                         },
                     },
                     "spec": {

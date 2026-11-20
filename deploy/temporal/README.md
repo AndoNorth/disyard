@@ -31,7 +31,7 @@ Profiles enable `temporal` by name, and Tilt enables the resources it depends on
 ## Bootstrap
 
 Module `temporal-bootstrap` runs on the host as a Tilt `local_resource` once `temporal` is ready, through a port-forward to the frontend bound to 127.0.0.1.
-It creates namespace `wdf` with a retention of 24h, registers the search attributes of [`naming.yaml`](../../contracts/temporal/naming.yaml) in it, and creates the reaper's Schedule `wdf-artifact-reaper` there with `wdf_artifactreaper.schedule.ensure_schedule`.
+It creates namespace `wft` with a retention of 24h, registers the search attributes of [`naming.yaml`](../../contracts/temporal/naming.yaml) in it, and creates the reaper's Schedule `wft-artifact-reaper` there with `wft_artifactreaper.schedule.ensure_schedule`.
 Diagram: [bootstrap/bootstrap.drawio.svg](bootstrap/bootstrap.drawio.svg), the items it creates and what a second run changes.
 
 | File | Holds |
@@ -48,7 +48,7 @@ Run it by hand with `deploy/temporal/bootstrap/bootstrap.sh [apply|check]`.
 
 Edit `server.dynamicConfig` in `values.json`.
 The cache keys are read only at start, so the pod templates carry `checksum/dynamic-config`, and a changed key rolls every Temporal pod.
-The Deployments use the `Recreate` strategy, because a surge pod does not fit the quota of `wdf-infra`.
+The Deployments use the `Recreate` strategy, because a surge pod does not fit the quota of `wft-infra`.
 
 ## Bumping the chart or the server
 
@@ -59,5 +59,5 @@ The Deployments use the `Recreate` strategy, because a surge pod does not fit th
 ## Reaching Temporal from the host
 
 ```sh
-kubectl --context kind-wdf -n wdf-infra port-forward --address 127.0.0.1 svc/temporal-frontend 17233:7233
+kubectl --context kind-wft -n wft-infra port-forward --address 127.0.0.1 svc/temporal-frontend 17233:7233
 ```

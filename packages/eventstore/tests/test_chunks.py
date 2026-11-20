@@ -6,9 +6,9 @@ from pathlib import Path
 
 import pytest
 import yaml
-from wdf_events import build_event
-from wdf_eventstore import BatchResult, chunk_count, events_for_job, insert_events
-from wdf_eventstore.store import SELECT_JOB
+from wft_events import build_event
+from wft_eventstore import BatchResult, chunk_count, events_for_job, insert_events
+from wft_eventstore.store import SELECT_JOB
 
 pytestmark = pytest.mark.integration
 
@@ -21,7 +21,7 @@ JOB = "3a9617fa-df7c-5760-a644-42d559e0f433"
 def started(time, sequence=0, job=JOB):
     return build_event(
         "job.started",
-        source="/wdf/workflow",
+        source="/wft/workflow",
         tenant="acme",
         jobid=job,
         priorityclass="standard",

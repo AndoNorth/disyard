@@ -7,11 +7,11 @@ import time
 import uuid
 
 import pytest
-from wdf_dispatchapi.gateway import TemporalGateway
-from wdf_dispatchapi.ports import NoWorkflow, TemporalUnavailable
-from wdf_dispatchapi.testing import gateway_contract
-from wdf_workflow.models import ControlSignal
-from wdf_workflow.testing import connect
+from wft_dispatchapi.gateway import TemporalGateway
+from wft_dispatchapi.ports import NoWorkflow, TemporalUnavailable
+from wft_dispatchapi.testing import gateway_contract
+from wft_workflow.models import ControlSignal
+from wft_workflow.testing import connect
 
 LIMIT_S = 180
 # Nothing listens there, so every call fails to connect.

@@ -1,7 +1,7 @@
 """The stand-in guest and runner."""
 
 import pytest
-from wdf_artifactclient.testing import RUNNERS, make_scratch, run_guest
+from wft_artifactclient.testing import RUNNERS, make_scratch, run_guest
 
 
 def test_a_guest_reads_the_input_and_writes_the_output_and_its_log_is_returned(scratch):

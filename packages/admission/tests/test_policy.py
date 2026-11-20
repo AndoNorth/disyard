@@ -7,8 +7,8 @@ from datetime import UTC, datetime, timedelta
 
 from hypothesis import given
 from hypothesis import strategies as st
-from wdf_admission.policy import Caps, Queue, Readmission, Resume, Snapshot, Turn, plan
-from wdf_broker.tenancy import load
+from wft_admission.policy import Caps, Queue, Readmission, Resume, Snapshot, Turn, plan
+from wft_broker.tenancy import load
 
 CLASSES = ["gold", "silver", "bronze"]
 TENANTS = ["a", "b", "c"]

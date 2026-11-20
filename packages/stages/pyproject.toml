@@ -1,13 +1,13 @@
 [project]
-name = "wdf-stages"
+name = "wft-stages"
 version = "0.0.0"
 license = "Apache-2.0"
 requires-python = ">=3.13,<3.14"
-dependencies = ["wdf-events", "wdf-keys", "jsonschema", "pyyaml"]
+dependencies = ["wft-events", "wft-keys", "jsonschema", "pyyaml"]
 
 [tool.uv.sources]
-wdf-events = { workspace = true }
-wdf-keys = { workspace = true }
+wft-events = { workspace = true }
+wft-keys = { workspace = true }
 
 [build-system]
 requires = ["hatchling"]

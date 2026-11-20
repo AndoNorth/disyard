@@ -1,6 +1,6 @@
-# wdf-compat
+# wft-compat
 
-The compatibility rules of the event contract, imported as `wdf_compat`.
+The compatibility rules of the event contract, imported as `wft_compat`.
 The contract itself is [contracts/events/README.md](../../contracts/events/README.md), and the event models are in `packages/events/`.
 
 ## What a minor may change
@@ -37,7 +37,7 @@ A new major is a new `type`, and each of these changes needs one:
 An upgrade function takes the decoded event of major N and returns the decoded event of major N + 1.
 It never changes `id`, `source` or `time`, so the event store still dedups, and `read_event` rejects an upgrade that does with `SchemaInvalid`, reason `upgrade-changed-identity`.
 Upgrade functions are registered in `UPGRADES` of `reader.py`, one per major step and never chained across a gap.
-Each upgrade increments `wdf_event_upgraded_total`.
+Each upgrade increments `wft_event_upgraded_total`.
 
 ## Replay
 
@@ -45,7 +45,7 @@ Each upgrade increments `wdf_event_upgraded_total`.
 An event of the current major returns byte-identical, so the original bytes are republished.
 An event of the previous major returns as canonical bytes of the current major, with `id`, `source` and `time` unchanged, so the history row still dedups.
 It follows the table above, and it returns the whole upgraded event or raises, never bytes that are partly upgraded.
-It increments `wdf_event_upgraded_total` for an upgrade.
+It increments `wft_event_upgraded_total` for an upgrade.
 Whether replay calls it or leaves the upgrade to the read path of admission is the broker epic's call, and `read_event` gives the same result either way.
 The window assumes that a replayed dead letter is upgraded or read by a reader that still knows its major.
 
@@ -72,15 +72,15 @@ A message can be dead lettered on the last day, replayed on the last day of its 
 | `DEAD_LETTER_RETENTION_DAYS` | 14 | placeholder |
 
 The window is 21 days at the placeholders.
-`INTRODUCED` in `wdf_events.models` records the date each major was introduced, and `check_catalogue` fails a catalogue that introduces a major no more than a window after the previous one, so a reader never meets a major two steps back.
+`INTRODUCED` in `wft_events.models` records the date each major was introduced, and `check_catalogue` fails a catalogue that introduces a major no more than a window after the previous one, so a reader never meets a major two steps back.
 
 ## Golden and poison vectors
 
-`contracts/events/vectors/golden/<type>/<major>.<minor>.json` holds one golden event per type and minor, in canonical bytes, built by `wdf_events.build_event` from the facts of the contract's valid vector of that type.
+`contracts/events/vectors/golden/<type>/<major>.<minor>.json` holds one golden event per type and minor, in canonical bytes, built by `wft_events.build_event` from the facts of the contract's valid vector of that type.
 `golden/MANIFEST.sha256` has one `<sha256>  <path>` line per golden file, and `check_manifest` fails on a file without a line, a line without a file and a hash that differs.
 A change to a golden file or its line is a contract-change PR.
 
 `contracts/events/vectors/poison/<case>.json` holds one input per failure, and `<case>.expect.json` names the typed error and `reason` that `read_event` must raise for it.
 The cases are a wrong major, schema-invalid data, a missing `time`, an `id` with `#`, bytes that are not JSON, truncated JSON, a `datacontenttype` other than `application/json` and an event over 64 KiB.
 
-`python -m wdf_compat.vectors` rewrites every one of these files, and `--check` fails when a committed file differs from what the builders write.
+`python -m wft_compat.vectors` rewrites every one of these files, and `--check` fails when a committed file differs from what the builders write.

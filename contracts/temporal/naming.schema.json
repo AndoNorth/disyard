@@ -307,7 +307,7 @@
       "additionalProperties": false,
       "properties": {
         "build_id_env": {
-          "const": "WDF_BUILD_ID",
+          "const": "WFT_BUILD_ID",
           "title": "Build Id Env",
           "type": "string"
         },
@@ -317,7 +317,7 @@
           "type": "string"
         },
         "id": {
-          "const": "wdf_keys.workflow_id",
+          "const": "wft_keys.workflow_id",
           "title": "Id",
           "type": "string"
         },
@@ -355,7 +355,7 @@
       "type": "object"
     }
   },
-  "$id": "urn:wdf:schema:temporal:naming:1",
+  "$id": "urn:wft:schema:temporal:naming:1",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
   "description": "naming.yaml: every Temporal name the workflow, its workers and its callers share.",
@@ -410,7 +410,7 @@
     },
     "search_attributes": {
       "patternProperties": {
-        "^Wdf[A-Z][A-Za-z]{0,62}$": {
+        "^Wft[A-Z][A-Za-z]{0,62}$": {
           "enum": [
             "keyword",
             "datetime"

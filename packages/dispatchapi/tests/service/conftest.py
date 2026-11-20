@@ -24,9 +24,9 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
-from wdf_broker.testing import FakeBroker
-from wdf_compile import bundle
-from wdf_dispatchapi.service import Config, Service
+from wft_broker.testing import FakeBroker
+from wft_compile import bundle
+from wft_dispatchapi.service import Config, Service
 
 SERVE = Path(__file__).with_name("serve.py")
 SERVE_TOOLS = runpy.run_path(str(SERVE))
@@ -45,20 +45,20 @@ def free_port() -> int:
 
 def environment(logins: dict[str, str], temporal: str, **limits) -> dict[str, str]:
     """The environment of the service over `logins`, keyed as the `logins` fixture keys them,
-    with every listener on a free port and each of `limits` as its WDF_DISPATCH_ variable."""
+    with every listener on a free port and each of `limits` as its WFT_DISPATCH_ variable."""
     env = {
-        "WDF_TEMPORAL_ADDRESS": temporal,
-        **{f"WDF_{key.upper()}_DSN": dsn for key, dsn in logins.items()},
-        "WDF_STORE_ENDPOINT": "http://127.0.0.1:1",
-        "WDF_SUBMIT_CREDENTIALS": "unused",
-        "WDF_BROKER_ADDRESS": "127.0.0.1:1",
-        "WDF_BROKER_PASSWORD": "unused",
-        "WDF_TENANCY_PROFILE": "ci",
-        "WDF_METRICS_ADDRESS": f"127.0.0.1:{free_port()}",
-        "WDF_DISPATCH_API_LISTEN": f"127.0.0.1:{free_port()}",
-        "WDF_CONTROL_API_LISTEN": f"127.0.0.1:{free_port()}",
+        "WFT_TEMPORAL_ADDRESS": temporal,
+        **{f"WFT_{key.upper()}_DSN": dsn for key, dsn in logins.items()},
+        "WFT_STORE_ENDPOINT": "http://127.0.0.1:1",
+        "WFT_SUBMIT_CREDENTIALS": "unused",
+        "WFT_BROKER_ADDRESS": "127.0.0.1:1",
+        "WFT_BROKER_PASSWORD": "unused",
+        "WFT_TENANCY_PROFILE": "ci",
+        "WFT_METRICS_ADDRESS": f"127.0.0.1:{free_port()}",
+        "WFT_DISPATCH_API_LISTEN": f"127.0.0.1:{free_port()}",
+        "WFT_CONTROL_API_LISTEN": f"127.0.0.1:{free_port()}",
     }
-    env.update({f"WDF_DISPATCH_{name.upper()}": str(value) for name, value in limits.items()})
+    env.update({f"WFT_DISPATCH_{name.upper()}": str(value) for name, value in limits.items()})
     return env
 
 
@@ -92,9 +92,9 @@ def process(env: dict[str, str], store_dir: Path, log: Path):
     with open(log, "ab") as out:
         proc = subprocess.Popen([sys.executable, str(SERVE)], env=full, stdout=out, stderr=out)
     urls = {
-        "dispatch": f"http://{env['WDF_DISPATCH_API_LISTEN']}",
-        "control": f"http://{env['WDF_CONTROL_API_LISTEN']}",
-        "metrics": f"http://{env['WDF_METRICS_ADDRESS']}/metrics",
+        "dispatch": f"http://{env['WFT_DISPATCH_API_LISTEN']}",
+        "control": f"http://{env['WFT_CONTROL_API_LISTEN']}",
+        "metrics": f"http://{env['WFT_METRICS_ADDRESS']}/metrics",
     }
     running = SimpleNamespace(proc=proc, **urls)
     try:
@@ -158,7 +158,7 @@ def template(source: dict) -> dict:
     """A compile of `source`, a simulate and an aggregate, with a seed and one integer parameter
     per job."""
     return {
-        "schema": "urn:wdf:schema:job:1.0",
+        "schema": "urn:wft:schema:job:1.0",
         "parameters": {"seed": "seed", "n": "integer"},
         "tasks": {
             "build": {"type": "compile", "params": {"source": source, "entry": "job"}},

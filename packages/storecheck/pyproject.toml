@@ -1,12 +1,12 @@
 [project]
-name = "wdf-storecheck"
+name = "wft-storecheck"
 version = "0.0.0"
 license = "Apache-2.0"
 requires-python = ">=3.13,<3.14"
 dependencies = ["boto3", "pydantic", "pytest", "pyyaml"]
 
 [project.entry-points.pytest11]
-wdf_storecheck = "wdf_storecheck.fixtures"
+wft_storecheck = "wft_storecheck.fixtures"
 
 [build-system]
 requires = ["hatchling"]

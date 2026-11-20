@@ -3,7 +3,7 @@ import json
 from pathlib import Path
 
 import pytest
-from wdf_plan import bind, canonical_bytes
+from wft_plan import bind, canonical_bytes
 
 VECTORS = Path(__file__).resolve().parents[3] / "contracts/job/vectors"
 PLANS = VECTORS / "plans/1"

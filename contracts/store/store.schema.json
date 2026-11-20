@@ -168,7 +168,7 @@
       "type": "object"
     }
   },
-  "$id": "urn:wdf:schema:store:1",
+  "$id": "urn:wft:schema:store:1",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "anyOf": [
     {

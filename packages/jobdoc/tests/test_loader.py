@@ -3,9 +3,9 @@
 import json
 
 import pytest
-from wdf_jobdoc import DocumentInvalid, parse_document
+from wft_jobdoc import DocumentInvalid, parse_document
 
-OK = b'{"schema": "urn:wdf:schema:job:1.0"}'
+OK = b'{"schema": "urn:wft:schema:job:1.0"}'
 
 
 def test_a_valid_document_loads(load, good):

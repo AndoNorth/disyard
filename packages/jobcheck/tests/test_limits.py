@@ -4,9 +4,9 @@ import copy
 from pathlib import Path
 
 import pytest
-from wdf_jobcheck.limits import check_limits
-from wdf_jobdoc import parse_document
-from wdf_plan import canonical_bytes, compile_plan, stats
+from wft_jobcheck.limits import check_limits
+from wft_jobdoc import parse_document
+from wft_plan import canonical_bytes, compile_plan, stats
 
 ROOT = Path(__file__).resolve().parents[3]
 FILES = sorted((ROOT / "contracts/job/vectors/invalid/limit").glob("*/*.json"))

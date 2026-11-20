@@ -1,4 +1,4 @@
-"""Bootstraps the Temporal server for the platform: namespace `wdf` with its retention, the search
+"""Bootstraps the Temporal server for the platform: namespace `wft` with its retention, the search
 attributes of the naming contract, and the reaper's Schedule in that namespace.
 Usage: bootstrap.py apply|check ADDRESS
 `apply` is idempotent and prints one line per item with what it did, ending with the count of
@@ -25,8 +25,8 @@ from temporalio.api.workflowservice.v1 import (
 )
 from temporalio.client import Client
 from temporalio.service import RPCError, RPCStatusCode
-from wdf_artifactreaper.schedule import SCHEDULE_ID, definition, ensure_schedule
-from wdf_workflow.contract import naming
+from wft_artifactreaper.schedule import SCHEDULE_ID, definition, ensure_schedule
+from wft_workflow.contract import naming
 
 RETENTION = timedelta(days=1)
 TYPES = {

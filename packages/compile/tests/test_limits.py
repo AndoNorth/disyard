@@ -14,9 +14,9 @@ from pathlib import Path
 
 import pytest
 import yaml
-from wdf_compile import bundle, heavy, limits
-from wdf_itest import image_ref
-from wdf_itest.session import RUN_LABEL
+from wft_compile import bundle, heavy, limits
+from wft_itest import image_ref
+from wft_itest.session import RUN_LABEL
 
 # The project, wheel and served helpers of the build tests, loaded by path as the import mode needs.
 _spec = importlib.util.spec_from_file_location(
@@ -192,7 +192,7 @@ def test_no_network_step(t1, locked, tmp_path, capsys):
         fetched = fetch(capsys, "--bundle", str(path), "--find-links", url, "--out", str(wheels))
     assert fetched[:2] == (0, "fetched: 1\n"), fetched
 
-    name = f"wdf-{t1.run_id}-compile"
+    name = f"wft-{t1.run_id}-compile"
     run = ["docker", "run", "-d", "--rm", "--name", name, "--label", f"{RUN_LABEL}={t1.run_id}"]
     run += ["--network", "none", "--memory", "1g", "--memory-swap", "1g", "--cpus", "1"]
     run += [
@@ -220,7 +220,7 @@ def test_no_network_step(t1, locked, tmp_path, capsys):
                 name,
                 python,
                 "-m",
-                "wdf_compile",
+                "wft_compile",
                 "build",
                 "--bundle",
                 str(path),

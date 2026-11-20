@@ -88,7 +88,7 @@
       "type": "object"
     }
   },
-  "$id": "urn:wdf:schema:activity:failure-classes:1",
+  "$id": "urn:wft:schema:activity:failure-classes:1",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
   "description": "failure-classes.yaml: every failure class with its budget and action.",

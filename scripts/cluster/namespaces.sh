@@ -20,12 +20,12 @@ mode=apply
 [ $# -eq 1 ] && [ -f "deploy/presets/$1.yaml" ] && [[ $mode =~ ^(apply|render|check)$ ]] ||
     { echo "usage: namespaces.sh [apply|render|check] <preset>" >&2; exit 2; }
 preset=deploy/presets/$1.yaml
-context=${WDF_CONTEXT:-kind-wdf}
+context=${WFT_CONTEXT:-kind-wft}
 k() { kubectl --context "$context" "$@"; }
 
 # The pools whose nodes each namespace runs on. Control pods share the infra pool.
-declare -A pools=([wdf-infra]="infra" [wdf-control]="infra" [wdf-workers]="compile simulate aggregate" [wdf-obs]="obs")
-namespaces=(wdf-infra wdf-control wdf-workers wdf-obs)
+declare -A pools=([wft-infra]="infra" [wft-control]="infra" [wft-workers]="compile simulate aggregate" [wft-obs]="obs")
+namespaces=(wft-infra wft-control wft-workers wft-obs)
 cpu_reserved_milli=100
 headroom_percent=5
 
@@ -106,7 +106,7 @@ check() {
         n=$(k -n "$ns" get resourcequota,limitrange --no-headers | wc -l)
         shown=ok
         [ "$n" -eq 2 ] || { shown="$n objects, want 2"; fail=1; }
-        if [ "$ns" = wdf-workers ]; then
+        if [ "$ns" = wft-workers ]; then
             { [ "$(to_milli "$quota_cpu")" -gt "$live_cpu" ] && [ "$(to_mib "$quota_mem")" -gt "$live_mem" ]; } || { shown="quota not above allocatable"; fail=1; }
         fi
         printf '%-13s %-26s %-26s %s\n' "$ns" "${quota_cpu}/${quota_mem}" "${live_cpu}m/${live_mem}Mi" "$shown"

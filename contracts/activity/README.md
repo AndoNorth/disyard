@@ -6,14 +6,14 @@ The [Consumers](#consumers) section names who reads each part.
 
 The workflow runs each task as one activity, `run_task`, on the queue of its pool.
 This directory pins what crosses that boundary: the task input, the task result, the failure details, the heartbeat details and the failure class table that decides what a failure costs.
-The schemas are generated from the models of `wdf_workflow.models` and never edited by hand.
+The schemas are generated from the models of `wft_workflow.models` and never edited by hand.
 
 ## Payloads
 
-A payload is canonical JSON, as `wdf_temporal.converter` writes a model: compact, sorted keys, UTF-8.
+A payload is canonical JSON, as `wft_temporal.converter` writes a model: compact, sorted keys, UTF-8.
 A size bound counts those bytes.
-A time is a string of `wdf_events.models.TIME_PATTERN`, and every reference reuses a model of the events contract, so no new reference shape exists.
-`LogTailReference` is `wdf_events.models.AttemptReference` narrowed to kind `log-tail`, as `ResultReference` narrows it.
+A time is a string of `wft_events.models.TIME_PATTERN`, and every reference reuses a model of the events contract, so no new reference shape exists.
+`LogTailReference` is `wft_events.models.AttemptReference` narrowed to kind `log-tail`, as `ResultReference` narrows it.
 A payload holds references and never bytes.
 
 ### Task input
@@ -22,20 +22,20 @@ A payload holds references and never bytes.
 
 | Field | Type | Rule | Reuses |
 | --- | --- | --- | --- |
-| `request` | object | a `dev.wdf.task.requested.v1` event that `wdf_events.check_task_request` accepts, written as `wdf_events.to_bytes` writes it, with no `attempt` attribute, because the envelope refuses one on that type | `wdf_events.Event`, data `TaskRequestData` |
+| `request` | object | a `dev.wft.task.requested.v1` event that `wft_events.check_task_request` accepts, written as `wft_events.to_bytes` writes it, with no `attempt` attribute, because the envelope refuses one on that type | `wft_events.Event`, data `TaskRequestData` |
 | `task_attempt` | integer | at least 1 | the task attempt of the events contract |
-| `resume_counter` | integer | at least 0 | the second input of `wdf_keys.attempt_identity` |
+| `resume_counter` | integer | at least 0 | the second input of `wft_keys.attempt_identity` |
 | `batch_id` | string | a UUID | the `<batch>` segment of every attempt-scoped key |
-| `seed` | integer | 0 to 2^53 - 1 | `JobParams.seed`, bounded above by `wdf_jobdoc.models.SEED_LIMIT`, the `<seed>` segment of every attempt-scoped key |
-| `params` | object | the `params` of the bound plan task for `request.data.task_type`, with no placeholder | `wdf_jobdoc.models.CompileParams`, `wdf_runtime.models.Input`, the aggregate params of `wdf_jobdoc.models` with string lists or null in place of a placeholder |
-| `cache_key` | string or null | 64 lower-case hex digits on a compile task with a key, null otherwise | `wdf_keys.compile_cache_key` |
+| `seed` | integer | 0 to 2^53 - 1 | `JobParams.seed`, bounded above by `wft_jobdoc.models.SEED_LIMIT`, the `<seed>` segment of every attempt-scoped key |
+| `params` | object | the `params` of the bound plan task for `request.data.task_type`, with no placeholder | `wft_jobdoc.models.CompileParams`, `wft_runtime.models.Input`, the aggregate params of `wft_jobdoc.models` with string lists or null in place of a placeholder |
+| `cache_key` | string or null | 64 lower-case hex digits on a compile task with a key, null otherwise | `wft_keys.compile_cache_key` |
 
 `request.data.inputs` holds no reference for compile, exactly one `component` for simulate, and exactly one `index` for aggregate (the index the workflow builds, or the submitter's `params.index`), and the worker reads the index from `inputs`.
 The worker's producer is `ProducerRef(job=request.jobid, task=request.taskid, attempt=attempt_identity(task_attempt, resume_counter))`.
 The worker writes `params` as `/in/input.json`, because the task request carries none.
 A compile task has no key when its bundle has no `uv.lock` or its modules lack the entry, and the worker then fails it as `compile_failed`.
 
-The converter writes the request inside the payload as exactly the bytes of `wdf_events.to_bytes`, so the history holds the bytes that the event store holds.
+The converter writes the request inside the payload as exactly the bytes of `wft_events.to_bytes`, so the history holds the bytes that the event store holds.
 
 ### Task result
 
@@ -53,10 +53,10 @@ A worker reports a failure as an `ApplicationError` whose `type` is a row of the
 
 | Field | Type | Rule | Reuses |
 | --- | --- | --- | --- |
-| `deterministic` | boolean | the row's value, or either value on a `from-error-file` row | `wdf_runtime.classify.Classified.deterministic` |
+| `deterministic` | boolean | the row's value, or either value on a `from-error-file` row | `wft_runtime.classify.Classified.deterministic` |
 | `reason` | string | 1 to 1,024 characters, starting with the class and `: ` | `Classified.reason`, `ArtifactError.reason` |
 | `started_at` | string | a time | |
-| `checkpoint` | object or null | the latest checkpoint the attempt uploaded | `wdf_events.models.CheckpointReference` |
+| `checkpoint` | object or null | the latest checkpoint the attempt uploaded | `wft_events.models.CheckpointReference` |
 | `log_tail` | object or null | null only when the upload of the tail itself failed | `LogTailReference` |
 
 A `failure-details` vector is the pair `{type, details}` that a worker raises, so the loader checks the details against the row of their type.
@@ -64,7 +64,7 @@ A `failure-details` vector is the pair `{type, details}` that a worker raises, s
 ### Heartbeat details
 
 `HeartbeatDetails` are the details of each `run_task` heartbeat, at most 2,048 bytes, with schema [heartbeat.schema.json](heartbeat.schema.json).
-`progress` (0 to 1), `step` (0 to `steps`) and `steps` (at least 1) come from the guest's `HEARTBEAT` line as `wdf_runtime.contract.heartbeat` parses it, and all three are null during staging, the warm-up of a component's first run on a pod, or on a pool without guest heartbeats.
+`progress` (0 to 1), `step` (0 to `steps`) and `steps` (at least 1) come from the guest's `HEARTBEAT` line as `wft_runtime.contract.heartbeat` parses it, and all three are null during staging, the warm-up of a component's first run on a pod, or on a pool without guest heartbeats.
 `checkpoint` is the latest checkpoint reference or null, and `started_at` is the time the attempt started.
 The latest checkpoint reference is in both the heartbeat and the failure details, so a worker that dies still hands over its last reference through its last heartbeat.
 
@@ -143,12 +143,12 @@ The guest's own run timeout (`timeout`, `compile_timeout`, `aggregate_timeout`) 
 
 ## Loader
 
-`contracts/activity/check.sh <file> [--as NAME]` runs `python -m wdf_workflow.contract --check <file> [--as NAME]`, the loader of both this contract and the Temporal contract.
+`contracts/activity/check.sh <file> [--as NAME]` runs `python -m wft_workflow.contract --check <file> [--as NAME]`, the loader of both this contract and the Temporal contract.
 `NAME` is a schema: `task-input`, `task-result`, `failure-details`, `heartbeat` or `failure-classes`.
 Without `--as`, the name is the directory under `vectors/` that holds the file, or else the file's stem, so `failure-classes.yaml` is checked as `failure-classes`.
 It exits 0 when valid, 1 with `reason: <code>: <detail>` on stderr when not, and 2 on usage.
-The loader reads `exit-classes.yaml`, `failures.yaml`, `staging.yaml` and the pinned table through the package data of `wdf_workflow`, and never through a repository path.
-`python -m wdf_workflow.gen [--check]` writes the generated schemas of both contracts, and with `--check` exits 1 and names each committed schema that differs from the models.
+The loader reads `exit-classes.yaml`, `failures.yaml`, `staging.yaml` and the pinned table through the package data of `wft_workflow`, and never through a repository path.
+`python -m wft_workflow.gen [--check]` writes the generated schemas of both contracts, and with `--check` exits 1 and names each committed schema that differs from the models.
 
 The first failing check wins, in this order.
 

@@ -10,83 +10,83 @@ members = ["packages/*"]
 
 # Workspace members are installed through the dev group, because a plain `uv run` installs only the root project.
 [tool.uv.sources]
-wdf-acceptance = { workspace = true }
-wdf-admission = { workspace = true }
-wdf-aggregate = { workspace = true }
-wdf-artifactclient = { workspace = true }
-wdf-artifactindex = { workspace = true }
-wdf-artifactreaper = { workspace = true }
-wdf-broker = { workspace = true }
-wdf-clusterkit = { workspace = true }
-wdf-compat = { workspace = true }
-wdf-compile = { workspace = true }
-wdf-dispatchapi = { workspace = true }
-wdf-events = { workspace = true }
-wdf-eventstore = { workspace = true }
-wdf-itest = { workspace = true }
-wdf-jobcheck = { workspace = true }
-wdf-jobdoc = { workspace = true }
-wdf-jobexamples = { workspace = true }
-wdf-jobpatch = { workspace = true }
-wdf-jobstate = { workspace = true }
-wdf-jobtools = { workspace = true }
-wdf-kernel = { workspace = true }
-wdf-keys = { workspace = true }
-wdf-migrate = { workspace = true }
-wdf-placement = { workspace = true }
-wdf-plan = { workspace = true }
-wdf-runtime = { workspace = true }
-wdf-stages = { workspace = true }
-wdf-stateops = { workspace = true }
-wdf-storecheck = { workspace = true }
-wdf-temporal = { workspace = true }
-wdf-worker = { workspace = true }
-wdf-workflow = { workspace = true }
-wdf-workloads = { workspace = true }
+wft-acceptance = { workspace = true }
+wft-admission = { workspace = true }
+wft-aggregate = { workspace = true }
+wft-artifactclient = { workspace = true }
+wft-artifactindex = { workspace = true }
+wft-artifactreaper = { workspace = true }
+wft-broker = { workspace = true }
+wft-clusterkit = { workspace = true }
+wft-compat = { workspace = true }
+wft-compile = { workspace = true }
+wft-dispatchapi = { workspace = true }
+wft-events = { workspace = true }
+wft-eventstore = { workspace = true }
+wft-itest = { workspace = true }
+wft-jobcheck = { workspace = true }
+wft-jobdoc = { workspace = true }
+wft-jobexamples = { workspace = true }
+wft-jobpatch = { workspace = true }
+wft-jobstate = { workspace = true }
+wft-jobtools = { workspace = true }
+wft-kernel = { workspace = true }
+wft-keys = { workspace = true }
+wft-migrate = { workspace = true }
+wft-placement = { workspace = true }
+wft-plan = { workspace = true }
+wft-runtime = { workspace = true }
+wft-stages = { workspace = true }
+wft-stateops = { workspace = true }
+wft-storecheck = { workspace = true }
+wft-temporal = { workspace = true }
+wft-worker = { workspace = true }
+wft-workflow = { workspace = true }
+wft-workloads = { workspace = true }
 
 [dependency-groups]
 dev = [
     "hypothesis",
     "pytest",
-    "wdf-acceptance",
-    "wdf-admission",
-    "wdf-aggregate",
-    "wdf-artifactclient",
-    "wdf-artifactindex",
-    "wdf-artifactreaper",
-    "wdf-broker",
-    "wdf-clusterkit",
-    "wdf-compat",
-    "wdf-compile",
-    "wdf-dispatchapi",
-    "wdf-events",
-    "wdf-eventstore",
-    "wdf-itest",
-    "wdf-jobcheck",
-    "wdf-jobdoc",
-    "wdf-jobexamples",
-    "wdf-jobpatch",
-    "wdf-jobstate",
-    "wdf-jobtools",
-    "wdf-kernel",
-    "wdf-keys",
-    "wdf-migrate",
-    "wdf-placement",
-    "wdf-plan",
-    "wdf-runtime",
-    "wdf-stages",
-    "wdf-stateops",
-    "wdf-storecheck",
-    "wdf-temporal",
-    "wdf-worker",
-    "wdf-workflow",
-    "wdf-workloads",
+    "wft-acceptance",
+    "wft-admission",
+    "wft-aggregate",
+    "wft-artifactclient",
+    "wft-artifactindex",
+    "wft-artifactreaper",
+    "wft-broker",
+    "wft-clusterkit",
+    "wft-compat",
+    "wft-compile",
+    "wft-dispatchapi",
+    "wft-events",
+    "wft-eventstore",
+    "wft-itest",
+    "wft-jobcheck",
+    "wft-jobdoc",
+    "wft-jobexamples",
+    "wft-jobpatch",
+    "wft-jobstate",
+    "wft-jobtools",
+    "wft-kernel",
+    "wft-keys",
+    "wft-migrate",
+    "wft-placement",
+    "wft-plan",
+    "wft-runtime",
+    "wft-stages",
+    "wft-stateops",
+    "wft-storecheck",
+    "wft-temporal",
+    "wft-worker",
+    "wft-workflow",
+    "wft-workloads",
 ]
 
 [tool.pytest.ini_options]
 # Several packages have a tests/test_vectors.py, so test modules are imported by path and not by basename.
 addopts = "--import-mode=importlib"
 markers = [
-    "integration: needs containers started through wdf_itest",
+    "integration: needs containers started through wft_itest",
     "slow: large results, deselected by scripts/test.sh and run only when selected",
 ]

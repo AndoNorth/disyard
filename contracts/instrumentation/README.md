@@ -10,7 +10,7 @@ An epic may add its own metrics to `metrics.yaml` before then, by a contract-cha
 
 ## Metric names
 
-- A name is `wdf_` followed by lower-case words and digits joined by underscores.
+- A name is `wft_` followed by lower-case words and digits joined by underscores.
 - A counter ends in `_total`, and a gauge or a histogram never does.
 - A metric with a unit ends in that unit, in base units (`bytes`, `seconds`, `ratio`), before the `_total` of a counter.
 - A histogram declares its bucket bounds in `metrics.yaml`.
@@ -42,23 +42,23 @@ The stored event key keeps the name `event_id`, which is the pair `<source>#<id>
 
 | Metric | Type | Labels | Emitted by |
 | --- | --- | --- | --- |
-| `wdf_event_bytes` | histogram | none | `to_bytes` observes the size of every serialised event |
-| `wdf_event_size_warnings_total` | counter | none | `to_bytes` when an event is above the warning size |
-| `wdf_event_rejected_total` | counter | `reason` | `to_bytes` when it refuses an event |
-| `wdf_event_upgraded_total` | counter | `type`, `from_major` | `read_event` and `upgrade_for_replay` on each upgrade |
+| `wft_event_bytes` | histogram | none | `to_bytes` observes the size of every serialised event |
+| `wft_event_size_warnings_total` | counter | none | `to_bytes` when an event is above the warning size |
+| `wft_event_rejected_total` | counter | `reason` | `to_bytes` when it refuses an event |
+| `wft_event_upgraded_total` | counter | `type`, `from_major` | `read_event` and `upgrade_for_replay` on each upgrade |
 
 The events lane asserts the serializer metrics and the compatibility lane asserts the upgrade metric in their own tests.
 
 ## Metrics of the broker contract
 
 Version 2 adds the counters of the broker client, which [contracts/broker/README.md](../broker/README.md) describes.
-They live in the in-process registry of `wdf_events.metrics`, and the observability epic exports that registry from every process that loads it.
+They live in the in-process registry of `wft_events.metrics`, and the observability epic exports that registry from every process that loads it.
 
 | Metric | Type | Labels | Emitted by |
 | --- | --- | --- | --- |
-| `wdf_broker_publish_total` | counter | `outcome`: `accepted`, `rejected`, `unroutable`, `timeout`, `unavailable`, `topology-error` | the client on every publish, as its outcome or error |
-| `wdf_broker_settle_total` | counter | `call`: `ack`, `retry`, `dead_letter`, `release` | the client on every settle call of an intake delivery |
-| `wdf_broker_dead_letter_total` | counter | `reason`: `MALFORMED`, `UNSUPPORTED_VERSION`, `ADMISSION_FAILED` | the client on every `dead_letter` call, by its application reason |
+| `wft_broker_publish_total` | counter | `outcome`: `accepted`, `rejected`, `unroutable`, `timeout`, `unavailable`, `topology-error` | the client on every publish, as its outcome or error |
+| `wft_broker_settle_total` | counter | `call`: `ack`, `retry`, `dead_letter`, `release` | the client on every settle call of an intake delivery |
+| `wft_broker_dead_letter_total` | counter | `reason`: `MALFORMED`, `UNSUPPORTED_VERSION`, `ADMISSION_FAILED` | the client on every `dead_letter` call, by its application reason |
 
 The `reason` values are the application codes of `contracts/broker/reasons.yaml`, and `packages/broker/tests/test_reasons.py` holds them equal.
 Version 2 consumers: admission (#8), observability (#13) and dispatch (#24).

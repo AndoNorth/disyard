@@ -2,7 +2,7 @@
 
 import pytest
 from pydantic import ValidationError
-from wdf_jobdoc import Placeholder
+from wft_jobdoc import Placeholder
 
 
 def test_defaults(load, good):
@@ -270,7 +270,7 @@ def test_a_bad_parameter_declaration_is_refused(issues, good, declarations):
 
 
 @pytest.mark.parametrize(
-    "version", ["urn:wdf:schema:job:1.1", "urn:wdf:schema:job:2.0", "job", 1, None]
+    "version", ["urn:wft:schema:job:1.1", "urn:wft:schema:job:2.0", "job", 1, None]
 )
 def test_a_schema_version_this_reader_does_not_read_is_refused(issues, good, version):
     good["schema"] = version
@@ -299,7 +299,7 @@ def test_max_parallel_is_read(load, good):
 
 
 def test_a_reference_is_a_content_address(issues, good):
-    good["tasks"]["build"]["params"]["source"]["uri"] = f"s3://wdf-sources/sha256/bb/{'b' * 64}"
+    good["tasks"]["build"]["params"]["source"]["uri"] = f"s3://wft-sources/sha256/bb/{'b' * 64}"
     assert issues(good) == [("bad-value", "/tasks/build/params/source")]
 
 

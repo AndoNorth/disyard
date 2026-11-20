@@ -6,7 +6,7 @@
 # Usage: secrets.sh [render|password]. Exit 0 ok, 2 usage.
 set -euo pipefail
 
-state=${WDF_STATE_DIR:-${XDG_STATE_HOME:-$HOME/.local/state}/wasm-dag-forge}
+state=${WFT_STATE_DIR:-${XDG_STATE_HOME:-$HOME/.local/state}/wasm-dag-forge}
 file=$state/appdb.credential
 mode=${1:-render}
 
@@ -26,7 +26,7 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: appdb-credentials
-  namespace: wdf-infra
+  namespace: wft-infra
 type: Opaque
 stringData:
   POSTGRES_PASSWORD: $value

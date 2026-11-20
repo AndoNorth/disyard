@@ -2,9 +2,9 @@
 
 import pytest
 from botocore.exceptions import ClientError
-from wdf_storecheck.checks import Report, matrix_differences, observe_matrix, run_credentials
-from wdf_storecheck.cli import run
-from wdf_storecheck.s3 import error_code, status
+from wft_storecheck.checks import Report, matrix_differences, observe_matrix, run_credentials
+from wft_storecheck.cli import run
+from wft_storecheck.s3 import error_code, status
 
 pytestmark = pytest.mark.integration
 
@@ -33,11 +33,11 @@ def test_wrong_role_write_is_refused_and_leaves_nothing(store):
     key = f"{target.prefix}wrong-role"
     try:
         with pytest.raises(ClientError) as refused:
-            target.as_role("submit").put_object(Bucket="wdf-results", Key=key, Body=b"1")
+            target.as_role("submit").put_object(Bucket="wft-results", Key=key, Body=b"1")
         assert error_code(refused.value) == "AccessDenied"
         assert status(refused.value) == 403
-        assert not target.exists("wdf-results", key)
-        assert target.admin.list_objects_v2(Bucket="wdf-results", Prefix=key)["KeyCount"] == 0
+        assert not target.exists("wft-results", key)
+        assert target.admin.list_objects_v2(Bucket="wft-results", Prefix=key)["KeyCount"] == 0
     finally:
         target.sweep()
 

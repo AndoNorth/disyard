@@ -3,13 +3,13 @@ readiness, the manual pause and the resume."""
 
 from hypothesis import given, settings
 from hypothesis import strategies as st
-from wdf_jobdoc.plan_models import Plan
-from wdf_workflow.ready import DONE, initial, resume, settle, to_interrupt, to_place
-from wdf_workflow.result import exhausted, outcome
+from wft_jobdoc.plan_models import Plan
+from wft_workflow.ready import DONE, initial, resume, settle, to_interrupt, to_place
+from wft_workflow.result import exhausted, outcome
 
 HASH = "a" * 64
 SOURCE = {
-    "uri": f"s3://wdf-sources/sha256/aa/{HASH}",
+    "uri": f"s3://wft-sources/sha256/aa/{HASH}",
     "sha256": HASH,
     "size": 2048,
     "name": "bundle.tar.gz",

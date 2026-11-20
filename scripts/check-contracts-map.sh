@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Fails when a directory under contracts/ has no row in the map table of docs/contracts.md, or a row points at a path that does not exist.
-# Roles, owners, consumers and the diagram are not checked. WDF_CONTRACTS_ROOT points at another tree, which the self-test uses.
+# Roles, owners, consumers and the diagram are not checked. WFT_CONTRACTS_ROOT points at another tree, which the self-test uses.
 set -euo pipefail
-root=${WDF_CONTRACTS_ROOT:-$(cd "$(dirname "$0")/.." && pwd)}
+root=${WFT_CONTRACTS_ROOT:-$(cd "$(dirname "$0")/.." && pwd)}
 doc=$root/docs/contracts.md
 [ -f "$doc" ] || { echo "error: $doc not found" >&2; exit 1; }
 

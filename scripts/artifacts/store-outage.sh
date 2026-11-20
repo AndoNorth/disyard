@@ -6,8 +6,8 @@
 # Usage: store-outage.sh stop|start. Exit 0 the store is in the asked state, 1 it did not get there, 2 usage.
 set -euo pipefail
 
-context=kind-wdf
-namespace=wdf-infra
+context=kind-wft
+namespace=wft-infra
 store=statefulset/objectstore
 pod=pod/objectstore-0
 timeout=300s

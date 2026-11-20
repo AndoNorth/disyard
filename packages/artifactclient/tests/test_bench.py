@@ -3,8 +3,8 @@
 import re
 
 import pytest
-from wdf_artifactclient.bench import main
-from wdf_storecheck.s3 import dump_credentials
+from wft_artifactclient.bench import main
+from wft_storecheck.s3 import dump_credentials
 
 
 @pytest.fixture(scope="module")
@@ -33,7 +33,7 @@ def test_bench_twice_verifies_every_result_and_builds_the_same_index(store, cred
 
 @pytest.mark.integration
 def test_bench_exits_one_when_a_count_is_wrong(store, credentials, capsys, monkeypatch):
-    from wdf_artifactclient import bench
+    from wft_artifactclient import bench
 
     real = bench.measure
     monkeypatch.setattr(bench, "measure", lambda *a: {**real(*a), "results_verified": "0"})

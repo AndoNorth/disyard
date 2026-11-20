@@ -7,12 +7,12 @@ The [Consumers](#consumers) section names who reads each part.
 This directory pins the tenants, the priority classes and the caps of each preset, in one file that the broker, admission and dispatch all read.
 The broker names one intake queue after each tenant and priority class, admission reads the caps and the order of the classes, and dispatch refuses a tenant or a class outside the profile.
 The format is this contract's, and the admission policy that applies the caps is admission's.
-The schema is generated from the models of `wdf_broker.models` and never edited by hand.
+The schema is generated from the models of `wft_broker.models` and never edited by hand.
 
 ## The file
 
 [tenancy.yaml](tenancy.yaml), with schema [tenancy.schema.json](tenancy.schema.json), holds `profiles`, keyed by the preset names `ci`, `dev` and `soak`, and `tilt_profiles`.
-A runtime reads a profile through package data with `wdf_broker.tenancy.load(profile)`, which returns the typed profile, and never by repository path.
+A runtime reads a profile through package data with `wft_broker.tenancy.load(profile)`, which returns the typed profile, and never by repository path.
 
 | Field | Type | Rule | `ci` value |
 | --- | --- | --- | --- |
@@ -28,10 +28,10 @@ A runtime reads a profile through package data with `wdf_broker.tenancy.load(pro
 Every integer figure is written as `{value: N, estimate: true}`, so a value PR can tell which numbers it may change.
 `dev` and `soak` use the `ci` values, as the limits profiles do.
 The tenant `acme` is the tenant of every event vector, and `standard` is the one priority class of the proof of concept.
-A module learns the Tilt profile from `WDF_TILT_PROFILE` and passes the mapped tenancy profile to its service as `WDF_TENANCY_PROFILE`, so the broker, admission and dispatch always read one profile.
+A module learns the Tilt profile from `WFT_TILT_PROFILE` and passes the mapped tenancy profile to its service as `WFT_TENANCY_PROFILE`, so the broker, admission and dispatch always read one profile.
 
 Two repository tests, in `packages/broker/tests/test_tenancy.py`, read by repository path and so stay out of the loader.
-`test_tenancy_job_classes_match_limits` holds the keys of `caps.job_class` equal to the `classes` of each limits profile, read through `wdf_jobdoc.profile_files.load_profile`.
+`test_tenancy_job_classes_match_limits` holds the keys of `caps.job_class` equal to the `classes` of each limits profile, read through `wft_jobdoc.profile_files.load_profile`.
 `test_tenancy_profiles_match_presets` holds the profile names equal to the presets of `deploy/presets/`, and the keys of `tilt_profiles` equal to the profiles of `deploy/tilt/profiles.yaml`.
 
 ## Consumers
@@ -45,9 +45,9 @@ Two repository tests, in `packages/broker/tests/test_tenancy.py`, read by reposi
 
 ## Loader
 
-`contracts/tenancy/check.sh <file> [--as NAME]` runs `python -m wdf_broker.contract --check <file> [--as NAME]`, the loader of both this contract and the broker contract, where `NAME` is `tenancy`.
+`contracts/tenancy/check.sh <file> [--as NAME]` runs `python -m wft_broker.contract --check <file> [--as NAME]`, the loader of both this contract and the broker contract, where `NAME` is `tenancy`.
 It exits 0 when valid, 1 with `reason: <code>: <detail>` on stderr when not, and 2 on usage.
-The loader reads the event profile through the package data of `wdf_events`.
+The loader reads the event profile through the package data of `wft_events`.
 
 The first failing check wins, in this order.
 

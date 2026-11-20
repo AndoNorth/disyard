@@ -3,8 +3,8 @@
 from pathlib import Path
 
 import pytest
-from wdf_jobcheck.references import check_references
-from wdf_jobdoc import parse_document
+from wft_jobcheck.references import check_references
+from wft_jobdoc import parse_document
 
 VECTORS = Path(__file__).resolve().parents[3] / "contracts/job/vectors"
 FILES = sorted((VECTORS / "invalid/reference").glob("*/*.json"))

@@ -1,12 +1,12 @@
 # JobWorkflow replay corpus
 
 Recorded histories of `JobWorkflow`, one per behaviour, which every change to the workflow must still replay.
-The file format, the runner and the retirement of a release are those of the [`wdf_temporal` replay corpus](../../temporal/README.md#replay-corpus).
+The file format, the runner and the retirement of a release are those of the [`wft_temporal` replay corpus](../../temporal/README.md#replay-corpus).
 `owners.yaml` maps the workflow type to the epic that owns these histories.
 
 ## The gate
 
-`tests/replay/test_replay.py` replays every history here with `wdf_temporal.corpus.replay_corpus([JobWorkflow], root)`.
+`tests/replay/test_replay.py` replays every history here with `wft_temporal.corpus.replay_corpus([JobWorkflow], root)`.
 It needs no container, so it runs in `just test` and in CI.
 It also checks from the committed files that each history holds the behaviour it was recorded for, and `test_replay_detects_reordered_activity` shows that a changed workflow fails the replay while a build that only delegates passes it.
 
@@ -29,14 +29,14 @@ nix develop -c uv run --frozen pytest packages/temporal packages/workflow -v -k 
 nix develop -c uv run --frozen python packages/workflow/tests/replay/record.py <release>
 ```
 
-The recorder runs each behaviour on one dev server through `wdf_itest`, with `StaticPlacer`, `FakeControl` and a `FakePool` per pool.
+The recorder runs each behaviour on one dev server through `wft_itest`, with `StaticPlacer`, `FakeControl` and a `FakePool` per pool.
 Its workers poll the queues the service polls, the workflow worker under worker versioning, and its client carries the tracing interceptor as the service's does.
-The build label of `wdf_temporal.corpus` names the recording build, and a fixed identity and empty failure stack traces keep host names, process ids and local paths out of the files.
+The build label of `wft_temporal.corpus` names the recording build, and a fixed identity and empty failure stack traces keep host names, process ids and local paths out of the files.
 It refuses a release directory that exists, since the corpus only grows.
 
 ## Rules for changing the workflow
 
-The workflow is `wdf_workflow.job` and every module it runs inside a workflow, such as `taskpath`, `ready`, `result`, `budgets` and `aggregate`.
+The workflow is `wft_workflow.job` and every module it runs inside a workflow, such as `taskpath`, `ready`, `result`, `budgets` and `aggregate`.
 
 1. A change to the workflow passes the gate as it is, or it is guarded.
 2. A change to the commands a recorded history expects goes behind `workflow.patched("<change>")` and keeps the old branch for histories without the marker.
@@ -47,5 +47,5 @@ The workflow is `wdf_workflow.job` and every module it runs inside a workflow, s
    A behaviour that the corpus lacks is recorded as a new release beside the old ones, and its histories are added to `RECORDED` in the test.
 6. A `patched` branch is removed, through `workflow.deprecate_patch` first, only once the release whose histories need it is retired.
 
-Every job is pinned to the build that started it, so a new build meets an open job only when `wdf_workflow.versioning.move` puts it on a fixed build.
+Every job is pinned to the build that started it, so a new build meets an open job only when `wft_workflow.versioning.move` puts it on a fixed build.
 That build replays the whole history, and the move reverts when it cannot, so these rules are what keeps a fix able to land on a running job.

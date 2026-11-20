@@ -30,7 +30,7 @@
           "type": "integer"
         },
         "uri": {
-          "pattern": "^s3://wdf-checkpoints/.+$",
+          "pattern": "^s3://wft-checkpoints/.+$",
           "title": "Uri",
           "type": "string"
         }
@@ -74,7 +74,7 @@
       "type": "object"
     }
   },
-  "$id": "urn:wdf:schema:activity:heartbeat:1",
+  "$id": "urn:wft:schema:activity:heartbeat:1",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
   "description": "The details of each run_task heartbeat, so a lost worker still hands over its checkpoint.",

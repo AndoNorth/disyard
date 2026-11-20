@@ -16,10 +16,10 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 import pytest
-from wdf_kernel import writer
-from wdf_kernel.expected import expected_blocks, expected_digest
-from wdf_workflow.harness import echo_params
-from wdf_workflow.harness.cluster import CurrentBuild
+from wft_kernel import writer
+from wft_kernel.expected import expected_blocks, expected_digest
+from wft_workflow.harness import echo_params
+from wft_workflow.harness.cluster import CurrentBuild
 
 # Serves the canned answer of the forwarded resource from FAKE_FORWARDS, a JSON map of resource to
 # [status, body], on the forward's local port, or never listens when the answer is "never".
@@ -79,7 +79,7 @@ def forwards(tmp_path, monkeypatch) -> Callable[[dict], Path]:
 def verify(tmp_path, monkeypatch) -> Callable[..., None]:
     """Stands a script in for cluster-verify that prints `stdout` and `stderr`, then sleeps
     `sleep_s`, then exits with `code`."""
-    from wdf_acceptance import smoke
+    from wft_acceptance import smoke
 
     def stand_in(code: int, stdout: str = "", stderr: str = "", sleep_s: float = 0) -> None:
         script = tmp_path / "cluster-verify.sh"
@@ -145,7 +145,7 @@ def task(task_id: str, state: str, attempt: int) -> dict:
 
 def reference(task_id: str, kind: str, name: str, data: bytes) -> dict:
     return {
-        "uri": f"s3://wdf-results/acme/b/{JOB_ID}/42/{task_id}/r1a1/{name}",
+        "uri": f"s3://wft-results/acme/b/{JOB_ID}/42/{task_id}/r1a1/{name}",
         "sha256": hashlib.sha256(data).hexdigest(),
         "size": len(data),
         "name": name,
@@ -195,11 +195,11 @@ class Healthy:
 
 class Service:
     async def describe_namespace(self, request):
-        assert request.namespace == "wdf"
+        assert request.namespace == "wft"
 
 
 class Client:
-    namespace = "wdf"
+    namespace = "wft"
     workflow_service = Service()
 
 
@@ -208,8 +208,8 @@ def healthy(verify, forwards, listener, monkeypatch) -> Healthy:
     """Every layer answers as a healthy ci cluster does, the broker with no dead letter, Temporal
     with build exit-a current and deployed, and the job admitted, running with its compile done,
     then succeeded with results that hold the known answer."""
-    from wdf_acceptance import smoke
-    from wdf_acceptance.clients import broker, store
+    from wft_acceptance import smoke
+    from wft_acceptance.clients import broker, store
 
     verify(0, VERIFIED + COUNTED)
     log = forwards({"svc/placement": [200, POOLS]})
@@ -233,7 +233,7 @@ def healthy(verify, forwards, listener, monkeypatch) -> Healthy:
 
         def upload_source(self, data):
             job.calls.append(("upload", hashlib.sha256(data).hexdigest()))
-            return {"uri": "s3://wdf-sources/sha256/ab/abc", "kind": "source"}
+            return {"uri": "s3://wft-sources/sha256/ab/abc", "kind": "source"}
 
         def submit_one(self, document, batch_key):
             job.calls.append(("submit", batch_key))
@@ -261,12 +261,12 @@ def healthy(verify, forwards, listener, monkeypatch) -> Healthy:
         return Client()
 
     async def current(client, context, timeout_s):
-        assert (context, timeout_s) == ("kind-wdf", smoke.POLLERS_S)
+        assert (context, timeout_s) == ("kind-wft", smoke.POLLERS_S)
         return CurrentBuild("exit-a", ("exit-a",), None)
 
     monkeypatch.setattr(smoke.temporal, "connect", connect)
     monkeypatch.setattr(smoke, "make_deployed_current", current)
-    monkeypatch.delenv("WDF_PRESET", raising=False)
+    monkeypatch.delenv("WFT_PRESET", raising=False)
     return Healthy(log, job)
 
 

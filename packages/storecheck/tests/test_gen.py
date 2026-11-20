@@ -13,7 +13,7 @@ FILES = ["contracts/store/store.schema.json"]
 
 def run(*args):
     return subprocess.run(
-        [sys.executable, "-m", "wdf_storecheck.gen", *args], capture_output=True, text=True
+        [sys.executable, "-m", "wft_storecheck.gen", *args], capture_output=True, text=True
     )
 
 

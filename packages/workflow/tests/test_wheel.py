@@ -11,14 +11,14 @@ ROOT = Path(__file__).resolve().parents[3]
 
 PROBE = """
 import asyncio
-from wdf_workflow.contract import exit_classes, failure_classes, naming, pools, registry_pools
-from wdf_workflow.models import CONTRACT
-from wdf_workflow.placement import PlacementRequest, StaticPlacer
-from wdf_workflow.testing import placer_contract
-from wdf_workflow.testing.control import FakeControl
-from wdf_workflow.testing.pool import staged_outputs
+from wft_workflow.contract import exit_classes, failure_classes, naming, pools, registry_pools
+from wft_workflow.models import CONTRACT
+from wft_workflow.placement import PlacementRequest, StaticPlacer
+from wft_workflow.testing import placer_contract
+from wft_workflow.testing.control import FakeControl
+from wft_workflow.testing.pool import staged_outputs
 
-assert naming().namespace == "wdf"
+assert naming().namespace == "wft"
 assert set(pools().pools) == registry_pools() == set(staged_outputs())
 assert failure_classes()["operator_interrupt"].budget == "free"
 assert "guest_memory_cap" in exit_classes()
@@ -26,7 +26,7 @@ for name in ("failures.yaml", "status.yaml"):
     assert (CONTRACT / name).read_text(), name
 placer_contract(StaticPlacer())
 request = PlacementRequest(task_type="compile", cpu_milli=1000, memory_mib=1024, run_timeout_s=600)
-assert StaticPlacer().place(request).queue == "wdf-compile"
+assert StaticPlacer().place(request).queue == "wft-compile"
 assert set(FakeControl().activities()) >= {"emit", "load_plan"}
 """
 
@@ -56,7 +56,7 @@ def run(*cmd, **kwargs) -> subprocess.CompletedProcess:
 def clean_python(tmp_path_factory) -> Path:
     work = tmp_path_factory.mktemp("wheel")
     wheels = work / "wheels"
-    for package in workspace_closure("wdf-workflow"):
+    for package in workspace_closure("wft-workflow"):
         run("uv", "build", "--wheel", "--package", package, "-o", str(wheels), cwd=ROOT)
     venv = work / "venv"
     run("uv", "venv", "--python", sys.executable, str(venv))
@@ -66,9 +66,9 @@ def clean_python(tmp_path_factory) -> Path:
 
 
 def test_wheel_closure_follows_the_lock():
-    closure = workspace_closure("wdf-workflow")
-    assert {"wdf-workflow", "wdf-artifactreaper", "wdf-temporal", "wdf-storecheck"} <= set(closure)
-    assert "wdf-migrate" not in closure
+    closure = workspace_closure("wft-workflow")
+    assert {"wft-workflow", "wft-artifactreaper", "wft-temporal", "wft-storecheck"} <= set(closure)
+    assert "wft-migrate" not in closure
 
 
 def test_wheel_in_a_clean_venv_loads_both_contracts_from_package_data(clean_python, tmp_path):
@@ -95,7 +95,7 @@ def test_wheel_loader_checks_a_file_away_from_the_repository(
     name = relative.split("/")[1] if relative.startswith("vectors/") else None
     copy = tmp_path / Path(relative).name
     copy.write_text((ROOT / "contracts" / contract / relative).read_text())
-    command = [clean_python, "-I", "-m", "wdf_workflow.contract", "--check", str(copy)]
+    command = [clean_python, "-I", "-m", "wft_workflow.contract", "--check", str(copy)]
     result = subprocess.run(
         command + (["--as", name] if name else []), capture_output=True, text=True, cwd=tmp_path
     )

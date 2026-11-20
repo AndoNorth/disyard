@@ -9,8 +9,8 @@ import pytest
 ROOT = Path(__file__).resolve().parents[3]
 
 PROBE = """
-import wdf_runtime.__main__, wdf_runtime.calibrate
-from wdf_runtime import pins
+import wft_runtime.__main__, wft_runtime.calibrate
+from wft_runtime import pins
 
 assert pins.WIT_VERSION == "1.0.0", pins.WIT_VERSION
 """
@@ -27,10 +27,10 @@ def clean_python(tmp_path_factory) -> Path:
     work = tmp_path_factory.mktemp("wheel")
     wheels = work / "wheels"
     for package in (
-        "wdf-runtime",
-        "wdf-jobdoc",
-        "wdf-kernel",
-        "wdf-keys",
+        "wft-runtime",
+        "wft-jobdoc",
+        "wft-kernel",
+        "wft-keys",
     ):
         run("uv", "build", "--wheel", "--package", package, "-o", str(wheels), cwd=ROOT)
     venv = work / "venv"

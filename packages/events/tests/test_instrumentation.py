@@ -12,7 +12,7 @@ ROOT = Path(__file__).resolve().parents[3]
 DIR = ROOT / "contracts/instrumentation"
 SCHEMA = json.loads((DIR / "metrics.schema.json").read_text())
 METRICS = yaml.safe_load((DIR / "metrics.yaml").read_text())["metrics"]
-NAME = re.compile(r"^wdf_[a-z][a-z0-9]*(_[a-z0-9]+)+$")
+NAME = re.compile(r"^wft_[a-z][a-z0-9]*(_[a-z0-9]+)+$")
 
 
 def check(path: Path) -> subprocess.CompletedProcess:
@@ -38,13 +38,13 @@ def test_the_file_defines_the_metrics_of_the_event_contract():
     labels = {
         name: set(metric["labels"])
         for name, metric in METRICS.items()
-        if name.startswith("wdf_event_")
+        if name.startswith("wft_event_")
     }
     assert labels == {
-        "wdf_event_bytes": set(),
-        "wdf_event_size_warnings_total": set(),
-        "wdf_event_rejected_total": {"reason"},
-        "wdf_event_upgraded_total": {"type", "from_major"},
+        "wft_event_bytes": set(),
+        "wft_event_size_warnings_total": set(),
+        "wft_event_rejected_total": {"reason"},
+        "wft_event_upgraded_total": {"type", "from_major"},
     }
 
 
@@ -66,7 +66,7 @@ def test_each_label_declares_its_values_and_is_not_denied():
 
 def test_a_copy_with_a_jobid_label_fails(tmp_path):
     copy = yaml.safe_load((DIR / "metrics.yaml").read_text())
-    copy["metrics"]["wdf_event_rejected_total"]["labels"]["jobid"] = {"values": ["x"]}
+    copy["metrics"]["wft_event_rejected_total"]["labels"]["jobid"] = {"values": ["x"]}
     path = tmp_path / "metrics.yaml"
     path.write_text(yaml.safe_dump(copy))
     run = check(path)

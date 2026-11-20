@@ -2,7 +2,7 @@
 calls in flight per tenant and per process."""
 
 import pytest
-from wdf_dispatchapi.limits import CallSlots, ConfigError, Limits, TooManyCalls
+from wft_dispatchapi.limits import CallSlots, ConfigError, Limits, TooManyCalls
 
 
 def test_defaults_are_the_contract_limits():
@@ -20,7 +20,7 @@ def test_defaults_are_the_contract_limits():
 
 
 def test_limits_from_the_environment():
-    environ = {"WDF_DISPATCH_ENTRIES": "10", "WDF_DISPATCH_IDLE_TIMEOUT_S": "0.5", "OTHER": "1"}
+    environ = {"WFT_DISPATCH_ENTRIES": "10", "WFT_DISPATCH_IDLE_TIMEOUT_S": "0.5", "OTHER": "1"}
 
     assert Limits.from_env(environ) == Limits(entries=10, idle_timeout_s=0.5)
     assert Limits.from_env({}) == Limits()
@@ -29,7 +29,7 @@ def test_limits_from_the_environment():
 @pytest.mark.parametrize("value", ["ten", "1.5", "0", "-3"])
 def test_limits_refuse_a_bad_value(value):
     with pytest.raises(ConfigError, match="ENTRIES|entries"):
-        Limits.from_env({"WDF_DISPATCH_ENTRIES": value})
+        Limits.from_env({"WFT_DISPATCH_ENTRIES": value})
 
 
 def test_calls_per_tenant():

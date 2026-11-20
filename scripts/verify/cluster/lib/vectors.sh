@@ -22,7 +22,7 @@ grep -qx "Version: $version" "$dir/README.md" || { echo "FAIL $name: README.md l
 # A contract whose files resolve pins can ship vectors/versions.yaml, which stands in for deploy/versions.yaml for
 # the vectors only, so real files below still resolve against the real pins.
 vector_check() {
-    if [ -f "$dir/vectors/versions.yaml" ]; then WDF_VERSIONS="$dir/vectors/versions.yaml" "$check" "$1"; else "$check" "$1"; fi
+    if [ -f "$dir/vectors/versions.yaml" ]; then WFT_VERSIONS="$dir/vectors/versions.yaml" "$check" "$1"; else "$check" "$1"; fi
 }
 
 expect_valid() {

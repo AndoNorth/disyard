@@ -2,7 +2,7 @@
 
 from datetime import UTC, datetime
 
-from wdf_events import build_event, from_bytes, to_event_row
+from wft_events import build_event, from_bytes, to_event_row
 
 JOB = "3a9617fa-df7c-5760-a644-42d559e0f433"
 
@@ -10,7 +10,7 @@ JOB = "3a9617fa-df7c-5760-a644-42d559e0f433"
 def build(name="job.started", data=None):
     return build_event(
         name,
-        source="/wdf/workflow",
+        source="/wft/workflow",
         tenant="acme",
         jobid=JOB,
         priorityclass="standard",

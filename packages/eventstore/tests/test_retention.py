@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 import yaml
-from wdf_compat.window import MAX_JOB_DURATION_DAYS
+from wft_compat.window import MAX_JOB_DURATION_DAYS
 
 ROOT = Path(__file__).resolve().parents[3]
 STATE = ROOT / "contracts/state"

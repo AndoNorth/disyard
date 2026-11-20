@@ -7,12 +7,12 @@ from datetime import UTC, datetime, timedelta
 
 import psycopg
 import pytest
-from wdf_artifactindex import index_reference, link_use, mark_deleted
-from wdf_events import build_event
-from wdf_eventstore import events_for_job, insert_events
-from wdf_jobstate import JobRow, get_job, insert_accepted, mark_published, transition
-from wdf_keys import workflow_id
-from wdf_stateops import check_invariants
+from wft_artifactindex import index_reference, link_use, mark_deleted
+from wft_events import build_event
+from wft_eventstore import events_for_job, insert_events
+from wft_jobstate import JobRow, get_job, insert_accepted, mark_published, transition
+from wft_keys import workflow_id
+from wft_stateops import check_invariants
 
 pytestmark = pytest.mark.integration
 
@@ -30,13 +30,13 @@ def make_row(**overrides) -> JobRow:
         "batch_id": str(uuid.uuid4()),
         "priority_class": "standard",
         "manifest_ref": {
-            "uri": f"s3://wdf-sources/sha256/aa/{SHA}",
+            "uri": f"s3://wft-sources/sha256/aa/{SHA}",
             "sha256": SHA,
             "size": 7,
             "name": "m",
             "kind": "manifest",
         },
-        "schema_version": "urn:wdf:schema:job.accepted:1.0",
+        "schema_version": "urn:wft:schema:job.accepted:1.0",
         "traceparent": TRACE,
         "seed": 3,
         "parameters": {"a": 1},
@@ -48,7 +48,7 @@ def make_row(**overrides) -> JobRow:
 def make_event(name, row: JobRow, data=None, jobclass=None, **attempt):
     return build_event(
         name,
-        source="/wdf/dispatch",
+        source="/wft/dispatch",
         tenant=row.tenant,
         jobid=row.job_id,
         priorityclass=row.priority_class,
@@ -71,7 +71,7 @@ def accepted_event(row: JobRow, jobclass=None):
 
 def result_reference(row: JobRow) -> dict:
     return {
-        "uri": f"s3://wdf-results/acme/b/{row.job_id}/seed-7/sim/r0a1/result.xml",
+        "uri": f"s3://wft-results/acme/b/{row.job_id}/seed-7/sim/r0a1/result.xml",
         "sha256": "4" * 64,
         "size": 1,
         "name": "result.xml",
@@ -210,7 +210,7 @@ def test_accepted_event_class_differing_from_the_row_is_reported(db):
 def blob(n: int) -> dict:
     digest = f"{n:064x}"
     return {
-        "uri": f"s3://wdf-sources/sha256/{digest[:2]}/{digest}",
+        "uri": f"s3://wft-sources/sha256/{digest[:2]}/{digest}",
         "sha256": digest,
         "size": 1,
         "name": "b",
@@ -250,7 +250,7 @@ def test_retention_invariant_reports_a_seeded_violation(db):
     mark_deleted(db, finished_output["uri"], now)
     checkpoint = {
         **output,
-        "uri": f"s3://wdf-checkpoints/acme/b/{live.job_id}/seed-7/sim/r0a1/s1/checkpoint.json",
+        "uri": f"s3://wft-checkpoints/acme/b/{live.job_id}/seed-7/sim/r0a1/s1/checkpoint.json",
         "kind": "checkpoint",
         "name": "checkpoint.json",
     }
@@ -285,7 +285,7 @@ def test_row_and_event_commit_or_roll_back_together(appdb):
 
 def cli(*args) -> subprocess.CompletedProcess:
     return subprocess.run(
-        [sys.executable, "-m", "wdf_stateops.invariants", *args],
+        [sys.executable, "-m", "wft_stateops.invariants", *args],
         capture_output=True,
         text=True,
     )

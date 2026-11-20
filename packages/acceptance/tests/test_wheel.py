@@ -17,15 +17,15 @@ import importlib
 import pkgutil
 
 import temporalio
-import wdf_acceptance
-import wdf_broker
-import wdf_clusterkit
-import wdf_kernel
-import wdf_workflow
-import wdf_workloads
-from wdf_acceptance.report import count_line, ok
+import wft_acceptance
+import wft_broker
+import wft_clusterkit
+import wft_kernel
+import wft_workflow
+import wft_workloads
+from wft_acceptance.report import count_line, ok
 
-for module in pkgutil.walk_packages(wdf_acceptance.__path__, "wdf_acceptance."):
+for module in pkgutil.walk_packages(wft_acceptance.__path__, "wft_acceptance."):
     if not module.name.endswith(".__main__"):
         importlib.import_module(module.name)
 assert count_line("ci", [ok("api", "ready")], 1) == "smoke ci: 1 ok, 0 failed, 0 skipped, 1 s"
@@ -57,7 +57,7 @@ def run(*cmd, **kwargs) -> subprocess.CompletedProcess:
 def clean_python(tmp_path_factory) -> Path:
     work = tmp_path_factory.mktemp("wheel")
     wheels = work / "wheels"
-    for package in workspace_closure("wdf-acceptance"):
+    for package in workspace_closure("wft-acceptance"):
         run("uv", "build", "--wheel", "--package", package, "-o", str(wheels), cwd=ROOT)
     venv = work / "venv"
     run("uv", "venv", "--python", sys.executable, str(venv))
@@ -70,11 +70,11 @@ def test_wheel_declares_the_dependency_set():
     project = tomllib.loads((ROOT / "packages/acceptance/pyproject.toml").read_text())["project"]
     assert sorted(project["dependencies"]) == [
         "temporalio",
-        "wdf-broker",
-        "wdf-clusterkit",
-        "wdf-kernel",
-        "wdf-workflow",
-        "wdf-workloads",
+        "wft-broker",
+        "wft-clusterkit",
+        "wft-kernel",
+        "wft-workflow",
+        "wft-workloads",
     ]
 
 

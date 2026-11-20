@@ -1,6 +1,6 @@
-"""The admission service as `python -m wdf_admission.service` runs it, configured from the
+"""The admission service as `python -m wft_admission.service` runs it, configured from the
 environment, except that each start goes to a recording fake, which moves the started row on to
-`succeeded` as the workflow would, on the superuser connection of WDF_TEST_SUPERUSER_DSN.
+`succeeded` as the workflow would, on the superuser connection of WFT_TEST_SUPERUSER_DSN.
 
 It prints the started jobs and the peak resident memory of the process once it has drained.
 """
@@ -12,15 +12,15 @@ import re
 from pathlib import Path
 
 import psycopg
-from wdf_admission.service import READY_ENV, Config, serve
-from wdf_broker.tenancy import load
-from wdf_jobstate import transition
+from wft_admission.service import READY_ENV, Config, serve
+from wft_broker.tenancy import load
+from wft_jobstate import transition
 
 
 def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
     config = Config.from_env(os.environ)
-    db = psycopg.connect(os.environ["WDF_TEST_SUPERUSER_DSN"], autocommit=True)
+    db = psycopg.connect(os.environ["WFT_TEST_SUPERUSER_DSN"], autocommit=True)
     started = []
 
     async def recording(row, accepted):

@@ -8,7 +8,7 @@
   "properties": {
     "name": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" },
     "group": { "enum": ["infra", "control", "workers", "obs"] },
-    "namespace": { "enum": ["wdf-infra", "wdf-control", "wdf-workers", "wdf-obs"] },
+    "namespace": { "enum": ["wft-infra", "wft-control", "wft-workers", "wft-obs"] },
     "artifact": {
       "type": "object",
       "required": ["kind", "pin"],
@@ -65,10 +65,10 @@
     }
   },
   "allOf": [
-    { "if": { "properties": { "group": { "const": "infra" } } }, "then": { "properties": { "namespace": { "const": "wdf-infra" } } } },
-    { "if": { "properties": { "group": { "const": "control" } } }, "then": { "properties": { "namespace": { "const": "wdf-control" } } } },
-    { "if": { "properties": { "group": { "const": "workers" } } }, "then": { "properties": { "namespace": { "const": "wdf-workers" } } } },
-    { "if": { "properties": { "group": { "const": "obs" } } }, "then": { "properties": { "namespace": { "const": "wdf-obs" } } } }
+    { "if": { "properties": { "group": { "const": "infra" } } }, "then": { "properties": { "namespace": { "const": "wft-infra" } } } },
+    { "if": { "properties": { "group": { "const": "control" } } }, "then": { "properties": { "namespace": { "const": "wft-control" } } } },
+    { "if": { "properties": { "group": { "const": "workers" } } }, "then": { "properties": { "namespace": { "const": "wft-workers" } } } },
+    { "if": { "properties": { "group": { "const": "obs" } } }, "then": { "properties": { "namespace": { "const": "wft-obs" } } } }
   ],
   "$defs": {
     "quantities": {

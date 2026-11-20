@@ -7,13 +7,13 @@ import shutil
 from datetime import UTC, datetime, timedelta
 
 import pytest
-from wdf_broker import client, dlq
-from wdf_broker.client import Credentials, connect
-from wdf_broker.contract import topology
-from wdf_broker.models import BrokerUnavailable, Outcome
-from wdf_broker.testing.container import broker_container
-from wdf_compat import Registry
-from wdf_events.profile import CONTRACT_DIR
+from wft_broker import client, dlq
+from wft_broker.client import Credentials, connect
+from wft_broker.contract import topology
+from wft_broker.models import BrokerUnavailable, Outcome
+from wft_broker.testing.container import broker_container
+from wft_compat import Registry
+from wft_events.profile import CONTRACT_DIR
 
 pytestmark = pytest.mark.integration
 
@@ -181,8 +181,8 @@ def test_dlq_replay_upgrades_previous_major(run, dead, open_as, held, tmp_path):
     def upgrade(document: dict) -> dict:
         return {
             **document,
-            "type": "dev.wdf.job.accepted.v2",
-            "dataschema": "urn:wdf:schema:job.accepted:2.0",
+            "type": "dev.wft.job.accepted.v2",
+            "dataschema": "urn:wft:schema:job.accepted:2.0",
         }
 
     registry = Registry(
@@ -301,7 +301,7 @@ def test_dlq_show_and_selectors(run, dead):
         "detail: no-row: message 2",
         f"jobid: {JOB[:-1]}2",
     ]
-    assert "annotation x-opt-wdf-reason: ADMISSION_FAILED" in out
+    assert "annotation x-opt-wft-reason: ADMISSION_FAILED" in out
     assert f"annotation x-first-death-queue: {QUEUE}" in out
     assert out[-1] == f"body: {job(2).decode()}"
     code, out, err = run("show", "--reason", "UNSUPPORTED_VERSION")

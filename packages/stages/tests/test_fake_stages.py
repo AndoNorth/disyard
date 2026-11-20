@@ -2,10 +2,10 @@
 
 import pytest
 import yaml
-from wdf_stages import FAKES, ContractViolation, Facts, run_stage_contract
-from wdf_stages.check import TABLE
-from wdf_stages.contract import default_cases, invoke
-from wdf_stages.recording import type_name
+from wft_stages import FAKES, ContractViolation, Facts, run_stage_contract
+from wft_stages.check import TABLE
+from wft_stages.contract import default_cases, invoke
+from wft_stages.recording import type_name
 
 STAGES = yaml.safe_load(TABLE.read_text())["stages"]
 
@@ -45,7 +45,7 @@ def read_undeclared_data_field(inbound, facts):
 
 def emit_from_another_source(inbound, facts):
     events = FAKES["dispatch"](inbound, facts)
-    return [e.model_copy(update={"source": "/wdf/control"}) for e in events]
+    return [e.model_copy(update={"source": "/wft/control"}) for e in events]
 
 
 def emit_an_undeclared_type(inbound, facts):
@@ -57,7 +57,7 @@ def emit_an_undeclared_type(inbound, facts):
     [
         ("placement", read_undeclared_attribute, "undeclared attributes \\['subject'\\]"),
         ("placement", read_undeclared_data_field, "undeclared data fields \\['inputs'\\]"),
-        ("dispatch", emit_from_another_source, "from /wdf/control"),
+        ("dispatch", emit_from_another_source, "from /wft/control"),
         ("placement", emit_an_undeclared_type, "does not declare"),
     ],
 )

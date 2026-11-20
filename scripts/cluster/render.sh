@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Renders the ctlptl cluster and registry files and one kubelet patch per node from a preset, without starting anything.
 # Usage: render.sh <preset>. Writes <dir>/<preset>/{cluster.yaml,registry.yaml,limits.yaml,patches/<node>/*.yaml} and
-# prints the directory. WDF_HOST_MEM_KIB and WDF_HOST_CPUS override the host size read from the docker daemon. The kind cluster is always named wdf, so every preset renders the same context and container names.
-# The directory is WDF_RENDER_DIR, or a cache directory outside the tree, because the output holds ctlptl, kubeadm and
+# prints the directory. WFT_HOST_MEM_KIB and WFT_HOST_CPUS override the host size read from the docker daemon. The kind cluster is always named wft, so every preset renders the same context and container names.
+# The directory is WFT_RENDER_DIR, or a cache directory outside the tree, because the output holds ctlptl, kubeadm and
 # kubelet documents that the repo's manifest lint has no schema for.
 # Exit 0 rendered, 1 the preset or a table is invalid, 2 usage.
 set -euo pipefail
@@ -36,7 +36,7 @@ pool_label=$(yq '.pool_label' contracts/topology/topology.yaml)
 taint_effect=$(yq '.taint_effect' contracts/topology/topology.yaml)
 image="kindest/node:$(yq '.kind_node_image.version' deploy/versions.yaml)@$(yq '.kind_node_image.digest' deploy/versions.yaml)"
 registry_image="registry:$(yq '.images.registry.version' deploy/versions.yaml)@$(yq '.images.registry.digest' deploy/versions.yaml)"
-registry_name=wdf-registry
+registry_name=wft-registry
 registry_port=5001
 # The control plane keeps kubeadm's own taint, so it is registered without a pool label or taint of its own.
 # A cpu reservation for system daemons is not part of the preset contract, so every node reserves the same amount.
@@ -44,22 +44,22 @@ SYSTEM_RESERVED_CPU=100m
 # kind patches a kubeadm document only when the patch carries the apiVersion kind generated for the node image, and it
 # ignores a mismatch silently. v1beta3 is what kind generates for the pinned node image, and up.sh checks the labels.
 KUBEADM_API=kubeadm.k8s.io/v1beta3
-PATCH_DIR=/etc/wdf-patches
+PATCH_DIR=/etc/wft-patches
 
 # The kubelet sizes a node from the host that runs the node containers, so the same host figures decide the reservation.
-host_mem_kib=${WDF_HOST_MEM_KIB:-$(docker info --format '{{.MemTotal}}' | awk '{ print int($1 / 1024) }')}
-host_cpus=${WDF_HOST_CPUS:-$(docker info --format '{{.NCPU}}')}
+host_mem_kib=${WFT_HOST_MEM_KIB:-$(docker info --format '{{.MemTotal}}' | awk '{ print int($1 / 1024) }')}
+host_cpus=${WFT_HOST_CPUS:-$(docker info --format '{{.NCPU}}')}
 
-out=${WDF_RENDER_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}/wasm-dag-forge/cluster}/$name
+out=${WFT_RENDER_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}/wasm-dag-forge/cluster}/$name
 rm -rf "$out"
 mkdir -p "$out"
 
 # Hard limits of every node container, one entry per kind node in kind's own naming order (control-plane, worker,
 # worker2, ...). Memory swap equals memory, so no node can grow past its declared size. kind has no limit setting,
 # so limits.sh applies this file with docker update once the nodes exist.
-limits_head() { printf 'cluster: wdf\nnodes:\n'; }
+limits_head() { printf 'cluster: wft\nnodes:\n'; }
 limit_entry() { # <kind node name> <role> <cpus> <memory_mib>
-    printf '  - container: wdf-%s\n    role: %s\n    cpus: %s\n    memory_mib: %s\n    memory_swap_mib: %s\n' \
+    printf '  - container: wft-%s\n    role: %s\n    cpus: %s\n    memory_mib: %s\n    memory_swap_mib: %s\n' \
         "$1" "$2" "$3" "$4" "$4"
 }
 limits_head >"$out/limits.yaml"
@@ -134,10 +134,10 @@ PATCH
 apiVersion: ctlptl.dev/v1alpha1
 kind: Cluster
 product: kind
-name: kind-wdf
+name: kind-wft
 registry: $registry_name
 kindV1Alpha4Cluster:
-  name: wdf
+  name: wft
   nodes:
 HEAD
     # kind lists the control plane first, then the workers in preset order.

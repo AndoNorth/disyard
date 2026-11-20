@@ -1,12 +1,12 @@
 ---
 metrics:
-  wdf_exampleBytes:
+  wft_exampleBytes:
     type: histogram
     unit: bytes
     help: Size of something.
     buckets: [1, 10]
     labels: {}
-  wdf_example_total:
+  wft_example_total:
     type: counter
     help: Things counted.
     labels:

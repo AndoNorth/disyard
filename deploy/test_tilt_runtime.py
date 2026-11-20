@@ -14,7 +14,7 @@ pytestmark = pytest.mark.skipif(shutil.which("tilt") is None, reason="tilt not o
 
 def test_kubeconfig_lands_in_the_private_runtime_dir(tmp_path, tmp_path_factory):
     (tmp_path / "Tiltfile").write_text("local('true')\n")
-    env = os.environ | {"KUBECONFIG": str(ROOT / "scripts/tilt/fixtures/kubeconfig-wdf.yaml")}
+    env = os.environ | {"KUBECONFIG": str(ROOT / "scripts/tilt/fixtures/kubeconfig-wft.yaml")}
     run = subprocess.run(
         ["tilt", "alpha", "tiltfile-result", "-f", str(tmp_path / "Tiltfile")],
         cwd=tmp_path,

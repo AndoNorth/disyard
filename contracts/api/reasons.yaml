@@ -74,7 +74,7 @@ reasons:
   - code: UNREADABLE_BUNDLE
     scopes: [upload]
     http: 422
-    when: wdf_compile.bundle.info refuses a source bundle
+    when: wft_compile.bundle.info refuses a source bundle
   - code: OBJECT_MISSING
     scopes: [call]
     http: 409

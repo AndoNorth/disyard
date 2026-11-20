@@ -4,11 +4,11 @@ from pathlib import Path
 
 import pytest
 import yaml
-from wdf_jobcheck import pool_budget
-from wdf_jobcheck.resources import check_resources
-from wdf_jobdoc import parse_document
-from wdf_jobdoc.profile import parse_cpu_milli, parse_memory_mib
-from wdf_jobdoc.profile_files import load_profile
+from wft_jobcheck import pool_budget
+from wft_jobcheck.resources import check_resources
+from wft_jobdoc import parse_document
+from wft_jobdoc.profile import parse_cpu_milli, parse_memory_mib
+from wft_jobdoc.profile_files import load_profile
 
 ROOT = Path(__file__).resolve().parents[3]
 FILES = sorted((ROOT / "contracts/job/vectors/invalid/resource").glob("*/*.json"))

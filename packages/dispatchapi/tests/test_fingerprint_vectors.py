@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 
 import pytest
-from wdf_dispatchapi import contract
+from wft_dispatchapi import contract
 
 PINNED = Path(__file__).resolve().parents[3] / "contracts/api/vectors/fingerprint.json"
 VECTORS = json.loads(PINNED.read_text())["vectors"]

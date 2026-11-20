@@ -9,18 +9,18 @@ import uuid
 from datetime import timedelta
 
 import pytest
-from wdf_artifactclient.commit import commit
-from wdf_artifactclient.errors import ArtifactNotFound
-from wdf_artifactindex import Deleted, Purged, purge, tombstone
-from wdf_artifactreaper import content
-from wdf_artifactreaper.content import (
+from wft_artifactclient.commit import commit
+from wft_artifactclient.errors import ArtifactNotFound
+from wft_artifactindex import Deleted, Purged, purge, tombstone
+from wft_artifactreaper import content
+from wft_artifactreaper.content import (
     CONTENT_BUCKETS,
     SWEEP_BEFORE_LOCK,
     collect_content,
     sweep_orphans,
 )
-from wdf_artifactreaper.reap import load_windows
-from wdf_storecheck.fixtures import running
+from wft_artifactreaper.reap import load_windows
+from wft_storecheck.fixtures import running
 
 pytestmark = [pytest.mark.integration, pytest.mark.pair, pytest.mark.isolated]
 
@@ -84,7 +84,7 @@ def test_orphan_object_is_deleted_after_the_grace(world, artifacts, clock, reape
     clock.advance(hours=2)
     with reaper.transaction():
         assert isinstance(purge(reaper, purged.uri, clock.now, interval, grace), Purged)
-        store.delete_object(Bucket="wdf-sources", Key=purged.uri.removeprefix("s3://wdf-sources/"))
+        store.delete_object(Bucket="wft-sources", Key=purged.uri.removeprefix("s3://wft-sources/"))
     world.submit.put_content(world.payload("purged"), "manifest", "purged.bin")
     assert row(world, purged) == (True, True) and present(world, purged)
 
@@ -153,9 +153,9 @@ def test_orphan_sweep_continues_from_its_cursor(world, clock, sweep, monkeypatch
     deleted = [sweep(later) for _ in range(3)]
 
     assert deleted == [3, 3, 2]
-    assert world.keys("wdf-sources", "") == []
+    assert world.keys("wft-sources", "") == []
     position = world.db.execute(
-        "SELECT position FROM reaper_cursor WHERE name = 'orphan-sweep:wdf-sources'"
+        "SELECT position FROM reaper_cursor WHERE name = 'orphan-sweep:wft-sources'"
     ).fetchone()
     assert position == ("",)
 

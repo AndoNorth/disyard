@@ -9,12 +9,12 @@ from pathlib import Path
 
 import pytest
 import yaml
-from wdf_artifactindex import index_reference
-from wdf_events import build_event
-from wdf_eventstore import insert_events
-from wdf_jobstate import JobRow, insert_accepted, transition
-from wdf_stateops import inputs
-from wdf_stateops.inputs import Refused, Store, StoreUnavailable, load, parse
+from wft_artifactindex import index_reference
+from wft_events import build_event
+from wft_eventstore import insert_events
+from wft_jobstate import JobRow, insert_accepted, transition
+from wft_stateops import inputs
+from wft_stateops.inputs import Refused, Store, StoreUnavailable, load, parse
 
 SQL_INPUTS = [i.name for i in load().inputs if i.source.kind == "sql"]
 CONTRACT_INPUTS = [i.name for i in load().inputs if i.source.kind in ("sql", "invariants")]
@@ -34,7 +34,7 @@ def values(db, store=None) -> dict[str, float]:
 def event_at(time: datetime):
     return build_event(
         "job.started",
-        source="/wdf/dispatch",
+        source="/wft/dispatch",
         tenant="acme",
         jobid=str(uuid.uuid4()),
         priorityclass="standard",
@@ -71,7 +71,7 @@ def test_ingest_lag_grows_with_the_age_of_the_newest_event(db):
 @pytest.mark.integration
 def test_the_command_prints_a_line_per_input_and_skips_the_store_inputs(appdb):
     run = subprocess.run(
-        [sys.executable, "-m", "wdf_stateops.inputs", "--dsn", appdb],
+        [sys.executable, "-m", "wft_stateops.inputs", "--dsn", appdb],
         capture_output=True,
         text=True,
     )
@@ -87,7 +87,7 @@ def test_the_command_prints_a_line_per_input_and_skips_the_store_inputs(appdb):
 
 def test_an_unreachable_database_exits_three():
     run = subprocess.run(
-        [sys.executable, "-m", "wdf_stateops.inputs", "--dsn", "postgresql://127.0.0.1:1/x"],
+        [sys.executable, "-m", "wft_stateops.inputs", "--dsn", "postgresql://127.0.0.1:1/x"],
         capture_output=True,
         text=True,
     )
@@ -96,7 +96,7 @@ def test_an_unreachable_database_exits_three():
 
 def test_a_store_endpoint_needs_credentials():
     run = subprocess.run(
-        [sys.executable, "-m", "wdf_stateops.inputs", "--dsn", "x", "--store-endpoint", "u"],
+        [sys.executable, "-m", "wft_stateops.inputs", "--dsn", "x", "--store-endpoint", "u"],
         capture_output=True,
         text=True,
     )
@@ -124,14 +124,14 @@ def test_a_failed_df_is_a_store_error(monkeypatch):
 def test_bytes_per_bucket_come_from_the_capacity_mode(monkeypatch, tmp_path):
     def capacity(endpoint, credentials, mode, say):
         assert mode == "capacity"
-        say("bytes wdf-sources 7")
-        say("bytes wdf-results 0")
+        say("bytes wft-sources 7")
+        say("bytes wft-results 0")
         return 0
 
     credentials = tmp_path / "c.json"
     credentials.write_text('{"reaper": {"access_key": "a", "secret_key": "b"}}')
     monkeypatch.setattr(inputs, "run_storecheck", capacity)
-    assert inputs.store_bytes(Store("u", credentials)) == {"wdf-sources": 7, "wdf-results": 0}
+    assert inputs.store_bytes(Store("u", credentials)) == {"wft-sources": 7, "wft-results": 0}
 
 
 def test_a_failing_capacity_mode_is_a_store_error(monkeypatch, tmp_path):
@@ -150,7 +150,7 @@ def test_a_failing_capacity_mode_is_a_store_error(monkeypatch, tmp_path):
 def task_event(name: str, job: str, task: str, data: dict, attempt: int | None = None, **kwargs):
     return build_event(
         name,
-        source="/wdf/workflow",
+        source="/wft/workflow",
         tenant="acme",
         jobid=job,
         priorityclass="standard",
@@ -232,13 +232,13 @@ def job_row() -> JobRow:
         batch_id=str(uuid.uuid4()),
         priority_class="standard",
         manifest_ref={
-            "uri": f"s3://wdf-sources/sha256/aa/{SHA}",
+            "uri": f"s3://wft-sources/sha256/aa/{SHA}",
             "sha256": SHA,
             "size": 7,
             "name": "m",
             "kind": "manifest",
         },
-        schema_version="wdf.job.accepted/3",
+        schema_version="wft.job.accepted/3",
         traceparent=TRACE,
         seed=3,
         parameters={},
@@ -246,7 +246,7 @@ def job_row() -> JobRow:
     )
 
 
-def finished_job(db, terminal_ago: timedelta, bucket: str = "wdf-results", kind: str = "result"):
+def finished_job(db, terminal_ago: timedelta, bucket: str = "wft-results", kind: str = "result"):
     """A succeeded job that ended the given time ago, with one live attempt-scoped row."""
     row = job_row()
     insert_accepted(db, [row])
@@ -292,7 +292,7 @@ def test_reaper_overdue_counts_rows_past_their_window_within_the_hard_expiry(db)
 
 @pytest.mark.integration
 def test_reaper_overdue_reads_the_checkpoint_window_of_the_bucket(db):
-    row = finished_job(db, timedelta(days=2), "wdf-checkpoints", "checkpoint")
+    row = finished_job(db, timedelta(days=2), "wft-checkpoints", "checkpoint")
     assert values(db)["reaper_overdue"] == 1
     db.execute("INSERT INTO reaper_job (job_id, results_done_at) VALUES (%s, now())", (row.job_id,))
     assert values(db)["reaper_overdue"] == 1
@@ -310,7 +310,7 @@ def test_checkpoint_age_is_the_largest_age_of_the_newest_checkpoint_of_a_live_jo
         index_reference(
             db,
             {
-                "uri": f"s3://wdf-checkpoints/acme/b/{row.job_id}/seed-3/sim/r0a1/s{n}/c.json",
+                "uri": f"s3://wft-checkpoints/acme/b/{row.job_id}/seed-3/sim/r0a1/s{n}/c.json",
                 "sha256": "5" * 64,
                 "size": 1,
                 "name": "c.json",

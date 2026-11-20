@@ -23,9 +23,9 @@ def render(preset, out):
         env={
             "PATH": os.environ["PATH"],
             "HOME": os.environ["HOME"],
-            "WDF_RENDER_DIR": str(out),
-            "WDF_HOST_MEM_KIB": str(HOST_MEM_KIB),
-            "WDF_HOST_CPUS": str(HOST_CPUS),
+            "WFT_RENDER_DIR": str(out),
+            "WFT_HOST_MEM_KIB": str(HOST_MEM_KIB),
+            "WFT_HOST_CPUS": str(HOST_CPUS),
         },
         capture_output=True,
         text=True,
@@ -66,15 +66,15 @@ def test_every_node_is_rendered_from_the_preset(preset, tmp_path):
     patches = re.findall(r"kubeadmConfigPatches:\n        - \|\n((?:          .*\n)+)", cluster)
     assert len(patches) == len(want)
     assert len(list(out.glob("patches/*/kubeletconfiguration+merge.yaml"))) == len(want)
-    mounts = re.findall(r"hostPath: (\S+)\n          containerPath: /etc/wdf-patches\n", cluster)
+    mounts = re.findall(r"hostPath: (\S+)\n          containerPath: /etc/wft-patches\n", cluster)
     assert len(mounts) == len(want)
     for patch, (role, _, _) in zip(patches, want, strict=True):
         assert "apiVersion: kubeadm.k8s.io/v1beta3\n" in patch
-        assert "patches:\n            directory: /etc/wdf-patches\n" in patch
+        assert "patches:\n            directory: /etc/wft-patches\n" in patch
         if role == "control-plane":
             assert "kind: InitConfiguration" in patch
         else:
-            assert f"node-labels: wdf.dev/pool={role}\n" in patch
+            assert f"node-labels: wft.dev/pool={role}\n" in patch
             assert f"value: {role}\n                effect: NoSchedule" in patch
 
 
@@ -134,17 +134,17 @@ def test_every_node_has_a_hard_limit(preset, tmp_path):
     names = [e[0] for e in entries]
     assert len(set(names)) == len(names)
     kind = ["control-plane"] + ["worker"] + [f"worker{i}" for i in range(2, len(want))]
-    assert names == [f"wdf-{k}" for k in kind]
+    assert names == [f"wft-{k}" for k in kind]
     for (_, *got), (role, mem, cpus) in zip(entries, want, strict=True):
         assert got == [role, cpus, str(mem), str(mem)]
 
 
 @pytest.mark.parametrize("preset", PRESETS)
-def test_cluster_and_registry_are_named_for_the_wdf_context(preset, tmp_path):
+def test_cluster_and_registry_are_named_for_the_wft_context(preset, tmp_path):
     out = render(preset, tmp_path)
     cluster = (out / "cluster.yaml").read_text()
-    assert re.search(r"^name: kind-wdf$", cluster, re.M)
-    assert re.search(r"^  name: wdf$", cluster, re.M)
+    assert re.search(r"^name: kind-wft$", cluster, re.M)
+    assert re.search(r"^  name: wft$", cluster, re.M)
     registry = (out / "registry.yaml").read_text()
     assert re.search(r"^name: (\S+)$", registry, re.M).group(1) in cluster
     assert "listenAddress: 127.0.0.1\n" in registry

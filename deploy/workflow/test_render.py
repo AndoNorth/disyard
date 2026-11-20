@@ -15,8 +15,8 @@ from pathlib import Path
 
 import pytest
 import yaml
-from wdf_storecheck.s3 import Creds, dump_credentials
-from wdf_workflow.service import ENV, READY_ENV, REAPER_ENV
+from wft_storecheck.s3 import Creds, dump_credentials
+from wft_workflow.service import ENV, READY_ENV, REAPER_ENV
 
 ROOT = Path(__file__).resolve().parents[2]
 MODULE = ROOT / "deploy/workflow"
@@ -53,15 +53,15 @@ def tiltfile_result(root: Path, build_id: str | None):
         + "load_dynamic('deploy/workflow/Tiltfile.module')\n"
         + f"config.set_enabled_resources({DEPENDS + ['workflow-worker']})\n"
     )
-    env = {k: v for k, v in os.environ.items() if k != "WDF_BUILD_ID"}
+    env = {k: v for k, v in os.environ.items() if k != "WFT_BUILD_ID"}
     env |= {
-        "KUBECONFIG": str(ROOT / "scripts/tilt/fixtures/kubeconfig-wdf.yaml"),
-        "WDF_STATE_DIR": str(state),
+        "KUBECONFIG": str(ROOT / "scripts/tilt/fixtures/kubeconfig-wft.yaml"),
+        "WFT_STATE_DIR": str(state),
         # logins.py runs in the environment of the tree, which the copy does not hold.
         "UV_PROJECT": str(ROOT),
     }
     if build_id is not None:
-        env["WDF_BUILD_ID"] = build_id
+        env["WFT_BUILD_ID"] = build_id
     return subprocess.run(
         ["tilt", "alpha", "tiltfile-result", "-f", str(root / "Tiltfile")],
         cwd=root,
@@ -90,12 +90,12 @@ def rendered(tmp_path_factory):
 def test_one_deployment_per_build_id(rendered):
     manifests, objects, _ = rendered
     deployment = objects["Deployment", "workflow-worker-exit-a"]
-    assert deployment["metadata"]["namespace"] == "wdf-control"
+    assert deployment["metadata"]["namespace"] == "wft-control"
     assert deployment["spec"]["strategy"] == {"type": "Recreate"}
     labels = deployment["spec"]["template"]["metadata"]["labels"]
-    assert labels == {"app.kubernetes.io/name": "workflow-worker", "wdf.dev/build-id": "exit-a"}
+    assert labels == {"app.kubernetes.io/name": "workflow-worker", "wft.dev/build-id": "exit-a"}
     [image] = manifests["workflow-worker"]["ImageTargets"]
-    assert image["BuildDetails"]["env"] == ["WDF_BUILD_ID=exit-a"]
+    assert image["BuildDetails"]["env"] == ["WFT_BUILD_ID=exit-a"]
     assert image["BuildDetails"]["args"][-1].endswith("deploy/workflow/image.sh")
 
 
@@ -105,8 +105,8 @@ def test_requests_equal_limits_in_memory_on_the_infra_pool(rendered):
     [container] = pod["containers"]
     resources = container["resources"]
     assert resources["requests"]["memory"] == resources["limits"]["memory"] == "256Mi"
-    assert pod["nodeSelector"] == {"wdf.dev/pool": "infra"}
-    assert container["readinessProbe"]["exec"]["command"] == ["test", "-e", "/tmp/wdf-ready"]
+    assert pod["nodeSelector"] == {"wft.dev/pool": "infra"}
+    assert container["readinessProbe"]["exec"]["command"] == ["test", "-e", "/tmp/wft-ready"]
 
 
 def test_service_configuration_from_env_and_secrets(rendered):
@@ -115,13 +115,13 @@ def test_service_configuration_from_env_and_secrets(rendered):
         "containers"
     ]
     env = {e["name"]: e["value"] for e in container["env"]}
-    assert env["WDF_TEMPORAL_NAMESPACE"] == "wdf"
-    assert env["WDF_TEMPORAL_ADDRESS"] == "temporal-frontend.wdf-infra.svc.cluster.local:7233"
-    assert env["WDF_PLACEMENT_URL"] == "http://placement.wdf-control.svc:8080"
-    assert "WDF_BUILD_ID" not in env, "the image carries the build id"
+    assert env["WFT_TEMPORAL_NAMESPACE"] == "wft"
+    assert env["WFT_TEMPORAL_ADDRESS"] == "temporal-frontend.wft-infra.svc.cluster.local:7233"
+    assert env["WFT_PLACEMENT_URL"] == "http://placement.wft-control.svc:8080"
+    assert "WFT_BUILD_ID" not in env, "the image carries the build id"
     assert container["envFrom"] == [{"secretRef": {"name": "workflow-worker-logins"}}]
     from_secrets = set(objects["Secret", "workflow-worker-logins"]["stringData"])
-    assert from_secrets == {"WDF_WORKFLOW_DSN", "WDF_ARTIFACTS_DSN", "WDF_REAPER_DSN"}
+    assert from_secrets == {"WFT_WORKFLOW_DSN", "WFT_ARTIFACTS_DSN", "WFT_REAPER_DSN"}
     assert not from_secrets & set(env)
     service = {*ENV.values(), *REAPER_ENV, READY_ENV} - {ENV["build_id"]}
     assert service == set(env) | from_secrets
@@ -145,7 +145,7 @@ def test_waits_for_logins_and_its_dependencies(rendered):
 def test_no_build_id_outside_a_checkout_refused(tmp_path):
     run = tiltfile_result(tmp_path, None)
     assert run.returncode != 0
-    assert "no build id: set WDF_BUILD_ID outside a git checkout" in run.stderr
+    assert "no build id: set WFT_BUILD_ID outside a git checkout" in run.stderr
 
 
 def test_build_id_not_a_name_refused(tmp_path):

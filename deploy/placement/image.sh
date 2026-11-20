@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Builds the image of the placement service from this tree: wheels of the workspace packages that wdf-placement needs,
+# Builds the image of the placement service from this tree: wheels of the workspace packages that wft-placement needs,
 # built on the host, over the third-party packages that uv.lock pins by hash, on the pinned Python base.
 # The third-party packages are read from the build cache first, as deploy/wheel-cache.sh says.
 # Usage: image.sh [REF]. REF defaults to EXPECTED_REF, which Tilt sets. Exit 0 built, 1 a failed build, 2 usage.
@@ -13,8 +13,8 @@ base="python:$(yq '.images.python.version' deploy/versions.yaml)@$(yq '.images.p
 context=$(mktemp -d)
 trap 'rm -rf "$context"' EXIT
 
-uv export --frozen --quiet --no-dev --package wdf-placement --no-emit-workspace -o "$context/requirements.txt"
-uv export --frozen --quiet --no-dev --package wdf-placement --only-emit-workspace --no-editable --no-hashes \
+uv export --frozen --quiet --no-dev --package wft-placement --no-emit-workspace -o "$context/requirements.txt"
+uv export --frozen --quiet --no-dev --package wft-placement --only-emit-workspace --no-editable --no-hashes \
     --no-annotate --no-header | while read -r package; do
     uv build --quiet --wheel --out-dir "$context/wheels" "$package"
 done

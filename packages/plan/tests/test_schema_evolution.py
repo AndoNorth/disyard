@@ -2,8 +2,8 @@ import copy
 import json
 
 import pytest
-from wdf_jobdoc.schemagen import DOCUMENT_MODELS, SCHEMA_DIR, render_document_schema
-from wdf_plan.evolution import violations
+from wft_jobdoc.schemagen import DOCUMENT_MODELS, SCHEMA_DIR, render_document_schema
+from wft_plan.evolution import violations
 
 SCHEMAS = sorted(DOCUMENT_MODELS)
 

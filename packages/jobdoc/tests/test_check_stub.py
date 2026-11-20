@@ -5,7 +5,7 @@ import sys
 
 import pytest
 
-CHECK = [sys.executable, "-m", "wdf_jobcheck.check"]
+CHECK = [sys.executable, "-m", "wft_jobcheck.check"]
 
 
 def run(*args):

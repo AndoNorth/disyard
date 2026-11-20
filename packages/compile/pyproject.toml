@@ -1,14 +1,14 @@
 [project]
-name = "wdf-compile"
+name = "wft-compile"
 version = "0.0.0"
 license = "Apache-2.0"
 requires-python = ">=3.13,<3.14"
-dependencies = ["componentize-py==0.25.1", "wdf-jobcheck", "wdf-keys", "wdf-runtime"]
+dependencies = ["componentize-py==0.25.1", "wft-jobcheck", "wft-keys", "wft-runtime"]
 
 [tool.uv.sources]
-wdf-jobcheck = { workspace = true }
-wdf-keys = { workspace = true }
-wdf-runtime = { workspace = true }
+wft-jobcheck = { workspace = true }
+wft-keys = { workspace = true }
+wft-runtime = { workspace = true }
 
 [build-system]
 requires = ["hatchling"]

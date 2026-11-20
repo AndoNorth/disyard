@@ -6,10 +6,10 @@ import re
 from concurrent.futures import ThreadPoolExecutor
 
 import pytest
-from wdf_broker.models import BrokerUnavailable, Outcome, PublishTimeout
-from wdf_broker.testing import FakeBroker, broker_contract
-from wdf_broker.testing import fake as fake_module
-from wdf_broker.testing.conformance import CHECKS
+from wft_broker.models import BrokerUnavailable, Outcome, PublishTimeout
+from wft_broker.testing import FakeBroker, broker_contract
+from wft_broker.testing import fake as fake_module
+from wft_broker.testing.conformance import CHECKS
 
 QUEUE = "intake.acme.standard"
 

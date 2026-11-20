@@ -10,7 +10,7 @@ ROOT = Path(__file__).resolve().parents[3]
 FIXTURE = Path(__file__).parent / "fixture_pkg"
 
 PROBE = """
-from wdf_migrate import discover
+from wft_migrate import discover
 assert [m.name for m in discover()] == ["0001_fixture_item.sql", "0002_fixture_note.sql"]
 """
 
@@ -25,9 +25,9 @@ def run(*cmd, **kwargs) -> subprocess.CompletedProcess:
 def clean_python(tmp_path_factory) -> Path:
     work = tmp_path_factory.mktemp("wheel")
     wheels = work / "wheels"
-    run("uv", "build", "--wheel", "--package", "wdf-migrate", "-o", str(wheels), cwd=ROOT)
+    run("uv", "build", "--wheel", "--package", "wft-migrate", "-o", str(wheels), cwd=ROOT)
     run("uv", "build", "--wheel", str(FIXTURE), "-o", str(wheels), cwd=work)
-    run("uv", "build", "--wheel", "--package", "wdf-itest", "-o", str(wheels), cwd=ROOT)
+    run("uv", "build", "--wheel", "--package", "wft-itest", "-o", str(wheels), cwd=ROOT)
     venv = work / "venv"
     run("uv", "venv", "--python", sys.executable, str(venv))
     python = venv / "bin/python"
@@ -46,7 +46,7 @@ def test_wheel_finds_the_migrations_of_an_installed_package(clean_python, tmp_pa
 def test_wheel_cli_reports_an_unreachable_database(clean_python, tmp_path):
     dsn = "postgresql://postgres@127.0.0.1:1/none?connect_timeout=2"
     result = subprocess.run(
-        [clean_python, "-I", "-m", "wdf_migrate", "check", "--dsn", dsn],
+        [clean_python, "-I", "-m", "wft_migrate", "check", "--dsn", dsn],
         capture_output=True,
         text=True,
         cwd=tmp_path,

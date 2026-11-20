@@ -2,33 +2,33 @@
 # Buckets, and for each artifact kind its bucket, addressing class and key template. Schema: layout.schema.json.
 # A content-addressed key derives from the object bytes, an attempt-scoped key from a never reused attempt identity.
 buckets:
-  - wdf-sources
-  - wdf-components
-  - wdf-results
-  - wdf-checkpoints
+  - wft-sources
+  - wft-components
+  - wft-results
+  - wft-checkpoints
 kinds:
-  manifest: {bucket: wdf-sources, class: content-addressed, key: "sha256/<hash2>/<hash>"}
-  source: {bucket: wdf-sources, class: content-addressed, key: "sha256/<hash2>/<hash>"}
-  index: {bucket: wdf-sources, class: content-addressed, key: "sha256/<hash2>/<hash>"}
-  component: {bucket: wdf-components, class: content-addressed, key: "sha256/<hash2>/<hash>"}
-  build-info: {bucket: wdf-components, class: content-addressed, key: "sha256/<hash2>/<hash>"}
+  manifest: {bucket: wft-sources, class: content-addressed, key: "sha256/<hash2>/<hash>"}
+  source: {bucket: wft-sources, class: content-addressed, key: "sha256/<hash2>/<hash>"}
+  index: {bucket: wft-sources, class: content-addressed, key: "sha256/<hash2>/<hash>"}
+  component: {bucket: wft-components, class: content-addressed, key: "sha256/<hash2>/<hash>"}
+  build-info: {bucket: wft-components, class: content-addressed, key: "sha256/<hash2>/<hash>"}
   result:
-    bucket: wdf-results
+    bucket: wft-results
     class: attempt-scoped
     key: "<tenant>/<batch>/<job>/<seed>/<task>/<attempt>/<name>"
   output:
-    bucket: wdf-results
+    bucket: wft-results
     class: attempt-scoped
     key: "<tenant>/<batch>/<job>/<seed>/<task>/<attempt>/<name>"
   log-tail:
-    bucket: wdf-results
+    bucket: wft-results
     class: attempt-scoped
     key: "<tenant>/<batch>/<job>/<seed>/<task>/<attempt>/<name>"
   summary:
-    bucket: wdf-results
+    bucket: wft-results
     class: attempt-scoped
     key: "<tenant>/<batch>/aggregate/<job>/<task>/<attempt>/<name>"
   checkpoint:
-    bucket: wdf-checkpoints
+    bucket: wft-checkpoints
     class: attempt-scoped
     key: "<tenant>/<batch>/<job>/<seed>/<task>/<attempt>/<segment>/<name>"

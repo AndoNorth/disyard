@@ -6,13 +6,13 @@ from datetime import UTC, datetime
 
 import psycopg
 import pytest
-from wdf_events import build_event, to_event_row
-from wdf_itest.session import RUN_LABEL
+from wft_events import build_event, to_event_row
+from wft_itest.session import RUN_LABEL
 
 pytestmark = pytest.mark.integration
 
 JOB = "3a9617fa-df7c-5760-a644-42d559e0f433"
-PASSWORD = "wdf"
+PASSWORD = "wft"
 
 
 def connect(port: int, timeout: float = 90) -> psycopg.Connection:
@@ -42,7 +42,7 @@ def labelled(run_id: str) -> list[str]:
 def test_a_replayed_event_adds_no_row_and_the_time_survives_to_the_microsecond(t1):
     event = build_event(
         "job.started",
-        source="/wdf/workflow",
+        source="/wft/workflow",
         tenant="acme",
         jobid=JOB,
         priorityclass="standard",

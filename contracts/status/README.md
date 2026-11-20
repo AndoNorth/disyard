@@ -12,7 +12,7 @@ The guarded compare-and-set that applies a move to the row stays in the storage 
 
 There are ten stored statuses: `accepted`, `admitted`, `running`, `paused`, `resume-pending`, `succeeded`, `partial`, `failed`, `cancelled` and `terminated`.
 The terminal set is `succeeded`, `partial`, `failed`, `cancelled` and `terminated`, and nothing moves out of it.
-`partial` is the terminal status of a run on partial inputs, and its event is `dev.wdf.job.partial.v1`, so a consumer that filters on `succeeded` never mistakes it for a complete run.
+`partial` is the terminal status of a run on partial inputs, and its event is `dev.wft.job.partial.v1`, so a consumer that filters on `succeeded` never mistakes it for a complete run.
 `accepted` is the stored name of the first status, and the older name `queued` is not used.
 
 ## Views
@@ -24,7 +24,7 @@ A reader derives a view from the stored status and the request, using `shown_whi
 ## Projection
 
 `projection` maps each of the 16 job lifecycle event types to the status it sets on the row, or to `null` when it sets none.
-The types are named without the `dev.wdf` prefix and the major, as the schema directories are.
+The types are named without the `dev.wft` prefix and the major, as the schema directories are.
 
 - `job.accepted`, `job.admitted`, `job.started`, `job.paused`, `job.succeeded`, `job.partial`, `job.failed`, `job.cancelled` and `job.terminated` set the status of the same name, except that `job.started` sets `running`.
 - `job.resume.requested` sets `resume-pending`.

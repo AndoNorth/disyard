@@ -15,14 +15,14 @@ HOLD_S = 10
 
 def node(name: str, pool: str) -> dict:
     return {
-        "metadata": {"name": name, "labels": {"wdf.dev/pool": pool}},
+        "metadata": {"name": name, "labels": {"wft.dev/pool": pool}},
         "status": {"allocatable": {"cpu": "1", "memory": "2Gi"}},
     }
 
 
 def pod(name: str, node_name: str, phase: str = "Running") -> dict:
     return {
-        "metadata": {"name": name, "namespace": "wdf-workers"},
+        "metadata": {"name": name, "namespace": "wft-workers"},
         "spec": {
             "nodeName": node_name,
             "containers": [{"resources": {"requests": {"cpu": "250m"}}}],
@@ -33,8 +33,8 @@ def pod(name: str, node_name: str, phase: str = "Running") -> dict:
 
 class FakeApi:
     def __init__(self):
-        self.nodes = {"kind": "NodeList", "items": [node("wdf-worker", "compile")]}
-        self.pods = {"kind": "PodList", "items": [pod("compile-worker-0", "wdf-worker")]}
+        self.nodes = {"kind": "NodeList", "items": [node("wft-worker", "compile")]}
+        self.pods = {"kind": "PodList", "items": [pod("compile-worker-0", "wft-worker")]}
         self.requests: list[tuple[str, str | None]] = []
         # The next `fail` node reads answer 500, and while `hold` is clear a node read waits on it.
         self.fail = 0

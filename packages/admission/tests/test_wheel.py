@@ -13,20 +13,20 @@ PROBE = """
 import sys
 from pathlib import Path
 
-import wdf_admission
-from wdf_broker.tenancy import load
-from wdf_broker.topology import intake_queues
-from wdf_compat import read_event
-from wdf_workflow.contract import naming
-from wdf_workflow.models import ResumeSignal
-from wdf_workflow.taskpath import QUEUE_PREFIX_MEMO
+import wft_admission
+from wft_broker.tenancy import load
+from wft_broker.topology import intake_queues
+from wft_compat import read_event
+from wft_workflow.contract import naming
+from wft_workflow.models import ResumeSignal
+from wft_workflow.taskpath import QUEUE_PREFIX_MEMO
 
 profile = load("ci")
 assert profile.priority_classes == ["standard"]
 assert {queue.rsplit(".", 1)[1] for queue in intake_queues(profile)} == {"standard"}
 assert naming().workflow.type == "JobWorkflow"
-assert QUEUE_PREFIX_MEMO == "wdf_pool_queue_prefix"
-assert read_event(Path(sys.argv[1]).read_bytes()).type == "dev.wdf.job.accepted.v1"
+assert QUEUE_PREFIX_MEMO == "wft_pool_queue_prefix"
+assert read_event(Path(sys.argv[1]).read_bytes()).type == "dev.wft.job.accepted.v1"
 """
 ACCEPTED = ROOT / "contracts/events/vectors/accepted/valid/accepted.json"
 
@@ -55,7 +55,7 @@ def run(*cmd, **kwargs) -> subprocess.CompletedProcess:
 def test_wheel_in_a_clean_venv_imports_admission(tmp_path):
     """Runs isolated from a directory with no repository above it, so a path into the tree fails."""
     wheels = tmp_path / "wheels"
-    for package in workspace_closure("wdf-admission"):
+    for package in workspace_closure("wft-admission"):
         run("uv", "build", "--wheel", "--package", package, "-o", str(wheels), cwd=ROOT)
     venv = tmp_path / "venv"
     run("uv", "venv", "--python", sys.executable, str(venv))

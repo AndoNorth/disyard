@@ -267,7 +267,7 @@
           "type": "integer"
         },
         "uri": {
-          "pattern": "^s3://wdf-sources/sha256/[0-9a-f]{2}/[0-9a-f]{64}$",
+          "pattern": "^s3://wft-sources/sha256/[0-9a-f]{2}/[0-9a-f]{64}$",
           "title": "Uri",
           "type": "string"
         }
@@ -370,7 +370,7 @@
           "type": "integer"
         },
         "uri": {
-          "pattern": "^s3://wdf-sources/sha256/[0-9a-f]{2}/[0-9a-f]{64}$",
+          "pattern": "^s3://wft-sources/sha256/[0-9a-f]{2}/[0-9a-f]{64}$",
           "title": "Uri",
           "type": "string"
         }
@@ -386,7 +386,7 @@
       "type": "object"
     }
   },
-  "$id": "urn:wdf:schema:activity:task-input:1",
+  "$id": "urn:wft:schema:activity:task-input:1",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
   "description": "The one argument of run_task: the request and what the worker needs beside it.",
@@ -440,7 +440,7 @@
     },
     "request": {
       "$ref": "#/$defs/Event",
-      "description": "A dev.wdf.task.requested.v1 event, as wdf_events.to_bytes writes it."
+      "description": "A dev.wft.task.requested.v1 event, as wft_events.to_bytes writes it."
     },
     "resume_counter": {
       "minimum": 0,

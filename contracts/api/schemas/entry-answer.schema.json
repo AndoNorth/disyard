@@ -22,7 +22,7 @@
       "type": "object"
     }
   },
-  "$id": "urn:wdf:schema:api:entry-answer:1",
+  "$id": "urn:wft:schema:api:entry-answer:1",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
   "description": "The answer to one entry, in request order.",

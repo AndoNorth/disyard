@@ -68,7 +68,7 @@ class Container:
     """One labelled, capped container that idles until removed."""
 
     def __init__(self, args, name, network, extra=()):
-        self.name = f"wdf-{args.run_id}-{name}"
+        self.name = f"wft-{args.run_id}-{name}"
         docker(
             "run", "--detach", "--name", self.name, "--label", f"{args.label}={args.run_id}",
             *CAP, "--network", network, "--user", args.user, "--env", "HOME=/tmp",
@@ -144,7 +144,7 @@ def build(args, prefix, size, venv, modules=1, hold=0):
             round(int((box.cgroup / "memory.current").read_text()) / MIB),
         )
         command = f"/work/{venv}/bin/componentize-py -q -d /tmp/wit -w task"
-        command += " componentize wdf_workloads.main"
+        command += " componentize wft_workloads.main"
         command += f" -o /tmp/out.wasm && cp /tmp/out.wasm /work/{prefix}.wasm"
         run = box.exec(prefix, command, workdir="/tmp/b")
         wasm = Path(args.out) / f"{prefix}.wasm"

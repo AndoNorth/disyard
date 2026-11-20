@@ -10,7 +10,7 @@ A Python service opts in from its `Tiltfile.module` and calls the library functi
 ```python
 load('../../tilt/live_update.star', 'python_live_update')
 
-python_live_update('wdf-<service>', '.', src='src', dest='/app')
+python_live_update('wft-<service>', '.', src='src', dest='/app')
 ```
 
 The `load` path is relative to the module file, so it depends on the module's depth under `deploy/`.
@@ -25,7 +25,7 @@ The `load` path is relative to the module file, so it depends on the module's de
 
 ## Modes
 
-`deploy/tilt/profiles.yaml` carries a `live_update` flag per profile, and the Tiltfile exports it as `WDF_LIVE_UPDATE` before any module loads.
+`deploy/tilt/profiles.yaml` carries a `live_update` flag per profile, and the Tiltfile exports it as `WFT_LIVE_UPDATE` before any module loads.
 
 | Profile | Live update |
 | --- | --- |

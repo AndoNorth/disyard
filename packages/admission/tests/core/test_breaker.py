@@ -3,8 +3,8 @@
 import psycopg
 import pytest
 from temporalio.service import RPCError, RPCStatusCode
-from wdf_admission.breaker import MAX_BACKOFF_S, STREAK, Breaker, Breakers, dependency_of
-from wdf_broker.models import BrokerUnavailable, TopologyError
+from wft_admission.breaker import MAX_BACKOFF_S, STREAK, Breaker, Breakers, dependency_of
+from wft_broker.models import BrokerUnavailable, TopologyError
 
 
 @pytest.mark.parametrize(

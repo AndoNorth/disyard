@@ -1,12 +1,12 @@
 [project]
-name = "wdf-events"
+name = "wft-events"
 version = "0.0.0"
 license = "Apache-2.0"
 requires-python = ">=3.13,<3.14"
-dependencies = ["pydantic", "jsonschema", "pyyaml", "wdf-keys", "psycopg[binary]"]
+dependencies = ["pydantic", "jsonschema", "pyyaml", "wft-keys", "psycopg[binary]"]
 
 [tool.uv.sources]
-wdf-keys = { workspace = true }
+wft-keys = { workspace = true }
 
 [build-system]
 requires = ["hatchling"]

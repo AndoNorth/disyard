@@ -34,7 +34,7 @@
         },
         "read_from": {
           "enum": [
-            "x-opt-wdf-reason",
+            "x-opt-wft-reason",
             "x-last-death-reason"
           ],
           "title": "Read From",
@@ -78,7 +78,7 @@
       "type": "object"
     }
   },
-  "$id": "urn:wdf:schema:broker:reasons:1",
+  "$id": "urn:wft:schema:broker:reasons:1",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
   "description": "reasons.yaml: every dead-letter reason with its event and its recovery.",

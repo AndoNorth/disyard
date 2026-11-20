@@ -9,13 +9,13 @@ import pytest
 ROOT = Path(__file__).resolve().parents[3]
 
 PROBE = """
-import wdf_artifactreaper.__main__, wdf_artifactreaper.schedule
-import wdf_artifactreaper
-from wdf_artifactreaper.reap import load_windows
+import wft_artifactreaper.__main__, wft_artifactreaper.schedule
+import wft_artifactreaper
+from wft_artifactreaper.reap import load_windows
 import importlib.resources as resources
 import yaml
 
-contract = resources.files("wdf_artifactreaper") / "contract"
+contract = resources.files("wft_artifactreaper") / "contract"
 for name in ("layout.yaml", "failures.yaml"):
     assert yaml.safe_load((contract / name).read_text()), name
 assert load_windows().checkpoint_keep >= 2
@@ -33,13 +33,13 @@ def clean_python(tmp_path_factory) -> Path:
     work = tmp_path_factory.mktemp("wheel")
     wheels = work / "wheels"
     for package in (
-        "wdf-artifactreaper",
-        "wdf-artifactclient",
-        "wdf-artifactindex",
-        "wdf-compat",
-        "wdf-events",
-        "wdf-keys",
-        "wdf-storecheck",
+        "wft-artifactreaper",
+        "wft-artifactclient",
+        "wft-artifactindex",
+        "wft-compat",
+        "wft-events",
+        "wft-keys",
+        "wft-storecheck",
     ):
         run("uv", "build", "--wheel", "--package", package, "-o", str(wheels), cwd=ROOT)
     venv = work / "venv"

@@ -14,13 +14,13 @@
     },
     "namespaces": {
       "type": "object",
-      "required": ["wdf-infra", "wdf-control", "wdf-workers", "wdf-obs"],
+      "required": ["wft-infra", "wft-control", "wft-workers", "wft-obs"],
       "additionalProperties": false,
       "properties": {
-        "wdf-infra": { "$ref": "#/$defs/namespace" },
-        "wdf-control": { "$ref": "#/$defs/namespace" },
-        "wdf-workers": { "$ref": "#/$defs/namespace" },
-        "wdf-obs": { "$ref": "#/$defs/namespace" }
+        "wft-infra": { "$ref": "#/$defs/namespace" },
+        "wft-control": { "$ref": "#/$defs/namespace" },
+        "wft-workers": { "$ref": "#/$defs/namespace" },
+        "wft-obs": { "$ref": "#/$defs/namespace" }
       }
     }
   },

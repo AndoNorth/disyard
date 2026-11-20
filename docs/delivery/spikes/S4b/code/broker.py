@@ -1,5 +1,5 @@
 """Renders the broker configuration of the spec's D4, D5, D12, D14 and D19 and runs RabbitMQ in one
-container under a wdf_itest T1 lock.
+container under a wft_itest T1 lock.
 
 The topology and the users are two files of one definitions directory, imported at boot.
 """
@@ -15,7 +15,7 @@ import urllib.request
 from contextlib import contextmanager
 from pathlib import Path
 
-from wdf_itest.session import RUN_LABEL, Session, host_port
+from wft_itest.session import RUN_LABEL, Session, host_port
 
 IMAGE = os.environ.get(
     "S4B_IMAGE",
@@ -29,7 +29,7 @@ INTAKE_POLICY = {
     "delivery-limit": 5,
     "max-length": 1000,
     "overflow": "reject-publish",
-    "dead-letter-exchange": "wdf.dlx",
+    "dead-letter-exchange": "wft.dlx",
     "dead-letter-strategy": "at-least-once",
 }
 DLQ_POLICY = {"delivery-limit": -1}
@@ -77,7 +77,7 @@ def topology() -> dict:
         "vhosts": [{"name": "/"}],
         "exchanges": [
             {
-                "name": "wdf.intake",
+                "name": "wft.intake",
                 "vhost": "/",
                 "type": "direct",
                 "durable": True,
@@ -86,7 +86,7 @@ def topology() -> dict:
                 "arguments": {},
             },
             {
-                "name": "wdf.dlx",
+                "name": "wft.dlx",
                 "vhost": "/",
                 "type": "fanout",
                 "durable": True,
@@ -98,7 +98,7 @@ def topology() -> dict:
         "queues": [queue(q) for q in intake + [DLQ]],
         "bindings": [
             {
-                "source": "wdf.intake",
+                "source": "wft.intake",
                 "vhost": "/",
                 "destination": q,
                 "destination_type": "queue",
@@ -109,7 +109,7 @@ def topology() -> dict:
         ]
         + [
             {
-                "source": "wdf.dlx",
+                "source": "wft.dlx",
                 "vhost": "/",
                 "destination": DLQ,
                 "destination_type": "queue",
@@ -118,10 +118,10 @@ def topology() -> dict:
             }
         ],
         "policies": [
-            policy("wdf-intake", INTAKE_PATTERN, INTAKE_POLICY),
-            # A queue three messages long for the full-queue case, which outranks wdf-intake.
-            policy("wdf-tiny", r"^intake\.acme\.tiny$", {**INTAKE_POLICY, "max-length": 3}, 1),
-            policy("wdf-dlq", r"^intake\.dlq$", DLQ_POLICY),
+            policy("wft-intake", INTAKE_PATTERN, INTAKE_POLICY),
+            # A queue three messages long for the full-queue case, which outranks wft-intake.
+            policy("wft-tiny", r"^intake\.acme\.tiny$", {**INTAKE_POLICY, "max-length": 3}, 1),
+            policy("wft-dlq", r"^intake\.dlq$", DLQ_POLICY),
         ],
     }
 
@@ -129,9 +129,9 @@ def topology() -> dict:
 def users(passwords: dict[str, str]) -> dict:
     intake_read = INTAKE_PATTERN
     perms = {
-        "dispatch": ("^$", r"^wdf\.intake$", "^$"),
+        "dispatch": ("^$", r"^wft\.intake$", "^$"),
         "admission": ("^$", "^$", intake_read),
-        "operator": ("^$", r"^wdf\.intake$", rf"^intake\.dlq$|{intake_read}"),
+        "operator": ("^$", r"^wft\.intake$", rf"^intake\.dlq$|{intake_read}"),
     }
     return {
         "users": [
@@ -255,7 +255,7 @@ def running(workdir: Path, memory: str = "1g", watermark_mib: int = 154):
     render(conf, passwords, watermark_mib)
     with Session(containers=1) as session:
         amqp, prom = host_port(session.slot, 0), host_port(session.slot, 1)
-        name = f"wdf-{session.run_id}-s4b-{secrets.token_hex(3)}"
+        name = f"wft-{session.run_id}-s4b-{secrets.token_hex(3)}"
         cid = subprocess.run(
             [
                 "docker",

@@ -6,20 +6,20 @@ import socket
 from datetime import UTC, datetime
 
 import pytest
-from wdf_artifactclient.checkpoint import (
+from wft_artifactclient.checkpoint import (
     DATA_NAME,
     METADATA_NAME,
     prune_plan,
     verify_checkpoint,
     write_checkpoint,
 )
-from wdf_artifactclient.client import ArtifactClient, RetryPolicy
-from wdf_artifactclient.errors import CheckpointCorrupt, StoreUnavailable
-from wdf_artifactclient.keys import split_uri
-from wdf_events import build_event, from_bytes, to_bytes
-from wdf_events.models import ProducerRef
-from wdf_storecheck.fixtures import running
-from wdf_storecheck.s3 import client as s3_client
+from wft_artifactclient.client import ArtifactClient, RetryPolicy
+from wft_artifactclient.errors import CheckpointCorrupt, StoreUnavailable
+from wft_artifactclient.keys import split_uri
+from wft_events import build_event, from_bytes, to_bytes
+from wft_events.models import ProducerRef
+from wft_storecheck.fixtures import running
+from wft_storecheck.s3 import client as s3_client
 
 JOB = "123e4567-e89b-42d3-a456-426614174000"
 WASM = hashlib.sha256(b"component").hexdigest()
@@ -75,7 +75,7 @@ def write(worker, tenant, data: bytes = b"", meta=META, attempt="r0a1", segment=
 
 
 def keys_under(admin, tenant: str) -> list[str]:
-    reply = admin.list_objects_v2(Bucket="wdf-checkpoints", Prefix=f"{tenant}/")
+    reply = admin.list_objects_v2(Bucket="wft-checkpoints", Prefix=f"{tenant}/")
     return sorted(item["Key"] for item in reply.get("Contents", []))
 
 
@@ -92,7 +92,7 @@ def test_write_then_verify(worker, tenant, admin):
     verified = verify_checkpoint(worker, reference)
     assert verified.reference == reference
     assert [o.sha256 for o in verified.objects] == [hashlib.sha256(data).hexdigest()]
-    assert verified.objects[0].uri == f"s3://wdf-checkpoints/{directory}{DATA_NAME}"
+    assert verified.objects[0].uri == f"s3://wft-checkpoints/{directory}{DATA_NAME}"
 
 
 def test_metadata_round_trips_wasm_hash_and_opaque_fields(worker, tenant):
@@ -235,7 +235,7 @@ def test_reference_fits_a_heartbeat_detail(worker, tenant):
 
     event = build_event(
         "task.checkpoint.committed",
-        source="/wdf/workflow",
+        source="/wft/workflow",
         tenant=tenant,
         jobid=JOB,
         priorityclass="standard",

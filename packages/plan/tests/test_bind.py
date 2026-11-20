@@ -1,5 +1,5 @@
 import pytest
-from wdf_plan import ParamsInvalid, bind, canonical_bytes, check_job_params, plan_hash
+from wft_plan import ParamsInvalid, bind, canonical_bytes, check_job_params, plan_hash
 
 PARAMS = {"seed": 7, "parameters": {"n": 1000, "tags": ["pi", "e"]}}
 

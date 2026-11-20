@@ -3,8 +3,8 @@ a credentials directory as the broker module writes it, and connections that are
 that are emptied after each test."""
 
 import pytest
-from wdf_broker import suite
-from wdf_broker.client import Credentials, connect
+from wft_broker import suite
+from wft_broker.client import Credentials, connect
 
 
 @pytest.fixture

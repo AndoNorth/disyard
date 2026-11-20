@@ -25,18 +25,18 @@ Epic numbers link to the epic issues on GitHub.
 | --- | --- | --- | --- | --- |
 | [events](../contracts/events/README.md) | #4 | `packages/events` and `packages/keys` generate the data schemas and the key formulas | every epic | PoC-essential interface |
 | [job](../contracts/job/README.md) | #5 | `packages/jobdoc` and its sibling packages generate the schemas, registry and limits schema | #24, #6, #8, #9, #3, #14, #15, #17 | PoC-essential interface |
-| [artifact](../contracts/artifact/README.md) | #4, extended by #12 | the `wdf_artifactclient` models generate the failure, staging, retention and index schemas | #3, #4, #5, #6, #10, #11, #13, #15, #16, #17, #18, #24 | PoC-essential interface |
+| [artifact](../contracts/artifact/README.md) | #4, extended by #12 | the `wft_artifactclient` models generate the failure, staging, retention and index schemas | #3, #4, #5, #6, #10, #11, #13, #15, #16, #17, #18, #24 | PoC-essential interface |
 | [store](../contracts/store/README.md) | #3 | `packages/storecheck` generates the schema from its models | #12, #13, #16, #17, #24, the object store module and the store contract script | PoC-essential interface |
 | [topology](../contracts/topology/README.md) | #2 | a hand-written table, validated by its schema | placement and workers, observability, load and chaos, and the cluster work of #2 | PoC-essential interface |
 | [module](../contracts/module/README.md) | #2 | each component ships its own `deploy/<component>/module.yaml` | the epics that ship an infrastructure component, and the Tilt skeleton | PoC-essential interface |
-| [activity](../contracts/activity/README.md) | #6 | the `wdf_workflow` models generate the task input, task result, failure details, heartbeat and failure class schemas | #9, #10, #13, #15, #18 | PoC-essential interface |
-| [temporal](../contracts/temporal/README.md) | #6 | the `wdf_workflow` models generate the naming, pool table, signal and status query schemas | #8, #9, #10, #12, #13, #15, #16, #24 | PoC-essential interface |
-| [broker](../contracts/broker/README.md) | #7 | the `wdf_broker` models generate the topology and reason schemas | #8, #24, #13, #15, #17 | PoC-essential interface |
-| [api](../contracts/api/README.md) | #24 | the `wdf_dispatchapi` models generate the route, reason, control table, fingerprint and body schemas | #14, #15, #16, #17 | PoC-essential interface |
+| [activity](../contracts/activity/README.md) | #6 | the `wft_workflow` models generate the task input, task result, failure details, heartbeat and failure class schemas | #9, #10, #13, #15, #18 | PoC-essential interface |
+| [temporal](../contracts/temporal/README.md) | #6 | the `wft_workflow` models generate the naming, pool table, signal and status query schemas | #8, #9, #10, #12, #13, #15, #16, #24 | PoC-essential interface |
+| [broker](../contracts/broker/README.md) | #7 | the `wft_broker` models generate the topology and reason schemas | #8, #24, #13, #15, #17 | PoC-essential interface |
+| [api](../contracts/api/README.md) | #24 | the `wft_dispatchapi` models generate the route, reason, control table, fingerprint and body schemas | #14, #15, #16, #17 | PoC-essential interface |
 | [state](../contracts/state/README.md) | #3 | `packages/jobstate`, `packages/eventstore` and `packages/artifactindex` generate the row schemas | #24, #8, #6, #7, #12, #13, #16, #17 | Shared data format |
-| [workload](../contracts/workload/README.md) | #11 | the `wdf_runtime` models generate the input, error, results, exit class, summary and build info schemas, and `wdf_kernel.format` holds the result format rules | #6, #10, #13, #15, #17, #18, #24 | Shared data format |
+| [workload](../contracts/workload/README.md) | #11 | the `wft_runtime` models generate the input, error, results, exit class, summary and build info schemas, and `wft_kernel.format` holds the result format rules | #6, #10, #13, #15, #17, #18, #24 | Shared data format |
 | [status](../contracts/status/README.md) | #4 | a hand-written table, validated by its schema | #3, #6, #8, #24 | Shared data format |
-| [tenancy](../contracts/tenancy/README.md) | #7 | the `wdf_broker` models generate the tenancy schema | #8, #24, #16 | Shared data format |
+| [tenancy](../contracts/tenancy/README.md) | #7 | the `wft_broker` models generate the tenancy schema | #8, #24, #16 | Shared data format |
 | [instrumentation](../contracts/instrumentation/README.md) | #4, then #13 | a hand-written metrics file, validated by its schema | #13 and every component that emits a metric, a log line or a span | Shared data format |
 | [preset](../contracts/preset/README.md) | #2 | the files in `deploy/presets/`, validated by its schema | every epic through `just up`, plus `just doctor` and the cluster renderer | Shared data format |
 | [versions](../contracts/versions.schema.json) (a schema only, see [versions policy](versions-policy.md)) | #1 | `deploy/versions.yaml`, checked by `just versions --check` | #2, #3, #6, #7, #13 | Shared data format |

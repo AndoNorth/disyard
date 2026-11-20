@@ -6,18 +6,18 @@ Consumers: storage (#3), workflow (#6), admission (#8), placement (#9), workers 
 
 The stage table says, for each stage of the platform, which source it writes under, which context attributes and data fields it reads, and which event types it emits.
 The table is [stages.yaml](stages.yaml), validated by [stages.schema.json](stages.schema.json) and against the event catalogue by the loader.
-Event types are named without the `dev.wdf` prefix and the major, as the schema directories of [the events contract](../events/README.md) are.
+Event types are named without the `dev.wft` prefix and the major, as the schema directories of [the events contract](../events/README.md) are.
 
 ## Stages
 
 | Stage | Source | Emits |
 | --- | --- | --- |
-| `dispatch` | `/wdf/dispatch` | `job.accepted`, and `job.published` when it set the receipt after the broker accepted its publish |
-| `control` | `/wdf/control` | the four request types, and `job.paused`, `job.resumed`, `job.cancelled` and `job.terminated` for a job that never started |
-| `admission` | `/wdf/admission` | `job.admitted`, `job.dead.lettered` for a message that parses far enough to name a job, and `job.published` when its claim set a missing receipt from a delivered message |
-| `workflow` | `/wdf/workflow` | every other job type and every task type except the task request |
-| `placement` | `/wdf/placement` | nothing, it reads the task type, CPU and memory of the task request |
-| `worker` | `/wdf/worker` | nothing, it reads the task request and writes references into heartbeat details |
+| `dispatch` | `/wft/dispatch` | `job.accepted`, and `job.published` when it set the receipt after the broker accepted its publish |
+| `control` | `/wft/control` | the four request types, and `job.paused`, `job.resumed`, `job.cancelled` and `job.terminated` for a job that never started |
+| `admission` | `/wft/admission` | `job.admitted`, `job.dead.lettered` for a message that parses far enough to name a job, and `job.published` when its claim set a missing receipt from a delivered message |
+| `workflow` | `/wft/workflow` | every other job type and every task type except the task request |
+| `placement` | `/wft/placement` | nothing, it reads the task type, CPU and memory of the task request |
+| `worker` | `/wft/worker` | nothing, it reads the task request and writes references into heartbeat details |
 
 The workflow builds the task request and hands it to the activity.
 It never writes the task request to the event history, which is why it is under `builds` and not under `emits`, and why no stage has to emit it.

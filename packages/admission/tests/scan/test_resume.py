@@ -8,13 +8,13 @@ import pytest
 from psycopg.types.json import Jsonb
 from temporalio.api.enums.v1 import EventType
 from temporalio.service import RPCError, RPCStatusCode
-from wdf_admission.claim import Claimed, claim
-from wdf_admission.policy import Caps, Snapshot, plan
-from wdf_admission.resume import Resumes, pending
-from wdf_admission.start import start
-from wdf_jobstate import request_action, transition
-from wdf_keys import workflow_id
-from wdf_workflow.models import ControlSignal, StatusQuery
+from wft_admission.claim import Claimed, claim
+from wft_admission.policy import Caps, Snapshot, plan
+from wft_admission.resume import Resumes, pending
+from wft_admission.start import start
+from wft_jobstate import request_action, transition
+from wft_keys import workflow_id
+from wft_workflow.models import ControlSignal, StatusQuery
 
 pytestmark = [pytest.mark.integration, pytest.mark.pair]
 

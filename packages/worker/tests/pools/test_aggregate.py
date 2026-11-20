@@ -11,16 +11,16 @@ from pathlib import Path
 import pytest
 from temporalio.exceptions import ApplicationError
 from temporalio.testing import ActivityEnvironment
-from wdf_artifactclient.aggregate import put_index
-from wdf_artifactclient.client import ArtifactClient
-from wdf_artifactclient.models import IndexEntry
-from wdf_events.models import ProducerRef
-from wdf_storecheck.s3 import dump_credentials
-from wdf_worker.config import ENV
-from wdf_worker.pools import Context, aggregate
-from wdf_workflow.contract import check_task_input, check_task_result
-from wdf_workflow.models import REASON_MAX, TaskInput
-from wdf_workloads import main
+from wft_artifactclient.aggregate import put_index
+from wft_artifactclient.client import ArtifactClient
+from wft_artifactclient.models import IndexEntry
+from wft_events.models import ProducerRef
+from wft_storecheck.s3 import dump_credentials
+from wft_worker.config import ENV
+from wft_worker.pools import Context, aggregate
+from wft_workflow.contract import check_task_input, check_task_result
+from wft_workflow.models import REASON_MAX, TaskInput
+from wft_workloads import main
 
 pytestmark = pytest.mark.integration
 

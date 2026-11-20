@@ -21,10 +21,10 @@ A reference has no field beyond these, so none can hold bytes, and the consumer 
 
 | Bucket | Class | Kinds |
 | --- | --- | --- |
-| `wdf-sources` | content-addressed | `manifest`, `source`, `index` |
-| `wdf-components` | content-addressed | `component`, `build-info` |
-| `wdf-results` | attempt-scoped | `result`, `output`, `log-tail`, `summary` |
-| `wdf-checkpoints` | attempt-scoped | `checkpoint` |
+| `wft-sources` | content-addressed | `manifest`, `source`, `index` |
+| `wft-components` | content-addressed | `component`, `build-info` |
+| `wft-results` | attempt-scoped | `result`, `output`, `log-tail`, `summary` |
+| `wft-checkpoints` | attempt-scoped | `checkpoint` |
 
 The key templates are in `layout.yaml` and match the bucket layout of the storage epic.
 A content-addressed key is `sha256/<first two hex digits of the hash>/<hash>`, so identical bytes are stored once and a changed object is a new key.
@@ -49,7 +49,7 @@ It exits 0 when valid, 1 with `reason: <code>: <detail>` on stderr when not, and
 
 ## Failure taxonomy
 
-[failures.yaml](failures.yaml) lists every artifact failure with its cause, retry rule, attempt class and surface, and [failures.schema.json](failures.schema.json) is generated from the models of `wdf_artifactclient`.
+[failures.yaml](failures.yaml) lists every artifact failure with its cause, retry rule, attempt class and surface, and [failures.schema.json](failures.schema.json) is generated from the models of `wft_artifactclient`.
 The retry rule is spent inside the client, and the attempt class is what the failed attempt reports.
 The surface is the typed exception of the client and the prefix of the reason of a `task.attempt.failed` event, which is the code and a colon.
 The `Reason` model of the events contract takes free text, so no event schema changes.
@@ -85,14 +85,14 @@ The cap of an output of a task type may be lower than the cap of its kind and ne
 
 ## Aggregate index
 
-An aggregate task that reads many results opens one object of kind `index`, content-addressed in `wdf-sources`, and never lists a bucket.
+An aggregate task that reads many results opens one object of kind `index`, content-addressed in `wft-sources`, and never lists a bucket.
 The object is canonical JSON Lines: keys sorted, no whitespace, each line ended by a line feed.
 The same entries in the same order therefore give the same bytes and the same hash.
 [index.schema.json](index.schema.json) is generated from the models and describes the two shapes of line.
 
 | Line | Fields |
 | --- | --- |
-| 1, the header | `schema` (`wdf.artifact.index/1`), `job` and `task` of the aggregate task that reads the index, `tenant`, and `partial` as `refuse` or `allow` |
+| 1, the header | `schema` (`wft.artifact.index/1`), `job` and `task` of the aggregate task that reads the index, `tenant`, and `partial` as `refuse` or `allow` |
 | after it, one entry per input | `task` (the task id of the input), `status` as `succeeded`, `failed` or `missing`, and `reference` |
 
 Entries are in ascending task id order with no id repeated, which lets a builder write them from a sorted iterator without holding the list.
@@ -137,10 +137,10 @@ The loader reads the safety net and the terminal statuses through package data a
 
 ## Contract files and their loader
 
-`python -m wdf_artifactclient.contract --check <failures.yaml|staging.yaml|retention.yaml|index.jsonl>` validates one file against the models, the layout, the registry, the status contract and the safety net.
+`python -m wft_artifactclient.contract --check <failures.yaml|staging.yaml|retention.yaml|index.jsonl>` validates one file against the models, the layout, the registry, the status contract and the safety net.
 A file that ends in `.jsonl` is an aggregate index object, and any other file is one of the YAML files.
 It exits 0 when valid, 1 with `reason: <code>: <detail>` on stderr when not, and 2 on usage.
-`python -m wdf_artifactclient.gen [--check]` writes the generated schemas, and with `--check` exits 1 and names each committed schema that differs from the models.
+`python -m wft_artifactclient.gen [--check]` writes the generated schemas, and with `--check` exits 1 and names each committed schema that differs from the models.
 
 | Reason | Fails when |
 | --- | --- |
@@ -153,7 +153,7 @@ It exits 0 when valid, 1 with `reason: <code>: <detail>` on stderr when not, and
 | `unknown-task-type` | a task type is not in the registry |
 | `output-not-in-registry` | the declared outputs of a task type differ from those of the registry, or the registry has a type that staging lacks |
 | `window-above-safety-net` | a window keeps results or checkpoints longer than the safety net of `contracts/state/retention.yaml` for their bucket |
-| `cache-window-below-twice-max-job-duration` | `cache_unused_days` is below twice `MAX_JOB_DURATION_DAYS` of `wdf_compat.window` |
+| `cache-window-below-twice-max-job-duration` | `cache_unused_days` is below twice `MAX_JOB_DURATION_DAYS` of `wft_compat.window` |
 | `keep-below-two` | `checkpoint_keep` is below two |
 | `failed-shorter-than-succeeded` | a failed or partial window is shorter than the succeeded one |
 | `unknown-status` | a window names a status that is not terminal in `contracts/status/status.yaml` |

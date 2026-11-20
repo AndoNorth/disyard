@@ -1,6 +1,6 @@
 name: vector
 group: infra
-namespace: wdf-infra
+namespace: wft-infra
 artifact:
   kind: chart
   pin: fixture-chart

@@ -6,12 +6,12 @@
             "apiVersion": "v1",
             "kind": "Node",
             "metadata": {
-                "name": "wdf-control-plane",
+                "name": "wft-control-plane",
                 "labels": {
                     "beta.kubernetes.io/arch": "amd64",
                     "beta.kubernetes.io/os": "linux",
                     "kubernetes.io/arch": "amd64",
-                    "kubernetes.io/hostname": "wdf-control-plane",
+                    "kubernetes.io/hostname": "wft-control-plane",
                     "kubernetes.io/os": "linux",
                     "node-role.kubernetes.io/control-plane": ""
                 }
@@ -47,14 +47,14 @@
             "apiVersion": "v1",
             "kind": "Node",
             "metadata": {
-                "name": "wdf-worker",
+                "name": "wft-worker",
                 "labels": {
                     "beta.kubernetes.io/arch": "amd64",
                     "beta.kubernetes.io/os": "linux",
                     "kubernetes.io/arch": "amd64",
-                    "kubernetes.io/hostname": "wdf-worker",
+                    "kubernetes.io/hostname": "wft-worker",
                     "kubernetes.io/os": "linux",
-                    "wdf.dev/pool": "infra"
+                    "wft.dev/pool": "infra"
                 }
             },
             "spec": {
@@ -62,7 +62,7 @@
                 "taints": [
                     {
                         "effect": "NoSchedule",
-                        "key": "wdf.dev/pool",
+                        "key": "wft.dev/pool",
                         "value": "infra"
                     }
                 ]
@@ -95,14 +95,14 @@
             "apiVersion": "v1",
             "kind": "Node",
             "metadata": {
-                "name": "wdf-worker2",
+                "name": "wft-worker2",
                 "labels": {
                     "beta.kubernetes.io/arch": "amd64",
                     "beta.kubernetes.io/os": "linux",
                     "kubernetes.io/arch": "amd64",
-                    "kubernetes.io/hostname": "wdf-worker2",
+                    "kubernetes.io/hostname": "wft-worker2",
                     "kubernetes.io/os": "linux",
-                    "wdf.dev/pool": "obs"
+                    "wft.dev/pool": "obs"
                 }
             },
             "spec": {
@@ -110,7 +110,7 @@
                 "taints": [
                     {
                         "effect": "NoSchedule",
-                        "key": "wdf.dev/pool",
+                        "key": "wft.dev/pool",
                         "value": "obs"
                     }
                 ]
@@ -143,14 +143,14 @@
             "apiVersion": "v1",
             "kind": "Node",
             "metadata": {
-                "name": "wdf-worker3",
+                "name": "wft-worker3",
                 "labels": {
                     "beta.kubernetes.io/arch": "amd64",
                     "beta.kubernetes.io/os": "linux",
                     "kubernetes.io/arch": "amd64",
-                    "kubernetes.io/hostname": "wdf-worker3",
+                    "kubernetes.io/hostname": "wft-worker3",
                     "kubernetes.io/os": "linux",
-                    "wdf.dev/pool": "compile"
+                    "wft.dev/pool": "compile"
                 }
             },
             "spec": {
@@ -158,7 +158,7 @@
                 "taints": [
                     {
                         "effect": "NoSchedule",
-                        "key": "wdf.dev/pool",
+                        "key": "wft.dev/pool",
                         "value": "compile"
                     }
                 ]
@@ -191,14 +191,14 @@
             "apiVersion": "v1",
             "kind": "Node",
             "metadata": {
-                "name": "wdf-worker4",
+                "name": "wft-worker4",
                 "labels": {
                     "beta.kubernetes.io/arch": "amd64",
                     "beta.kubernetes.io/os": "linux",
                     "kubernetes.io/arch": "amd64",
-                    "kubernetes.io/hostname": "wdf-worker4",
+                    "kubernetes.io/hostname": "wft-worker4",
                     "kubernetes.io/os": "linux",
-                    "wdf.dev/pool": "simulate"
+                    "wft.dev/pool": "simulate"
                 }
             },
             "spec": {
@@ -206,7 +206,7 @@
                 "taints": [
                     {
                         "effect": "NoSchedule",
-                        "key": "wdf.dev/pool",
+                        "key": "wft.dev/pool",
                         "value": "simulate"
                     }
                 ]
@@ -239,14 +239,14 @@
             "apiVersion": "v1",
             "kind": "Node",
             "metadata": {
-                "name": "wdf-worker5",
+                "name": "wft-worker5",
                 "labels": {
                     "beta.kubernetes.io/arch": "amd64",
                     "beta.kubernetes.io/os": "linux",
                     "kubernetes.io/arch": "amd64",
-                    "kubernetes.io/hostname": "wdf-worker5",
+                    "kubernetes.io/hostname": "wft-worker5",
                     "kubernetes.io/os": "linux",
-                    "wdf.dev/pool": "aggregate"
+                    "wft.dev/pool": "aggregate"
                 }
             },
             "spec": {
@@ -254,7 +254,7 @@
                 "taints": [
                     {
                         "effect": "NoSchedule",
-                        "key": "wdf.dev/pool",
+                        "key": "wft.dev/pool",
                         "value": "aggregate"
                     }
                 ]
@@ -287,12 +287,12 @@
             "apiVersion": "v1",
             "kind": "Pod",
             "metadata": {
-                "name": "etcd-wdf-control-plane",
+                "name": "etcd-wft-control-plane",
                 "namespace": "kube-system",
                 "labels": {}
             },
             "spec": {
-                "nodeName": "wdf-control-plane",
+                "nodeName": "wft-control-plane",
                 "containers": [
                     {
                         "name": "etcd",
@@ -324,12 +324,12 @@
             "apiVersion": "v1",
             "kind": "Pod",
             "metadata": {
-                "name": "kube-apiserver-wdf-control-plane",
+                "name": "kube-apiserver-wft-control-plane",
                 "namespace": "kube-system",
                 "labels": {}
             },
             "spec": {
-                "nodeName": "wdf-control-plane",
+                "nodeName": "wft-control-plane",
                 "containers": [
                     {
                         "name": "kube-apiserver",
@@ -367,7 +367,7 @@
                 }
             },
             "spec": {
-                "nodeName": "wdf-control-plane",
+                "nodeName": "wft-control-plane",
                 "containers": [
                     {
                         "name": "coredns",
@@ -409,7 +409,7 @@
                 }
             },
             "spec": {
-                "nodeName": "wdf-control-plane",
+                "nodeName": "wft-control-plane",
                 "containers": [
                     {
                         "name": "kindnet-cni",
@@ -452,7 +452,7 @@
                 }
             },
             "spec": {
-                "nodeName": "wdf-control-plane",
+                "nodeName": "wft-control-plane",
                 "containers": [
                     {
                         "name": "kube-proxy",
@@ -486,7 +486,7 @@
                 }
             },
             "spec": {
-                "nodeName": "wdf-worker",
+                "nodeName": "wft-worker",
                 "containers": [
                     {
                         "name": "kindnet-cni",
@@ -529,7 +529,7 @@
                 }
             },
             "spec": {
-                "nodeName": "wdf-worker",
+                "nodeName": "wft-worker",
                 "containers": [
                     {
                         "name": "kube-proxy",
@@ -563,7 +563,7 @@
                 }
             },
             "spec": {
-                "nodeName": "wdf-worker2",
+                "nodeName": "wft-worker2",
                 "containers": [
                     {
                         "name": "kindnet-cni",
@@ -606,7 +606,7 @@
                 }
             },
             "spec": {
-                "nodeName": "wdf-worker2",
+                "nodeName": "wft-worker2",
                 "containers": [
                     {
                         "name": "kube-proxy",
@@ -640,7 +640,7 @@
                 }
             },
             "spec": {
-                "nodeName": "wdf-worker3",
+                "nodeName": "wft-worker3",
                 "containers": [
                     {
                         "name": "kindnet-cni",
@@ -683,7 +683,7 @@
                 }
             },
             "spec": {
-                "nodeName": "wdf-worker3",
+                "nodeName": "wft-worker3",
                 "containers": [
                     {
                         "name": "kube-proxy",
@@ -717,7 +717,7 @@
                 }
             },
             "spec": {
-                "nodeName": "wdf-worker4",
+                "nodeName": "wft-worker4",
                 "containers": [
                     {
                         "name": "kindnet-cni",
@@ -760,7 +760,7 @@
                 }
             },
             "spec": {
-                "nodeName": "wdf-worker4",
+                "nodeName": "wft-worker4",
                 "containers": [
                     {
                         "name": "kube-proxy",
@@ -794,7 +794,7 @@
                 }
             },
             "spec": {
-                "nodeName": "wdf-worker5",
+                "nodeName": "wft-worker5",
                 "containers": [
                     {
                         "name": "kindnet-cni",
@@ -837,7 +837,7 @@
                 }
             },
             "spec": {
-                "nodeName": "wdf-worker5",
+                "nodeName": "wft-worker5",
                 "containers": [
                     {
                         "name": "kube-proxy",
@@ -865,13 +865,13 @@
             "kind": "Pod",
             "metadata": {
                 "name": "temporal-frontend-7d9c5b6f4-2kq8x",
-                "namespace": "wdf-infra",
+                "namespace": "wft-infra",
                 "labels": {
                     "app.kubernetes.io/name": "temporal-frontend"
                 }
             },
             "spec": {
-                "nodeName": "wdf-worker",
+                "nodeName": "wft-worker",
                 "containers": [
                     {
                         "name": "temporal-frontend",
@@ -908,13 +908,13 @@
             "kind": "Pod",
             "metadata": {
                 "name": "temporal-schema-6x2vp",
-                "namespace": "wdf-infra",
+                "namespace": "wft-infra",
                 "labels": {
                     "job-name": "temporal-schema"
                 }
             },
             "spec": {
-                "nodeName": "wdf-worker",
+                "nodeName": "wft-worker",
                 "containers": [
                     {
                         "name": "temporal-schema",
@@ -951,17 +951,17 @@
             "kind": "Pod",
             "metadata": {
                 "name": "admission-5f8b7c9d6-r4t7w",
-                "namespace": "wdf-control",
+                "namespace": "wft-control",
                 "labels": {
                     "app.kubernetes.io/name": "admission"
                 }
             },
             "spec": {
-                "nodeName": "wdf-worker",
+                "nodeName": "wft-worker",
                 "containers": [
                     {
                         "name": "admission",
-                        "image": "wdf-admission:tilt-1b7e4c2a9d03f6e5",
+                        "image": "wft-admission:tilt-1b7e4c2a9d03f6e5",
                         "resources": {
                             "limits": {
                                 "cpu": "250m",
@@ -994,18 +994,18 @@
             "kind": "Pod",
             "metadata": {
                 "name": "compile-worker-7b5d9c8f6d-h6t2r",
-                "namespace": "wdf-workers",
+                "namespace": "wft-workers",
                 "labels": {
                     "app.kubernetes.io/name": "compile-worker",
                     "pod-template-hash": "7b5d9c8f6d"
                 }
             },
             "spec": {
-                "nodeName": "wdf-worker3",
+                "nodeName": "wft-worker3",
                 "containers": [
                     {
                         "name": "compile-worker",
-                        "image": "wdf-compile-worker:tilt-6c1f2b9e0a4d7e31",
+                        "image": "wft-compile-worker:tilt-6c1f2b9e0a4d7e31",
                         "resources": {
                             "limits": {
                                 "cpu": "1",
@@ -1038,18 +1038,18 @@
             "kind": "Pod",
             "metadata": {
                 "name": "simulate-worker-7b5d9c8f6d-z9c3v",
-                "namespace": "wdf-workers",
+                "namespace": "wft-workers",
                 "labels": {
                     "app.kubernetes.io/name": "simulate-worker",
                     "pod-template-hash": "7b5d9c8f6d"
                 }
             },
             "spec": {
-                "nodeName": "wdf-worker4",
+                "nodeName": "wft-worker4",
                 "containers": [
                     {
                         "name": "simulate-worker",
-                        "image": "wdf-simulate-worker:tilt-0d5a8e3c7b2f1946",
+                        "image": "wft-simulate-worker:tilt-0d5a8e3c7b2f1946",
                         "resources": {
                             "limits": {
                                 "cpu": "250m",
@@ -1082,18 +1082,18 @@
             "kind": "Pod",
             "metadata": {
                 "name": "aggregate-worker-7b5d9c8f6d-m4p7s",
-                "namespace": "wdf-workers",
+                "namespace": "wft-workers",
                 "labels": {
                     "app.kubernetes.io/name": "aggregate-worker",
                     "pod-template-hash": "7b5d9c8f6d"
                 }
             },
             "spec": {
-                "nodeName": "wdf-worker5",
+                "nodeName": "wft-worker5",
                 "containers": [
                     {
                         "name": "aggregate-worker",
-                        "image": "wdf-aggregate-worker:tilt-9e4b1c7f2a6d0853",
+                        "image": "wft-aggregate-worker:tilt-9e4b1c7f2a6d0853",
                         "resources": {
                             "limits": {
                                 "cpu": "1",

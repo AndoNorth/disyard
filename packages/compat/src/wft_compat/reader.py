@@ -1,0 +1,105 @@
+"""Reads an event of the current major or the one before it, upgrading the older one."""
+
+import json
+from collections.abc import Callable, Mapping
+from dataclasses import dataclass, field
+from datetime import UTC, date, datetime
+from importlib.resources.abc import Traversable
+from typing import Any
+
+from wft_events import MAX_BYTES, Event, EventTooLarge, SchemaInvalid, UnsupportedMajor, from_bytes
+from wft_events.metrics import registry as metrics
+from wft_events.models import INTRODUCED
+from wft_events.profile import CONTRACT, TYPE_RE, check_event, known_versions
+
+from . import window
+
+# The attributes that identify a fact, which an upgrade never changes so the store still dedups.
+IDENTITY = ("id", "source", "time")
+
+Upgrade = Callable[[dict[str, Any]], dict[str, Any]]
+
+
+@dataclass(frozen=True)
+class Registry:
+    """The schema files, the introduction date of each major and the upgrade of each major step.
+
+    `upgrades[(name, major)]` turns a decoded event of that major into a decoded event of the next.
+    """
+
+    schemas_dir: Traversable
+    introduced: Mapping[tuple[str, int], str]
+    upgrades: Mapping[tuple[str, int], Upgrade] = field(default_factory=dict)
+
+    def current(self, name: str) -> int:
+        return max(major for major, _ in known_versions(name, self.schemas_dir))
+
+
+# One upgrade function per major step is added here, next to the model of the new major.
+UPGRADES: dict[tuple[str, int], Upgrade] = {}
+
+CATALOGUE = Registry(CONTRACT / "schemas", INTRODUCED, UPGRADES)
+
+
+def _upgrade(event: Event, registry: Registry, today: date) -> Event:
+    name = TYPE_RE.fullmatch(event.type)["name"]
+    major = int(TYPE_RE.fullmatch(event.type)["major"])
+    current = registry.current(name)
+    if major == current:
+        return event
+    if major != current - 1:
+        raise UnsupportedMajor(
+            "unsupported-major",
+            f"{event.type} is {current - major} majors behind {name} v{current}",
+        )
+    introduced = registry.introduced.get((name, current))
+    if introduced and window.retired(introduced, today):
+        raise UnsupportedMajor(
+            "retired-major",
+            f"{event.type} left its window {window.readable_days()} days after {introduced}",
+        )
+    upgrade = registry.upgrades.get((name, major))
+    if upgrade is None:
+        raise UnsupportedMajor("no-upgrade", f"{name} has no upgrade from v{major}")
+    document = upgrade(event.model_dump(exclude_none=True))
+    check_event(document, registry.schemas_dir)
+    if any(document.get(key) != getattr(event, key) for key in IDENTITY):
+        raise SchemaInvalid("upgrade-changed-identity", f"{event.type} upgrade changed {IDENTITY}")
+    metrics.inc("wft_event_upgraded_total", type=name, from_major=str(major))
+    return Event.model_validate(document)
+
+
+def read_event(data: bytes, registry: Registry = CATALOGUE, today: date | None = None) -> Event:
+    """The event in `data` at the current major of its type.
+
+    An event of the previous major is upgraded while its window is open, and raises
+    UnsupportedMajor after that.
+    An event of any other major raises UnsupportedMajor, and an invalid one raises SchemaInvalid.
+    `today` is the day the window is measured on, and defaults to today in UTC.
+    """
+    event = from_bytes(data, registry.schemas_dir)
+    return _upgrade(event, registry, today or datetime.now(UTC).date())
+
+
+def upgrade_for_replay(
+    data: bytes, registry: Registry = CATALOGUE, today: date | None = None
+) -> bytes:
+    """The bytes to republish for a replayed event, at the current major of its type.
+
+    An event of the current major comes back byte-identical, and an event of the previous major
+    comes back as canonical bytes of the upgraded event, with `id`, `source` and `time` unchanged.
+    The errors are those of `read_event`, and no call returns bytes that are partly upgraded.
+    """
+    event = from_bytes(data, registry.schemas_dir)
+    upgraded = _upgrade(event, registry, today or datetime.now(UTC).date())
+    if upgraded is event:
+        return data
+    encoded = json.dumps(
+        upgraded.model_dump(exclude_none=True),
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=False,
+    ).encode()
+    if len(encoded) > MAX_BYTES:
+        raise EventTooLarge("event-too-large", f"{len(encoded)} bytes, the limit is {MAX_BYTES}")
+    return encoded

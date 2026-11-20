@@ -17,15 +17,15 @@ import pytest
 from psycopg.conninfo import conninfo_to_dict
 from psycopg.types.json import Jsonb
 from temporalio.service import RPCError, RPCStatusCode
-from wdf_admission.intake import IDLE_S, Intake, Work
-from wdf_admission.policy import Caps, Resume, Snapshot
-from wdf_broker import dlq
-from wdf_broker.client import Consumer, Credentials, connect
-from wdf_broker.models import Outcome
-from wdf_broker.tenancy import load
-from wdf_broker.testing.container import broker_container
-from wdf_events import build_event, to_bytes
-from wdf_jobstate import transition
+from wft_admission.intake import IDLE_S, Intake, Work
+from wft_admission.policy import Caps, Resume, Snapshot
+from wft_broker import dlq
+from wft_broker.client import Consumer, Credentials, connect
+from wft_broker.models import Outcome
+from wft_broker.tenancy import load
+from wft_broker.testing.container import broker_container
+from wft_events import build_event, to_bytes
+from wft_jobstate import transition
 
 pytestmark = [pytest.mark.integration, pytest.mark.pair]
 
@@ -43,7 +43,7 @@ CAPS = Caps(
     job_class={"short": 10, "long": 10},
     reserve_interval=5,
 )
-DEAD_LETTERED = ("dev.wdf.job.dead.lettered.v1", "/wdf/admission")
+DEAD_LETTERED = ("dev.wft.job.dead.lettered.v1", "/wft/admission")
 # Above the delayed retries of a message's five counted retries, 1 s times each delivery count.
 RETRIES_S = 40
 TIMEOUT_S = 10
@@ -167,7 +167,7 @@ class Broker:
         try:
             held = operator.browser(DLQ).drain(n + 1, TIMEOUT_S)
             letters = [
-                (d.annotations.get("x-opt-wdf-reason"), d.annotations.get("x-opt-wdf-detail"))
+                (d.annotations.get("x-opt-wft-reason"), d.annotations.get("x-opt-wft-detail"))
                 for d in held
             ]
             for delivery in held:
@@ -278,8 +278,8 @@ def edited(event, edit) -> bytes:
 
 
 def unsupported(document) -> None:
-    document["type"] = "dev.wdf.job.accepted.v2"
-    document["dataschema"] = "urn:wdf:schema:job.accepted:2.0"
+    document["type"] = "dev.wft.job.accepted.v2"
+    document["dataschema"] = "urn:wft:schema:job.accepted:2.0"
 
 
 def test_ack_after_start(broker, make_intake, rows, starts, clock, seed_event, status):
@@ -309,7 +309,7 @@ def test_malformed_dead_lettered(broker, make_intake, rows, clock, seed_event, e
     broker.publish(edited(event, lambda d: d["data"].pop("manifest")))
     intake = make_intake()
     run_until(
-        intake, rows, clock, lambda: intake.counts["wdf_admission_dead_lettered_total", "MALFORMED"]
+        intake, rows, clock, lambda: intake.counts["wft_admission_dead_lettered_total", "MALFORMED"]
     )
     [(reason, detail)] = broker.dead_letters(1)
     assert (reason, detail.split(": ")[0]) == ("MALFORMED", "bad-data")
@@ -327,7 +327,7 @@ def test_unsupported_major_dead_lettered(
         intake,
         rows,
         clock,
-        lambda: intake.counts["wdf_admission_dead_lettered_total", "UNSUPPORTED_VERSION"],
+        lambda: intake.counts["wft_admission_dead_lettered_total", "UNSUPPORTED_VERSION"],
     )
     [(reason, detail)] = broker.dead_letters(1)
     assert (reason, detail.split(": ")[0]) == ("UNSUPPORTED_VERSION", "unsupported-major")
@@ -345,7 +345,7 @@ def test_dead_letter_event_once(broker, make_intake, rows, clock, seed_event, ev
         intake,
         rows,
         clock,
-        lambda: intake.counts["wdf_admission_dead_lettered_total", "UNSUPPORTED_VERSION"] == 2,
+        lambda: intake.counts["wft_admission_dead_lettered_total", "UNSUPPORTED_VERSION"] == 2,
     )
     assert len(broker.dead_letters(2)) == 2
     assert events(event.jobid).count(DEAD_LETTERED) == 1
@@ -360,7 +360,7 @@ def test_nameless_message_no_event(broker, make_intake, rows, clock, seed_event,
         intake,
         rows,
         clock,
-        lambda: intake.counts["wdf_admission_dead_lettered_total", "MALFORMED"] == 2,
+        lambda: intake.counts["wft_admission_dead_lettered_total", "MALFORMED"] == 2,
     )
     tokens = [detail.split(": ")[0] for _, detail in broker.dead_letters(2)]
     assert tokens == ["malformed-json", "missing-jobid"]
@@ -393,7 +393,7 @@ def test_last_delivery_admission_failed(
         intake,
         rows,
         clock,
-        lambda: intake.counts["wdf_admission_dead_lettered_total", "ADMISSION_FAILED"],
+        lambda: intake.counts["wft_admission_dead_lettered_total", "ADMISSION_FAILED"],
     )
     assert broker.dead_letters(1) == [("ADMISSION_FAILED", "ValueError: boom")]
     assert len(starts.calls) == 6
@@ -405,7 +405,7 @@ def test_wrong_type_dead_lettered(broker, make_intake, rows, clock, seed_event, 
     event = seed_event()
     admitted = build_event(
         "job.admitted",
-        source="/wdf/admission",
+        source="/wft/admission",
         tenant=event.tenant,
         jobid=event.jobid,
         priorityclass=event.priorityclass,
@@ -417,9 +417,9 @@ def test_wrong_type_dead_lettered(broker, make_intake, rows, clock, seed_event, 
     broker.publish(admitted)
     intake = make_intake()
     run_until(
-        intake, rows, clock, lambda: intake.counts["wdf_admission_dead_lettered_total", "MALFORMED"]
+        intake, rows, clock, lambda: intake.counts["wft_admission_dead_lettered_total", "MALFORMED"]
     )
-    assert broker.dead_letters(1) == [("MALFORMED", "wrong-type: dev.wdf.job.admitted.v1")]
+    assert broker.dead_letters(1) == [("MALFORMED", "wrong-type: dev.wft.job.admitted.v1")]
     assert events(event.jobid)[-1] == DEAD_LETTERED
 
 
@@ -431,7 +431,7 @@ def test_unknown_pair_dead_lettered(broker, make_intake, rows, clock, db, accept
         intake,
         rows,
         clock,
-        lambda: intake.counts["wdf_admission_dead_lettered_total", "MALFORMED"] == 2,
+        lambda: intake.counts["wft_admission_dead_lettered_total", "MALFORMED"] == 2,
     )
     assert broker.dead_letters(2) == [
         ("MALFORMED", "unknown-tenant: zeta"),
@@ -447,7 +447,7 @@ def test_queue_mismatch_dead_lettered(broker, make_intake, rows, clock, seed_eve
     broker.publish(event, queue=ACME)
     intake = make_intake()
     run_until(
-        intake, rows, clock, lambda: intake.counts["wdf_admission_dead_lettered_total", "MALFORMED"]
+        intake, rows, clock, lambda: intake.counts["wft_admission_dead_lettered_total", "MALFORMED"]
     )
     assert broker.dead_letters(1) == [("MALFORMED", f"queue-mismatch: beta.standard on {ACME}")]
     assert events(event.jobid)[-1] == DEAD_LETTERED
@@ -464,7 +464,7 @@ def test_no_row_retried_then_admission_failed(
         intake,
         rows,
         clock,
-        lambda: intake.counts["wdf_admission_dead_lettered_total", "ADMISSION_FAILED"],
+        lambda: intake.counts["wft_admission_dead_lettered_total", "ADMISSION_FAILED"],
     )
     assert broker.dead_letters(1) == [("ADMISSION_FAILED", f"no-row: {job_id}")]
     assert starts.calls == []
@@ -488,7 +488,7 @@ def test_dead_lettered_row_stays_accepted(
         intake,
         rows,
         clock,
-        lambda: intake.counts["wdf_admission_dead_lettered_total", "ADMISSION_FAILED"],
+        lambda: intake.counts["wft_admission_dead_lettered_total", "ADMISSION_FAILED"],
     )
     [(reason, detail)] = broker.dead_letters(1)
     assert (reason, detail.split(": ")[0]) == ("ADMISSION_FAILED", "SchemaInvalid")
@@ -518,7 +518,7 @@ def test_other_tenant_no_event(broker, make_intake, rows, clock, seed_event, eve
         intake,
         rows,
         clock,
-        lambda: intake.counts["wdf_admission_dead_lettered_total", "UNSUPPORTED_VERSION"],
+        lambda: intake.counts["wft_admission_dead_lettered_total", "UNSUPPORTED_VERSION"],
     )
     assert [reason for reason, _ in broker.dead_letters(1)] == ["UNSUPPORTED_VERSION"]
     assert DEAD_LETTERED not in events(event.jobid)
@@ -575,7 +575,7 @@ def test_failure_after_claim_left_admitted(
     run_until(intake, rows, clock, lambda: len(starts.calls) == 2)
     assert starts.calls == [event.jobid, event.jobid]
     assert eventually(broker.counts, (0, 0)) == (0, 0)
-    assert events(event.jobid).count(("dev.wdf.job.admitted.v1", "/wdf/admission")) == 1
+    assert events(event.jobid).count(("dev.wft.job.admitted.v1", "/wft/admission")) == 1
 
 
 def test_broker_breaker_reconnects(broker, make_intake, rows, starts, clock, seed_event, drains):
@@ -608,12 +608,12 @@ def test_missing_queue_skipped(broker, make_intake, rows, starts, clock, seed_ev
     assert eventually(broker.counts, (1, 0)) == (1, 0)
     cycle(intake, rows)
     assert starts.calls == [event.jobid]
-    assert intake.counts["wdf_admission_queue_missing_total",] == 1
+    assert intake.counts["wft_admission_queue_missing_total",] == 1
     while intake.cycles < 9:
         clock.advance(cycle(intake, rows))
-    assert intake.counts["wdf_admission_queue_missing_total",] == 1
+    assert intake.counts["wft_admission_queue_missing_total",] == 1
     clock.advance(cycle(intake, rows))
-    assert intake.counts["wdf_admission_queue_missing_total",] == 2
+    assert intake.counts["wft_admission_queue_missing_total",] == 2
 
 
 def test_empty_queue_backed_off(make_intake, rows, clock, drains):
@@ -632,7 +632,7 @@ def test_empty_queue_backed_off(make_intake, rows, clock, drains):
 def test_class_at_cap_released(
     broker, make_intake, rows, starts, clock, seed_event, admission_db, db
 ):
-    from wdf_admission.claim import claim
+    from wft_admission.claim import claim
 
     holder = seed_event()
     claim(admission_db, holder.jobid)

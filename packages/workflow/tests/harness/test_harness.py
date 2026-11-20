@@ -18,19 +18,19 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
-import wdf_clusterkit
+import wft_clusterkit
 from temporalio.api.common.v1 import SearchAttributes
 from temporalio.converter import encode_search_attributes
 from temporalio.service import RPCError, RPCStatusCode
-from wdf_kernel import writer
-from wdf_kernel.expected import expected_blocks
-from wdf_keys import workflow_id
-from wdf_plan import plan_hash, read_plan
-from wdf_workflow import versioning
-from wdf_workflow.activities.cache import bundle_key
-from wdf_workflow.budgets import INFRA_RETRIES
-from wdf_workflow.contract import naming
-from wdf_workflow.harness import (
+from wft_kernel import writer
+from wft_kernel.expected import expected_blocks
+from wft_keys import workflow_id
+from wft_plan import plan_hash, read_plan
+from wft_workflow import versioning
+from wft_workflow.activities.cache import bundle_key
+from wft_workflow.budgets import INFRA_RETRIES
+from wft_workflow.contract import naming
+from wft_workflow.harness import (
     BURN,
     ENTRY,
     REAL_ENTRY,
@@ -44,11 +44,11 @@ from wdf_workflow.harness import (
     search_attributes,
     smoke_jobs,
 )
-from wdf_workflow.harness.__main__ import main
-from wdf_workflow.models import StatusQuery
-from wdf_workflow.taskpath import QUEUE_PREFIX_MEMO
-from wdf_workflow.testing.pool import FakePool
-from wdf_workloads import bundle as workloads
+from wft_workflow.harness.__main__ import main
+from wft_workflow.models import StatusQuery
+from wft_workflow.taskpath import QUEUE_PREFIX_MEMO
+from wft_workflow.testing.pool import FakePool
+from wft_workloads import bundle as workloads
 
 LIMIT_S = 300
 # The infrastructure budget that the one task of STATUS spent.
@@ -75,11 +75,11 @@ STATUS = {
 
 def harness(*args: str) -> subprocess.CompletedProcess:
     return subprocess.run(
-        [sys.executable, "-m", "wdf_workflow.harness", *args],
+        [sys.executable, "-m", "wft_workflow.harness", *args],
         capture_output=True,
         text=True,
         timeout=LIMIT_S,
-        env={**os.environ, "WDF_BUILD_ID": "harness-test"},
+        env={**os.environ, "WFT_BUILD_ID": "harness-test"},
     )
 
 
@@ -104,7 +104,7 @@ def test_smoke_jobs_load_as_load_plan_reads_them():
 
 
 def test_the_drivers_control_namespace_is_the_one_versioning_deploys_to():
-    assert wdf_clusterkit.CONTROL == versioning.KUBE_NAMESPACE
+    assert wft_clusterkit.CONTROL == versioning.KUBE_NAMESPACE
 
 
 def test_start_options_encode_every_search_attribute():
@@ -119,7 +119,7 @@ def test_start_options_encode_every_search_attribute():
     [
         ["--address", "127.0.0.1:1", "restart", "--jobs", "1"],
         ["--address", "127.0.0.1:1", "smoke", "--jobs", "0"],
-        ["--address", "127.0.0.1:1", "--kube-context", "kind-wdf", "describe"],
+        ["--address", "127.0.0.1:1", "--kube-context", "kind-wft", "describe"],
         ["--address", "127.0.0.1:1", "restart", "--target", ","],
         ["--address", "127.0.0.1:1", "smoke", "--queue-prefix", "Bad-"],
         ["--address", "127.0.0.1:1", "smoke", "--queue-prefix", "x" * 120],
@@ -152,7 +152,7 @@ class Waits:
 
 waits = Waits()
 sys.argv = ["harness", *sys.argv[1:]]
-runpy.run_module("wdf_workflow.harness", run_name="__main__", alter_sys=True)
+runpy.run_module("wft_workflow.harness", run_name="__main__", alter_sys=True)
 """
 
 

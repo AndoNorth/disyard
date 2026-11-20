@@ -1,12 +1,12 @@
 {
-  "schema": "wdf.build-info/1",
+  "schema": "wft.build-info/1",
   "cache_key": "045cd531b785ef4372129fd372a2d1af851c0a7718195e0b643faffc44373254",
   "inputs": {
     "source_hash": "1e6ed65d77d6364eeaed5a745ba5c4985ae2b700dd85d7cf7f027bdf294a33fc",
     "lockfile_hash": "84321598744d84dbee2318e634c74c9aae39a1c253f1c4bd17ebf9ef2f807b11",
     "componentize_py_version": "0.25.1",
     "wit_version": "1.0.0",
-    "entry": "wdf_workloads.main"
+    "entry": "wft_workloads.main"
   },
   "tools": {
     "componentize_py": "0.25.1",

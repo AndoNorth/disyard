@@ -5,9 +5,9 @@ import json
 import pytest
 import yaml
 from jsonschema import ValidationError, validate
-from wdf_compat.window import MAX_JOB_DURATION_DAYS
-from wdf_jobdoc.profile import PROFILES, Limits, LimitsFile
-from wdf_jobdoc.profile_files import load_profile
+from wft_compat.window import MAX_JOB_DURATION_DAYS
+from wft_jobdoc.profile import PROFILES, Limits, LimitsFile
+from wft_jobdoc.profile_files import load_profile
 
 
 @pytest.fixture
