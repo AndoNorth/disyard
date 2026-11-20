@@ -1,0 +1,1 @@
+A stray wDf_name, in a letter case the rewrite leaves alone, that the prefix check refuses.

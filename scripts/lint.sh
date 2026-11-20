@@ -11,6 +11,7 @@ run_shellcheck()  { shellcheck "$@"; }
 run_actionlint()  { actionlint "$@"; }
 run_kubeconform() { kubeconform -strict -summary "$@"; }
 run_nixfmt()      { nixfmt --check "$@"; }
+run_prefix()      { python3 scripts/rename-prefix.py check "$@"; }
 
 # Every candidate file: tracked and untracked-but-not-ignored in a git checkout, found on disk otherwise (an export).
 all_files() {
@@ -68,6 +69,7 @@ lint_all() {
     if [ -n "${LINT_ONLY:-}" ] && [ "$LINT_ONLY" != kubeconform ]; then :
     elif [ ${#f[@]} -gt 0 ]; then echo "== kubeconform (${#f[@]} files)"; linted=$((linted + ${#f[@]})); run_kubeconform "${f[@]}" || rc=1; else echo "skip kubeconform: no files"; fi
     step nixfmt      run_nixfmt      '*.nix'
+    step prefix      run_prefix      '*'
     if [ -z "${LINT_ONLY:-}" ] && [ "$linted" -eq 0 ] && [ -n "$(all_files | tr -d '\0')" ]; then
         echo "error: no files linted in a tree that has files, refusing to report success" >&2
         rc=1
@@ -98,7 +100,7 @@ case "${1:-}" in
         rc=0
         fixtures=("$FIXTURES"/*)
         for f in "${fixtures[@]}"; do expect_fail "$f" || rc=1; done
-        [ ${#fixtures[@]} -eq 6 ] || { echo "expected 6 fixtures" >&2; rc=1; }
+        [ ${#fixtures[@]} -eq 7 ] || { echo "expected 7 fixtures" >&2; rc=1; }
         exit $rc ;;
     --only) [ $# -eq 2 ] || { echo "usage: lint.sh --only <step>" >&2; exit 2; }; LINT_ONLY=$2 lint_all ;;
     "") lint_all ;;
