@@ -1,7 +1,7 @@
 # Events contract
 
 Owner epic: #4 (job event envelope and state propagation).
-Version: 4
+Version: 5
 Consumers: every epic.
 Storage (#3), validator (#5), workflow (#6), broker (#7), admission (#8), placement (#9), workers (#10), toolchain (#11), artifacts (#12), observability (#13), dispatch (#24) and the checkpoint epic (#18) read it.
 

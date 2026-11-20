@@ -1,7 +1,7 @@
 # Instrumentation contract
 
 Owner epic: #4 (job event envelope and state propagation), until the observability epic (#13) takes the file over.
-Version: 2
+Version: 3
 Consumers: observability (#13) and every component that emits a metric, a log line or a span.
 
 This contract pins the rules for metrics, labels, log fields and traces, and a `metrics.yaml` that holds the metrics of the event contract and the counters of the broker client.

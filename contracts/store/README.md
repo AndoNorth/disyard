@@ -1,7 +1,7 @@
 # Store contract
 
 Owner epic: #3 (durable state and artifact storage).
-Version: 4
+Version: 5
 Consumers: artifacts (#12), the dispatch and control API (#24), the contract script of this epic, the object store module, characterization (#16, #17) and the observability epic (#13).
 
 This directory pins who may do what in the object store, which lifecycle rules each bucket carries and what each tested product is known not to do.

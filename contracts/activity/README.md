@@ -1,7 +1,7 @@
 # Activity contract
 
 Owner epic: #6 (workflow engine on Temporal).
-Version: 1, in [VERSION](VERSION).
+Version: 2, in [VERSION](VERSION).
 The [Consumers](#consumers) section names who reads each part.
 
 The workflow runs each task as one activity, `run_task`, on the queue of its pool.

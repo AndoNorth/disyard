@@ -1,7 +1,7 @@
 # Preset contract
 
 Owner epic: #2 (fixed-resource cluster and Tilt).
-Version: 1
+Version: 2
 Consumers: every epic through `just up`, `just doctor` (reads `memory_mib`), the cluster renderer, the footprint spike and characterization.
 
 A preset fixes the numbers of one cluster size, and the same repo runs at each size.

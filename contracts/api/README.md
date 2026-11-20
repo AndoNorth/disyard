@@ -1,7 +1,7 @@
 # API contract
 
 Owner epic: #24 (dispatch and control API).
-Version: 1, in [VERSION](VERSION).
+Version: 2, in [VERSION](VERSION).
 The [Consumers](#consumers) section names who reads each part.
 
 The dispatch and control API is the front door of the platform: a submitter sends a batch of jobs in one call and gets an answer per job, and an operator cancels, pauses, resumes or terminates a job.

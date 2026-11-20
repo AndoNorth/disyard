@@ -14,7 +14,7 @@ from pathlib import Path
 import psycopg
 
 ENTRY_POINT_GROUP = "wft.migrations"
-LOCK_KEY = 0x7764666D  # "wdfm"
+LOCK_KEY = 0x7766746D  # "wftm"
 
 NUMBERED = re.compile(r"^(\d{4})_[a-z0-9_]+(\.contract)?\.sql$")
 REPEATABLE = re.compile(r"^R__[a-z0-9_]+\.sql$")

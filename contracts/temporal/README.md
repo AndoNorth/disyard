@@ -1,7 +1,7 @@
 # Temporal contract
 
 Owner epic: #6 (workflow engine on Temporal).
-Version: 3, in [VERSION](VERSION).
+Version: 4, in [VERSION](VERSION).
 The [Consumers](#consumers) section names who reads each part.
 
 Temporal owns the state of every job.
