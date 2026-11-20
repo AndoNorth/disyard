@@ -54,6 +54,7 @@ def test_a_replayed_event_adds_no_row_and_the_time_survives_to_the_microsecond(t
     key, moment, body = to_event_row(event)
     assert event.time.endswith(".123456Z")
     unsorted_body = '{"b":1,"a":{"d":1,"c":2}}'
+    others = labelled(t1.run_id)
     with t1.container("postgres", ports={0: 5432}, env={"POSTGRES_PASSWORD": PASSWORD}) as c:
         with connect(c.host_ports[0]) as db:
             db.execute(
@@ -77,5 +78,5 @@ def test_a_replayed_event_adds_no_row_and_the_time_survives_to_the_microsecond(t
             db.execute("INSERT INTO as_jsonb VALUES (%s)", (unsorted_body,))
             assert db.execute("SELECT body FROM as_text").fetchone()[0] == unsorted_body
             assert db.execute("SELECT body::text FROM as_jsonb").fetchone()[0] != unsorted_body
-        assert labelled(t1.run_id) == [c.id[:12]]
-    assert labelled(t1.run_id) == []
+        assert sorted(labelled(t1.run_id)) == sorted([*others, c.id[:12]])
+    assert labelled(t1.run_id) == others
