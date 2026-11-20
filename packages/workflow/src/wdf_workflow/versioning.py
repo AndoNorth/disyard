@@ -112,14 +112,17 @@ async def current(client: Client) -> str | None:
     return routing.current_deployment_version.build_id or None
 
 
-async def set_current(client: Client, build_id: str, timeout_s: float = POLLERS_S) -> str | None:
+async def set_current(
+    client: Client, build_id: str, timeout_s: float = POLLERS_S, *, only_if_none: bool = False
+) -> str | None:
     """Makes the build current once its pollers are seen, and returns the build that was current
     before, or None on a first deploy.
 
     Run at every deploy, the first included, since a deployment with no current version gives a new
     job to no build. The call carries the deployment's conflict token, so a change made since the
     describe is refused, and never `allow_no_pollers`, so a build that does not poll is never made
-    current. A build that is current already is left as it is.
+    current. A build that is current already is left as it is. With `only_if_none`, any build made
+    current while the pollers were awaited is left as it is too, and returned.
     """
     await wait_pollers(client, build_id, timeout_s)
     service = client.workflow_service
@@ -129,7 +132,7 @@ async def set_current(client: Client, build_id: str, timeout_s: float = POLLERS_
         )
     )
     previous = described.worker_deployment_info.routing_config.current_deployment_version.build_id
-    if previous == build_id:
+    if previous == build_id or (only_if_none and previous):
         return previous
     await service.set_worker_deployment_current_version(
         SetWorkerDeploymentCurrentVersionRequest(

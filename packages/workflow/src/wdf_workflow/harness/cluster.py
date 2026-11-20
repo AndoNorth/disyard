@@ -16,6 +16,7 @@ import sys
 import time
 from collections.abc import AsyncIterator
 from contextlib import AsyncExitStack, asynccontextmanager
+from dataclasses import dataclass
 from pathlib import Path
 
 import psycopg
@@ -73,6 +74,48 @@ IMAGE = f"wdf-{WORKFLOW_WORKER}"
 BUILD = Path("deploy/workflow/image.sh")
 
 
+@dataclass(frozen=True)
+class CurrentBuild:
+    # The build current when the helper returned.
+    current: str
+    # The builds deployed as workflow worker Deployments, as listed.
+    deployed: tuple[str, ...]
+    # The build the helper made current, or None when it wrote nothing.
+    made: str | None
+
+
+async def make_deployed_current(
+    client: Client, context: str, timeout_s: float = versioning.POLLERS_S
+) -> CurrentBuild:
+    """Makes the deployed build current when no build is, as a first deploy needs, since a
+    deployment with no current build gives a new job to no worker. Refuses a current build that is
+    not deployed, and, when no build is current, any number of deployed builds but one."""
+    listed = await asyncio.to_thread(
+        kubectl,
+        context,
+        f"--namespace={CONTROL}",
+        "get",
+        "deployments",
+        "-l",
+        WORKER_LABEL,
+        "-o",
+        "jsonpath={.items[*].metadata.labels.wdf\\.dev/build-id}",
+    )
+    deployed = tuple(listed.split())
+    current = await versioning.current(client)
+    made = None
+    if current is None:
+        if len(deployed) != 1:
+            raise Refused(f"no current build, and the deployed builds are {list(deployed)}")
+        # A build made current by another caller during the poller wait is kept, not overwritten.
+        current = await versioning.set_current(client, deployed[0], timeout_s, only_if_none=True)
+        if current is None:
+            current = made = deployed[0]
+    if current not in deployed:
+        raise Refused(f"build {current} is current, but the deployed builds are {list(deployed)}")
+    return CurrentBuild(current, deployed, made)
+
+
 class Cluster:
     """T2: the cluster of a kube context with the workflow worker deployed."""
 
@@ -107,31 +150,13 @@ class Cluster:
             self.db = await asyncio.to_thread(self._connect)
             self.submit = ArtifactClient(self.endpoint, self.credentials["submit"])
             self.client = await connect(f"127.0.0.1:{self.forwards['temporal'].port}")
-            await self._first_current()
+            made = (await make_deployed_current(self.client, self.context)).made
+            if made is not None:
+                print(f"harness: made build {made} current", file=sys.stderr, flush=True)
         except BaseException:
             await self.__aexit__()
             raise
         return self
-
-    async def _first_current(self) -> None:
-        """Makes the deployed build current when no build is, as a first deploy needs, since a
-        deployment with no current build gives a new job to no worker."""
-        if await versioning.current(self.client) is not None:
-            return
-        builds = kubectl(
-            self.context,
-            f"--namespace={CONTROL}",
-            "get",
-            "deployments",
-            "-l",
-            WORKER_LABEL,
-            "-o",
-            "jsonpath={.items[*].metadata.labels.wdf\\.dev/build-id}",
-        ).split()
-        if len(builds) != 1:
-            raise Refused(f"no current build, and the deployed builds are {builds}")
-        await versioning.set_current(self.client, builds[0])
-        print(f"harness: made build {builds[0]} current", file=sys.stderr, flush=True)
 
     async def __aexit__(self, *exc) -> None:
         if self._watch is not None:
