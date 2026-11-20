@@ -19,42 +19,39 @@ arrives, whose simulate task sets `checkpoint`, so a pause withdraws it.
 
 import asyncio
 import hashlib
-import http.client
 import json
-import socket
 import subprocess
 import sys
 import tempfile
 import threading
 import time
-import urllib.error
-import urllib.request
 import uuid
 from collections import Counter
 from collections.abc import Callable, Iterable, Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
-from urllib.parse import urlsplit
 
 import psycopg
 import wdf_keys
 from temporalio.client import Client
+from wdf_acceptance.clients import Failed
+from wdf_acceptance.clients.api import Api, batch, batch_key, request, stream, template
 from wdf_broker.tenancy import load
 from wdf_clusterkit import (
     CONTROL,
     INFRA,
     UP_S,
     Forward,
+    Refused,
     appdb_password,
     kubectl,
     state_dir,
 )
 from wdf_jobstate import status_vocabulary
-from wdf_workflow import versioning
 from wdf_workflow.contract import naming
-from wdf_workflow.harness import REAL_ENTRY, echo_params, source_bundle
-from wdf_workflow.harness.cluster import WORKER_LABEL
+from wdf_workflow.harness import echo_params, source_bundle
+from wdf_workflow.harness.cluster import make_deployed_current
 
 from ..gateway import TemporalGateway
 
@@ -94,99 +91,8 @@ POLL_S = 0.5
 # How long the restart waits before it deletes the pod, and again before the rest of the call, so
 # the pod's stop has begun when the entries after the first half arrive (an estimate).
 RESTART_AFTER_S = 3.0
-CALL_TIMEOUT_S = 120
 # The workflow ids that one visibility query names.
 LIST_CHUNK = 100
-
-
-class Failed(Exception):
-    """A call the scenario relies on answered something else."""
-
-
-def request(url: str, method: str = "GET", body: bytes | None = None) -> tuple[int, dict]:
-    """The status and JSON body of one call."""
-    call = urllib.request.Request(url, data=body, method=method)
-    try:
-        with urllib.request.urlopen(call, timeout=CALL_TIMEOUT_S) as answer:
-            return answer.status, json.loads(answer.read())
-    except urllib.error.HTTPError as error:
-        return error.code, json.loads(error.read() or b"{}")
-
-
-def stream(url: str, lines: Iterable[bytes]) -> list[dict]:
-    """The answer lines of an NDJSON call, read while a thread sends its body, as the contract asks
-    of a client. A call whose connection the server drops, as a deleted pod does, returns the lines
-    it answered, and a call refused before its answer raises Failed."""
-    parts = urlsplit(url)
-    sock = socket.create_connection((parts.hostname, parts.port), timeout=CALL_TIMEOUT_S)
-
-    def send() -> None:
-        try:
-            sock.sendall(
-                f"POST {parts.path} HTTP/1.1\r\nHost: {parts.netloc}\r\n"
-                "Content-Type: application/x-ndjson\r\nTransfer-Encoding: chunked\r\n\r\n".encode()
-            )
-            for line in lines:
-                sock.sendall(b"%x\r\n%b\r\n" % (len(line), line))
-            sock.sendall(b"0\r\n\r\n")
-        except OSError:
-            # The server ended the call and closed, so the rest of the body has nowhere to go.
-            pass
-
-    sender = threading.Thread(target=send, daemon=True)
-    sender.start()
-    answers = []
-    try:
-        response = http.client.HTTPResponse(sock)
-        response.begin()
-        if response.status != 200:
-            raise Failed(f"{url} answered {response.status}: {response.read().decode()}")
-        while text := response.readline():
-            answers.append(json.loads(text))
-    except (OSError, http.client.HTTPException):
-        # The connection went with the pod.
-        pass
-    finally:
-        sender.join(CALL_TIMEOUT_S)
-        sock.close()
-    return answers
-
-
-def template(source: dict, simulate: dict, checkpoint: bool = False) -> dict:
-    """A compile of the workload library bundle, one simulate task running `simulate`, and an
-    aggregate over its result."""
-    return {
-        "schema": "urn:wdf:schema:job:1.0",
-        "parameters": {},
-        "tasks": {
-            "build": {"type": "compile", "params": {"source": source, "entry": REAL_ENTRY}},
-            "sim": {
-                "type": "simulate",
-                "inputs": [{"task": "build", "output": "component"}],
-                "cpu": 0.25,
-                "memory_mib": 384,
-                "run_timeout_s": 600,
-                "retries": 1,
-                "checkpoint": checkpoint,
-                "params": simulate,
-            },
-            "agg": {
-                "type": "aggregate",
-                "inputs": [{"task": "sim", "output": "result"}],
-                "cpu": 1,
-                "memory_mib": 512,
-                "run_timeout_s": 600,
-                "params": {"aggregation": "digest_list"},
-            },
-        },
-    }
-
-
-def batch(batch_key: str, document: dict, count: int) -> list[bytes]:
-    """The lines of a batch submit body of `count` jobs of one template."""
-    header = {"batch_key": batch_key, "template": document}
-    entries = ({"index": n, "seed": n, "parameters": {}} for n in range(count))
-    return [json.dumps(line).encode() + b"\n" for line in (header, *entries)]
 
 
 def state(answer: dict) -> str:
@@ -213,6 +119,7 @@ class Smoke:
     def __init__(self, dispatch: str, control: str, context: str, jobs: int):
         self.dispatch, self.control, self.context, self.jobs = dispatch, control, context, jobs
         self.tenant = next(iter(load(PROFILE).tenants))
+        self.api = Api(dispatch, control, self.tenant)
         self.passed = True
 
     def expect(self, name: str, value, wanted) -> None:
@@ -222,14 +129,11 @@ class Smoke:
         if not (wanted(value) if callable(wanted) else value == wanted):
             self.passed = False
 
-    def tenant_url(self, base: str, path: str, tenant: str | None = None) -> str:
-        return f"{base}/v1/tenants/{tenant or self.tenant}/{path}"
-
     # The API.
 
     def upload(self, kind: str, data: bytes) -> tuple[int, dict]:
         sha256 = hashlib.sha256(data).hexdigest()
-        return request(self.tenant_url(self.dispatch, f"objects/{kind}/{sha256}"), "PUT", data)
+        return request(self.api.url(self.dispatch, f"objects/{kind}/{sha256}"), "PUT", data)
 
     def workloads(self) -> dict:
         """The reference of the workload library bundle, uploaded unless it is already stored."""
@@ -237,30 +141,17 @@ class Smoke:
         from wdf_workloads import bundle as workloads
 
         with tempfile.TemporaryDirectory(prefix="wdf-smoke-") as work:
-            data = workloads.write(Path(work)).read_bytes()
-        code, answer = self.upload("source", data)
-        if code not in (200, 201):
-            raise Failed(f"the upload of the workload library bundle answered {code}: {answer}")
-        return answer["reference"]
+            return self.api.upload_source(workloads.write(Path(work)).read_bytes())
 
     def submit(self, lines: Iterable[bytes]) -> list[dict]:
-        return stream(self.tenant_url(self.dispatch, "batches"), lines)
+        return stream(self.api.url(self.dispatch, "batches"), lines)
 
     def submit_one(self, document: dict) -> str:
         """Submits one job of the template under a fresh batch key, and returns its id."""
-        answers = self.submit(batch(f"smoke-{uuid.uuid4().hex[:12]}", document, 1))
-        if answers[0].get("outcome") != "accepted":
-            raise Failed(f"the job was not accepted: {answers[0]}")
-        return answers[0]["job_id"]
-
-    def status(self, job_id: str) -> dict:
-        code, answer = request(self.tenant_url(self.control, f"jobs/{job_id}"))
-        if code != 200:
-            raise Failed(f"the status read of {job_id} answered {code}: {answer}")
-        return answer
+        return self.api.submit_one(document, batch_key())
 
     def act(self, job_id: str, action: str) -> dict:
-        url = self.tenant_url(self.control, f"jobs/{job_id}/{action}")
+        url = self.api.url(self.control, f"jobs/{job_id}/{action}")
         code, answer = request(url, "POST", json.dumps({"reason": "smoke"}).encode())
         if code != 200:
             raise Failed(f"the {action} of {job_id} answered {code}: {answer}")
@@ -270,7 +161,7 @@ class Smoke:
         """Polls the job's status until `done` holds of it, recording each state it shows."""
         deadline = time.monotonic() + JOB_S
         while True:
-            answer = self.status(job_id)
+            answer = self.api.status(job_id)
             if seen is not None:
                 seen.add(answer)
             if done(answer):
@@ -369,12 +260,13 @@ class Smoke:
 
     def run_submit(self) -> None:
         document = template(self.workloads(), echo_params())
-        lines = batch(f"smoke-{uuid.uuid4().hex[:12]}", document, self.jobs)
+        lines = batch(batch_key(), document, self.jobs)
         first = Counter(a.get("outcome") for a in self.submit(lines))
         again = Counter(a.get("outcome") for a in self.submit(lines))
         self.expect("accepted", first["accepted"], self.jobs)
         self.expect("duplicate_on_resend", again["duplicate"], self.jobs)
-        code, _ = request(self.tenant_url(self.dispatch, "batches", "nobody"), "POST", lines[0])
+        nobody = Api(self.dispatch, self.control, "nobody")
+        code, _ = request(nobody.url(self.dispatch, "batches"), "POST", lines[0])
         self.expect("unknown_tenant", code, 404)
 
     def run_cancel_before_start(self) -> None:
@@ -383,7 +275,7 @@ class Smoke:
             job_id = self.submit_one(document)
             answer = self.act(job_id, "cancel")
             self.expect("row_only", int(answer["outcome"] == "applied"), 1)
-            self.expect("status", self.status(job_id)["status"], "cancelled")
+            self.expect("status", self.api.status(job_id)["status"], "cancelled")
             with self.forward(INFRA, "svc/temporal-frontend", 7233) as temporal:
                 with TemporalGateway(temporal) as gateway:
                     workflow = "started" if gateway.exists(job_id) else "none"
@@ -391,7 +283,7 @@ class Smoke:
 
     def run_run(self) -> None:
         document = template(self.workloads(), echo_params())
-        answers = self.submit(batch(f"smoke-{uuid.uuid4().hex[:12]}", document, self.jobs))
+        answers = self.submit(batch(batch_key(), document, self.jobs))
         ended = [self.ended(a["job_id"]) for a in answers if a.get("outcome") == "accepted"]
         statuses = sorted({a["status"] for a in ended}) or ["none"]
         self.expect("status", ",".join(statuses), "succeeded")
@@ -417,8 +309,8 @@ class Smoke:
         self.expect("seen", ",".join(seen.states), ",".join(CANCEL_RUNNING))
 
     def run_restart(self) -> None:
-        batch_key = f"smoke-restart-{uuid.uuid4().hex[:12]}"
-        lines = batch(batch_key, template(self.workloads(), echo_params()), self.jobs)
+        key = batch_key("smoke-restart")
+        lines = batch(key, template(self.workloads(), echo_params()), self.jobs)
         # The header and the first half of the entries, then the rest once the pod is stopping, so
         # the stop lands in the middle of the call.
         half = 1 + self.jobs // 2
@@ -452,11 +344,11 @@ class Smoke:
         # The last line is the summary, with no outcome.
         again = Counter(a["outcome"] for a in self.submit(lines) if "outcome" in a)
         print(f"resend: {' '.join(f'{k} {n}' for k, n in sorted(again.items()))}", flush=True)
-        job_ids = [wdf_keys.job_id(self.tenant, f"{batch_key}/{n}") for n in range(self.jobs)]
+        job_ids = [wdf_keys.job_id(self.tenant, f"{key}/{n}") for n in range(self.jobs)]
         try:
-            self.count(batch_key, job_ids)
+            self.count(key, job_ids)
         finally:
-            self.cancel_batch(batch_key)
+            self.cancel_batch(key)
 
     def count(self, batch_key: str, job_ids: list[str]) -> None:
         """What the restart left in the rows, the event history, Temporal and the dead-letter
@@ -543,17 +435,22 @@ class Smoke:
 
     def cancel_batch(self, batch_key: str) -> None:
         """Cancels every job of the batch, so its jobs leave the pools once the counts are taken."""
-        url = self.tenant_url(self.control, f"batches/{batch_key}/cancel")
-        lines = [json.dumps({"reason": "smoke"}).encode()]
-        answers = stream(url, lines)
-        summary = answers[-1].get("summary") if answers else None
+        summary = self.api.cancel_batch(batch_key)
         print(f"cleanup: cancelled batch {batch_key}: {summary}", file=sys.stderr, flush=True)
 
     def first_current(self) -> None:
-        """Makes the deployed workflow worker build current when no build is, as the harness does,
-        since a deployment with no current build gives a new job to no worker."""
+        """Makes the deployed workflow worker build current when no build is, through the helper
+        the harness calls, since a deployment with no current build gives a new job to no worker."""
+
+        async def made(address: str) -> str | None:
+            client = await Client.connect(address, namespace=naming().namespace)
+            return (await make_deployed_current(client, self.context)).made
+
         with self.forward(INFRA, "svc/temporal-frontend", 7233) as temporal:
-            build = asyncio.run(_first_current(temporal, self.context))
+            try:
+                build = asyncio.run(made(temporal))
+            except Refused as refused:
+                raise Failed(str(refused)) from refused
         if build is not None:
             print(f"smoke: made build {build} current", file=sys.stderr, flush=True)
 
@@ -590,24 +487,3 @@ async def _executions(address: str, job_ids: list[str]) -> Counter:
         async for execution in client.list_workflows(f"WorkflowId IN ({chunk})"):
             executions[ids[execution.id]] += 1
     return executions
-
-
-async def _first_current(address: str, context: str) -> str | None:
-    """The build made current, or None when one already was."""
-    client = await Client.connect(address, namespace=naming().namespace)
-    if await versioning.current(client) is not None:
-        return None
-    builds = kubectl(
-        context,
-        f"--namespace={CONTROL}",
-        "get",
-        "deployments",
-        "-l",
-        WORKER_LABEL,
-        "-o",
-        "jsonpath={.items[*].metadata.labels.wdf\\.dev/build-id}",
-    ).split()
-    if len(builds) != 1:
-        raise Failed(f"no current build, and the deployed builds are {builds}")
-    await versioning.set_current(client, builds[0])
-    return builds[0]

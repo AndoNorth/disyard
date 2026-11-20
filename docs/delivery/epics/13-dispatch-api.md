@@ -876,4 +876,4 @@ Follow-ups found:
 
 Closure addenda, one dated line each, added after close when a `revisit` child issue is filed against this epic:
 
-- 2026-11-19: the `revisit` child issue to be filed from [R.2 of the smoke gate spec](17-acceptance-smoke.md#r2-driver-onto-the-shared-helper-and-client-revisit-of-24) makes the dispatch smoke driver call `make_deployed_current` of `wdf_workflow.harness.cluster` and import its job shape and API calls from `wdf_acceptance.clients.api`, with its scenarios unchanged; the issue link replaces the spec link once filed.
+- 2026-11-19: [#542](https://github.com/AndoNorth/wasm-dag-forge/issues/542) makes the dispatch smoke driver call `make_deployed_current` of `wdf_workflow.harness.cluster` and import its job shape and API calls from `wdf_acceptance.clients.api`, with its scenarios unchanged.

@@ -28,7 +28,7 @@ dependencies = [
 
 # The drivers of a deployed cluster, which no image runs.
 [project.optional-dependencies]
-cluster = ["wdf-clusterkit"]
+cluster = ["wdf-acceptance", "wdf-clusterkit"]
 
 [tool.uv.sources]
 wdf-artifactclient = { workspace = true }
