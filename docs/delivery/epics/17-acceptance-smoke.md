@@ -1,6 +1,6 @@
 # Epic #17 pass 1: Smoke gate - breakdown
 
-Status: draft, review fixes applied, awaiting approval
+Status: approved
 Epic: https://github.com/AndoNorth/wasm-dag-forge/issues/17
 Architecture note: none new, and `docs/architecture/01-system-context.drawio` is unchanged, because the gate adds a host-side test entry point and package but no deployed component, data path or contract; the ladder document of pass 2 is where the test levels are described
 Depends on (closed epics): #1, #2, #4, #5, #3, #12, #11, #6, #9, #10, #7, #8, #24
@@ -209,97 +209,15 @@ Departures from the method, stated so that the captain approves them knowingly:
 
 ## 4. Issues
 
-One block per issue, in the [lane issue template](../../../.github/ISSUE_TEMPLATE/lane-issue.md).
-Replaced by `#NNN` links after filing.
-Every pytest command runs from the repository root under `nix develop -c`.
+Each issue below was filed on 2026-11-20 from the [lane issue template](../../../.github/ISSUE_TEMPLATE/lane-issue.md), and its body holds the block that stood here: scope, owns, consumes and produces, acceptance criteria, verifier, and needs and blocks as links.
+0.1, C.1, G.1 and G.2 are sub-issues of #17; R.1 is a `revisit` child of #6 and R.2 a `revisit` child of #24.
 
-### 0.1 Package skeleton, wrapper and forward deadline
-
-Lane 0, tier T0. Needs: none. Blocks: C.1, R.1, G.1.
-
-- Scope: the package `wdf_acceptance` (pyproject declaring the full dependency set of decision 20: `temporalio`, `wdf-workflow`, `wdf-broker`, `wdf-kernel`, `wdf-workloads` and `wdf-clusterkit`, README, `report.py` holding the row and count-line format and the exit mapping of section 2), added to the root dev group; `scripts/smoke.sh` as section 1.4 says; and the `timeout_s` parameter of `Forward.open` (section 2, Produces).
-- Owns: lane 0's globs.
-- Consumes / produces: `cluster-verify` (exit codes only).
-  Produces the smoke recipe v1 contract of section 2 and `Forward.open(timeout_s)`.
-- Acceptance criteria:
-  - [ ] `pytest packages/acceptance -v -k "count_line_buckets or row_line_format or exit_mapping or wheel"` passes; `test_count_line_buckets` prints `smoke ci: 8 ok, 1 failed, 1 skipped, 94 s` for the rows of section 2's example.
-  - [ ] `pytest packages/acceptance/tests/test_wrapper.py -v` passes, running `scripts/smoke.sh` with fake `kind`, `kubectl`, `flock`, `timeout` and `uv` first on `PATH`: `WDF_PRESET=dev` exits 2 with the preset reason; a missing `kubectl` exits 2; a `flock` that fails exits 4 with `refused: could not take /tmp/wdf-cluster.lock in 900 s`; a driver exit of 0, 1, 2 and 4 passes through; a `timeout` exit of 124 gives exit 1, and of 137 gives exit 1 with `FAIL budget` printed by the wrapper.
-  - [ ] `pytest packages/clusterkit -v -k forward_open_deadline` passes: with a fake `kubectl` that exits at once, `Forward.open(timeout_s=1)` raises `TimeoutError` within 2 s, and `Forward.open()` still uses `UP_S`.
-  - [ ] `packages/acceptance/pyproject.toml` lists the six dependencies of decision 20, and `uv lock --check` exits 0.
-- Verifier: `packages/acceptance/tests/test_report.py`, `test_wrapper.py`, `test_wheel.py`, `packages/clusterkit/tests/test_clusterkit.py`.
-
-### C.1 Clients
-
-Lane C, tier T0. Needs: 0.1. Blocks: R.2, G.1, G.2.
-
-- Scope: the four client modules of section 2 (Produces).
-  `api` carries the job shape (`template`, `batch`) and the upload, submit, status and batch-cancel calls of the dispatch smoke driver (section 1.1), with the driver's behaviour; `store` fetches a result reference with a named store identity; `temporal` connects to namespace `wdf`; `broker` runs `python -m wdf_broker.dlq list` and returns the count it prints.
-- Owns: lane C's globs.
-- Consumes / produces: `contracts/api/routes.yaml`, `contracts/store/roles.yaml`, `dlq list`'s output.
-  Produces the clients that G.1, G.2, R.2 and pass 2 use.
-- Acceptance criteria:
-  - [ ] `pytest packages/acceptance/tests/clients -v` passes, with `test_api_against_server` driving an in-test `ThreadingHTTPServer` that answers `PUT` with 201 then 200, the NDJSON submit with one `accepted` line, the status read and the batch cancel; `test_template_matches_driver` asserting `template(...)` and `batch(...)` equal the dispatch smoke driver's for the same arguments; `test_store_fetch_checks_identity` asserting the fetch signs with the identity it is given; and `test_dead_letters_count` summing the `count` lines of a canned `dlq list` output.
-- Verifier: `packages/acceptance/tests/clients/`.
-
-### R.1 Make the deployed build current (revisit of #6)
-
-Lane R, tier T0. Needs: 0.1. Blocks: R.2, G.1. Label: `revisit`, child of #6.
-
-- Scope: `make_deployed_current` of section 2 (Produces) in `wdf_workflow.harness.cluster`, with the harness's `_first_current` replaced by a call to it.
-  The helper lists the deployed builds as `_first_current` does today and, besides its current outcomes, refuses when the current build is not among the deployed builds.
-  When no build is current it makes the single deployed build current through `versioning.set_current` with a new keyword `only_if_none=True`, which, after the poller wait, returns the build that became current in the meantime instead of overwriting it.
-  The dated Closure addendum line of `08-workflow-engine.md` gets this issue's link.
-- Owns: lane R's globs, without the dispatch files.
-- Consumes / produces: temporal naming, `versioning.current`, `versioning.set_current`.
-  Produces the helper that R.2 and G.1 call.
-- Consumer epics affected, listed in the issue: #17 (this gate), #15 and #16 (the harness at T2).
-- Acceptance criteria:
-  - [ ] `pytest packages/workflow/tests/harness/test_make_current.py -v` passes over a fake Temporal client and a fake `kubectl`: current `a` with `a` deployed returns `CurrentBuild(current="a", deployed=("a",), made=None)` and writes nothing; current `a` with `a` and `b` deployed returns `CurrentBuild(current="a", deployed=("a", "b"), made=None)`; current `a` with only `b` deployed raises `Refused` naming `a` and `b`; no current build with `b` alone deployed returns `CurrentBuild(current="b", deployed=("b",), made="b")` and writes once; no current build with zero or two deployed builds raises `Refused` naming them; a build `b` made current during the poller wait returns `CurrentBuild(current="b", deployed=("b",), made=None)` and is not overwritten.
-  - [ ] `pytest packages/workflow -q -rs` passes with no `SKIPPED` line, and the PR's diff removes or changes no `assert` line of the existing tests.
-- Verifier: `packages/workflow/tests/harness/test_make_current.py` and the existing workflow tests.
-
-### R.2 Driver onto the shared helper and client (revisit of #24)
-
-Lane R, tier T0. Needs: R.1, C.1. Blocks: G.2. Label: `revisit`, child of #24.
-
-- Scope: the dispatch smoke driver's `_first_current` and `first_current` call `make_deployed_current`, and its `template`, `batch`, upload, submit, status and batch-cancel code is replaced by imports from `wdf_acceptance.clients.api`, with `wdf-acceptance` added to the driver's `cluster` extra; its scenarios keep their behaviour.
-  The dated Closure addendum line of `13-dispatch-api.md` gets this issue's link.
-- Owns: the dispatch files of lane R's globs, and `uv.lock` (rerun rule).
-- Consumes / produces: R.1's helper, C.1's `api` client.
-  Produces one copy of the job shape and the API calls.
-- Consumer epics affected, listed in the issue: #17 (this gate), #14 and #15 (the driver's scenarios).
-- Acceptance criteria:
-  - [ ] `pytest packages/dispatchapi -q -rs` passes with no `SKIPPED` line, and the PR's diff removes or changes no `assert` line of the existing tests.
-  - [ ] `grep -nE "^def (template|batch)|^async def _first_current" packages/dispatchapi/src/wdf_dispatchapi/smoke/__init__.py` prints nothing.
-  - [ ] `uv lock --check` exits 0.
-- Verifier: the existing dispatch API tests.
-
-### G.1 Boundary rows
-
-Lane G, tier T0 and T2. Needs: C.1, R.1. Blocks: G.2.
-
-- Scope: the driver `python -m wdf_acceptance.smoke` with boundary rows 1 to 5 of section 1.2, their deadlines (D6) and the run rules of D4; job rows print `skip` until G.2.
-- Owns: lane G's globs.
-- Consumes / produces: C.1's clients, R.1's helper, `cluster-verify`, 0.1's `report`.
-  Produces the boundary half of `just smoke`.
-- Acceptance criteria:
-  - [ ] `pytest packages/acceptance/tests/smoke -v -k boundary` passes: each of rows 1 to 5 against a canned answer; a `cluster-verify` exit 4 ends the run with exit 4 and no other row; a `cluster-verify` that outlives its deadline prints `FAIL cluster-verify did not finish` with its last check line; a probe whose forward never listens prints its `FAIL` row within `PROBE_S` plus 1 s while the other boundary rows still print and the job rows print `skip`; a non-zero dead-letter baseline passes row 3.
-  - [ ] T2, on `ci` after `just up` and `scripts/tilt/run.sh ci`: `just smoke` prints rows 1 to 5 `ok`, with the elapsed time of row 1 pasted in the PR as the first measurement of `cluster-verify`.
-  - [ ] T2, one manual check, not a negative suite: `kubectl --context kind-wdf -n wdf-control scale deployment/placement --replicas=0`, then `just smoke` exits 1 with `FAIL placement`, rows 1 to 4 `ok`, the job rows `skip` and an elapsed under 60 s; then `--replicas=1`, and `just smoke` prints rows 1 to 5 `ok` again.
-- Verifier: `packages/acceptance/tests/smoke/test_boundary.py`, `just smoke`.
-
-### G.2 Job rows
-
-Lane G, tier T0 and T2. Needs: G.1, R.2. Blocks: the exit test.
-
-- Scope: job rows 6 to 10 of section 1.3 on C.1's clients, the batch cancel on a failed job row, and the SIGINT handling of section 1.4.
-- Owns: lane G's globs.
-- Consumes / produces: C.1's clients, the level 0 echo vector, `wdf_kernel.check`.
-  Produces the complete `just smoke`.
-- Acceptance criteria:
-  - [ ] `pytest packages/acceptance/tests/smoke -v -k job` passes: a status sequence `admitted`, `running` with `build` `succeeded`, `succeeded` with `detail: null` passes row 7 and names "ran" or "hit the cache" by `task_attempt`; a sequence that ends before any `running` sample shows `build` `succeeded` fails row 7; a `sha256` mismatch fails row 8; a dead-letter count above the baseline fails row 10; a failed job row and a SIGINT each call the batch cancel once and print the count line.
-  - [ ] T2: `just smoke` three times in a row on one deploy, each exit 0 with every row `ok` and an elapsed under 300 s, the outputs pasted in the PR.
-- Verifier: `packages/acceptance/tests/smoke/test_job.py`, `just smoke`.
+- [#539](https://github.com/AndoNorth/wasm-dag-forge/issues/539) 0.1 Package skeleton, wrapper and forward deadline
+- [#540](https://github.com/AndoNorth/wasm-dag-forge/issues/540) C.1 Clients
+- [#541](https://github.com/AndoNorth/wasm-dag-forge/issues/541) R.1 Make the deployed build current (revisit of #6)
+- [#542](https://github.com/AndoNorth/wasm-dag-forge/issues/542) R.2 Driver onto the shared helper and client (revisit of #24)
+- [#543](https://github.com/AndoNorth/wasm-dag-forge/issues/543) G.1 Boundary rows
+- [#544](https://github.com/AndoNorth/wasm-dag-forge/issues/544) G.2 Job rows
 
 ## 5. Order, stubs and spikes
 
