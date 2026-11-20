@@ -29,7 +29,8 @@ done
 $allowed || { echo "refused: $data_dir is not the data directory of any preset in deploy/presets" >&2; exit 4; }
 
 kind delete cluster --name wdf
-docker rm -f wdf-registry >/dev/null 2>&1 || true
+# -v takes the registry's anonymous image volume with it, which would otherwise outlive the container.
+docker rm -f -v wdf-registry >/dev/null 2>&1 || true
 
 # The node containers write as root, so the contents go through a container and the directory itself is the user's.
 if [ -d "$data_dir" ]; then
