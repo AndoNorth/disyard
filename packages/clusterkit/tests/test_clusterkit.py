@@ -1,12 +1,15 @@
 """The parts of the kit that need no cluster."""
 
 import asyncio
+import itertools
 import json
 import socket
+import time
 
 import pytest
 import wdf_clusterkit
 from wdf_clusterkit import (
+    UP_S,
     Forward,
     appdb_password,
     free_port,
@@ -105,6 +108,37 @@ def test_forward_binds_localhost_and_keeps_its_port_when_opened_again(monkeypatc
     assert spawned[0].terminated and forward.alive
     forward.close()
     assert not forward.alive
+
+
+@pytest.fixture
+def kubectl_exits_at_once(monkeypatch, tmp_path):
+    fake = tmp_path / "kubectl"
+    fake.write_text("#!/bin/sh\nexit 1\n")
+    fake.chmod(0o755)
+    monkeypatch.setenv("PATH", f"{tmp_path}:{wdf_clusterkit.os.environ['PATH']}")
+
+
+def test_forward_open_deadline_ends_a_forward_that_never_listens(kubectl_exits_at_once):
+    forward = Forward("kind-wdf", "wdf-infra", "svc/temporal-frontend", 7233)
+    started = time.monotonic()
+    with pytest.raises(TimeoutError, match="did not listen in 1 s"):
+        forward.open(timeout_s=1)
+    assert time.monotonic() - started < 2
+    assert not forward.alive
+
+
+def test_forward_open_deadline_defaults_to_up_s(kubectl_exits_at_once, monkeypatch):
+    reads = []
+    clock = itertools.count(step=60.0)
+    monkeypatch.setattr(
+        wdf_clusterkit.time, "monotonic", lambda: reads.append(next(clock)) or reads[-1]
+    )
+    monkeypatch.setattr(wdf_clusterkit.time, "sleep", lambda s: None)
+    forward = Forward("kind-wdf", "wdf-infra", "svc/temporal-frontend", 7233)
+    with pytest.raises(TimeoutError, match=f"did not listen in {UP_S:.0f} s"):
+        forward.open()
+    # The clock moves 60 s a read, so the forward gives up on the first read past UP_S.
+    assert reads[0] + UP_S < reads[-1] <= reads[0] + UP_S + 60
 
 
 def test_until_returns_the_first_truthy_value_of_a_sync_or_async_check():

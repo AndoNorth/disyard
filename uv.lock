@@ -10,6 +10,7 @@ resolution-markers = [
 [manifest]
 members = [
     "wasm-dag-forge",
+    "wdf-acceptance",
     "wdf-admission",
     "wdf-aggregate",
     "wdf-artifactclient",
@@ -682,6 +683,7 @@ source = { virtual = "." }
 dev = [
     { name = "hypothesis" },
     { name = "pytest" },
+    { name = "wdf-acceptance" },
     { name = "wdf-admission" },
     { name = "wdf-aggregate" },
     { name = "wdf-artifactclient" },
@@ -722,6 +724,7 @@ dev = [
 dev = [
     { name = "hypothesis" },
     { name = "pytest" },
+    { name = "wdf-acceptance", editable = "packages/acceptance" },
     { name = "wdf-admission", editable = "packages/admission" },
     { name = "wdf-aggregate", editable = "packages/aggregate" },
     { name = "wdf-artifactclient", editable = "packages/artifactclient" },
@@ -752,6 +755,29 @@ dev = [
     { name = "wdf-storecheck", editable = "packages/storecheck" },
     { name = "wdf-temporal", editable = "packages/temporal" },
     { name = "wdf-worker", editable = "packages/worker" },
+    { name = "wdf-workflow", editable = "packages/workflow" },
+    { name = "wdf-workloads", editable = "packages/workloads" },
+]
+
+[[package]]
+name = "wdf-acceptance"
+version = "0.0.0"
+source = { editable = "packages/acceptance" }
+dependencies = [
+    { name = "temporalio" },
+    { name = "wdf-broker" },
+    { name = "wdf-clusterkit" },
+    { name = "wdf-kernel" },
+    { name = "wdf-workflow" },
+    { name = "wdf-workloads" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "temporalio" },
+    { name = "wdf-broker", editable = "packages/broker" },
+    { name = "wdf-clusterkit", editable = "packages/clusterkit" },
+    { name = "wdf-kernel", editable = "packages/kernel" },
     { name = "wdf-workflow", editable = "packages/workflow" },
     { name = "wdf-workloads", editable = "packages/workloads" },
 ]

@@ -1,0 +1,25 @@
+[project]
+name = "wdf-acceptance"
+version = "0.0.0"
+license = "Apache-2.0"
+requires-python = ">=3.13,<3.14"
+# Every dependency the clients and the gate import, declared here so the wheel test catches an undeclared one.
+dependencies = [
+    "temporalio",
+    "wdf-broker",
+    "wdf-clusterkit",
+    "wdf-kernel",
+    "wdf-workflow",
+    "wdf-workloads",
+]
+
+[tool.uv.sources]
+wdf-broker = { workspace = true }
+wdf-clusterkit = { workspace = true }
+wdf-kernel = { workspace = true }
+wdf-workflow = { workspace = true }
+wdf-workloads = { workspace = true }
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
