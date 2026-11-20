@@ -13,6 +13,9 @@ lint:
 ci *mode:
     scripts/ci.sh {{ mode }}
 
+pre-pr *base:
+    scripts/pre-pr.sh {{ base }}
+
 pre-push *check:
     scripts/hooks/pre-push.sh {{ check }}
 

@@ -122,6 +122,8 @@ A pull request body follows the [template](../../.github/pull_request_template.m
 Every Test plan line is a checked box naming the exact command run, followed by a collapsed block holding the real output, response body or log lines, trimmed to the relevant part.
 Evidence is output that was captured, never a description of it, and a UI or rendered output carries a screenshot or rendered text.
 A criterion that cannot run yet says which later work it waits for.
+The local gate line names `nix develop -c just pre-pr` and pastes its `== unit tests:` and `== integration tests:` lines with the pytest summaries, or names `nix develop -c just ci` when `just pre-pr` asked for the full run.
+The green CI `check` run on the pull request is the full-gate evidence, linked by its run url.
 
 ## Comments
 
@@ -150,8 +152,11 @@ The later epic's breakdown spec lists the child issue under Consumes.
 
 Retired on 2026-11-15 with the `verify` and `verify-clean` recipes (https://github.com/AndoNorth/wasm-dag-forge/issues/366), because no epic built a verifier.
 Each issue names its tests or commands, and each epic's exit test is a command checklist, run by a worker who did not write the lanes.
-Before reporting done, a worker runs `nix develop -c just ci`, `just doctor` and every test or command the issue names, and reports the commit sha, each result, and what was not run and why.
-`just verify-lint`, part of `just ci`, still checks any `verify-<domain>` skill that exists, and passes when none does.
+Before reporting done, a worker runs `nix develop -c just pre-pr`, `just doctor` and every test or command the issue names, and reports the commit sha, each result, and what was not run and why.
+`just pre-pr` runs lint and the other checks of `just ci`, the unit tests of the changed packages and of the packages that depend on them, and the integration tests of the changed packages.
+When it prints `full run required`, the change reaches tests no package owns, and the worker runs `nix develop -c just ci` instead.
+The pull request's CI run is the full proof, and the merge gate does not change.
+`just verify-lint`, part of `just ci` and of `just pre-pr`, still checks any `verify-<domain>` skill that exists, and passes when none does.
 
 ## Epic order
 

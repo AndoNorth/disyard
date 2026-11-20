@@ -39,6 +39,7 @@ A criterion that cannot run yet says which tier it waits for, and the issue is b
 
 ## Done means
 
-- [ ] `just ci` green on the branch
+- [ ] `just pre-pr` green on the branch, or `just ci` when it asks for the full run
+- [ ] the CI `check` job green on the pull request
 - [ ] the named tests or commands ran, and their real output (not a description of it) is pasted in the PR or linked as a CI run url
 - [ ] nothing outside "Owns" changed
