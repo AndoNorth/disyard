@@ -1,6 +1,7 @@
 # Epic #13: Observability - breakdown
 
 Status: approved by the captain 2026-11-20, with the post-fix review fixes applied; the "Assumed" list of https://github.com/AndoNorth/wasm-dag-forge/pull/537 was accepted at approval.
+Lane issues filed 2026-11-20 as #546 to #574 (section 4).
 Epic: https://github.com/AndoNorth/wasm-dag-forge/issues/13
 Architecture note: `docs/architecture/05-observability-data-flow.drawio`, which still shows the shape before decisions 22 to 28 (it names Temporal's own timeline UI as the per-job drill-down).
 0.2 (issue) redraws it in place to the shape this spec builds (pull scrape, one collector for logs, events and traces, Tempo and Pyroscope, Explore by job id and the Temporal UI as the per-job view, the smoke results dashboard, the whole stack behind the observability switch), as the sibling specs refine their notes in lane 0 (`11-workers.md:5`, `12-admission.md:5`, `14-placement.md:5`); this spec PR does not change the diagram.
@@ -224,306 +225,41 @@ Departures from the method, stated so the review approves them knowingly:
 
 ## 4. Issues
 
-One block per issue, in the lane issue template, replaced by `#NNN` links after filing.
-The filed issue takes its Owns from its lane's row of section 3 (for lane E, the issue's own part of the row), its Consumes / produces from its rows of section 2, and its Verifier from the tests its criteria name, so a block below writes those lines only where they add to that.
+Each issue below was filed on 2026-11-20 from the [lane issue template](../../../.github/ISSUE_TEMPLATE/lane-issue.md), and its body holds the block that stood here: scope, owns, consumes and produces, acceptance criteria, verifier, and needs and blocks as links.
+Each takes its Owns from its lane's row of section 3 (for lane E, the issue's own part of the row), and its Consumes / produces from its rows of section 2.
+The `revisit` issues (R.1, R.2, S.4, E.1 to E.6) are sub-issues of the closed epic they change and carry `epic:13`; the rest are sub-issues of #13.
+The epic-wide tracking comment on #13 lists them by lane in start order.
 Done means, for every issue: `just ci` green on the branch, the output of the named tests pasted in the PR, and nothing outside Owns and the shared files changed.
 
-### 0.3 Preset contract v2
-
-Lane 0, tier T0. Needs: nothing. Blocks: R.1, and with the rest of lane 0 every other issue but S14.
-
-- Scope: the contract-change PR that bumps `contracts/preset/` to version 2: the optional `obs_stack: {cpus, memory_mib}` and the top-level `obs_memory_mib` of D19 in the schema, the loader's checks (the `obs_stack` node holds the reservation rule, `obs_memory_mib` equals the node sum with the obs node replaced by `obs_stack`), the vectors of 0.4, the README's field table and Version, and the version label of diagram 15's preset box; it touches `contracts/` and that label only. `contracts/preset/README.md:71` covers the `contracts/` part, the diagram label is the departure of section 3, and the `docs/contracts.md` row is unchanged because the owner and the consumers stay (`docs/contracts.md:41,47`). The presets gain the fields in R.1.
-- Consumes / produces: preset v1. Produces preset v2; consumer issues listed in the PR: R.1, R.2, T.1, and the open epics #16, #17.
-- Acceptance criteria:
-  - [ ] `scripts/verify/cluster/lib/vectors.sh contracts/preset deploy/presets/*.yaml` exits 0 with the new vectors, and the presets of `main`, which have no `obs_stack`, still load.
-  - [ ] `scripts/check-contracts-map.sh` exits 0, and `scripts/export-diagrams.sh --check` exits 0.
-
-### 0.1 Instrumentation contract v3 and the catalogue
-
-Lane 0, tier T0. Needs: nothing. Blocks: every other issue but 0.3, R.1, S13 and S14.
-
-- Scope: the contract-change PR that takes the contract over (owner #13), rewrites the Log fields section to D15 as a breaking change with the mapping from the context attribute names, adds the `external` section of D3 to the schema and loader, adds `attempt`, `attempt_id` and `traceparent` to the label denylist (`contracts/instrumentation/metrics.schema.json:8-22` has none of them), the platform catalogue of 0.4 with bounded labels, the label value sets of 0.4 and pinned buckets (D6), and leaves out the two names of D5; the `docs/contracts.md` row and diagram 15 in the same PR.
-  The PR lists the emitters it migrates (E.2 to E.6) as its consumer issues, because no service emits a JSON line with the version 2 names today: every service logs plain text (`packages/workflow/src/wdf_workflow/service/__main__.py:16`, `packages/admission/src/wdf_admission/service/__main__.py:17`, `packages/dispatchapi/src/wdf_dispatchapi/service/__init__.py:320`, `packages/worker/src/wdf_worker/__main__.py:23`, `packages/placement/src/wdf_placement/service.py:225` [read]), and the one structured `extra` in the code uses `event_type` and `cloudevent_id` (`packages/events/src/wdf_events/codec.py:54`), which keep their names.
-- Owns: `contracts/instrumentation/**`, the instrumentation row of `docs/contracts.md`, diagram 15.
-- Consumes / produces: instrumentation v2. Produces instrumentation v3; consumer issues listed in the PR: E.1 to E.6, H.1, I.1, C.1, A.1, A.2, G.1, G.2, T.1, and the open epics #14, #15, #16, #17, #18.
-- Acceptance criteria:
-  - [ ] `scripts/verify/cluster/lib/vectors.sh contracts/instrumentation contracts/instrumentation/metrics.yaml` exits 0, with new vectors `valid/external.yaml`, `invalid/schema-violation/external-without-job.yaml`, `invalid/denied-label/external-jobid.yaml` and `invalid/denied-label/attempt-id.yaml`.
-  - [ ] `pytest packages/events -v -k instrumentation` passes unchanged.
-  - [ ] `scripts/check-contracts-map.sh` exits 0, and `scripts/export-diagrams.sh --check` exits 0.
-- Verifier: the vectors, `packages/events/tests/test_instrumentation.py`.
-
-### 0.2 Package skeleton, query client, fake, runbook and diagram
-
-Lane 0, tier T0. Needs: 0.1. Blocks: every lane after lane 0.
-
-- Scope: `packages/obs` with the dependency set of section 3, README, wheel test; `wdf_obs.query` and `wdf_obs.testing.FakeObs` of 0.4 and their contract test `test_conformance.py`; `wdf_obs.targets.JOBS`; a static test that every metric name an emitter declares is catalogued; a static test that no log call names a version 2 log field; the dev shell line for `promtool`; `deploy/obs/README.md`, the stack's runbook, which states once that the switch is `WDF_OBS=on just up`, links D19's owner docs, gives the job drill-down (Explore by `job_id`, the Temporal UI at `127.0.0.1:18233`, `temporal workflow show`), and says that Temporal keeps a closed workflow's history 24 hours in this pass, revisited with #16 (decision 28); diagram 05 redrawn to the decided shape.
-- Owns: lane 0's globs except 0.1's and 0.3's.
-- Consumes / produces: instrumentation v3. Produces the package and the stub every lane builds on.
-- Acceptance criteria:
-  - [ ] `pytest packages/obs -v -k "wheel or query or conformance"` passes: the wheel imports `wdf_obs` and `pyroscope` outside the repository, and `prom`, `targets`, `loki`, `trace` and `profiled` read the canned answers of `FakeObs`; `test_conformance.py` without `-m cluster` runs over `FakeObs`.
-  - [ ] `pytest packages/obs/tests/test_catalogue_names.py -v` passes: every name in the `COUNTERS`, `GAUGES`, `AGES` and `HISTOGRAMS` declarations (maps or tuples) of every `metrics.py` under `packages/*/src` (today `packages/admission/src/wdf_admission/service/metrics.py:16-38` and `packages/dispatchapi/src/wdf_dispatchapi/service/metrics.py:15-21`), and every name created in `packages/workflow/src/wdf_workflow/job.py`, is in the catalogue, and the `exit_class` values equal `contracts/workload/exit-classes.yaml`.
-  - [ ] `pytest packages/obs/tests/test_log_names.py -v` passes: no `extra=` key and no `logs.bind` keyword under `packages/*/src` is `jobid`, `taskid`, `attempt` or `traceparent`, except the `traceparent` argument of `logs.bind`, which D15 exempts; a planted `extra={"jobid": ...}` fails it and a planted `logs.bind(traceparent=...)` passes it.
-  - [ ] `nix develop -c promtool --version` prints a version.
-  - [ ] `scripts/export-diagrams.sh --check` exits 0, and diagram 05 shows pull scrapes, one collector for logs, events and traces, Tempo, Pyroscope, Grafana on 127.0.0.1 linking to the Temporal UI as the per-job view on the infra node, the smoke gate's push of its results, and the switch around the whole stack and the UI, with no Temporal timeline UI as the only drill-down.
-- Verifier: `packages/obs/tests/test_wheel.py`, `test_query.py`, `test_conformance.py`, `test_catalogue_names.py`, `test_log_names.py`.
-
-### R.1 The observability switch (revisit of #2)
-
-Lane R, tier T0. Needs: 0.3. Blocks: S13, R.2, E.2 to E.6, S.4, T.1. Label: `revisit`, child of #2.
-
-- Scope: D19 and D20: `obs_stack` and `obs_memory_mib` on `ci` and `soak` (D9's estimates), `opt_in: [obs]` on the `ci` and `soak` profiles and the corrected header comment of `deploy/tilt/profiles.yaml`, the record `cluster.obs` in `up.sh` and its removal in `nuke.sh`, `scripts/cluster/obs.sh`, the switch in `render.sh`, `namespaces.sh`, `budget.sh`, `doctor.sh`'s `memory-vs-preset`, `up.sh`'s host check, `scripts/tilt/run.sh`, `cluster-verify.sh` (the recorded value exported to its children) and the `Tiltfile`, `deploy/tilt/obs.star`, the `GITHUB_ACTIONS` refusal, and a switch section in `docs/cluster-host.md` with the one-line local and smoke procedure in `docs/dev-setup.md`; the dated Closure addendum line of `02-cluster.md` gets this issue's link.
-- Consumer epics affected, listed in the issue: #13, #16, #17 (a `ci` cluster brought up before R.1 has no record and reads as switch off; nothing needs `just nuke` until someone turns the switch on).
-- Acceptance criteria:
-  - [ ] `scripts/verify/cluster/lib/vectors.sh contracts/preset deploy/presets/*.yaml` exits 0 with `obs_stack` and `obs_memory_mib` on `ci` and `soak`.
-  - [ ] `scripts/cluster/budget.sh ci`, `WDF_OBS=on scripts/cluster/budget.sh ci`, `scripts/cluster/budget.sh soak` and `WDF_OBS=on scripts/cluster/budget.sh soak` each exit 0, and the switch-on runs print the `obs` node line at the `obs_stack` allocatable; `WDF_OBS=on scripts/cluster/budget.sh dev` exits 2.
-  - [ ] `pytest scripts/cluster -q` passes, with new tests that render `ci` both ways (the obs node's container limit is 640 MiB off and the `obs_stack` figure on, and `namespaces.sh render` gives the matching `wdf-obs` quota), that `up.sh` with `GITHUB_ACTIONS=true WDF_OBS=on` exits 2 before it renders anything, that `up.sh` exits 4 when the record differs from `WDF_OBS` on an existing cluster, that `obs.sh` prints `on`, `off`, and `off` for a missing record, that `doctor.sh`'s `memory-vs-preset` with a fake `proc/meminfo` under `ROOT` between 12,032 and 13,696 MiB passes with the switch off and warns with it on, and that no file under `.github/workflows/` names `WDF_OBS`.
-  - [ ] `pytest scripts/tilt -q` passes with a fixture module in group `obs`: it is enabled for `--profile ci` only when `run.sh` passes the switch on, and `cluster-verify.sh` with the record at `off` and `WDF_OBS=on` in the caller's environment excludes it from its module count and renders the 640 MiB obs node and its quota.
-- Verifier: the preset loader, `scripts/cluster/test_*.py`, `scripts/tilt/test_tiltfile.py`.
-
-### S13 Stack footprint (spike)
-
-Lane S, tier T2, timeboxed 2.5 days. Needs: R.1 (throwaway code only otherwise). Blocks: R.2, S.1, S.2, S.3, P.1, P.2, I.1.
-
-- Question: does the whole stack of D9, Tempo and Pyroscope included, run on the `ci` obs node at its `obs_stack` estimate, how fast does its storage grow, and what do the trace and profile wiring cost the service and worker pods, the simulate worker at its staging-cap peak included?
-- Method: `WDF_OBS=on just up` on preset `ci`, `scripts/tilt/run.sh ci`, the stack applied from `docs/delivery/spikes/S13/code/` by `kubectl apply` at D9's limits, scraping every target of D1, with the services run once with throwaway OTLP and Pyroscope settings and once without; three runs of the smoke job; on the real simulate pool, both ways, a job whose simulate result is at the staging cap, the peak that `WORKER_RESERVE_MIB` is sized for (`packages/worker/src/wdf_worker/pools/simulate.py:29-31`), because the workflow harness runs fake pools by default; then the workflow harness with 2,000 jobs for at least one hour; peak working set and CPU throttling per container from cAdvisor, Prometheus head series, and the bytes on each volume at start and end.
-- Pass line: no obs container restarts or is OOM killed, every obs container's peak working set is at most 80 percent of its D9 limit, every service and worker container stays at most 80 percent of its own limit with the wiring on, the simulate pod at its staging-cap peak included, each backend's bytes per hour extrapolated to its decision 20 retention (240 hours for Prometheus and Loki, 72 for Tempo and Pyroscope) fit the proposed size cap and volume, and `WDF_OBS=on scripts/cluster/budget.sh ci` with the proposed figures exits 0.
-- Settles: R.2's figures (memory, and CPU from the throttled share), D9's limits, the size caps and volume sizes of S.1, S.2, P.1 and P.2 (D24; never a time retention), and whether D22's sample rate needs lowering for the worker pods.
-- Result: `docs/delivery/spikes/S13/stack-footprint.md`.
-
-### S14 Series and keys on the pinned versions (spike)
-
-Lane A, tier T2, timeboxed 1.5 days. Needs: nothing. Blocks: A.1, A.2, C.1's external list, E.4's heartbeat line, P.1, P.2.
-
-- Question: which of the series the rules need exist on Temporal server 1.32.2, the SDK of `uv.lock`, kube-state-metrics at its newest release, and the kind node image of `deploy/versions.yaml`, and which retention keys Tempo and Pyroscope have at their newest releases?
-- Pass line: all present, each with the named label: (1) a Temporal matching series of backlog count and backlog age with `task_queue`; (2) a Temporal series counting activity heartbeat timeouts with `task_queue`; (3) SDK `temporal_activity_schedule_to_start_latency` and the worker slot series from a pool worker with `task_queue`; (4) `kube_pod_container_status_last_terminated_exitcode` reading 137 after a throwaway pod with a 32 MiB limit runs `tail /dev/zero` on the obs node (not the node-wide memory canary); (5) a cAdvisor series that rises when a container hits its limit on cgroup v2 (the `memory.events` `max` signal of S10); (6) kubelet volume stats for a local-path claim; (7) a time retention key in Tempo and in Pyroscope, and whether either has a size cap.
-- Fallbacks if absent, decided in the result: (2) the workflow counter of E.4, (5) the alert dropped and #6's leftover noted, (6) each backend's self-reported storage bytes (Prometheus, Loki, Tempo and Pyroscope) for `WdfObsVolumeFilling`, and SeaweedFS's own disk series on 9327 for `WdfStoreCapacityHigh`, each named in the result, (7) D24's alert-only size cap.
-- Result: `docs/delivery/spikes/S14/series.md`.
-
-### R.2 Obs node figures and host ports (revisit of #2)
-
-Lane R, tier T0 and T2. Needs: S13. Blocks: S.1's T2 line, S.3, S.4, I.1. Label: `revisit`, child of #2.
-
-- Scope: the `obs_stack` and `obs_memory_mib` figures of `ci` and `soak` at S13's result (default 2,304 MiB, 1.5 CPU), the Grafana row `grafana`, host port 13000, NodePort 30300, and the Temporal UI row `temporal-ui`, host port 18233, NodePort 30233, with the port table of `docs/cluster-host.md`; the dated Closure addendum line of `02-cluster.md` gets this issue's link.
-- Consumer epics affected, listed in the issue: #13, #16, #17 (every `ci` cluster needs `just nuke` once for the port rows).
-- Acceptance criteria:
-  - [ ] `contracts/preset/check.sh deploy/presets/ci.yaml`, `contracts/preset/check.sh deploy/presets/soak.yaml` and `contracts/preset/check.sh deploy/host/ports.yaml` exit 0; `scripts/cluster/budget.sh ci`, `WDF_OBS=on scripts/cluster/budget.sh ci` and `scripts/cluster/slots.sh ci` exit 0.
-  - [ ] T2, switch on: `just nuke`, `WDF_OBS=on just up` exit 0 and `kubectl --context kind-wdf get node -l wdf.dev/pool=obs -o jsonpath='{.items[0].status.allocatable.memory}'` matches the reservation rule for the `obs_stack` size; `scripts/cluster-verify.sh` and `WDF_OBS=off scripts/cluster-verify.sh` both exit 0.
-  - [ ] T2, switch off: `just nuke`, `just up` exit 0, the same query matches the 640 MiB node, and `scripts/cluster-verify.sh` and `WDF_OBS=on scripts/cluster-verify.sh` both exit 0.
-- Verifier: the preset loader, `scripts/cluster/test_*.py`.
-
-### H.1 JSON logs and OTLP push
-
-Lane H, tier T0 and T1. Needs: 0.2. Blocks: H.3, E.2 to E.6, S.2's T2 line.
-
-- Scope: `wdf_obs.logs` of D14 and D15: the stdout JSON handler, which renders only the D15 fields, the OTLP log exporter when the endpoint is set, and `logs.bind(**fields)` over `contextvars`, which takes the D15 names plus a `traceparent` argument from which it derives `trace_id` and `span_id`.
-- Acceptance criteria:
-  - [ ] `pytest packages/obs/tests/logs -v` passes: each line is one JSON object with the D15 fields; `bind(traceparent=...)` yields `trace_id` and `span_id` and no `traceparent` field; `bind(jobid=...)` raises `TypeError`; a record with `extra={"jobid": ...}` or any other key outside D15 emits no such field; with the endpoint unset no exporter is created; with the endpoint refusing connections, 10,000 lines log in under 2 s and `wdf_obs_log_dropped_total` counts the drops; with an in-test OTLP HTTP receiver, the received records carry `service.name` and the fields as attributes.
-  - [ ] `pytest packages/obs/tests/logs -v -m integration` passes against the pinned collector image through `wdf_itest`, which forwards one record to a file exporter.
-- Verifier: `packages/obs/tests/logs/`.
-
-### H.2 Metrics helpers and the registry bridge
-
-Lane H, tier T0. Needs: 0.2, E.1. Blocks: E.2 to E.6, I.1.
-
-- Scope: `wdf_obs.metrics.runtime(address, buckets)` (the Temporal runtime with the catalogue's buckets) and `export_registry(meter)` that mirrors `wdf_events.metrics.registry` through E.1's listener; names are held to the catalogue by 0.2's static test over the emitters' declarations (D13), not at runtime.
-- Acceptance criteria:
-  - [ ] `pytest packages/obs/tests/metrics -v` passes: the runtime's endpoint serves a registry counter and `wdf_event_bytes` buckets after `to_bytes` runs; buckets equal the catalogue's.
-- Verifier: `packages/obs/tests/metrics/`.
-
-### H.3 Traces, profiles and the setup call
-
-Lane H, tier T0 and T1. Needs: H.1. Blocks: E.2 to E.6, I.1, P.1's and P.2's T2 lines.
-
-- Scope: `wdf_obs.traces` of D21, `wdf_obs.profiles` of D22, and `wdf_obs.setup(component)` of D23, which is idempotent within a process.
-- Acceptance criteria:
-  - [ ] `pytest packages/obs/tests/traces -v` passes: with the endpoint unset, `setup` installs no provider and `wdf_temporal.trace.current_traceparent()` inside `stage_span` returns the parent's `traceparent`, as today; with an in-test OTLP HTTP receiver, a `stage_span` parented on a known `traceparent` arrives with that trace id and `service.name`; with the endpoint refusing connections, 10,000 spans end in under 2 s and `wdf_obs_span_dropped_total` counts the drops.
-  - [ ] `pytest packages/obs/tests/profiles -v` passes: with `WDF_PYROSCOPE_ADDRESS` unset `pyroscope.configure` is never called, and with it set it is called once with `wdf.<component>` and the `pool` tag.
-  - [ ] `pytest packages/obs/tests/traces -v -m integration` passes against the pinned collector image, which forwards one span to a file exporter.
-- Verifier: `packages/obs/tests/traces/`, `packages/obs/tests/profiles/`.
-
-### I.1 State inputs exporter
-
-Lane H, tier T1 and T2. Needs: H.2, H.3, S13, R.2; its T2 line also S.1. Blocks: C.1's T2 line, T.1.
-
-- Scope: `python -m wdf_obs.inputs` and module `state-inputs` of D12, with its login created as the admission module creates its own, calling `wdf_obs.setup("state-inputs")` with `obs_env()`.
-- Acceptance criteria:
-  - [ ] `pytest packages/obs/tests/inputs -v -m integration` passes against Postgres through `wdf_itest` with the migrations applied: every `sql`, `sql_labelled` and `invariants` input is served as `wdf_state_<name>`, and a failing query keeps the last value and counts the error.
-  - [ ] T2, switch on: after `scripts/tilt/run.sh ci`, `wdf_obs.query.prom` returns `wdf_state_connections` above 0.
-- Verifier: `packages/obs/tests/inputs/`, the module's render test.
-
-### E.1 Registry listener (revisit of #4)
-
-Lane E, tier T0. Needs: lane 0. Blocks: H.2. Label: `revisit`, child of #4.
-
-- Scope: `Registry.listeners`, called with each `inc` and `observe`, with no change to existing behaviour; the dated Closure addendum line of `03-envelope.md`.
-- Consumer epics affected, listed in the issue: #13.
-- Acceptance criteria:
-  - [ ] `pytest packages/events -q -rs` passes with no `SKIPPED` line, and `test_metrics_listener` shows a listener receives each call once.
-
-### E.2 Admission (revisit of #8)
-
-Lane E, tier T0 and T2. Needs: H.1, H.2, H.3, R.1; its T2 lines also S.1, S.2 and the gate. Blocks: C.1's T2 line, P.1's third criterion, T.1. Label: `revisit`, child of #8.
-
-- Scope: `wdf_obs.setup("admission")` in place of `logging.basicConfig`, `job_id` and the claim's `traceparent` bound per claim with `logs.bind`, `export_registry`, `wdf_admission_cap_jobs{scope}`, and `obs_env()` in `deploy/admission/Tiltfile.module`; the dated Closure addendum line of `12-admission.md`.
-- Consumer epics affected, listed in the issue: #13, #14, #15, #16, #17 (log field names and the new gauge).
-- Acceptance criteria:
-  - [ ] `pytest packages/admission -q -rs` passes with no `SKIPPED` line, and `test_obs` shows a JSON claim line with `job_id` and `trace_id` and the cap gauge per scope.
-  - [ ] T2, switch on: `wdf_obs.query.prom(..., 'wdf_broker_settle_total')` returns a series from the admission pod after one `just smoke`.
-  - [ ] T2, switch off: the admission pod's env has no `OTEL_EXPORTER_OTLP_ENDPOINT` and its log lines are JSON on `kubectl logs`.
-
-### E.3 Dispatch (revisit of #24)
-
-Lane E, tier T0 and T2. Needs: as E.2. Blocks: as E.2. Label: `revisit`, child of #24.
-
-- Scope: `wdf_obs.setup("dispatch")`, `job_id` and the job's `traceparent` bound on each accepted job line and on the `publish.py` error line that names a job today (`packages/dispatchapi/src/wdf_dispatchapi/publish.py:105`), a span for each accepted job (`dispatch.accept`, a proposal) started with `wdf_temporal.trace.stage_span` on the job's `traceparent` so the trace of the job's `trace_id` includes dispatch (D21), with the call's `dispatch.submit` span and its links kept, `export_registry`, and `obs_env()` in `deploy/dispatchapi/Tiltfile.module`; the dated Closure addendum line of `13-dispatch-api.md`.
-- Consumer epics affected, listed in the issue: #13, #14, #15, #16, #17 (log field names and the span per job).
-- Acceptance criteria:
-  - [ ] `pytest packages/dispatchapi -q -rs` passes with no `SKIPPED` line, and `test_obs` shows a JSON accepted line with `job_id` and `trace_id`, and, with an in-test OTLP HTTP receiver, one span per accepted job of a call whose trace id is that job's and whose `service.name` is `dispatch`.
-  - [ ] T2, switch on: `wdf_obs.query.prom(..., 'wdf_broker_publish_total')` returns a series from the dispatch pod after one `just smoke`.
-  - [ ] T2, switch off: as E.2's for the dispatch pod.
-
-### E.4 Workflow (revisit of #6)
-
-Lane E, tier T0 and T1. Needs: H.1, H.2, H.3, R.1, S14. Blocks: as E.2. Label: `revisit`, child of #6.
-
-- Scope: `wdf_obs.setup("workflow")` in the service and activities, `wdf_workflow_job_seconds` and `wdf_workflow_jobs_total` recorded through `workflow.metric_meter()` when a job ends, with one JSON line at the job's end carrying `job_id`, `job_class` and `outcome`, one JSON line for each compile skipped on a cache hit (from `cache_hit`, `packages/workflow/src/wdf_workflow/taskpath.py:310-335`) carrying `job_id`, `task_id` and the reason `compile-cache-hit`, the heartbeat timeout counter only if S14 found no server series, and `obs_env()` in `deploy/workflow/Tiltfile.module`; the dated Closure addendum line of `08-workflow-engine.md`.
-- Consumer epics affected, listed in the issue: #13, #14, #15, #16, #17 (log lines and the job-end series).
-- Acceptance criteria:
-  - [ ] `pytest packages/workflow -q -rs` passes with no `SKIPPED` line, the replay corpus included, and the PR removes or changes no `assert` line.
-  - [ ] `test_obs` at T1 on the dev server: one job ends and both new series carry its `job_class` and `outcome`, the job-end line carries its `job_id`, a second job whose compile hits the cache logs the skipped-compile line with its `job_id` and `task_id`, and with an in-test OTLP receiver the activity spans of that job carry its trace id.
-
-### E.5 Placement (revisit of #9)
-
-Lane E, tier T0 and T2. Needs: as E.2. Blocks: C.1's T2 line, T.1. Label: `revisit`, child of #9.
-
-- Scope: the placement names of 0.4 declared in `packages/placement/src/wdf_placement/metrics.py` (D13) and served on 9464 named `metrics`, `wdf_obs.setup("placement")` with the decision line kept as `msg`, and `obs_env()` in `deploy/placement/Tiltfile.module`; the dated Closure addendum line of `14-placement.md`.
-- Consumer epics affected, listed in the issue: #13, #14, #16 (the placement series).
-- Acceptance criteria:
-  - [ ] `pytest packages/placement -q -rs` passes with no `SKIPPED` line, and `test_obs` shows one decision counted by pool and verdict.
-  - [ ] T2, switch on: `wdf_placement_decisions_total` is served after one `just smoke`.
-
-### E.6 Workers (revisit of #10)
-
-Lane E, tier T0 and T2. Needs: as E.2. Blocks: C.1's T2 line, T.1. Label: `revisit`, child of #10.
-
-- Scope: SDK metrics on 9464 named `metrics`, the worker names of 0.4 declared in `packages/worker/src/wdf_worker/metrics.py` (D13) with `exit_class` from the runner (OOM counted for `oom_killed`, `compile_oom` and `aggregate_oom`), `wdf_obs.setup("<pool>-worker")` with JSON outcome logs carrying `job_id`, `task_id`, `attempt_id`, `pool` and `exit_class`, no line per heartbeat, and `obs_env()` in `deploy/workers/pool.star`.
-  With the switch on, the pool NetworkPolicy of `deploy/workers/pool.star` gains ingress from Prometheus's pods in `wdf-obs` on port 9464 and egress to the collector (4318) and Pyroscope (4040) in `wdf-obs`; with it off the policy is as today (D20).
-  `wdf_worker.probe` gains the targets `collector` and `pyroscope`, expected `ok` exactly when `OTEL_EXPORTER_OTLP_ENDPOINT` is set and `refused` otherwise, with its test and the Egress section of `deploy/workers/README.md`; the dated Closure addendum line of `11-workers.md`.
-- Consumer epics affected, listed in the issue: #13, #14, #15, #16, #17 (worker series, log lines and the pool policy).
-- Acceptance criteria:
-  - [ ] `pytest packages/worker -q -rs` passes with no `SKIPPED` line, `test_obs` counts an exit class per pool and logs one outcome line per task, and `test_probe` expects the two obs targets both ways.
-  - [ ] T2, switch on: after one `just smoke`, `wdf_worker_tasks_total{pool="simulate",exit_class="ok"}` is at least 1, the three worker targets are up, and `kubectl --context kind-wdf -n wdf-workers exec deploy/<pool>-worker -- python -m wdf_worker.probe` exits 0 for each pool.
-  - [ ] T2, switch off: the same probe exits 0 for each pool.
-
-### S.1 Prometheus and kube-state-metrics
-
-Lane S, tier T0 and T2. Needs: lane 0, S13, R.2. Blocks: S.2, S.3, C.1's T2 line, I.1's T2 line, T.1.
-
-- Scope: modules `prometheus` and `kube-state-metrics`, the discovery of D1, the OTLP receiver of D25 (`--web.enable-otlp-receiver`), the rule files mounted from a ConfigMap whose checksum on the pod template rolls Prometheus when a rule changes, strategy `Recreate` (D9), the time retention of decision 20 and the size cap of S13 (D24), a volume per D11, and the removal of `deploy/dummy/obs/`, which nothing else references (`git grep dummy-obs` [read] finds only its manifest and the closed `02-cluster.md`).
-- Acceptance criteria:
-  - [ ] `pytest packages/obs/tests/stack -v -k prometheus` passes: the rendered configuration's jobs equal `wdf_obs.targets.JOBS`, `promtool check config` passes on it, and both Deployments render strategy `Recreate`.
-  - [ ] `scripts/cluster/budget.sh ci` and `WDF_OBS=on scripts/cluster/budget.sh ci` exit 0, the switch-on run listing both modules.
-  - [ ] T2, switch on: after `scripts/tilt/run.sh ci`, `wdf_obs.query.targets` shows every target up, `query.prom` returns `kube_node_status_allocatable` for six nodes, `pytest packages/obs/tests/test_conformance.py -v -m cluster -k prometheus` passes, and `scripts/cluster-verify.sh` prints `ok ready` with the two modules counted.
-
-### S.2 Loki and the collector
-
-Lane S, tier T0 and T2. Needs: S.1, H.1. Blocks: S.3, P.1, P.2, T.1.
-
-- Scope: modules `loki` (monolithic, filesystem, retention on at decision 20's 10 days, strategy `Recreate`) and `collector` (one Deployment, OTLP receiver for logs and traces, Kubernetes event watch, Loki OTLP exporter, and a traces pipeline to `tempo.wdf-obs:4318` that drops while Tempo is absent).
-- Acceptance criteria:
-  - [ ] T2, switch on: a log line pushed from the host through a forward with `job_id=probe-<hex>` is returned by `query.loki` within 30 s, with `job_id` as structured metadata and not as a label (`/loki/api/v1/labels` has no `job_id`).
-  - [ ] T2, switch on: `query.loki` returns the Kubernetes events of a pod started in `wdf-obs`, and `pytest packages/obs/tests/test_conformance.py -v -m cluster -k loki` passes.
-
-### S.3 Grafana
-
-Lane S, tier T0 and T2. Needs: S.2, R.2. Blocks: G.1's and G.2's T2 lines, S.4, T.1, the exit test.
-
-- Scope: module `grafana` of D8 with four datasources (Prometheus, Loki, Tempo, Pyroscope), the links of D8 (a Loki derived field from `trace_id` to Tempo, one from `job_id` to the Temporal UI's workflow page, and a Tempo span link from `temporalWorkflowID` to the same page), the anonymous role Editor, dashboard provisioning, and Grafana's database on a local-path volume with strategy `Recreate`.
-- Acceptance criteria:
-  - [ ] T2, switch on: `curl -s http://127.0.0.1:13000/api/health` answers `"database": "ok"`, and `/api/datasources` with the admin credential lists the four datasources.
-  - [ ] T2, switch on: `/api/datasources` shows the Loki derived fields and the Tempo span link of D8, the `job_id` one with URL `http://127.0.0.1:18233/namespaces/wdf/workflows/job-${...}` and the `temporalWorkflowID` one with URL `http://127.0.0.1:18233/namespaces/wdf/workflows/${__span.tags.temporalWorkflowID}`; without a login `POST /api/ds/query` with a Loki query body (one `queries` entry on the Loki datasource uid, and a `from` and `to` range) answers 200; and `GET /api/admin/settings` with the admin credential shows `auth.anonymous` with `enabled` `true` and `org_role` `Editor`, the role that gives Explore, which a Viewer's dashboard query through `/api/ds/query` would not prove.
-  - [ ] T2, switch on: an annotation posted through `POST /api/annotations` is still listed after `kubectl --context kind-wdf -n wdf-obs delete pod -l app=grafana` and the new pod is ready.
-  - [ ] No credential is in a tracked file (`git grep` for the generated password finds nothing).
-
-### S.4 Temporal UI behind the switch (revisit of #6)
-
-Lane S, tier T0 and T2. Needs: S.3, R.1, R.2. Blocks: the exit test. Label: `revisit`, child of #6.
-
-- Scope: the chart's `web` enabled in the Temporal module only when `WDF_OBS` is `on` (`deploy/temporal/values.json:52` disables it today), on the infra node with a `resources` entry of 64 MiB requests equal to limits (estimate, the infra node has 374 MiB of free requests on `ci`, `budget.sh ci` [read]), its image pinned in `deploy/versions.yaml`, its web Service on NodePort 30233 behind R.2's `temporal-ui` host port row (`127.0.0.1:18233`, the pair the preset vector already uses, `contracts/preset/vectors/valid/ports.yaml:5-7`); the dated Closure addendum line of `08-workflow-engine.md`.
-- Consumer epics affected, listed in the issue: #13, #15, #16.
-- Acceptance criteria:
-  - [ ] `scripts/cluster/budget.sh ci` and `WDF_OBS=on scripts/cluster/budget.sh ci` exit 0 with the UI's entry counted on the infra node.
-  - [ ] T2, switch on: the UI pod is ready on the infra node, and `http://127.0.0.1:18233/namespaces/wdf/workflows/job-<id>` shows the workflow of one `just smoke` run.
-  - [ ] T2, switch off: no UI pod exists in `wdf-infra`.
-
-### P.1 Tempo
-
-Lane S, tier T0 and T2. Needs: S.2, H.3, S14; its third criterion also E.2, E.3, E.4 and the gate. Blocks: T.1, C.1's T2 line.
-
-- Scope: module `tempo` (monolithic, OTLP receiver, filesystem storage, the retention of D24, strategy `Recreate`), its scrape target, and the conformance of `query.trace`.
-- Acceptance criteria:
-  - [ ] `scripts/cluster/budget.sh ci` and `WDF_OBS=on scripts/cluster/budget.sh ci` exit 0.
-  - [ ] T2, switch on: a span pushed from the host to the collector with a known trace id is returned by `query.trace` within 30 s, `pytest packages/obs/tests/test_conformance.py -v -m cluster -k tempo` passes, and Grafana's Tempo datasource health check answers ok.
-  - [ ] T2, switch on: after one `just smoke`, `query.trace` on the job's `trace_id` returns spans of `dispatch`, `admission` and `workflow`.
-
-### P.2 Pyroscope
-
-Lane S, tier T0 and T2. Needs: S.2, H.3, S14. Blocks: T.1, C.1's T2 line.
-
-- Scope: module `pyroscope` (monolithic, filesystem storage, the retention of D24, strategy `Recreate`), its scrape target, and the conformance of `query.profiled`.
-- Acceptance criteria:
-  - [ ] `scripts/cluster/budget.sh ci` and `WDF_OBS=on scripts/cluster/budget.sh ci` exit 0.
-  - [ ] T2, switch on: a host process that calls `wdf_obs.setup("probe")` with `WDF_PYROSCOPE_ADDRESS` on a forward is listed by `query.profiled` within 60 s, `pytest packages/obs/tests/test_conformance.py -v -m cluster -k pyroscope` passes, and Grafana's Pyroscope datasource health check answers ok.
-
-### G.1 Dashboards: fleet, intake and admission, paused jobs, characterization, smoke
-
-Lane G, tier T0 and T2. Needs: lane 0; its T2 line also S.3, T.1 and the gate. Blocks: C.1.
-
-- Scope: five dashboards; the characterization one shows every characterization series of 0.4 with its pinned buckets, for #16; the `smoke` dashboard of D25 shows the last run's verdict, per-row seconds over runs from `wdf_smoke_row_seconds`, failures over runs from `wdf_smoke_row_verdict{verdict="FAIL"}`, and the `smoke` annotations.
-- Acceptance criteria:
-  - [ ] `pytest packages/obs/tests/dashboards -v` passes: valid JSON, known datasource uids, no panel query names a label on the denylist.
-  - [ ] T2, switch on: a screenshot of each dashboard after one `just smoke`, pasted in the PR, with no panel showing "No data" for a series the smoke run emits, the `smoke` dashboard after three runs showing three points per row and three annotations.
-
-### G.2 Dashboards: placement and pools, workers, cluster health, stack health
-
-Lane G, tier T0 and T2. Needs: as G.1. Blocks: C.1.
-
-- Scope and acceptance as G.1 for these four, the workers dashboard showing exit classes and OOM counts per pool, and the stack health dashboard covering every obs module, Tempo and Pyroscope included, with each one's volume use and ingest rate.
-
-### A.1 Alert rules: intake, admission, dispatch, workflow, events
-
-Lane A, tier T0. Needs: lane 0, S14. Blocks: C.1.
-
-- Scope: the three broker rules as pinned, `WdfIntakeWaitHigh`, `WdfReconcilerBacklogOld`, `WdfControlOutboxOld`, the admission rules of decision 11, `WdfJobPausedNeedsAttention`, `WdfResumeWaiting`, `WdfScheduleToStartBreached`, `WdfHistoryLengthHigh`, `WdfTemporalWorkerUnhealthy`, `WdfOldBuildIdLingering` (threshold above 7 days, D4), `WdfEventRejected`, each with a `promtool` test that fires and one that stays silent.
-- Acceptance criteria:
-  - [ ] `promtool check rules deploy/obs/prometheus/rules/*.yaml` and `promtool test rules deploy/obs/prometheus/rules/tests/*.yaml` print `SUCCESS`, run inside `just ci` by `packages/obs/tests/rules/test_promtool.py`, and `WdfOldBuildIdLingering`'s silent test holds a pinned build 7 days old.
-
-### A.2 Alert rules: pools, workers, OOM, artifacts, cluster and the stack
-
-Lane A, tier T0. Needs: lane 0, S14. Blocks: C.1.
-
-- Scope: `WdfPoolBacklogAgeHigh`, `WdfUnschedulableTasks`, `WdfHeartbeatTimeoutStorm`, `WdfWorkerOOM`, `WdfContainerOOM`, `WdfPoolSaturated` (`info`), `WdfCompileFailuresHigh` and `WdfAggregateFailuresHigh` by class, `WdfCompileCacheMissStorm`, `WdfStoreCapacityHigh` (the inputs threshold of 70 percent), `WdfPodRestartUnexpected`, `WdfTargetDown`, `WdfWatchdog`, `WdfObsVolumeFilling` (Prometheus, Loki, Tempo and Pyroscope volumes, Loki's 8 GB of decision 20 and the size caps of D24), `WdfObsDataLoss` (the log and span drop counters of `wdf_obs` among its inputs), with `promtool` tests as A.1.
-- Acceptance criteria: as A.1.
-
-### C.1 Catalogue contract test
-
-Lane G, tier T0 and T2. Needs: lane 0; its T2 line also S.1, P.1, P.2, E.2 to E.6, I.1, G.1, G.2, A.1, A.2, T.1 and the gate. Blocks: the exit test.
-
-- Scope: `wdf_obs.catalogue`: every series name in a dashboard query or rule expression is in the catalogue (names or `external`), and, live, every catalogue entry appears in a scrape, or for the pushed `wdf_smoke_*` names of D25 in Prometheus after one `just smoke`.
-- Acceptance criteria:
-  - [ ] `pytest packages/obs/tests/catalogue -v` passes, including a test that a dashboard naming `wdf_nope_total` fails it.
-  - [ ] T2, switch on: `pytest packages/obs/tests/catalogue -v -m cluster` after one `just smoke` passes, and lists any entry absent from the scrape by name.
-
-### T.1 Telemetry row of `just smoke`
-
-Lane T, tier T0 and T2. Needs: R.1, S.1, S.2, S.3, P.1, P.2, I.1, E.2 to E.6, the gate's G.2 merged. Blocks: G.1's and G.2's T2 lines, C.1's T2 line, the exit test.
-
-- Scope: row 11 of D16, which reads the switch from the record `up.sh` wrote, takes the trace id from dispatch's accepted line in Loki, and reads row 7's cache outcome; the job rows' reserve of 90 s with the switch on; the results hook of D25 in `results.py`, called once after the count line with the switch on.
-- Acceptance criteria:
-  - [ ] `pytest packages/acceptance/tests/smoke -v -k telemetry` passes over `FakeObs`: all targets up, the log lines of the six components, the trace's three services and the eight profiled components pass; with row 7's `build` at `task_attempt` 0, no compile-worker line or profile is asked; a target down fails naming its job; a component with no line, no span or no profile after the one 60 s deadline fails naming it and the signal; the record at `off` prints `ok telemetry: observability off, not checked`; rows 1 or 6 not ok print `skip`; the reserve is 90 s with the record at `on` and 30 s with it at `off`.
-  - [ ] `pytest packages/acceptance/tests/smoke -v -k results` passes over `FakeObs`: with the record at `on`, one run pushes `wdf_smoke_row_verdict` and `wdf_smoke_row_seconds` for rows `1` to `11` and `run` and posts one annotation tagged `smoke`; with row 6 failed, and so row 11 at `skip`, the run still pushes, `run` with verdict `FAIL`; with the record at `off` nothing is pushed; with `FakeObs` refusing, the run's rows, count line and exit code are unchanged and one stderr line reports the failed push.
-  - [ ] T2, switch on: `just smoke` three times on one deploy, each exit 0 with 11 rows `ok` and an elapsed under 300 s, outputs in the PR, the second and third with `build` hitting the cache, and `query.prom` returns `wdf_smoke_row_seconds{row="run"}` with three samples.
-  - [ ] T2, switch off: `just smoke` once on a switch-off deploy, exit 0 with 11 rows `ok`, row 11 reading `observability off, not checked`, output in the PR.
+- [#546](https://github.com/AndoNorth/wasm-dag-forge/issues/546) 0.3 Preset contract v2
+- [#547](https://github.com/AndoNorth/wasm-dag-forge/issues/547) 0.1 Instrumentation contract v3 and the catalogue
+- [#548](https://github.com/AndoNorth/wasm-dag-forge/issues/548) 0.2 Package skeleton, query client, fake, runbook and diagram
+- [#549](https://github.com/AndoNorth/wasm-dag-forge/issues/549) R.1 The observability switch (revisit of #2)
+- [#550](https://github.com/AndoNorth/wasm-dag-forge/issues/550) S13 Stack footprint (spike)
+- [#551](https://github.com/AndoNorth/wasm-dag-forge/issues/551) S14 Series and keys on the pinned versions (spike)
+- [#552](https://github.com/AndoNorth/wasm-dag-forge/issues/552) R.2 Obs node figures and host ports (revisit of #2)
+- [#553](https://github.com/AndoNorth/wasm-dag-forge/issues/553) H.1 JSON logs and OTLP push
+- [#554](https://github.com/AndoNorth/wasm-dag-forge/issues/554) H.2 Metrics helpers and the registry bridge
+- [#555](https://github.com/AndoNorth/wasm-dag-forge/issues/555) H.3 Traces, profiles and the setup call
+- [#556](https://github.com/AndoNorth/wasm-dag-forge/issues/556) I.1 State inputs exporter
+- [#557](https://github.com/AndoNorth/wasm-dag-forge/issues/557) E.1 Registry listener (revisit of #4)
+- [#558](https://github.com/AndoNorth/wasm-dag-forge/issues/558) E.2 Admission (revisit of #8)
+- [#559](https://github.com/AndoNorth/wasm-dag-forge/issues/559) E.3 Dispatch (revisit of #24)
+- [#560](https://github.com/AndoNorth/wasm-dag-forge/issues/560) E.4 Workflow (revisit of #6)
+- [#561](https://github.com/AndoNorth/wasm-dag-forge/issues/561) E.5 Placement (revisit of #9)
+- [#562](https://github.com/AndoNorth/wasm-dag-forge/issues/562) E.6 Workers (revisit of #10)
+- [#563](https://github.com/AndoNorth/wasm-dag-forge/issues/563) S.1 Prometheus and kube-state-metrics
+- [#564](https://github.com/AndoNorth/wasm-dag-forge/issues/564) S.2 Loki and the collector
+- [#565](https://github.com/AndoNorth/wasm-dag-forge/issues/565) S.3 Grafana
+- [#566](https://github.com/AndoNorth/wasm-dag-forge/issues/566) S.4 Temporal UI behind the switch (revisit of #6)
+- [#567](https://github.com/AndoNorth/wasm-dag-forge/issues/567) P.1 Tempo
+- [#568](https://github.com/AndoNorth/wasm-dag-forge/issues/568) P.2 Pyroscope
+- [#569](https://github.com/AndoNorth/wasm-dag-forge/issues/569) G.1 Dashboards: fleet, intake and admission, paused jobs, characterization, smoke
+- [#570](https://github.com/AndoNorth/wasm-dag-forge/issues/570) G.2 Dashboards: placement and pools, workers, cluster health, stack health
+- [#571](https://github.com/AndoNorth/wasm-dag-forge/issues/571) A.1 Alert rules: intake, admission, dispatch, workflow, events
+- [#572](https://github.com/AndoNorth/wasm-dag-forge/issues/572) A.2 Alert rules: pools, workers, OOM, artifacts, cluster and the stack
+- [#573](https://github.com/AndoNorth/wasm-dag-forge/issues/573) C.1 Catalogue contract test
+- [#574](https://github.com/AndoNorth/wasm-dag-forge/issues/574) T.1 Telemetry row of `just smoke`
 
 ## 5. Order, stubs and spikes
 
