@@ -42,14 +42,6 @@ export default makeScene2D(function* (view) {
         fill={C.text}
         fontSize={44}
         fontWeight={700}
-        x={-270}
-        y={-470}
-      />
-      <Txt
-        text="solid = has code/contract   dashed = designed only"
-        fill={C.dim}
-        fontSize={22}
-        x={640}
         y={-470}
       />
       <Rect
@@ -65,16 +57,16 @@ export default makeScene2D(function* (view) {
       >
         <Txt ref={statusTxt} text="status: -" fill={C.dim} fontSize={26} />
       </Rect>
-      {box({ref: submit, x: -700, y: -300, w: 340, h: 130, title: 'Submit API', sub: 'validate, compile plan, dedup row', designed: true})}
-      {box({ref: intake, x: -235, y: -300, w: 340, h: 130, title: 'RabbitMQ intake', sub: 'queue per (tenant, class)', color: C.amber, designed: true})}
-      {box({ref: admission, x: 235, y: -300, w: 340, h: 130, title: 'Admission (layer 1)', sub: 'priority, quota, class cap', color: C.pink, designed: true})}
-      {box({ref: workflow, x: 700, y: -300, w: 340, h: 130, title: 'Temporal workflow', sub: 'one job = one workflow', color: C.green, designed: true})}
-      {box({ref: place, x: -800, y: -110, w: 240, h: 110, title: 'Placement', sub: 'layer 2 pool pick', color: C.pink, designed: true})}
+      {box({ref: submit, x: -700, y: -300, w: 340, h: 130, title: 'Dispatch API', sub: 'validate, compile plan, dedup row'})}
+      {box({ref: intake, x: -235, y: -300, w: 340, h: 130, title: 'RabbitMQ intake', sub: 'queue per (tenant, class)', color: C.amber})}
+      {box({ref: admission, x: 235, y: -300, w: 340, h: 130, title: 'Admission (layer 1)', sub: 'priority, quota, class cap', color: C.pink})}
+      {box({ref: workflow, x: 700, y: -300, w: 340, h: 130, title: 'Temporal workflow', sub: 'one job = one workflow', color: C.green})}
+      {box({ref: place, x: -800, y: -110, w: 240, h: 110, title: 'Placement', sub: 'layer 2 pool pick', color: C.pink})}
       {taskIds.map((id, i) =>
         box({ref: tasks[i], x: taskX[i], y: -110, w: 300, h: 110, title: `${id}`, sub: `type: ${taskType[i]}`, color: taskColor[i]}),
       )}
       {taskIds.map((_, i) =>
-        box({ref: pools[i], x: taskX[i], y: 70, w: 300, h: 90, title: `pool: ${taskType[i]}`, sub: 'Temporal task queue', color: taskColor[i], designed: true}),
+        box({ref: pools[i], x: taskX[i], y: 70, w: 300, h: 90, title: `pool: ${taskType[i]}`, sub: 'Temporal task queue', color: taskColor[i]}),
       )}
       {taskIds.map((_, i) =>
         box({
@@ -86,12 +78,11 @@ export default makeScene2D(function* (view) {
           title: i === 1 ? 'slot pod (WASM)' : 'slot pod (native)',
           sub: i === 1 ? 'fresh instance, seed=42' : i === 0 ? 'builds component' : 'reads results via index',
           color: taskColor[i],
-          designed: true,
         }),
       )}
       {box({ref: buckets[0], x: -450, y: 390, w: 300, h: 70, title: 'wdf-components', color: C.violet})}
       {box({ref: buckets[1], x: 0, y: 390, w: 300, h: 70, title: 'wdf-results', color: C.blue})}
-      {box({ref: buckets[2], x: 450, y: 390, w: 300, h: 70, title: 'summary', color: C.amber})}
+      {box({ref: buckets[2], x: 450, y: 390, w: 300, h: 70, title: 'wdf-results', color: C.amber})}
       <Txt
         ref={log}
         text=""
@@ -124,7 +115,7 @@ export default makeScene2D(function* (view) {
 
   // 1. submit
   yield* show(submit());
-  say('1. The job document is validated once per template, compiled to a plan, and written as an accepted_job row. A unique (tenant, submission_key) dedups.');
+  say('1. The Dispatch API validates the job document once per template, compiles it to a plan, and writes an accepted_job row. A unique (tenant, submission_key) dedups.');
   token().opacity(1);
   yield* waitFor(2.5);
   setStatus('status: accepted', C.amber);
@@ -165,7 +156,7 @@ export default makeScene2D(function* (view) {
   const outs = [
     'component stored in wdf-components',
     'result stored in wdf-results',
-    'summary stored',
+    'summary stored in wdf-results',
   ];
   for (let i = 0; i < 3; i++) {
     say(notes[i]);

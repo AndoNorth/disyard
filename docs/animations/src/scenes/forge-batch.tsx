@@ -50,7 +50,7 @@ export default makeScene2D(function* (view) {
         y={-470}
       />
       <Txt
-        text="solid = has code/contract   dashed = designed only"
+        text="solid = built   dashed = not built yet"
         fill={C.dim}
         fontSize={22}
         x={640}
@@ -60,10 +60,10 @@ export default makeScene2D(function* (view) {
         box({ref: tpl[i], x: colX[0], y: r.y, w: 230, h: 130, title: r.name, sub: 'template: validated once, compiled once', color: r.color}),
       )}
       {rows.map((r, i) =>
-        box({ref: q[i], x: colX[1], y: r.y, w: 230, h: 150, title: 'intake queue', sub: 'jobs waiting', color: r.color, designed: true}),
+        box({ref: q[i], x: colX[1], y: r.y, w: 230, h: 150, title: 'intake queue', sub: 'jobs waiting', color: r.color}),
       )}
       {rows.map((r, i) =>
-        box({ref: run[i], x: colX[2], y: r.y, w: 230, h: 150, title: 'admitted jobs', sub: 'slot-limited workers', color: r.color, designed: true}),
+        box({ref: run[i], x: colX[2], y: r.y, w: 230, h: 150, title: 'admitted jobs', sub: 'slot-limited workers', color: r.color}),
       )}
       {rows.map((r, i) =>
         box({ref: res[i], x: colX[3], y: r.y, w: 230, h: 150, title: 'results', sub: 'jobs done', color: r.color}),
@@ -95,7 +95,7 @@ export default makeScene2D(function* (view) {
           <Circle ref={d} width={18} height={18} fill={r.color} opacity={0} x={colX[0] + 115} y={r.y} />
         )),
       )}
-      {box({ref: index, x: 410, y: 0, w: 180, h: 200, title: 'results index', sub: 'JSONL, streamed', color: C.green})}
+      {box({ref: index, x: 410, y: 0, w: 180, h: 200, title: 'results index', sub: 'JSONL, built by the load CLI', color: C.green, designed: true})}
       <Txt
         fill={C.green}
         fontSize={34}
@@ -111,7 +111,7 @@ export default makeScene2D(function* (view) {
       )}
       <Txt
         ref={note}
-        text="Cross-job aggregate is an open design question in the repo (#17)"
+        text="The load CLI that builds this index is not built yet"
         fill={C.amber}
         fontSize={22}
         x={560}
