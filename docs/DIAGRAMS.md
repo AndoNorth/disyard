@@ -58,6 +58,10 @@ In a GitHub issue, use the full raw link to the file on `main` (the repo is publ
 ![Task path](https://raw.githubusercontent.com/AndoNorth/wasm-dag-forge/main/docs/architecture/06-task-path-option-a.drawio.svg)
 ```
 
+## Animations
+
+A flow over time is animated with Motion Canvas instead, as [docs/animations/README.md](animations/README.md) describes, which also says when to pick which.
+
 ## Mermaid
 
 Mermaid in the text is fine for trivial flows.
