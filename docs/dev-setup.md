@@ -56,6 +56,7 @@ No logic lives in the justfile, and each real recipe calls `scripts/<name>.sh`.
 | `itest [domain]` | real | - | `pytest -m integration`, optionally limited to `packages/<domain>` |
 | `contracts-map` | real | - | fails when a directory under `contracts/` has no row in the map of [contracts.md](contracts.md), or a row points at a missing path |
 | `ci` | real | - | `lint`, `check-links`, `contracts-map` and its self-test, the `ci-paths` self-test, `verify-lint`, then `test` and `itest` unless only documentation changed, then `nix flake check` |
+| `pre-pr [base]` | real | - | the local gate before a pull request: the docs path of `ci`, the unit tests of the changed packages and their dependents, and the integration tests of the changed packages, see [CI](#ci) |
 | `verify-lint` | real | - | checks each `verify-<domain>` skill has a `SKILL.md` named after its directory, passes when none exist |
 | `pre-push` | real | - | the fast gate that the pre-push hook runs, see [Git hooks](#git-hooks) |
 | `hooks-status` | real | - | prints whether the git hooks are installed for this checkout |
@@ -221,7 +222,14 @@ CI can be switched off in two ways:
   Any other value, or no variable, leaves it on.
 - A commit message containing `[skip ci]` skips the runs natively in GitHub Actions.
 
-Locally, `nix develop -c just ci` is the same gate as the CI step.
+Locally, `nix develop -c just pre-pr` is the gate before a pull request, and the pull request's CI run is the full proof.
+It runs the docs path of `just ci`, then the unit tests of every package changed against the merge base with `origin/main` and of every workspace member that depends on one of them, then the integration tests of the changed packages.
+`scripts/affected.py` reads the dependencies from the `[tool.uv.sources]` table of each `packages/*/pyproject.toml`.
+A change outside `packages/` that `scripts/ci-paths.sh` does not count as documentation, such as `scripts/`, `deploy/`, `contracts/`, `uv.lock`, `pyproject.toml` or the flake, can reach tests that no package owns.
+`just pre-pr` then prints `full run required` with the path and exits 1 without running anything, and the full run is needed instead.
+A stacked branch passes its base, as in `just pre-pr <base branch>`.
+
+`nix develop -c just ci` is the same gate as the CI step.
 It takes the docs path when every file changed against the merge base with `origin/main`, uncommitted and untracked files included, is documentation.
 `just ci --docs` and `just ci --full` force a path.
 Lint on the workflow file is part of it, so a line over 120 columns in `ci.yml` fails before the push.
