@@ -83,18 +83,18 @@ class Forward:
             stderr=subprocess.DEVNULL,
         )
 
-    def open(self) -> None:
+    def open(self, timeout_s: float = UP_S) -> None:
         with self.lock:
             self._close()
             self._spawn()
-            deadline = time.monotonic() + UP_S
+            deadline = time.monotonic() + timeout_s
             while not _listening(self.port):
                 if self.process.poll() is not None:
                     # The resource is not up yet, as right after its pod restarted.
                     self._spawn()
                 if time.monotonic() > deadline:
                     self._close()
-                    raise TimeoutError(f"{' '.join(self.argv)} did not listen in {UP_S:.0f} s")
+                    raise TimeoutError(f"{' '.join(self.argv)} did not listen in {timeout_s:.0f} s")
                 time.sleep(0.5)
 
     @property
