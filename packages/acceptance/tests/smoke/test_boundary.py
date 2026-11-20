@@ -1,6 +1,5 @@
-"""The boundary rows against canned answers: a script for cluster-verify, a fake kubectl whose
-port-forwards serve canned answers, in-test API listeners and stand-ins for the broker and Temporal
-clients, so no cluster is touched."""
+"""The boundary rows against the canned answers of the healthy cluster in conftest, each test
+changing one layer's answer."""
 
 import time
 
@@ -10,50 +9,13 @@ from wdf_acceptance.clients import broker
 from wdf_clusterkit import Refused
 from wdf_workflow.harness.cluster import CurrentBuild
 
-VERIFIED = "ok preset fine\nok ports every host port listens on 127.0.0.1 only\n"
-COUNTED = "cluster-verify ci: 10 ok, 0 failed\n"
-POOLS = {"pools": {"compile": {}, "simulate": {}, "aggregate": {}}}
-READY = {"status": "ready"}
 JOB_SKIPS = [
-    "skip job-submit job rows not written yet",
-    "skip job-run job rows not written yet",
-    "skip job-result job rows not written yet",
-    "skip job-aggregate job rows not written yet",
-    "skip dead-letters job rows not written yet",
+    "skip job-submit after broker failed",
+    "skip job-run after broker failed",
+    "skip job-result after broker failed",
+    "skip job-aggregate after broker failed",
+    "skip dead-letters after broker failed",
 ]
-
-
-class Service:
-    async def describe_namespace(self, request):
-        assert request.namespace == "wdf"
-
-
-class Client:
-    namespace = "wdf"
-    workflow_service = Service()
-
-
-@pytest.fixture
-def healthy(verify, forwards, listener, monkeypatch):
-    """Every layer answers as a healthy ci cluster does, the broker with no dead letter and
-    Temporal with build exit-a current and deployed. Returns the fake kubectl's call log."""
-    verify(0, VERIFIED + COUNTED)
-    log = forwards({"svc/placement": [200, POOLS]})
-    monkeypatch.setattr(smoke, "DISPATCH", listener(200, READY))
-    monkeypatch.setattr(smoke, "CONTROL_API", listener(200, READY))
-    monkeypatch.setattr(broker, "dead_letters", lambda address, timeout_s: 0)
-
-    async def connect(address):
-        return Client()
-
-    async def current(client, context, timeout_s):
-        assert (context, timeout_s) == ("kind-wdf", smoke.POLLERS_S)
-        return CurrentBuild("exit-a", ("exit-a",), None)
-
-    monkeypatch.setattr(smoke.temporal, "connect", connect)
-    monkeypatch.setattr(smoke, "make_deployed_current", current)
-    monkeypatch.delenv("WDF_PRESET", raising=False)
-    return log
 
 
 def run(capsys) -> tuple[int, list[str]]:
@@ -70,19 +32,20 @@ def test_boundary_rows_all_ok(healthy, capsys):
         "ok temporal namespace wdf, build exit-a current, deployed exit-a",
         "ok placement 3 pools",
     ]
-    assert lines[5:10] == JOB_SKIPS
-    assert lines[10].startswith("smoke ci: 5 ok, 0 failed, 5 skipped, ")
-    # The job rows are not ok, so the gate does not pass yet.
-    assert code == 1
+    assert code == 0
 
 
 def test_boundary_forwards_reach_the_layers(healthy, capsys):
     run(capsys)
-    forwarded = [line.split()[1:] for line in healthy.read_text().splitlines()]
+    forwarded = [line.split()[1:] for line in healthy.log.read_text().splitlines()]
+    # The job rows then read the store twice and count the dead letters again.
     assert [(ns, args[-2], args[-1].split(":")[1]) for ns, *args in forwarded] == [
         ("--namespace=wdf-infra", "svc/rabbitmq", "5672"),
         ("--namespace=wdf-infra", "svc/temporal-frontend", "7233"),
         ("--namespace=wdf-control", "svc/placement", "8080"),
+        ("--namespace=wdf-infra", "svc/objectstore", "8333"),
+        ("--namespace=wdf-infra", "svc/objectstore", "8333"),
+        ("--namespace=wdf-infra", "svc/rabbitmq", "5672"),
     ]
 
 
@@ -92,7 +55,7 @@ def test_boundary_refusal_or_usage_ends_the_run(healthy, verify, capsys, code):
     assert smoke.main() == code
     out, err = capsys.readouterr()
     assert out == ""
-    assert healthy.read_text() == ""
+    assert healthy.log.read_text() == ""
 
 
 def test_boundary_cluster_verify_failure_names_its_fail_lines(healthy, verify, capsys):
@@ -112,7 +75,7 @@ def test_boundary_cluster_verify_failure_names_its_fail_lines(healthy, verify, c
 
 def test_boundary_cluster_verify_past_its_deadline(healthy, verify, capsys, monkeypatch):
     monkeypatch.setattr(smoke, "VERIFY_S", 1.0)
-    verify(0, VERIFIED, sleep_s=30)
+    verify(0, "ok preset fine\nok ports every host port listens on 127.0.0.1 only\n", sleep_s=30)
     started = time.monotonic()
     code, lines = run(capsys)
     assert lines[0] == (
@@ -125,7 +88,7 @@ def test_boundary_cluster_verify_past_its_deadline(healthy, verify, capsys, monk
 
 def test_boundary_forward_that_never_listens(healthy, forwards, capsys, monkeypatch):
     monkeypatch.setattr(smoke, "PROBE_S", 2.0)
-    forwards({"svc/placement": [200, POOLS], "svc/rabbitmq": "never"})
+    forwards({"svc/rabbitmq": "never"})
     printed = []
     add = smoke.Gate.add
 
@@ -142,9 +105,7 @@ def test_boundary_forward_that_never_listens(healthy, forwards, capsys, monkeypa
     assert printed[2] - printed[1] < smoke.PROBE_S + 1
     assert lines[3].startswith("ok temporal")
     assert lines[4] == "ok placement 3 pools"
-    assert lines[5:10] == [
-        line.replace("job rows not written yet", "after broker failed") for line in JOB_SKIPS
-    ]
+    assert lines[5:10] == JOB_SKIPS
     assert code == 1
 
 
