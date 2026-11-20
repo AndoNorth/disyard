@@ -1009,6 +1009,7 @@ dependencies = [
 
 [package.optional-dependencies]
 cluster = [
+    { name = "wdf-acceptance" },
     { name = "wdf-clusterkit" },
 ]
 
@@ -1019,6 +1020,7 @@ requires-dist = [
     { name = "pydantic" },
     { name = "pyyaml" },
     { name = "temporalio" },
+    { name = "wdf-acceptance", marker = "extra == 'cluster'", editable = "packages/acceptance" },
     { name = "wdf-artifactclient", editable = "packages/artifactclient" },
     { name = "wdf-artifactindex", editable = "packages/artifactindex" },
     { name = "wdf-broker", editable = "packages/broker" },
