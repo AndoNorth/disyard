@@ -12,12 +12,14 @@ jobs:
   # Setting the repository variable CI_ENABLED to false skips every job.
   # A commit message containing [skip ci] also skips runs natively.
   # A pull request that changes documentation only takes the docs path of scripts/ci.sh, a push to main the full path.
-  # The jobs run on every event and gate inside, so a check made required later always reports.
+  # The full path runs the checks and one test job per shard of scripts/ci-shards.sh side by side, and the docs path
+  # skips the test jobs. The check job sums them up, so it is the one check to require.
   changes:
     if: ${{ vars.CI_ENABLED != 'false' }}
     runs-on: ubuntu-latest
     outputs:
       mode: ${{ steps.classify.outputs.mode }}
+      shards: ${{ steps.classify.outputs.shards }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -30,21 +32,16 @@ jobs:
           mode=full
           [ "$EVENT" != pull_request ] || mode=$(git diff --name-only --no-renames HEAD^1 HEAD | scripts/ci-paths.sh)
           echo "mode=$mode" | tee -a "$GITHUB_OUTPUT"
+          shards=$(scripts/ci-shards.sh)
+          echo "shards=$shards" | tee -a "$GITHUB_OUTPUT"
 
-  check:
+  checks:
     needs: changes
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
       - uses: DeterminateSystems/nix-installer-action@v23
-      # The image builds of the integration tests read their wheels and release assets from this cache first.
-      - name: Restore the build download cache
-        uses: actions/cache@v6
-        with:
-          path: ~/.cache/wasm-dag-forge/build
-          key: build-downloads-${{ hashFiles('uv.lock', 'nix/wasm-tools.nix', 'deploy/versions.yaml') }}
-          restore-keys: build-downloads-
-      - run: nix develop -c just ci --${{ needs.changes.outputs.mode }}
+      - run: nix develop -c just ci --checks
       - name: Reproducibility check
         if: ${{ needs.changes.outputs.mode == 'full' }}
         run: |
@@ -56,3 +53,45 @@ jobs:
           b=$(drv "$RUNNER_TEMP/export-b")
           echo "$a"
           [ "$a" = "$b" ] || { echo "drvPath differs: $b" >&2; exit 1; }
+
+  test:
+    needs: changes
+    if: ${{ needs.changes.outputs.mode == 'full' }}
+    runs-on: ubuntu-latest
+    strategy:
+      # Every shard runs to the end, so one failure does not hide another.
+      fail-fast: false
+      matrix:
+        shard: ${{ fromJSON(needs.changes.outputs.shards) }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: DeterminateSystems/nix-installer-action@v23
+      # The image builds of the integration tests read their wheels and release assets from this cache first.
+      - name: Restore the build download cache
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/wasm-dag-forge/build
+          key: build-downloads-${{ hashFiles('uv.lock', 'nix/wasm-tools.nix', 'deploy/versions.yaml') }}
+          restore-keys: build-downloads-
+      # uv keeps the downloaded wheels and the python-qpid-proton build from its sdist here.
+      # Without restore keys the cache never grows past one lock file's worth.
+      - name: Restore the uv cache
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/uv
+          key: uv-${{ hashFiles('uv.lock') }}
+      - run: nix develop -c just ci --shard ${{ matrix.shard }}
+
+  check:
+    needs: [changes, checks, test]
+    if: ${{ always() && vars.CI_ENABLED != 'false' }}
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          MODE: ${{ needs.changes.outputs.mode }}
+          CHECKS: ${{ needs.checks.result }}
+          TEST: ${{ needs.test.result }}
+        run: |
+          echo "path=$MODE checks=$CHECKS test=$TEST"
+          [ "$CHECKS" = success ]
+          [ "$TEST" = success ] || { [ "$MODE" = docs ] && [ "$TEST" = skipped ]; }

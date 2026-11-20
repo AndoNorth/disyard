@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
-# Usage: ci.sh [--docs | --full]
+# Usage: ci.sh [--docs | --full | --checks | --shard <name>]
 # The CI gate: the same command runs locally and in .github/workflows/ci.yml.
 # The docs path skips the unit and integration tests, which no documentation file can affect.
+# CI splits the full path in two: --checks runs it without the tests, and --shard runs only the unit and integration
+# tests of one shard of scripts/ci-shards.sh, on a runner of its own.
 # Without a flag, the docs path is taken when every file changed against the merge base with origin/main is documentation.
 set -euo pipefail
 cd "$(dirname "$0")/.."
@@ -17,8 +19,18 @@ changed() {
 case "${1:-}" in
     --docs) mode=docs ;;
     --full) mode=full ;;
+    --checks) mode=checks ;;
+    --shard)
+        [ $# -eq 2 ] || { echo "usage: ci.sh --shard <name>" >&2; exit 2; }
+        out=$(scripts/ci-shards.sh "$2")
+        mapfile -t args <<<"$out"
+        [ -n "${args[0]}" ] || args=()
+        echo "== ci shard: $2"
+        scripts/test.sh "${args[@]}"
+        scripts/itest.sh -- "${args[@]}"
+        exit ;;
     "") mode=$(changed | scripts/ci-paths.sh) ;;
-    *) echo "usage: ci.sh [--docs | --full]" >&2; exit 2 ;;
+    *) echo "usage: ci.sh [--docs | --full | --checks | --shard <name>]" >&2; exit 2 ;;
 esac
 echo "== ci path: $mode"
 
@@ -29,6 +41,8 @@ scripts/check-contracts-map.sh
 scripts/check-contracts-map.test.sh
 echo "== ci-paths"
 scripts/ci-paths.test.sh
+echo "== ci-shards"
+scripts/ci-shards.test.sh
 echo "== verify-lint"
 scripts/lint.sh --verify-skills
 if [ "$mode" = full ]; then

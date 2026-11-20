@@ -52,10 +52,10 @@ No logic lives in the justfile, and each real recipe calls `scripts/<name>.sh`.
 | `doctor [--json]` | real | - | host preflight, see below |
 | `versions [--check]` | real | - | prints tool versions and `deploy/versions.yaml`, `--check` validates the file against its schema |
 | `lint` | real | - | ruff, yamllint, shellcheck, actionlint, kubeconform and nixfmt over the files each owns |
-| `test` | real | - | `pytest -m "not integration"`, nothing collected counts as success |
+| `test` | real | - | `pytest -m "not integration and not slow"`, nothing collected counts as success |
 | `itest [domain]` | real | - | `pytest -m integration`, optionally limited to `packages/<domain>` |
 | `contracts-map` | real | - | fails when a directory under `contracts/` has no row in the map of [contracts.md](contracts.md), or a row points at a missing path |
-| `ci` | real | - | `lint`, `check-links`, `contracts-map` and its self-test, the `ci-paths` self-test, `verify-lint`, then `test` and `itest` unless only documentation changed, then `nix flake check` |
+| `ci` | real | - | `lint`, `check-links`, `contracts-map` and its self-test, the `ci-paths` and `ci-shards` self-tests, `verify-lint`, then `test` and `itest` unless only documentation changed, then `nix flake check` |
 | `pre-pr [base]` | real | - | the local gate before a pull request: the docs path of `ci`, the unit tests of the changed packages and their dependents, and the integration tests of the changed packages, see [CI](#ci) |
 | `verify-lint` | real | - | checks each `verify-<domain>` skill has a `SKILL.md` named after its directory, passes when none exist |
 | `pre-push` | real | - | the fast gate that the pre-push hook runs, see [Git hooks](#git-hooks) |
@@ -202,23 +202,34 @@ The full policy, including the preference for first-party charts, is in [version
 ## CI
 
 `.github/workflows/ci.yml` runs on pushes to `main` and on pull requests.
-Its `changes` job picks the path, and its `check` job runs checkout, Nix installation, the restore of the build download cache, `nix develop -c just ci --<path>`, and on the full path a reproducibility check.
+Its `changes` job picks the path and reads the test shards from `scripts/ci-shards.sh`.
+Its `checks` job runs `nix develop -c just ci --checks`, which is the gate without the unit and integration tests, and on the full path a reproducibility check.
+On the full path, one `test` job per shard runs at the same time on a runner of its own.
+Each restores the build download cache and the uv cache, then runs `nix develop -c just ci --shard <name>`: the unit tests, then the integration tests, of that shard's paths, with the same markers as `just test` and `just itest`.
+The `check` job passes when `checks` passed and every `test` job passed, or the docs path skipped them, so `check` is the one status to require.
+
+Each line of the list in `scripts/ci-shards.sh` is a shard: a name, then the packages and top-level directories it runs.
+The last shard names nothing and runs every path no other shard names, so a new package is tested before it is placed in a shard.
+Adding a line adds a runner, and moving a package between lines rebalances the shards.
+`scripts/ci-shards.test.sh` fails when a package, `deploy/` or `scripts/` would be run by no shard or by two, when a line names a missing path, and when the last shard names one.
+
 The reproducibility check runs `git archive HEAD` into two fresh directories and evaluates `.#devShells.x86_64-linux.default.drvPath` in each.
 The job fails when the two derivation paths differ, which stands in for a second contributor's machine.
 
 A pull request whose changed files are all documentation takes the docs path, and every other change and every push to `main` takes the full path.
 `scripts/ci-paths.sh` decides, and `scripts/ci-paths.test.sh` lists which paths count as documentation.
-The docs path runs lint, the link check, the contracts map, the verify-skills lint and `nix flake check`, whose `checks.pre-commit` reads documentation too.
-It skips the unit and integration tests, the reproducibility check and the `kind-smoke` cluster run.
+The docs path runs lint, the link check, the contracts map, the self-tests, the verify-skills lint and `nix flake check`, whose `checks.pre-commit` reads documentation too.
+It skips the `test` jobs, the reproducibility check and the `kind-smoke` cluster run.
 Each skipped job still reports as skipped, so a check made required later never stays pending.
 
 The image builds, `deploy/workers/image.sh` and `deploy/workflow/image.sh`, read the wheels that `uv.lock` pins and the release assets of `nix/wasm-tools.nix` from the build download cache before the network, locally as in CI.
 A second build on the same host downloads nothing, and every cached file is checked against its pinned hash before use.
-The cache is `~/.cache/wasm-dag-forge/build` (under `XDG_CACHE_HOME` when set, or `WDF_BUILD_CACHE`), removing it is always safe, and `actions/cache` carries it between runs of `check` and `state-modules`.
+The cache is `~/.cache/wasm-dag-forge/build` (under `XDG_CACHE_HOME` when set, or `WDF_BUILD_CACHE`), removing it is always safe, and `actions/cache` carries it between runs of the `test` jobs and `state-modules`.
+`actions/cache` also carries `~/.cache/uv`, keyed by `uv.lock` alone, so a `test` job neither downloads the wheels nor builds `python-qpid-proton` from its sdist again.
 
 CI can be switched off in two ways:
 
-- Setting the repository variable `CI_ENABLED` to `false` skips every job through the job-level `if` of `changes`.
+- Setting the repository variable `CI_ENABLED` to `false` skips every job through the job-level `if` of `changes` and `check`.
   Any other value, or no variable, leaves it on.
 - A commit message containing `[skip ci]` skips the runs natively in GitHub Actions.
 
@@ -229,9 +240,9 @@ A change outside `packages/` that `scripts/ci-paths.sh` does not count as docume
 `just pre-pr` then prints `full run required` with the path and exits 1 without running anything, and the full run is needed instead.
 A stacked branch passes its base, as in `just pre-pr <base branch>`.
 
-`nix develop -c just ci` is the same gate as the CI step.
+`nix develop -c just ci` is the same gate as the CI jobs together, with every shard's tests in one run.
 It takes the docs path when every file changed against the merge base with `origin/main`, uncommitted and untracked files included, is documentation.
-`just ci --docs` and `just ci --full` force a path.
+`just ci --docs` and `just ci --full` force a path, and `just ci --shard <name>` runs one shard's tests as CI does.
 Lint on the workflow file is part of it, so a line over 120 columns in `ci.yml` fails before the push.
 
 ## Troubleshooting

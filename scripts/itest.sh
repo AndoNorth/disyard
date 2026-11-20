@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-# Integration tests, optionally limited to packages/<domain>. pytest exit 5 (nothing collected) is success.
+# Usage: itest.sh [domain | -- pytest-args...]
+# Integration tests, optionally limited to packages/<domain> or by pytest arguments.
+# pytest exit 5 (nothing collected) is success.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -7,8 +9,11 @@ command -v uv >/dev/null || { echo "error: uv not on PATH, run inside nix develo
 # --frozen runs the pytest pinned in uv.lock, and uv fails loudly when it cannot provide one.
 pytest=(uv run --frozen pytest)
 
-target=()
-[ -n "${1:-}" ] && target=("packages/$1")
+case "${1:-}" in
+    "") target=() ;;
+    --) target=("${@:2}") ;;
+    *) target=("packages/$1") ;;
+esac
 
 rc=0
 "${pytest[@]}" -m integration "${target[@]}" || rc=$?
