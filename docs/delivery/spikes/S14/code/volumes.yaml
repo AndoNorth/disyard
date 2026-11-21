@@ -1,0 +1,64 @@
+---
+# Two local-path claims on the obs node, one of the provisioner's default hostPath type and one of type local, each
+# written with 8 MiB by a pod, so kubelet volume stats can be looked for on each.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: s14-hostpath
+  namespace: wft-obs
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: standard
+  resources:
+    requests:
+      storage: 64Mi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: s14-local
+  namespace: wft-obs
+  annotations:
+    volumeType: local
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: standard
+  resources:
+    requests:
+      storage: 64Mi
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: s14-volumes
+  namespace: wft-obs
+spec:
+  nodeSelector:
+    wft.dev/pool: obs
+  tolerations:
+    - key: wft.dev/pool
+      operator: Equal
+      value: obs
+      effect: NoSchedule
+  containers:
+    - name: writer
+      image: CANARY_IMAGE
+      command:
+        - sh
+        - -c
+        - dd if=/dev/zero of=/hostpath/f bs=1M count=8 && dd if=/dev/zero of=/local/f bs=1M count=8 && sleep 86400
+      resources:
+        requests: {cpu: 10m, memory: 16Mi}
+        limits: {cpu: 10m, memory: 16Mi}
+      volumeMounts:
+        - name: hostpath
+          mountPath: /hostpath
+        - name: local
+          mountPath: /local
+  volumes:
+    - name: hostpath
+      persistentVolumeClaim:
+        claimName: s14-hostpath
+    - name: local
+      persistentVolumeClaim:
+        claimName: s14-local
