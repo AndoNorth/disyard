@@ -30,6 +30,7 @@ GAUGES = {
     "wft_admission_paused_jobs": ("job_class",),
     "wft_admission_resumes_waiting": ("priority_class",),
     "wft_admission_breaker_open": ("dependency",),
+    "wft_admission_cap_jobs": ("scope",),
 }
 HISTOGRAMS = {
     "wft_admission_wait_seconds": ("priority_class",),
@@ -70,6 +71,7 @@ class Metrics:
         for name, labels in COUNTERS.items():
             for values in zero.get(name, [()]):
                 self.counters[name].add(0, dict(zip(labels, values, strict=True)))
+        self.gauge("wft_admission_cap_jobs", {"global": caps.global_, "open": caps.open}, "scope")
         self.rows({}, 0, {}, {})
         closed = dict.fromkeys((*DEPENDENCIES, INTERNAL), 0)
         self.gauge("wft_admission_breaker_open", closed, "dependency")

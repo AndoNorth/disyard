@@ -666,4 +666,4 @@ Follow-ups found:
 
 Closure addenda, one dated line each, added after close when a `revisit` child issue is filed against this epic:
 
-- none yet
+- 2026-11-21: [#558](https://github.com/AndoNorth/weft/issues/558) puts `wft_obs.setup` and the registry export in the service, binds `job_id` and the claim's `traceparent` to each start's log lines, and serves the cap in force as `wft_admission_cap_jobs{scope}`.

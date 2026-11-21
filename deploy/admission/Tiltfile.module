@@ -2,6 +2,8 @@
 # The host-side resource admission-logins creates the service login in the app database before the service starts,
 # the Secret admission-logins carries its DSN, and the Secret admission-broker the password of the broker user
 # admission, taken from the broker module's helper.
+load("../tilt/obs.star", "obs_env")
+
 module = read_yaml("module.yaml")
 name = module["name"]
 namespace = module["namespace"]
@@ -63,6 +65,7 @@ env = {
     "WFT_METRICS_ADDRESS": "0.0.0.0:9464",
     "WFT_READY_FILE": ready,
 }
+env.update(obs_env())
 
 k8s_yaml(encode_yaml({
     "apiVersion": "apps/v1",
