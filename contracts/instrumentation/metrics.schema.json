@@ -18,7 +18,10 @@
     "spanid",
     "span_id",
     "batch_id",
-    "submission_key"
+    "submission_key",
+    "attempt",
+    "attempt_id",
+    "traceparent"
   ],
   "properties": {
     "metrics": {
@@ -53,6 +56,25 @@
                 "values_from": { "type": "string", "pattern": "^[a-zA-Z0-9._/-]+$" }
               }
             }
+          }
+        }
+      }
+    },
+    "external": {
+      "type": "object",
+      "propertyNames": { "pattern": "^[a-zA-Z_:][a-zA-Z0-9_:]*$" },
+      "additionalProperties": {
+        "type": "object",
+        "required": ["type", "help", "job", "labels"],
+        "additionalProperties": false,
+        "properties": {
+          "type": { "enum": ["counter", "gauge", "histogram"] },
+          "help": { "type": "string", "minLength": 1 },
+          "job": { "type": "string", "minLength": 1 },
+          "labels": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": { "type": "string", "pattern": "^[a-zA-Z_][a-zA-Z0-9_]*$" }
           }
         }
       }
