@@ -1,0 +1,22 @@
+name: pr-title
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+
+permissions:
+  contents: read
+
+jobs:
+  # The squash merge turns the PR title into the commit subject the release notes are built from.
+  # `edited` reruns the check when only the title changes.
+  # Setting the repository variable CI_ENABLED to false skips the job.
+  title:
+    if: ${{ vars.CI_ENABLED != 'false' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      # The title reaches the script through the environment, never through the shell text.
+      - env:
+          TITLE: ${{ github.event.pull_request.title }}
+        run: python3 scripts/check_pr_title.py "$TITLE"
