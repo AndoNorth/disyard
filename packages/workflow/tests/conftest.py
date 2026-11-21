@@ -27,7 +27,7 @@ def task_input():
 def temporal(t1) -> str:
     """The address of a dev server with the namespace of naming.yaml, one per test module, which
     is gone before the next module runs."""
-    from wdf_workflow.contract import naming
+    from wft_workflow.contract import naming
 
     with t1.container(
         "temporalio/temporal",

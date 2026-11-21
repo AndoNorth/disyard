@@ -10,11 +10,11 @@ from pathlib import Path
 import pytest
 from temporalio.client import Client
 from temporalio.worker import Replayer, Worker
-from wdf_events import Event, from_bytes, to_bytes
-from wdf_events.models import JobParams
-from wdf_itest.session import RUN_LABEL
-from wdf_temporal import ENCODING, event_data_converter
-from wdf_temporal.standin import RUNNER, TASK_QUEUE, StandInJob, run_task
+from wft_events import Event, from_bytes, to_bytes
+from wft_events.models import JobParams
+from wft_itest.session import RUN_LABEL
+from wft_temporal import ENCODING, event_data_converter
+from wft_temporal.standin import RUNNER, TASK_QUEUE, StandInJob, run_task
 
 pytestmark = pytest.mark.integration
 
@@ -100,11 +100,11 @@ def test_the_history_holds_the_canonical_event_bytes_and_replays(t1, vector):
     assert JobParams.model_validate_json(workflow_input[1].data) == PARAMS
 
     request = from_bytes(activity_input[0].data)
-    assert request.type == "dev.wdf.task.requested.v1"
+    assert request.type == "dev.wft.task.requested.v1"
     assert activity_input[0].data == to_bytes(request)
     assert activity_input[0].metadata["encoding"] == ENCODING.encode()
 
-    assert result.type == "dev.wdf.task.result.ready.v1"
+    assert result.type == "dev.wft.task.result.ready.v1"
     assert (result.jobid, result.traceparent) == (accepted.jobid, accepted.traceparent)
 
     asyncio.run(

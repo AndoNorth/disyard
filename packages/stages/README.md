@@ -1,6 +1,6 @@
-# wdf-stages
+# wft-stages
 
-The fake stages and the contract runner of the stage contract, imported as `wdf_stages`.
+The fake stages and the contract runner of the stage contract, imported as `wft_stages`.
 The contract itself is [contracts/stages/README.md](../../contracts/stages/README.md), and the table it validates is `contracts/stages/stages.yaml`.
 
 ## A stage

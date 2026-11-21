@@ -15,10 +15,10 @@ from pathlib import Path
 
 import pytest
 import yaml
-from wdf_broker import topology
-from wdf_broker.contract import topology as spec
-from wdf_broker.models import Estimate, Tenant
-from wdf_broker.tenancy import load
+from wft_broker import topology
+from wft_broker.contract import topology as spec
+from wft_broker.models import Estimate, Tenant
+from wft_broker.tenancy import load
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
@@ -31,7 +31,7 @@ USERS = {"dispatch", "admission", "operator"}
 
 @pytest.fixture(autouse=True)
 def state(tmp_path, monkeypatch):
-    monkeypatch.setenv("WDF_STATE_DIR", str(tmp_path))
+    monkeypatch.setenv("WFT_STATE_DIR", str(tmp_path))
     return tmp_path
 
 
@@ -46,7 +46,7 @@ def pod_of(manifests) -> dict:
 def test_statefulset_carries_the_runtime_settings():
     rendered = objects(config.render("ci"))
     sts = rendered["StatefulSet"]
-    assert sts["metadata"] == {"name": "rabbitmq", "namespace": "wdf-infra"}
+    assert sts["metadata"] == {"name": "rabbitmq", "namespace": "wft-infra"}
     assert sts["spec"]["replicas"] == 1
     pod = sts["spec"]["template"]["spec"]
     [container] = pod["containers"]
@@ -64,7 +64,7 @@ def test_statefulset_carries_the_runtime_settings():
         env["RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS"]
         == "+S 1:1 +sbwt none +sbwtdcpu none +sbwtdio none"
     )
-    assert pod["nodeSelector"] == {"wdf.dev/pool": "infra"}
+    assert pod["nodeSelector"] == {"wft.dev/pool": "infra"}
     assert {p["containerPort"] for p in container["ports"]} == {5672, 15692}
     assert container["readinessProbe"]["tcpSocket"] == {"port": "amqp"}
     [claim] = sts["spec"]["volumeClaimTemplates"]
@@ -136,13 +136,13 @@ def test_a_changed_tenancy_profile_rolls_the_pod():
         }
     )
     after = annotations(config.render("ci", wider))
-    assert after["wdf.dev/config-digest"] != before["wdf.dev/config-digest"]
-    assert after["wdf.dev/tenancy-profile"] == "ci"
+    assert after["wft.dev/config-digest"] != before["wft.dev/config-digest"]
+    assert after["wft.dev/tenancy-profile"] == "ci"
 
 
 def test_a_new_password_rolls_the_pod(state):
     def digest():
-        return pod_of(config.render("ci"))["metadata"]["annotations"]["wdf.dev/config-digest"]
+        return pod_of(config.render("ci"))["metadata"]["annotations"]["wft.dev/config-digest"]
 
     before = digest()
     (state / "rabbitmq/admission.password").unlink()
@@ -151,7 +151,7 @@ def test_a_new_password_rolls_the_pod(state):
 
 def test_tilt_profile_maps_to_its_tenancy_profile():
     pod = pod_of(config.render("full"))
-    assert pod["metadata"]["annotations"]["wdf.dev/tenancy-profile"] == "dev"
+    assert pod["metadata"]["annotations"]["wft.dev/tenancy-profile"] == "dev"
     with pytest.raises(KeyError, match="no tenancy profile"):
         config.render("nope")
 
@@ -189,14 +189,14 @@ def test_command_line(state, capsys):
 @pytest.mark.skipif(shutil.which("tilt") is None, reason="tilt not on PATH")
 def test_tiltfile_loads_the_module_for_the_exported_profile(tmp_path, state):
     (tmp_path / "Tiltfile").write_text(
-        "os.putenv('WDF_TILT_PROFILE', 'ci')\n"
+        "os.putenv('WFT_TILT_PROFILE', 'ci')\n"
         f"load_dynamic('{HERE}/Tiltfile.module')\n"
         "config.set_enabled_resources(['rabbitmq'])\n"
     )
     env = {
         **os.environ,
-        "KUBECONFIG": str(ROOT / "scripts/tilt/fixtures/kubeconfig-wdf.yaml"),
-        "WDF_STATE_DIR": str(state),
+        "KUBECONFIG": str(ROOT / "scripts/tilt/fixtures/kubeconfig-wft.yaml"),
+        "WFT_STATE_DIR": str(state),
     }
     run = subprocess.run(
         ["tilt", "alpha", "tiltfile-result", "-f", str(tmp_path / "Tiltfile")],

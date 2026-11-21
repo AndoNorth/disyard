@@ -20,14 +20,14 @@ So 0.2 adds `gcc` to the dev shell, as the shared-file rules of section 3 forese
 | Default | What this run says | Change |
 | --- | --- | --- |
 | D14 limit 256 MiB, watermark 154 MiB | the broker's own memory reaches 160.5 MiB while it recovers its full queues after a restart, and raises the memory alarm | **changes**: limit and request 320 MiB, watermark 192 MiB, raised before M.1 |
-| D6 delayed retry | 4.4.0 offers it on quorum queues and the counts stay as S4 measured | **changes**: `wdf-intake` gains the delayed retry, type `failed` recommended |
+| D6 delayed retry | 4.4.0 offers it on quorum queues and the counts stay as S4 measured | **changes**: `wft-intake` gains the delayed retry, type `failed` recommended |
 | D15 series | ready and unacked are in `queue_coarse_metrics`, the consumer count is not | **changes**: the consumer count is family `queue_consumer_count` |
 | D10 client | a refused permission ends the whole session, and credit sent before the attach is answered ends it too | **adds** two rules for C.1 |
 | Q1 (a) premise | a held last delivery lost to a dropped connection, a client close or a restart dead-letters as `delivery_limit` | confirms |
 | C.2 expected count | a held delivery lost the same ways comes back with its count raised by one | sets it to 1 from 0 |
 | Q4 (a) `release()` | goes back to the head with its count unchanged | confirms |
 | D17 browse | `released` counts nothing and keeps the order when the pass settles in delivery order | confirms, with that condition |
-| D5 `wdf-dlq` | `delivery-limit` -1 turns the limit off | confirms, value `-1` |
+| D5 `wft-dlq` | `delivery-limit` -1 turns the limit off | confirms, value `-1` |
 | D19, D12 | a definitions directory of a topology file and a users file with salted hashes imports, applies the policies and creates no `guest` | confirms |
 | Q2, D22 | proton 0.41.1 passes the same checks | confirms (a), (b) stays available |
 
@@ -41,10 +41,10 @@ Does the S4 wrapper design hold on Python 3.13 with proton 0.40.0 built from its
 | --- | --- |
 | Host | WSL2, 20,002 MiB `MemTotal` (`host.mem_total_mib`), 8 CPUs (`host.cpus`), Docker 29.1.3 (`host.docker`) |
 | Other work on the host | 1 other container (`host.other_containers`), not touched, 16,218 MiB `MemAvailable` before the run (`host.mem_available_mib.before`) |
-| Locks | one `wdf-t1` lock file through `wdf_itest.Session(containers=1)` for each broker, one broker at a time, no cluster, ports on slot 4 (`WDF_SLOT` from the pool slot of the worktree, because a sibling worker held slot 0's ports) |
+| Locks | one `wft-t1` lock file through `wft_itest.Session(containers=1)` for each broker, one broker at a time, no cluster, ports on slot 4 (`WFT_SLOT` from the pool slot of the worktree, because a sibling worker held slot 0's ports) |
 | Broker | `rabbitmq:4.4.0@sha256:1166559c9e77b0208b9d96bfaf265ddbdd491ce3cebb8cf990aabe9274f16d2c` (`image.rabbitmq`), the digest 0.2 pins, a fresh container for each run and each measurement, capped at 1 GiB except for check 10 |
 | Broker configuration | the settings of D14 (`vm_memory_high_watermark.absolute`, `disk_free_limit.absolute` 64 MB, `raft.wal_max_size_bytes` 32 MB, `+S 1:1 +sbwt none +sbwtdcpu none +sbwtdio none`), `enabled_plugins` of `[rabbitmq_prometheus]`, and a definitions directory imported at boot (check 8) |
-| Topology | `wdf.intake` direct, `wdf.dlx` fanout, quorum queues `intake.acme.standard`, `intake.acme.low`, `intake.beta.standard`, `intake.beta.low` and `intake.dlq` with initial group size 1, policies `wdf-intake` and `wdf-dlq` of D5, and for the full-queue case a queue `intake.acme.tiny` under a policy `wdf-tiny` of higher priority with `max-length` 3 |
+| Topology | `wft.intake` direct, `wft.dlx` fanout, quorum queues `intake.acme.standard`, `intake.acme.low`, `intake.beta.standard`, `intake.beta.low` and `intake.dlq` with initial group size 1, policies `wft-intake` and `wft-dlq` of D5, and for the full-queue case a queue `intake.acme.tiny` under a policy `wft-tiny` of higher priority with `max-length` 3 |
 | Users | `dispatch`, `admission` and `operator` with the permissions of D12 and fresh passwords per broker; each check publishes as `dispatch`, consumes intake as `admission` and reads and replays the dead-letter queue as `operator` |
 | Python | 3.13.15 of the dev shell, a scratch venv per proton version created with `uv` 0.11.21 |
 | Client | `python-qpid-proton` 0.40.0 and 0.41.1, each built from its sdist with `--no-binary`, with `cffi` 2.1.1; neither build links OpenSSL or Cyrus SASL, and SASL PLAIN works without them |
@@ -84,8 +84,8 @@ The build stage installs `gcc` and `libc6-dev` with `apt-get` and builds the whe
 | 1 Publish outcome observed | routable `accepted`, unroutable key `released`, a queue of three takes 4 `accepted` then 4 `rejected`, as S4 saw; a missing queue is a refused attach `amqp:not-found` that leaves the connection usable | `.check1.*` |
 | 2 One message per credit | credit 1 gives 1 with the broker at ready 2 and unacked 1, credit 2 gives 2, nothing extra after 2 s, a drain on an empty queue returns nothing in 4 to 39 ms | `.check2.drain_empty_s` |
 | 3 Retry counts | counts 0, 1, 2, 3 over four retries, and 0, 0, 0, 0 over four `release()` | `.check3.retry_counts`, `.release_counts` |
-| 4 Dead-letter on the sixth failed delivery | counts 0 to 5, no seventh delivery, `x-last-death-reason` `delivery_limit` with no application reason; an ack of the sixth leaves the dead-letter queue empty; `dead_letter` puts `x-opt-wdf-reason` and `x-opt-wdf-detail` on the dead letter in the same settle, with broker reason `rejected` | `.check4.*` |
-| 5 Byte-identical after dead-letter and replay | 803 bytes, properties and data sections identical as sent, at intake, in the dead-letter queue and after replay; the replay carries only `x-exchange` and `x-routing-key`; the negative control, a resend of the whole dead letter, carries the nine stale `x-*death*` and `x-opt-wdf-*` annotations, and a changed byte fails the body check | `.check5.*` |
+| 4 Dead-letter on the sixth failed delivery | counts 0 to 5, no seventh delivery, `x-last-death-reason` `delivery_limit` with no application reason; an ack of the sixth leaves the dead-letter queue empty; `dead_letter` puts `x-opt-wft-reason` and `x-opt-wft-detail` on the dead letter in the same settle, with broker reason `rejected` | `.check4.*` |
+| 5 Byte-identical after dead-letter and replay | 803 bytes, properties and data sections identical as sent, at intake, in the dead-letter queue and after replay; the replay carries only `x-exchange` and `x-routing-key`; the negative control, a resend of the whole dead letter, carries the nine stale `x-*death*` and `x-opt-wft-*` annotations, and a changed byte fails the body check | `.check5.*` |
 
 | Run | 0.40.0 | 0.41.1 |
 | --- | --- | --- |
@@ -111,7 +111,7 @@ C.2's `held_delivery_across_restart` and `held_delivery_across_connection_drop` 
 ### 7 Delayed retry
 
 RabbitMQ 4.4.0 takes three policy keys on quorum queues, `delayed-retry-type` (`all`, `failed`, `returned` or `disabled`), `delayed-retry-min` and `delayed-retry-max` in milliseconds, all found in `rabbit_quorum_queue` and applied by `rabbitmqctl set_policy`.
-The runs set `wdf-intake` with the keys of D5 plus a minimum of 1,000 and a maximum of 30,000, then retried one message six times and released another once.
+The runs set `wft-intake` with the keys of D5 plus a minimum of 1,000 and a maximum of 30,000, then retried one message six times and released another once.
 
 | Type | Counts over six retries | Seconds before each redelivery | Dead letter | Seconds before a released message returns | Its count |
 | --- | --- | --- | --- | --- | --- |
@@ -132,15 +132,15 @@ A message under a delay is not available, so a `drain` does not wait for it, and
 | Users | exactly `admission`, `dispatch`, `operator`, with `rabbit_password_hashing_sha256` hashes of a 4-byte salt | `m8.users` |
 | `guest` | not created, a login is refused with `amqp:unauthorized-access` | `m8.guest_login` |
 | Permissions | as D12, configure `^$` for all three | `m8.permissions.*` |
-| Policies | `wdf-intake` and `wdf-dlq` with every key of D5 on every intake queue and on `intake.dlq`, read back from the broker | `m8.policy.*`, `m8.queue.*` |
-| Exchanges, bindings | `wdf.intake` direct, `wdf.dlx` fanout, both durable, 6 bindings | `m8.exchange.*`, `m8.bindings` |
-| Refusals | `dispatch` attaching a receiver, `admission` publishing, `operator` publishing to `wdf.dlx`: each ends the session with `amqp:unauthorized-access` | `m8.refused.*` |
+| Policies | `wft-intake` and `wft-dlq` with every key of D5 on every intake queue and on `intake.dlq`, read back from the broker | `m8.policy.*`, `m8.queue.*` |
+| Exchanges, bindings | `wft.intake` direct, `wft.dlx` fanout, both durable, 6 bindings | `m8.exchange.*`, `m8.bindings` |
+| Refusals | `dispatch` attaching a receiver, `admission` publishing, `operator` publishing to `wft.dlx`: each ends the session with `amqp:unauthorized-access` | `m8.refused.*` |
 
 ### 9 The dead-letter policy and a browse
 
 | Figure | Value | Names |
 | --- | --- | --- |
-| Effective `wdf-dlq` | `delivery-limit` -1 | `m9.dlq_effective` |
+| Effective `wft-dlq` | `delivery-limit` -1 | `m9.dlq_effective` |
 | 30 counted retries across five dead letters, six each | all five stay, counts rise 1 to 6, nothing dropped | `m9.dlq_retries_survived`, `m9.dlq_retry_counts` |
 | 25 browse passes, each pulling the five and settling `released` in delivery order | the same order every pass, header count and `x-delivery-count` stay 1, `x-acquired-count` rises 1 to 24 | `m9.browse_*` |
 | A pass that settles the head last | the next pass sees `12340` instead of `01234` | `m9.order_after_out_of_order_release` |
@@ -199,7 +199,7 @@ A message settled back with `modified`, counted or not, returns ahead of every m
    0.2 adds `pkgs.gcc` of the pinned nixpkgs, which builds proton 0.40.0 with no other package.
    An image needs `gcc` and `libc6-dev` from `apt-get` in its build stage only.
 3. **The delayed retry exists, and `failed` is the type that matches D6.**
-   It spaces counted retries 1, 2, 3, 4 and 5 s apart with the minimum at 1 s and leaves the counts as S4 measured, so D6's condition holds and `wdf-intake` gains `delayed-retry-type` `failed`, `delayed-retry-min` 1000 and `delayed-retry-max` 30000.
+   It spaces counted retries 1, 2, 3, 4 and 5 s apart with the minimum at 1 s and leaves the counts as S4 measured, so D6's condition holds and `wft-intake` gains `delayed-retry-type` `failed`, `delayed-retry-min` 1000 and `delayed-retry-max` 30000.
    The body's type `all` also delays a `release()` by a second, which Q4 does not need, and either type changes nothing a consumer parses.
    With it, six transient failures need 15 s to dead-letter a healthy job instead of milliseconds, which is the risk D6 records.
 4. **Two client rules for C.1.**
@@ -210,7 +210,7 @@ A message settled back with `modified`, counted or not, returns ahead of every m
    A delivery held when its connection drops, its client closes or the broker restarts returns with its count raised by one, and on the last delivery it dead-letters as `delivery_limit`, which confirms Q1's premise and sets the counts that C.2 asserts.
    The old connection raises `BrokerUnavailable` with `amqp:internal-error` when the broker closes it or restarts.
 6. **The consumer count is a family of its own.**
-   `queue_coarse_metrics` carries ready and unacked but not the consumer count, which is `rabbitmq_detailed_queue_consumers` of family `queue_consumer_count`, so the suite's `check` guard and `WdfIntakeQueueStalled` scrape both families.
+   `queue_coarse_metrics` carries ready and unacked but not the consumer count, which is `rabbitmq_detailed_queue_consumers` of family `queue_consumer_count`, so the suite's `check` guard and `WftIntakeQueueStalled` scrape both families.
 7. **A browse keeps the order only when it settles in delivery order.**
    A message settled back, `released` or `modified`, goes ahead of the messages never delivered in the order it came back, so a pass that releases its holds in the order it got them leaves the queue as it was, and `released` changes neither the header count nor `x-delivery-count`.
    `release()` in admission therefore puts a message back at the head, which Q4 (a) assumes.
@@ -225,4 +225,4 @@ A message settled back with `modified`, counted or not, returns ahead of every m
 - The proton 0.40.0 build stage was a cache hit in the recorded run after the cold build of the trial (21.1 s for the wheel step), and 0.41.1 was cold.
 - The dev shell without the host compiler and with the pinned `gcc` was run for 0.40.0 only.
 - Not measured: TLS, more than one node, concurrent consumers on one queue, publishes from several threads on one connection (C.1's `publish_from_threads`), the consumer timeout of the broker, and a `release()` loop under the `all` type over many outages.
-- Two worktrees that both leave `WDF_SLOT` unset share the T1 ports of slot 0, so two T1 sessions on one host can collide on a port even when each holds its own lock file; this run used slot 4, and the collision is outside this spike.
+- Two worktrees that both leave `WFT_SLOT` unset share the T1 ports of slot 0, so two T1 sessions on one host can collide on a port even when each holds its own lock file; this run used slot 4, and the collision is outside this spike.

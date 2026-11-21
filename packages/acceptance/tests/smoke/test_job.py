@@ -4,7 +4,7 @@ the job's status samples, its stored objects or the dead-letter count."""
 import os
 import signal
 
-from wdf_acceptance import smoke
+from wft_acceptance import smoke
 
 
 def run(capsys) -> tuple[int, list[str], str]:
@@ -87,7 +87,7 @@ def test_job_result_without_the_known_answer(healthy, canned, capsys):
     healthy.job.objects[ended["results"][0]["uri"]] = wrong
     _, lines, _ = run(capsys)
     assert (
-        lines[7] == "FAIL job-result wdf_kernel.check exited 1: differs: the seed is 7, expected 42"
+        lines[7] == "FAIL job-result wft_kernel.check exited 1: differs: the seed is 7, expected 42"
     )
 
 

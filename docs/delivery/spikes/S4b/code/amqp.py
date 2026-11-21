@@ -90,7 +90,7 @@ class Received:
             Delivery.MODIFIED,
             failed=True,
             undeliverable=True,
-            annotations={"x-opt-wdf-reason": reason, "x-opt-wdf-detail": detail},
+            annotations={"x-opt-wft-reason": reason, "x-opt-wft-detail": detail},
         )
 
     def release(self):
@@ -216,7 +216,7 @@ class Connection(Handler):
 
     def publish_raw(self, routing_key: str, raw: bytes, timeout_s=5.0, address=None) -> str:
         """Sends encoded sections, as replay does with the bare sections of a dead letter."""
-        address = address or f"/exchanges/wdf.intake/{routing_key}"
+        address = address or f"/exchanges/wft.intake/{routing_key}"
         with self._publish:
             fut = Future()
 

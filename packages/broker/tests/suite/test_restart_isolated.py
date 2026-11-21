@@ -3,9 +3,9 @@
 import subprocess
 
 import pytest
-from wdf_broker import suite
-from wdf_broker.models import BrokerUnavailable, Outcome
-from wdf_broker.testing.container import _wait_ready, broker_container
+from wft_broker import suite
+from wft_broker.models import BrokerUnavailable, Outcome
+from wft_broker.testing.container import _wait_ready, broker_container
 
 pytestmark = [pytest.mark.integration, pytest.mark.isolated]
 

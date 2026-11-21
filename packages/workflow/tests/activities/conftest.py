@@ -2,7 +2,7 @@
 container for a test module.
 
 Every activity runs as its writer: the store client holds the `workflow` identity and the database
-login is a fresh member of `wdf_workflow` or `wdf_artifacts`. The superuser only seeds and reads
+login is a fresh member of `wft_workflow` or `wft_artifacts`. The superuser only seeds and reads
 rows, and the clients of the other store roles write what a worker or the dispatch API would.
 """
 
@@ -13,11 +13,11 @@ import psycopg
 import pytest
 from psycopg import sql
 from psycopg.conninfo import make_conninfo
-from wdf_artifactclient.client import ArtifactClient, RetryPolicy
-from wdf_artifactclient.keys import split_uri
-from wdf_events import from_bytes
-from wdf_jobstate import JobRow, insert_accepted, transition
-from wdf_storecheck.s3 import client as s3_client
+from wft_artifactclient.client import ArtifactClient, RetryPolicy
+from wft_artifactclient.keys import split_uri
+from wft_events import from_bytes
+from wft_jobstate import JobRow, insert_accepted, transition
+from wft_storecheck.s3 import client as s3_client
 
 NO_WAIT = RetryPolicy(sleep=lambda seconds: None)
 STARTED = "contracts/events/vectors/golden/job.started/1.0.json"
@@ -145,13 +145,13 @@ def job(db, started_event):
             batch_id=str(uuid.uuid4()),
             priority_class=started_event.priorityclass,
             manifest_ref={
-                "uri": f"s3://wdf-sources/sha256/aa/{'a' * 64}",
+                "uri": f"s3://wft-sources/sha256/aa/{'a' * 64}",
                 "sha256": "a" * 64,
                 "size": 7,
                 "name": "manifest.json",
                 "kind": "manifest",
             },
-            schema_version="urn:wdf:schema:job.accepted:1.0",
+            schema_version="urn:wft:schema:job.accepted:1.0",
             traceparent=started_event.traceparent,
             seed=7,
             parameters={},

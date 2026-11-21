@@ -5,9 +5,9 @@ from itertools import product
 
 import pytest
 import yaml
-from wdf_dispatchapi import contract
-from wdf_dispatchapi.control_table import ASK_GATEWAY, NOOP, TERMINAL, Decision, decide, view
-from wdf_dispatchapi.models import CONTRACT, ControlTable
+from wft_dispatchapi import contract
+from wft_dispatchapi.control_table import ASK_GATEWAY, NOOP, TERMINAL, Decision, decide, view
+from wft_dispatchapi.models import CONTRACT, ControlTable
 
 STATUS = yaml.safe_load((CONTRACT / "status.yaml").read_text())
 STATUSES = STATUS["statuses"]

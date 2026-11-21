@@ -34,5 +34,5 @@ nodes:
     memory_mib: 1536
 host:
   ports: deploy/host/ports.yaml
-  data_dir: ~/.local/share/wdf/soak
+  data_dir: ~/.local/share/wft/soak
 mirror: false

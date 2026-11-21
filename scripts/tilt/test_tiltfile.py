@@ -21,7 +21,7 @@ PROFILES = yaml.safe_load((ROOT / "deploy/tilt/profiles.yaml").read_text())["pro
 pytestmark = pytest.mark.skipif(shutil.which("tilt") is None, reason="tilt not on PATH")
 
 
-def tiltfile_result(profile="ci", kubeconfig="kubeconfig-wdf.yaml", modules=MODULES):
+def tiltfile_result(profile="ci", kubeconfig="kubeconfig-wft.yaml", modules=MODULES):
     return subprocess.run(
         [
             "tilt", "alpha", "tiltfile-result", "--",
@@ -59,7 +59,7 @@ def test_obs_tier_and_mirror_differ_per_profile():
 def test_guard_refuses_a_second_kind_context():
     run = tiltfile_result(kubeconfig="kubeconfig-other.yaml")
     assert run.returncode != 0
-    assert "refusing context kind-other, only kind-wdf is allowed" in run.stderr
+    assert "refusing context kind-other, only kind-wft is allowed" in run.stderr
 
 
 def test_unknown_profile_is_refused():

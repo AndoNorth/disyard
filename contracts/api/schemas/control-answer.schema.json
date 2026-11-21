@@ -1,5 +1,5 @@
 {
-  "$id": "urn:wdf:schema:api:control-answer:1",
+  "$id": "urn:wft:schema:api:control-answer:1",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
   "properties": {

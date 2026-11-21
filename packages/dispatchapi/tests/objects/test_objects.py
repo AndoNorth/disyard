@@ -5,13 +5,13 @@ import io
 import secrets
 
 import pytest
-from wdf_artifactclient.client import ArtifactClient, kind_caps
-from wdf_artifactclient.errors import ArtifactNotFound
-from wdf_artifactclient.keys import content_key
-from wdf_dispatchapi.objects import CHUNK_BYTES, UPLOADS_IN_FLIGHT, Refused, Uploads
-from wdf_events.models import ContentReference
-from wdf_storecheck.provision import ADMIN
-from wdf_storecheck.s3 import client as s3_client
+from wft_artifactclient.client import ArtifactClient, kind_caps
+from wft_artifactclient.errors import ArtifactNotFound
+from wft_artifactclient.keys import content_key
+from wft_dispatchapi.objects import CHUNK_BYTES, UPLOADS_IN_FLIGHT, Refused, Uploads
+from wft_events.models import ContentReference
+from wft_storecheck.provision import ADMIN
+from wft_storecheck.s3 import client as s3_client
 
 pytestmark = pytest.mark.integration
 
@@ -43,13 +43,13 @@ def sha256(data: bytes) -> str:
 
 def stored_keys(shelf, digest: str) -> list[str]:
     s3 = s3_client(shelf.endpoint, shelf.credentials[ADMIN])
-    listing = s3.list_objects_v2(Bucket="wdf-sources", Prefix=content_key("source", digest))
+    listing = s3.list_objects_v2(Bucket="wft-sources", Prefix=content_key("source", digest))
     return [entry["Key"] for entry in listing.get("Contents", [])]
 
 
 def absent(client: ArtifactClient, digest: str) -> bool:
     reference = ContentReference(
-        uri=f"s3://wdf-sources/{content_key('source', digest)}",
+        uri=f"s3://wft-sources/{content_key('source', digest)}",
         sha256=digest,
         size=0,
         name="probe",
@@ -75,7 +75,7 @@ def test_upload_twice_is_200_and_one_object(shelf, uploads, client, make_bundle,
     assert (status, answer.created) == (201, True)
     assert answer.reference.sha256 == digest
     assert answer.reference.size == len(data)
-    assert answer.reference.uri == f"s3://wdf-sources/{content_key('source', digest)}"
+    assert answer.reference.uri == f"s3://wft-sources/{content_key('source', digest)}"
 
     again_status, again = uploads.put("source", digest, io.BytesIO(data))
     assert (again_status, again.created) == (200, False)

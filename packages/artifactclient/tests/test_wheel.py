@@ -11,8 +11,8 @@ ROOT = Path(__file__).resolve().parents[3]
 PROBE = """
 import importlib
 import yaml
-from wdf_artifactclient.contract import check
-from wdf_artifactclient.models import CONTRACT
+from wft_artifactclient.contract import check
+from wft_artifactclient.models import CONTRACT
 
 for name in ("failures.yaml", "staging.yaml", "retention.yaml"):
     check(yaml.safe_load((CONTRACT / name).read_text()))
@@ -20,9 +20,9 @@ for name in (
     "__main__", "aggregate", "bench", "cache", "checkpoint", "client", "commit", "errors",
     "faults", "keys", "staging", "testing",
 ):
-    importlib.import_module(f"wdf_artifactclient.{name}")
-from wdf_artifactclient.client import kind_caps
-from wdf_artifactclient.keys import content_key
+    importlib.import_module(f"wft_artifactclient.{name}")
+from wft_artifactclient.client import kind_caps
+from wft_artifactclient.keys import content_key
 
 assert content_key("manifest", "ab" * 32) == "sha256/ab/" + "ab" * 32
 assert kind_caps()["result"] > 0
@@ -51,12 +51,12 @@ def clean_python(tmp_path_factory) -> Path:
     work = tmp_path_factory.mktemp("wheel")
     wheels = work / "wheels"
     for package in (
-        "wdf-artifactclient",
-        "wdf-artifactindex",
-        "wdf-compat",
-        "wdf-events",
-        "wdf-keys",
-        "wdf-storecheck",
+        "wft-artifactclient",
+        "wft-artifactindex",
+        "wft-compat",
+        "wft-events",
+        "wft-keys",
+        "wft-storecheck",
     ):
         run("uv", "build", "--wheel", "--package", package, "-o", str(wheels), cwd=ROOT)
     venv = work / "venv"
@@ -86,7 +86,7 @@ def test_a_wheel_loader_checks_a_file_away_from_the_repository(clean_python, tmp
     contract = tmp_path / Path(relative).name
     contract.write_text((ROOT / "contracts/artifact" / relative).read_text())
     result = subprocess.run(
-        [clean_python, "-I", "-m", "wdf_artifactclient.contract", "--check", str(contract)],
+        [clean_python, "-I", "-m", "wft_artifactclient.contract", "--check", str(contract)],
         capture_output=True,
         text=True,
         cwd=tmp_path,

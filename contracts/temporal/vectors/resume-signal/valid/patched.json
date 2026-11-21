@@ -5,6 +5,6 @@
     "name": "job.json",
     "sha256": "d43fc3dfc3235c62b07ab0efd7aaaf75b5ef6d1feaf3ad23e8ce1c344f598bb8",
     "size": 3072,
-    "uri": "s3://wdf-sources/sha256/d4/d43fc3dfc3235c62b07ab0efd7aaaf75b5ef6d1feaf3ad23e8ce1c344f598bb8"
+    "uri": "s3://wft-sources/sha256/d4/d43fc3dfc3235c62b07ab0efd7aaaf75b5ef6d1feaf3ad23e8ce1c344f598bb8"
   }
 }

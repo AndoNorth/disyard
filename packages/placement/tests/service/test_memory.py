@@ -5,7 +5,7 @@ import itertools
 import re
 from pathlib import Path
 
-from wdf_workflow.placement import PlacementRequest, ServicePlacer, task_pools
+from wft_workflow.placement import PlacementRequest, ServicePlacer, task_pools
 
 CALLS = 1_000
 READS = 3

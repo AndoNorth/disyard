@@ -7,7 +7,7 @@ set -euo pipefail
 [ $# -eq 2 ] || { echo "usage: secret.sh <name> <namespace>" >&2; exit 2; }
 name=$1
 namespace=$2
-state=${WDF_STATE_DIR:-${XDG_STATE_HOME:-$HOME/.local/state}/wasm-dag-forge}
+state=${WFT_STATE_DIR:-${XDG_STATE_HOME:-$HOME/.local/state}/wasm-dag-forge}
 file=$state/$name.password
 
 if [ ! -s "$file" ]; then

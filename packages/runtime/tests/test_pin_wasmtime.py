@@ -12,15 +12,15 @@ from pathlib import Path
 from typing import NamedTuple
 
 import pytest
-from wdf_compile import bundle as compile_bundle
-from wdf_compile.build import build
-from wdf_runtime import pins
-from wdf_runtime.classify import Facts, classify, read_error_file
-from wdf_runtime.command import GUEST_INPUT, INPUT_FILE, MIB, OUTPUT, PAGE, command
-from wdf_runtime.contract import canonical
-from wdf_runtime.pins import GUEST_MIN_PAGES, GUEST_OVERHEAD_MIB
-from wdf_runtime.run import warm, warmed
-from wdf_workloads import bundle
+from wft_compile import bundle as compile_bundle
+from wft_compile.build import build
+from wft_runtime import pins
+from wft_runtime.classify import Facts, classify, read_error_file
+from wft_runtime.command import GUEST_INPUT, INPUT_FILE, MIB, OUTPUT, PAGE, command
+from wft_runtime.contract import canonical
+from wft_runtime.pins import GUEST_MIN_PAGES, GUEST_OVERHEAD_MIB
+from wft_runtime.run import warm, warmed
+from wft_workloads import bundle
 
 ROOT = Path(__file__).resolve().parents[3]
 ECHO = json.loads((ROOT / "contracts/workload/vectors/level0/echo/input.json").read_text())
@@ -39,7 +39,7 @@ import json
 import os
 import sys
 
-from wdf_workloads import main
+from wft_workloads import main
 
 RUNS = 0
 
@@ -82,7 +82,7 @@ class Measured(NamedTuple):
 @pytest.fixture(scope="module")
 def component(tmp_path_factory) -> Path:
     work = tmp_path_factory.mktemp("workloads")
-    return build(bundle.write(work), "wdf_workloads.main", work / "built").component
+    return build(bundle.write(work), "wft_workloads.main", work / "built").component
 
 
 @pytest.fixture(scope="module")
@@ -99,11 +99,11 @@ def warm_cache(component, tmp_path_factory) -> Path:
 def probe(tmp_path_factory) -> Path:
     """The packages of the workload component under an entry module that counts its runs."""
     work = tmp_path_factory.mktemp("probe")
-    for name, data in {**bundle.files(), "wdf_pin_probe.py": PROBE.encode()}.items():
+    for name, data in {**bundle.files(), "wft_pin_probe.py": PROBE.encode()}.items():
         (work / "tree" / name).parent.mkdir(parents=True, exist_ok=True)
         (work / "tree" / name).write_bytes(data)
     tar = compile_bundle.write(work / "tree", work)
-    return build(tar, "wdf_pin_probe", work / "built").component
+    return build(tar, "wft_pin_probe", work / "built").component
 
 
 def measured(argv: list[str]) -> Measured:

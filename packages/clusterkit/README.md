@@ -1,6 +1,6 @@
-# wdf-clusterkit
+# wft-clusterkit
 
-The host side of every driver of a deployed cluster, imported as `wdf_clusterkit`.
+The host side of every driver of a deployed cluster, imported as `wft_clusterkit`.
 The workflow harness's T2 tier, the admission drive and the dispatch smoke driver build on it.
 
 It owns `kubectl` on a kube context, `Forward`, a `kubectl port-forward` bound to 127.0.0.1 on a fixed local port that survives a pod restart, the state directory and the credentials in it, `reachable`, `ready` and `oom_killed` for pods, the `until` poller, and the namespace and start-up constants.

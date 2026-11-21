@@ -4,15 +4,15 @@ with Temporal faked."""
 import uuid
 
 import pytest
-from wdf_dispatchapi.reads import ReadRefused, batch_summary, depth, job_page, job_status
-from wdf_dispatchapi.testing import running_status
-from wdf_jobstate import mark_delivered, mark_published, request_action, transition
-from wdf_keys import batch_id
-from wdf_temporal import trace_id_of
+from wft_dispatchapi.reads import ReadRefused, batch_summary, depth, job_page, job_status
+from wft_dispatchapi.testing import running_status
+from wft_jobstate import mark_delivered, mark_published, request_action, transition
+from wft_keys import batch_id
+from wft_temporal import trace_id_of
 
 pytestmark = pytest.mark.integration
 
-WORKFLOW = "/wdf/workflow"
+WORKFLOW = "/wft/workflow"
 
 
 def refused(code: str):
@@ -22,7 +22,7 @@ def refused(code: str):
 def result_of(row, task: str, attempt: int) -> dict:
     return {
         "result": {
-            "uri": f"s3://wdf-results/acme/b/j/7/{task}/r0a{attempt}/result.bin",
+            "uri": f"s3://wft-results/acme/b/j/7/{task}/r0a{attempt}/result.bin",
             "sha256": "0" * 64,
             "size": attempt,
             "name": "result.bin",
@@ -120,7 +120,7 @@ def test_results_in_task_order(reader, seed, record, gateway):
             "batch_id": row.batch_id,
             "submission_key": row.submission_key,
         },
-        source="/wdf/dispatch",
+        source="/wft/dispatch",
     )
     results = job_status(reader, gateway, "acme", row.job_id).results
     assert [(r.producer.task, r.producer.attempt) for r in results] == [
@@ -136,7 +136,7 @@ def test_dead_letter_field(reader, seed, record, gateway):
     clean, lettered = seed(count=2)
     for minutes, reason in ((1, "MALFORMED"), (5, "UNSUPPORTED_VERSION")):
         data = {"dlq_reason": reason, "detail": f"refused at minute {minutes}"}
-        record(lettered, "job.dead.lettered", data, minutes=minutes, source="/wdf/admission")
+        record(lettered, "job.dead.lettered", data, minutes=minutes, source="/wft/admission")
     assert job_status(reader, gateway, "acme", clean.job_id).dead_letter is None
     letter = job_status(reader, gateway, "acme", lettered.job_id).dead_letter
     assert (letter.dlq_reason, letter.detail) == ("UNSUPPORTED_VERSION", "refused at minute 5")

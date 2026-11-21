@@ -1,5 +1,5 @@
 {
-  "$id": "urn:wdf:schema:workload:input:1",
+  "$id": "urn:wft:schema:workload:input:1",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
   "description": "input.json: the bound params of a simulate task, written canonical to /in/input.json.",

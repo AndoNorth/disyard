@@ -11,14 +11,14 @@ set -uo pipefail
 root=$(cd "$(dirname "${BASH_SOURCE[0]}")/../../../../.." && pwd)
 cd "$root" || exit 2
 [ $# -le 1 ] || { echo "usage: run.sh [out-dir]" >&2; exit 2; }
-out=$(realpath -m "${1:-$(mktemp -d "${TMPDIR:-/tmp}/wdf-s1b.XXXXXX")}")
+out=$(realpath -m "${1:-$(mktemp -d "${TMPDIR:-/tmp}/wft-s1b.XXXXXX")}")
 mkdir -p "$out"
 
 code=docs/delivery/spikes/S1b/code
 image="python:3.13-slim-bookworm@sha256:a5a7017efc5969e00ae2b91c8eb0631049a569652aa4ffc4501769049ae45c72"
 wasi_url=https://github.com/WebAssembly/WASI/archive/refs/tags/v0.2.9.tar.gz
 wasi_sha256=8c52624aebed805e29aa1e64053fd3171159bbe8a195e90982f87edae789a6e8
-label=wdf.dev/verify-run
+label=wft.dev/verify-run
 run_id="s1b-$(date -u +%Y%m%dT%H%M%SZ)"
 say() { echo "[$(date +%T)] $*" >&2; }
 figure() { echo "figure $1 $2" | tee -a "$out/figures.txt"; }
@@ -31,12 +31,12 @@ cleanup() {
 }
 trap cleanup EXIT
 
-# One of the two T1 lock files of wdf_itest, so this run counts toward the two containers across the host.
+# One of the two T1 lock files of wft_itest, so this run counts toward the two containers across the host.
 deadline=$(($(date +%s) + 1800))
 while :; do
     for i in 0 1; do
-        exec 9>"/tmp/wdf-t1.$i.lock"
-        flock -n 9 && { echo "pid=$$ run=$run_id" >"/tmp/wdf-t1.$i.lock"; break 2; }
+        exec 9>"/tmp/wft-t1.$i.lock"
+        flock -n 9 && { echo "pid=$$ run=$run_id" >"/tmp/wft-t1.$i.lock"; break 2; }
     done
     [ "$(date +%s)" -lt "$deadline" ] || { say "no T1 lock file became free"; exit 1; }
     sleep 2
@@ -62,7 +62,7 @@ curl -sSfL -o "$out/wasi.tar.gz" "$wasi_url" || exit 1
 echo "$wasi_sha256  $out/wasi.tar.gz" | sha256sum -c --quiet || exit 1
 tar -xzf "$out/wasi.tar.gz" -C "$out" || exit 1
 for p in cli clocks filesystem io random sockets; do cp -r "$out/WASI-0.2.9/proposals/$p/wit" "$out/wit/deps/$p"; done
-printf 'package wdf:task@1.0.0;\n\nworld task {\n  include wasi:cli/command@0.2.9;\n}\n' >"$out/wit/task.wit"
+printf 'package wft:task@1.0.0;\n\nworld task {\n  include wasi:cli/command@0.2.9;\n}\n' >"$out/wit/task.wit"
 
 say "capped container steps"
 python3 "$code/measure.py" --image "$image" --label "$label" --run-id "$run_id" --out "$out" \

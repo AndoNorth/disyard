@@ -8,7 +8,7 @@ from pathlib import Path
 
 import psycopg
 import pytest
-from wdf_storecheck.s3 import Creds, dump_credentials
+from wft_storecheck.s3 import Creds, dump_credentials
 
 _spec = importlib.util.spec_from_file_location(
     "workflow_logins", Path(__file__).with_name("logins.py")
@@ -21,7 +21,7 @@ ITEMS = [f"login: {login} in {group}" for login, group in logins.LOGINS.values()
 
 @pytest.fixture(autouse=True)
 def state(tmp_path, monkeypatch):
-    monkeypatch.setenv("WDF_STATE_DIR", str(tmp_path))
+    monkeypatch.setenv("WFT_STATE_DIR", str(tmp_path))
     return tmp_path
 
 
@@ -76,9 +76,9 @@ def test_drift_found_and_repaired(server, state, capsys):
     appdb = server
     logins.main("apply", appdb)
     workflow, artifacts, _ = (login for login, _ in logins.LOGINS.values())
-    reaper = logins.LOGINS["WDF_REAPER_DSN"][0]
+    reaper = logins.LOGINS["WFT_REAPER_DSN"][0]
     with psycopg.connect(appdb, autocommit=True) as conn:
-        conn.execute(f"grant wdf_reader to {workflow}")
+        conn.execute(f"grant wft_reader to {workflow}")
         conn.execute(f"alter role {reaper} createrole")
     known = json.loads(logins.state_file().read_text())
     known[artifacts] = "rotated"
@@ -87,7 +87,7 @@ def test_drift_found_and_repaired(server, state, capsys):
 
     code, out, err = run("check", appdb, capsys)
     assert code == 1
-    assert f"{ITEMS[0]} differs: member of wdf_reader, wdf_workflow" in out
+    assert f"{ITEMS[0]} differs: member of wft_reader, wft_workflow" in out
     assert f"{ITEMS[1]} differs: password" in out
     assert f"{ITEMS[2]} differs: attributes" in out
     assert err == [f"differs: {item}" for item in ITEMS]
@@ -95,7 +95,7 @@ def test_drift_found_and_repaired(server, state, capsys):
     code, out, _ = run("apply", appdb, capsys)
     assert (code, out[-1]) == (0, "changed: 3")
     assert run("check", appdb, capsys)[0] == 0
-    assert memberships(appdb)[workflow] == ["wdf_workflow"]
+    assert memberships(appdb)[workflow] == ["wft_workflow"]
 
 
 def test_render_secrets(state, tmp_path):
@@ -109,12 +109,12 @@ def test_render_secrets(state, tmp_path):
 
     dsns, credentials = first
     assert [s["metadata"] for s in first] == [
-        {"name": "workflow-worker-logins", "namespace": "wdf-control"},
-        {"name": "workflow-worker-store", "namespace": "wdf-control"},
+        {"name": "workflow-worker-logins", "namespace": "wft-control"},
+        {"name": "workflow-worker-store", "namespace": "wft-control"},
     ]
     known = json.loads(logins.state_file().read_text())
     assert dsns["stringData"] == {
-        env: f"postgresql://{login}:{known[login]}@appdb.wdf-infra.svc.cluster.local:5432/postgres"
+        env: f"postgresql://{login}:{known[login]}@appdb.wft-infra.svc.cluster.local:5432/postgres"
         for env, (login, _) in logins.LOGINS.items()
     }
     held = json.loads(credentials["stringData"]["credentials.json"])

@@ -4,5 +4,5 @@ FROM accepted_job j
 WHERE j.published_at IS NULL
   AND (
     j.status <> 'accepted'
-    OR EXISTS (SELECT 1 FROM event e WHERE e.job_id = j.job_id AND e.type = 'dev.wdf.job.published.v1')
+    OR EXISTS (SELECT 1 FROM event e WHERE e.job_id = j.job_id AND e.type = 'dev.wft.job.published.v1')
   )

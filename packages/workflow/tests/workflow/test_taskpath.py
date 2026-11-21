@@ -7,10 +7,10 @@ import json
 import pytest
 from temporalio.api.enums.v1 import EventType
 from temporalio.worker import Replayer
-from wdf_stages.recording import type_name
-from wdf_temporal import event_data_converter, tracing_interceptor
-from wdf_workflow.job import JobWorkflow
-from wdf_workflow.testing import Fail, Succeed, connect
+from wft_stages.recording import type_name
+from wft_temporal import event_data_converter, tracing_interceptor
+from wft_workflow.job import JobWorkflow
+from wft_workflow.testing import Fail, Succeed, connect
 
 pytestmark = pytest.mark.integration
 

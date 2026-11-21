@@ -14,15 +14,15 @@ from datetime import timedelta
 
 import pytest
 from psycopg.types.json import Jsonb
-from wdf_artifactclient import cache
-from wdf_artifactclient.aggregate import put_index
-from wdf_artifactclient.commit import commit
-from wdf_artifactclient.errors import ArtifactNotFound
-from wdf_artifactclient.models import IndexEntry
-from wdf_artifactindex import RowPurged, index_reference, link_use, uses_of
-from wdf_artifactreaper.content import PURGE_LOCKED, collect_content
-from wdf_artifactreaper.reap import load_windows, reap_once
-from wdf_stateops.invariants import check_invariants
+from wft_artifactclient import cache
+from wft_artifactclient.aggregate import put_index
+from wft_artifactclient.commit import commit
+from wft_artifactclient.errors import ArtifactNotFound
+from wft_artifactclient.models import IndexEntry
+from wft_artifactindex import RowPurged, index_reference, link_use, uses_of
+from wft_artifactreaper.content import PURGE_LOCKED, collect_content
+from wft_artifactreaper.reap import load_windows, reap_once
+from wft_stateops.invariants import check_invariants
 
 pytestmark = [pytest.mark.integration, pytest.mark.pair]
 
@@ -311,7 +311,7 @@ def test_a_link_waiting_on_the_purge_lock_is_refused_and_the_bytes_put_again(
     collect(clock.now)
     clock.advance(hours=2)
     job = str(uuid.uuid4())
-    other = login("wdf_artifacts")
+    other = login("wft_artifacts")
     outcome: list[object] = []
 
     def link_when_locked(uri: str) -> None:
@@ -358,7 +358,7 @@ def test_a_full_run_on_a_store_holding_every_kind_leaves_the_invariants_holding(
     assert first.results_jobs == 1
     assert second.purged >= 1
     checked = subprocess.run(
-        [sys.executable, "-m", "wdf_stateops.invariants", "--dsn", appdb],
+        [sys.executable, "-m", "wft_stateops.invariants", "--dsn", appdb],
         capture_output=True,
         text=True,
     )

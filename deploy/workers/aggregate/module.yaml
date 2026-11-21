@@ -1,6 +1,6 @@
 name: aggregate-worker
 group: workers
-namespace: wdf-workers
+namespace: wft-workers
 artifact:
   kind: image
   pin: python
@@ -16,8 +16,8 @@ resources:
 readiness:
   command:
     - kubectl
-    - --context=kind-wdf
-    - --namespace=wdf-workers
+    - --context=kind-wft
+    - --namespace=wft-workers
     - wait
     - --for=condition=Available
     - deployment/aggregate-worker

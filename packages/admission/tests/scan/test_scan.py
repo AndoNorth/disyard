@@ -9,13 +9,13 @@ from datetime import timedelta
 import pytest
 from temporalio.client import WorkflowExecutionStatus
 from temporalio.service import RPCError, RPCStatusCode
-from wdf_admission import policy
-from wdf_admission.claim import Claimed, claim
-from wdf_admission.scan import Restarted, Scanner, readmit
-from wdf_admission.start import start
-from wdf_jobstate import insert_accepted, transition
-from wdf_keys import workflow_id
-from wdf_stateops import bench
+from wft_admission import policy
+from wft_admission.claim import Claimed, claim
+from wft_admission.scan import Restarted, Scanner, readmit
+from wft_admission.start import start
+from wft_jobstate import insert_accepted, transition
+from wft_keys import workflow_id
+from wft_stateops import bench
 
 pytestmark = [pytest.mark.integration, pytest.mark.pair]
 

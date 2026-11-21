@@ -1,14 +1,14 @@
 """The commit control activity against a real store and database, as a plain function under a
-`wdf_artifacts` login with the `workflow` store identity."""
+`wft_artifacts` login with the `workflow` store identity."""
 
 import asyncio
 import uuid
 
 import pytest
 from temporalio.exceptions import ApplicationError
-from wdf_events.models import ProducerRef
-from wdf_workflow.activities import Committer
-from wdf_workflow.testing.control import Commit, ControlCase, control_activity_contract
+from wft_events.models import ProducerRef
+from wft_workflow.activities import Committer
+from wft_workflow.testing.control import Commit, ControlCase, control_activity_contract
 
 pytestmark = [pytest.mark.integration, pytest.mark.pair]
 
@@ -17,7 +17,7 @@ TENANT = "acme"
 
 @pytest.fixture
 def committer(login, workflow_store):
-    return Committer(login("wdf_artifacts"), workflow_store)
+    return Committer(login("wft_artifacts"), workflow_store)
 
 
 @pytest.fixture

@@ -1,15 +1,15 @@
 """The index_checkpoint control activity against a real database, as a plain function under a
-`wdf_artifacts` login, with checkpoints that a simulate worker wrote to a real store."""
+`wft_artifacts` login, with checkpoints that a simulate worker wrote to a real store."""
 
 import asyncio
 import uuid
 
 import pytest
 from temporalio.exceptions import ApplicationError
-from wdf_artifactclient.checkpoint import write_checkpoint
-from wdf_events.models import ProducerRef
-from wdf_workflow.activities import Committer
-from wdf_workflow.testing.control import ControlCase, IndexCheckpoint, control_activity_contract
+from wft_artifactclient.checkpoint import write_checkpoint
+from wft_events.models import ProducerRef
+from wft_workflow.activities import Committer
+from wft_workflow.testing.control import ControlCase, IndexCheckpoint, control_activity_contract
 
 pytestmark = [pytest.mark.integration, pytest.mark.pair]
 
@@ -19,7 +19,7 @@ META = {"format_version": 1, "progress": 0.5, "wasm_sha256": "e" * 64}
 @pytest.fixture
 def committer(login):
     """A committer with no store client, since indexing a checkpoint never reads the store."""
-    return Committer(login("wdf_artifacts"), None)
+    return Committer(login("wft_artifacts"), None)
 
 
 @pytest.fixture

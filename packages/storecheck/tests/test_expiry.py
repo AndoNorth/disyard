@@ -5,8 +5,8 @@ import re
 
 import pytest
 from botocore.exceptions import ClientError
-from wdf_storecheck.cli import Options, run
-from wdf_storecheck.s3 import error_code
+from wft_storecheck.cli import Options, run
+from wft_storecheck.s3 import error_code
 
 pytestmark = pytest.mark.integration
 
@@ -26,7 +26,7 @@ def test_lifecycle_date_rule_expires_only_the_armed_prefix(start, product):
         assert code == 0, lines
         assert "ok lifecycle: expired: 1 of 1, controls kept: 3 of 3" in lines
         with pytest.raises(ClientError) as untouched:
-            store.store().admin.get_bucket_lifecycle_configuration(Bucket="wdf-sources")
+            store.store().admin.get_bucket_lifecycle_configuration(Bucket="wft-sources")
         assert error_code(untouched.value) in (
             "NoSuchLifecycleConfiguration",
             "NoSuchBucketLifecycleConfiguration",
@@ -53,9 +53,9 @@ def test_marker_put_then_get_and_a_missing_marker_fails(store):
     assert lines_of(store, "marker-get")[0] == 1
     assert lines_of(store, "marker-put")[0] == 0
     assert lines_of(store, "marker-get")[0] == 0
-    store.store().admin.put_object(Bucket="wdf-sources", Key="storecheck-marker/object", Body=b"x")
+    store.store().admin.put_object(Bucket="wft-sources", Key="storecheck-marker/object", Body=b"x")
     assert lines_of(store, "marker-get")[0] == 1
-    store.store().admin.delete_object(Bucket="wdf-sources", Key="storecheck-marker/object")
+    store.store().admin.delete_object(Bucket="wft-sources", Key="storecheck-marker/object")
 
 
 def test_capacity_prints_a_line_per_bucket_and_needs_the_reaper(store):

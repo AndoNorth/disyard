@@ -70,7 +70,7 @@ pools:
         exit_code: 5
       - class: aggregate_parse_failed
         trigger: >-
-          A results.xml is not well formed, declares a DOCTYPE or breaks wdf.sim.v1, and the reason names the
+          A results.xml is not well formed, declares a DOCTYPE or breaks wft.sim.v1, and the reason names the
           input.
         deterministic: true
         exit_code: 6

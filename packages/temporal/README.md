@@ -1,13 +1,13 @@
-# wdf-temporal
+# wft-temporal
 
-Temporal helpers of the event contract, imported as `wdf_temporal`.
+Temporal helpers of the event contract, imported as `wft_temporal`.
 The contract itself is [contracts/events/README.md](../../contracts/events/README.md), and the event models are in `packages/events/`.
 
 ## Payload form
 
 Payload form: `converter`
 
-`wdf_temporal.event_data_converter` stores an event in the Temporal history as the canonical bytes of `wdf_events.to_bytes`, under the metadata encoding `json/plain`.
+`wft_temporal.event_data_converter` stores an event in the Temporal history as the canonical bytes of `wft_events.to_bytes`, under the metadata encoding `json/plain`.
 The Temporal UI therefore shows the event as readable JSON, and `json.loads` reads the data.
 The stock `json/plain` converter cannot stand in for it, because it escapes non-ASCII text, so an event with a Unicode attribute would be stored as different bytes than the store and the broker hold.
 
@@ -20,9 +20,9 @@ A value that is not a model keeps the stock `json/plain` behaviour.
 
 ## Stand-in workflow
 
-`wdf_temporal.standin.StandInJob` takes the accepted event and the job params block as its two start arguments.
+`wft_temporal.standin.StandInJob` takes the accepted event and the job params block as its two start arguments.
 It builds a task request event, runs one activity with it as input, and returns the result ready event that the activity builds.
-It stays as the workflow that the tests of this package run, and `JobWorkflow` of `wdf_workflow` uses the same converter.
+It stays as the workflow that the tests of this package run, and `JobWorkflow` of `wft_workflow` uses the same converter.
 
 ## Trace context
 
@@ -40,10 +40,10 @@ The guarantee is one trace id across the stages of a run, and nothing is claimed
 `corpus/owners.yaml` maps a workflow type to the epic that owns its histories.
 The histories are recorded in the declared payload form.
 
-Record a release from the current code, in one container started through `wdf_itest`:
+Record a release from the current code, in one container started through `wft_itest`:
 
 ```sh
-uv run --frozen python -m wdf_temporal.corpus record <release>
+uv run --frozen python -m wft_temporal.corpus record <release>
 ```
 
 `replay_corpus(classes)` replays every history whose workflow type has a class among the ones given, with the current workflow code and payload decoding.
@@ -52,7 +52,7 @@ A history is never skipped, so a runner built from a partial list of classes can
 Another package keeps its histories in a corpus of its own with the same layout and replays them with its own class through the same runner, as `packages/workflow/corpus/` does for `JobWorkflow`.
 
 The corpus only grows.
-The one exception is the retirement of a release: a pull request that names the release directory and deletes it, after the compatibility window of `wdf_compat.window.readable_days()` days.
+The one exception is the retirement of a release: a pull request that names the release directory and deletes it, after the compatibility window of `wft_compat.window.readable_days()` days.
 `test_replay_negative.py` rewrites a recorded history with a renamed event field and expects the replay to fail, so the gate is shown able to fail.
 
 Worker versioning on activity queues other than the workflow queue is not proven here, as the epic says.

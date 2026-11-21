@@ -1,5 +1,5 @@
 {
-  "$id": "urn:wdf:schema:workload:error:1",
+  "$id": "urn:wft:schema:workload:error:1",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
   "description": "error.json: the optional failure report a guest writes to /out before it exits nonzero.",

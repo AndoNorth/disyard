@@ -1,5 +1,5 @@
 [project]
-name = "wdf-stateops"
+name = "wft-stateops"
 version = "0.0.0"
 license = "Apache-2.0"
 requires-python = ">=3.13,<3.14"
@@ -7,24 +7,24 @@ dependencies = [
     "psycopg[binary]",
     "pydantic",
     "pyyaml",
-    "wdf-events",
-    "wdf-eventstore",
-    "wdf-jobstate",
-    "wdf-keys",
-    "wdf-migrate",
-    "wdf-storecheck",
+    "wft-events",
+    "wft-eventstore",
+    "wft-jobstate",
+    "wft-keys",
+    "wft-migrate",
+    "wft-storecheck",
 ]
 
-[project.entry-points."wdf.migrations"]
-stateops = "wdf_stateops.migrations"
+[project.entry-points."wft.migrations"]
+stateops = "wft_stateops.migrations"
 
 [tool.uv.sources]
-wdf-events = { workspace = true }
-wdf-eventstore = { workspace = true }
-wdf-jobstate = { workspace = true }
-wdf-keys = { workspace = true }
-wdf-migrate = { workspace = true }
-wdf-storecheck = { workspace = true }
+wft-events = { workspace = true }
+wft-eventstore = { workspace = true }
+wft-jobstate = { workspace = true }
+wft-keys = { workspace = true }
+wft-migrate = { workspace = true }
+wft-storecheck = { workspace = true }
 
 [build-system]
 requires = ["hatchling"]

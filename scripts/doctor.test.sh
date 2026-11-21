@@ -26,7 +26,7 @@ build() {
 run() {
   local r="$work/$1"
   rc=0
-  out=$(env -i HOME="$work/home" IN_NIX_SHELL=impure WDF_DOCTOR_ROOT="$r" WDF_DOCTOR_REPO="$r/${REPOSUB:-repo}" \
+  out=$(env -i HOME="$work/home" IN_NIX_SHELL=impure WFT_DOCTOR_ROOT="$r" WFT_DOCTOR_REPO="$r/${REPOSUB:-repo}" \
     PATH="${PATHPREFIX:-}$r/bin:$r/nix/store/pkg/bin:$r/sys-bin" "$bash_bin" "$doctor") || rc=$?
   failing=$(grep '^fail ' <<<"$out" | cut -d' ' -f2 | tr -d ':' | tr '\n' ' ' || true)
 }
@@ -64,7 +64,7 @@ rc=0; out=$(env -i bash "$doctor") || rc=$?
 failing=$(grep '^fail ' <<<"$out" | cut -d' ' -f2 | tr -d ':' | tr '\n' ' '); check outside-shell in-dev-shell
 
 # --json is a valid array with the same ids.
-run healthy; json=$(env -i HOME="$work/home" IN_NIX_SHELL=impure WDF_DOCTOR_ROOT="$work/healthy" WDF_DOCTOR_REPO="$work/healthy/repo" \
+run healthy; json=$(env -i HOME="$work/home" IN_NIX_SHELL=impure WFT_DOCTOR_ROOT="$work/healthy" WFT_DOCTOR_REPO="$work/healthy/repo" \
   PATH="$work/healthy/bin:$work/healthy/nix/store/pkg/bin:$work/healthy/sys-bin" "$bash_bin" "$doctor" --json)
 python3 -c 'import json,sys; d=json.loads(sys.argv[1]); assert len(d)==10 and all(set(r)=={"id","status","detail"} for r in d)' "$json"
 echo "ok   json"

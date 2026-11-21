@@ -1,6 +1,6 @@
 name: store
 group: infra
-namespace: wdf-infra
+namespace: wft-infra
 artifact: {kind: image, pin: pause}
 resources:
   store:

@@ -1,5 +1,5 @@
 [project]
-name = "wdf-dispatchapi"
+name = "wft-dispatchapi"
 version = "0.0.0"
 license = "Apache-2.0"
 requires-python = ">=3.13,<3.14"
@@ -9,44 +9,44 @@ dependencies = [
     "pydantic",
     "pyyaml",
     "temporalio",
-    "wdf-artifactclient",
-    "wdf-artifactindex",
-    "wdf-broker",
-    "wdf-compile",
-    "wdf-events",
-    "wdf-eventstore",
-    "wdf-itest",
-    "wdf-jobcheck",
-    "wdf-jobpatch",
-    "wdf-jobstate",
-    "wdf-keys",
-    "wdf-plan",
-    "wdf-stages",
-    "wdf-temporal",
-    "wdf-workflow",
+    "wft-artifactclient",
+    "wft-artifactindex",
+    "wft-broker",
+    "wft-compile",
+    "wft-events",
+    "wft-eventstore",
+    "wft-itest",
+    "wft-jobcheck",
+    "wft-jobpatch",
+    "wft-jobstate",
+    "wft-keys",
+    "wft-plan",
+    "wft-stages",
+    "wft-temporal",
+    "wft-workflow",
 ]
 
 # The drivers of a deployed cluster, which no image runs.
 [project.optional-dependencies]
-cluster = ["wdf-acceptance", "wdf-clusterkit"]
+cluster = ["wft-acceptance", "wft-clusterkit"]
 
 [tool.uv.sources]
-wdf-artifactclient = { workspace = true }
-wdf-artifactindex = { workspace = true }
-wdf-broker = { workspace = true }
-wdf-clusterkit = { workspace = true }
-wdf-compile = { workspace = true }
-wdf-events = { workspace = true }
-wdf-eventstore = { workspace = true }
-wdf-itest = { workspace = true }
-wdf-jobcheck = { workspace = true }
-wdf-jobpatch = { workspace = true }
-wdf-jobstate = { workspace = true }
-wdf-keys = { workspace = true }
-wdf-plan = { workspace = true }
-wdf-stages = { workspace = true }
-wdf-temporal = { workspace = true }
-wdf-workflow = { workspace = true }
+wft-artifactclient = { workspace = true }
+wft-artifactindex = { workspace = true }
+wft-broker = { workspace = true }
+wft-clusterkit = { workspace = true }
+wft-compile = { workspace = true }
+wft-events = { workspace = true }
+wft-eventstore = { workspace = true }
+wft-itest = { workspace = true }
+wft-jobcheck = { workspace = true }
+wft-jobpatch = { workspace = true }
+wft-jobstate = { workspace = true }
+wft-keys = { workspace = true }
+wft-plan = { workspace = true }
+wft-stages = { workspace = true }
+wft-temporal = { workspace = true }
+wft-workflow = { workspace = true }
 
 [build-system]
 requires = ["hatchling"]

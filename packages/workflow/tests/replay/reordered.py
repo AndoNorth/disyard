@@ -3,10 +3,10 @@ histories replay on, and one that reorders two activities, which they must not r
 
 from temporalio import workflow
 from temporalio.common import VersioningBehavior
-from wdf_events import Event
-from wdf_events.models import JobParams
-from wdf_workflow.contract import naming
-from wdf_workflow.job import Identity, JobWorkflow
+from wft_events import Event
+from wft_events.models import JobParams
+from wft_workflow.contract import naming
+from wft_workflow.job import Identity, JobWorkflow
 
 
 @workflow.defn(name=naming().workflow.type, versioning_behavior=VersioningBehavior.PINNED)

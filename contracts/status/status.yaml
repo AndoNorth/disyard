@@ -37,8 +37,8 @@ projection:
   job.resume.requested: [{sets: resume-pending}]
   # The workflow resumes a job that was running, and the control stage resumes one that never started.
   job.resumed:
-    - {when: {source: /wdf/workflow}, sets: running}
-    - {when: {source: /wdf/control}, sets: accepted}
+    - {when: {source: /wft/workflow}, sets: running}
+    - {when: {source: /wft/control}, sets: accepted}
   job.cancel.requested: [{sets: null}]
   job.terminate.requested: [{sets: null}]
   job.succeeded: [{sets: succeeded}]

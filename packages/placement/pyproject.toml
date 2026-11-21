@@ -1,14 +1,14 @@
 [project]
-name = "wdf-placement"
+name = "wft-placement"
 version = "0.0.0"
 license = "Apache-2.0"
 requires-python = ">=3.13,<3.14"
 dependencies = [
-    "wdf-workflow",
+    "wft-workflow",
 ]
 
 [tool.uv.sources]
-wdf-workflow = { workspace = true }
+wft-workflow = { workspace = true }
 
 [build-system]
 requires = ["hatchling"]

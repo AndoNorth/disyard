@@ -91,7 +91,7 @@
       "type": "object"
     }
   },
-  "$id": "urn:wdf:schema:artifact:staging:3",
+  "$id": "urn:wft:schema:artifact:staging:3",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
   "description": "staging.yaml: the scratch directory of a task, its declared outputs and the size caps.",

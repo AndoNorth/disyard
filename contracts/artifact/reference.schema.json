@@ -80,7 +80,7 @@
       "type": "integer"
     },
     "uri": {
-      "pattern": "^s3://wdf-(sources|components|results|checkpoints)/.+$",
+      "pattern": "^s3://wft-(sources|components|results|checkpoints)/.+$",
       "type": "string"
     }
   },

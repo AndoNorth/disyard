@@ -9,9 +9,9 @@ import pytest
 from proton import Condition, Endpoint, Link, Message, symbol
 from proton.reactor import LinkOption
 from proton.utils import BlockingConnection
-from wdf_broker.contract import parse
-from wdf_broker.contract import topology as spec
-from wdf_broker.testing.container import broker_container
+from wft_broker.contract import parse
+from wft_broker.contract import topology as spec
+from wft_broker.testing.container import broker_container
 
 pytestmark = pytest.mark.integration
 
@@ -34,7 +34,7 @@ def ctl_json(broker, *args: str) -> list[dict]:
 
 def test_policies_applied(broker):
     intake = spec().intake_policy.definition
-    wdf_intake = {
+    wft_intake = {
         "delivery-limit": intake.delivery_limit,
         "max-length": intake.max_length.value,
         "overflow": intake.overflow,
@@ -56,11 +56,11 @@ def test_policies_applied(broker):
     for name, row in queues.items():
         assert row["type"] == "quorum", name
         if name == "intake.dlq":
-            assert row["policy"] == "wdf-dlq"
+            assert row["policy"] == "wft-dlq"
             assert row["effective_policy_definition"] == {"delivery-limit": -1}
         else:
-            assert row["policy"] == "wdf-intake", name
-            assert row["effective_policy_definition"] == wdf_intake, name
+            assert row["policy"] == "wft-intake", name
+            assert row["effective_policy_definition"] == wft_intake, name
 
 
 def _connect(broker, user: str) -> BlockingConnection:
@@ -151,7 +151,7 @@ def test_users_permissions_enforced(broker):
     users = ctl_json(broker, "list_users")
     assert sorted(user["user"] for user in users) == ["admission", "dispatch", "operator"]
 
-    exchange, dlq, declared = "wdf.intake", spec().dead_letter_queue.name, "intake.acme.declared"
+    exchange, dlq, declared = "wft.intake", spec().dead_letter_queue.name, "intake.acme.declared"
     publish = f"/exchanges/{exchange}/{INTAKE}"
 
     assert attach(broker, "dispatch", publish, sender=True) is None

@@ -11,4 +11,4 @@ COPY wheels /tmp/build/wheels
 RUN pip install --no-cache-dir --no-deps --no-index /tmp/build/wheels/*.whl && pip check && rm -rf /tmp/build
 ENV PYTHONUNBUFFERED=1
 USER 65532:65532
-ENTRYPOINT ["python", "-m", "wdf_placement"]
+ENTRYPOINT ["python", "-m", "wft_placement"]

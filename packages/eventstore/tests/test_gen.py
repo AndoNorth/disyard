@@ -9,7 +9,7 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[3]
 RETENTION = "contracts/state/retention.yaml"
-POLICIES = "packages/eventstore/src/wdf_eventstore/migrations/R__event_policies.sql"
+POLICIES = "packages/eventstore/src/wft_eventstore/migrations/R__event_policies.sql"
 FILES = [
     "contracts/state/schemas/event-row/1.json",
     "contracts/state/retention.schema.json",
@@ -19,7 +19,7 @@ FILES = [
 
 def run(*args):
     return subprocess.run(
-        [sys.executable, "-m", "wdf_eventstore.gen", *args], capture_output=True, text=True
+        [sys.executable, "-m", "wft_eventstore.gen", *args], capture_output=True, text=True
     )
 
 

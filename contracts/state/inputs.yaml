@@ -3,7 +3,7 @@
 # Schema: inputs.schema.json, generated from the models.
 # A source of kind sql is a query that returns one number.
 # A source of kind sql_labelled names a label column and returns one row per label, the label first and then the number.
-# A query may use the named parameters of wdf_stateops.windows: the windows of the reaper per status as a JSON object
+# A query may use the named parameters of wft_stateops.windows: the windows of the reaper per status as a JSON object
 # keyed by status, the hard expiry of the results and checkpoint buckets as intervals, the unreferenced grace as an
 # interval and the codes of contracts/artifact/failures.yaml as a text array.
 # The kind invariants counts the rows that the invariant queries report when no open workflows are given.
@@ -56,7 +56,7 @@ inputs:
       ref: >-
         select c.code, count(f.code) from unnest(%(failure_codes)s::text[]) as c(code)
         left join (select substring(body::jsonb #>> '{data,reason}' from '^([A-Z][A-Z_]*): ') as code
-        from event where type = 'dev.wdf.task.attempt.failed.v1') f on f.code = c.code
+        from event where type = 'dev.wft.task.attempt.failed.v1') f on f.code = c.code
         group by c.code order by c.code
   - name: checkpoint_age_seconds
     unit: seconds
@@ -84,10 +84,10 @@ inputs:
         join job_status s on s.status = j.status
         left join reaper_job r on r.job_id = j.job_id
         where s.terminal and a.deleted_at is null and (
-        (a.bucket = 'wdf-results' and r.results_done_at is null
+        (a.bucket = 'wft-results' and r.results_done_at is null
         and j.terminal_at + make_interval(days => (%(windows)s::jsonb -> j.status ->> 'results_days')::int) < now()
         and j.terminal_at + %(results_expiry)s > now())
-        or (a.bucket = 'wdf-checkpoints' and r.checkpoints_done_at is null
+        or (a.bucket = 'wft-checkpoints' and r.checkpoints_done_at is null
         and j.terminal_at + make_interval(days => (%(windows)s::jsonb -> j.status ->> 'checkpoints_days')::int) < now()
         and j.terminal_at + %(checkpoints_expiry)s > now()))
   - name: cache_hits
@@ -95,7 +95,7 @@ inputs:
     source:
       kind: sql
       ref: >-
-        select count(*) from event where type = 'dev.wdf.task.skipped.v1'
+        select count(*) from event where type = 'dev.wft.task.skipped.v1'
         and body::jsonb #>> '{data,reason}' = 'compile-cache-hit'
   - name: cache_misses
     unit: tasks
@@ -103,6 +103,6 @@ inputs:
       kind: sql
       ref: >-
         select count(distinct (s.job_id, s.task_id)) from event s
-        where s.type = 'dev.wdf.task.started.v1' and exists (
-        select 1 from event r where r.type = 'dev.wdf.task.requested.v1' and r.job_id = s.job_id
+        where s.type = 'dev.wft.task.started.v1' and exists (
+        select 1 from event r where r.type = 'dev.wft.task.requested.v1' and r.job_id = s.job_id
         and r.task_id = s.task_id and r.body::jsonb #>> '{data,task_type}' = 'compile')

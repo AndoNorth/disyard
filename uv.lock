@@ -10,39 +10,39 @@ resolution-markers = [
 [manifest]
 members = [
     "wasm-dag-forge",
-    "wdf-acceptance",
-    "wdf-admission",
-    "wdf-aggregate",
-    "wdf-artifactclient",
-    "wdf-artifactindex",
-    "wdf-artifactreaper",
-    "wdf-broker",
-    "wdf-clusterkit",
-    "wdf-compat",
-    "wdf-compile",
-    "wdf-dispatchapi",
-    "wdf-events",
-    "wdf-eventstore",
-    "wdf-itest",
-    "wdf-jobcheck",
-    "wdf-jobdoc",
-    "wdf-jobexamples",
-    "wdf-jobpatch",
-    "wdf-jobstate",
-    "wdf-jobtools",
-    "wdf-kernel",
-    "wdf-keys",
-    "wdf-migrate",
-    "wdf-placement",
-    "wdf-plan",
-    "wdf-runtime",
-    "wdf-stages",
-    "wdf-stateops",
-    "wdf-storecheck",
-    "wdf-temporal",
-    "wdf-worker",
-    "wdf-workflow",
-    "wdf-workloads",
+    "wft-acceptance",
+    "wft-admission",
+    "wft-aggregate",
+    "wft-artifactclient",
+    "wft-artifactindex",
+    "wft-artifactreaper",
+    "wft-broker",
+    "wft-clusterkit",
+    "wft-compat",
+    "wft-compile",
+    "wft-dispatchapi",
+    "wft-events",
+    "wft-eventstore",
+    "wft-itest",
+    "wft-jobcheck",
+    "wft-jobdoc",
+    "wft-jobexamples",
+    "wft-jobpatch",
+    "wft-jobstate",
+    "wft-jobtools",
+    "wft-kernel",
+    "wft-keys",
+    "wft-migrate",
+    "wft-placement",
+    "wft-plan",
+    "wft-runtime",
+    "wft-stages",
+    "wft-stateops",
+    "wft-storecheck",
+    "wft-temporal",
+    "wft-worker",
+    "wft-workflow",
+    "wft-workloads",
 ]
 
 [[package]]
@@ -683,39 +683,39 @@ source = { virtual = "." }
 dev = [
     { name = "hypothesis" },
     { name = "pytest" },
-    { name = "wdf-acceptance" },
-    { name = "wdf-admission" },
-    { name = "wdf-aggregate" },
-    { name = "wdf-artifactclient" },
-    { name = "wdf-artifactindex" },
-    { name = "wdf-artifactreaper" },
-    { name = "wdf-broker" },
-    { name = "wdf-clusterkit" },
-    { name = "wdf-compat" },
-    { name = "wdf-compile" },
-    { name = "wdf-dispatchapi" },
-    { name = "wdf-events" },
-    { name = "wdf-eventstore" },
-    { name = "wdf-itest" },
-    { name = "wdf-jobcheck" },
-    { name = "wdf-jobdoc" },
-    { name = "wdf-jobexamples" },
-    { name = "wdf-jobpatch" },
-    { name = "wdf-jobstate" },
-    { name = "wdf-jobtools" },
-    { name = "wdf-kernel" },
-    { name = "wdf-keys" },
-    { name = "wdf-migrate" },
-    { name = "wdf-placement" },
-    { name = "wdf-plan" },
-    { name = "wdf-runtime" },
-    { name = "wdf-stages" },
-    { name = "wdf-stateops" },
-    { name = "wdf-storecheck" },
-    { name = "wdf-temporal" },
-    { name = "wdf-worker" },
-    { name = "wdf-workflow" },
-    { name = "wdf-workloads" },
+    { name = "wft-acceptance" },
+    { name = "wft-admission" },
+    { name = "wft-aggregate" },
+    { name = "wft-artifactclient" },
+    { name = "wft-artifactindex" },
+    { name = "wft-artifactreaper" },
+    { name = "wft-broker" },
+    { name = "wft-clusterkit" },
+    { name = "wft-compat" },
+    { name = "wft-compile" },
+    { name = "wft-dispatchapi" },
+    { name = "wft-events" },
+    { name = "wft-eventstore" },
+    { name = "wft-itest" },
+    { name = "wft-jobcheck" },
+    { name = "wft-jobdoc" },
+    { name = "wft-jobexamples" },
+    { name = "wft-jobpatch" },
+    { name = "wft-jobstate" },
+    { name = "wft-jobtools" },
+    { name = "wft-kernel" },
+    { name = "wft-keys" },
+    { name = "wft-migrate" },
+    { name = "wft-placement" },
+    { name = "wft-plan" },
+    { name = "wft-runtime" },
+    { name = "wft-stages" },
+    { name = "wft-stateops" },
+    { name = "wft-storecheck" },
+    { name = "wft-temporal" },
+    { name = "wft-worker" },
+    { name = "wft-workflow" },
+    { name = "wft-workloads" },
 ]
 
 [package.metadata]
@@ -724,86 +724,86 @@ dev = [
 dev = [
     { name = "hypothesis" },
     { name = "pytest" },
-    { name = "wdf-acceptance", editable = "packages/acceptance" },
-    { name = "wdf-admission", editable = "packages/admission" },
-    { name = "wdf-aggregate", editable = "packages/aggregate" },
-    { name = "wdf-artifactclient", editable = "packages/artifactclient" },
-    { name = "wdf-artifactindex", editable = "packages/artifactindex" },
-    { name = "wdf-artifactreaper", editable = "packages/artifactreaper" },
-    { name = "wdf-broker", editable = "packages/broker" },
-    { name = "wdf-clusterkit", editable = "packages/clusterkit" },
-    { name = "wdf-compat", editable = "packages/compat" },
-    { name = "wdf-compile", editable = "packages/compile" },
-    { name = "wdf-dispatchapi", editable = "packages/dispatchapi" },
-    { name = "wdf-events", editable = "packages/events" },
-    { name = "wdf-eventstore", editable = "packages/eventstore" },
-    { name = "wdf-itest", editable = "packages/itest" },
-    { name = "wdf-jobcheck", editable = "packages/jobcheck" },
-    { name = "wdf-jobdoc", editable = "packages/jobdoc" },
-    { name = "wdf-jobexamples", editable = "packages/jobexamples" },
-    { name = "wdf-jobpatch", editable = "packages/jobpatch" },
-    { name = "wdf-jobstate", editable = "packages/jobstate" },
-    { name = "wdf-jobtools", editable = "packages/jobtools" },
-    { name = "wdf-kernel", editable = "packages/kernel" },
-    { name = "wdf-keys", editable = "packages/keys" },
-    { name = "wdf-migrate", editable = "packages/migrate" },
-    { name = "wdf-placement", editable = "packages/placement" },
-    { name = "wdf-plan", editable = "packages/plan" },
-    { name = "wdf-runtime", editable = "packages/runtime" },
-    { name = "wdf-stages", editable = "packages/stages" },
-    { name = "wdf-stateops", editable = "packages/stateops" },
-    { name = "wdf-storecheck", editable = "packages/storecheck" },
-    { name = "wdf-temporal", editable = "packages/temporal" },
-    { name = "wdf-worker", editable = "packages/worker" },
-    { name = "wdf-workflow", editable = "packages/workflow" },
-    { name = "wdf-workloads", editable = "packages/workloads" },
+    { name = "wft-acceptance", editable = "packages/acceptance" },
+    { name = "wft-admission", editable = "packages/admission" },
+    { name = "wft-aggregate", editable = "packages/aggregate" },
+    { name = "wft-artifactclient", editable = "packages/artifactclient" },
+    { name = "wft-artifactindex", editable = "packages/artifactindex" },
+    { name = "wft-artifactreaper", editable = "packages/artifactreaper" },
+    { name = "wft-broker", editable = "packages/broker" },
+    { name = "wft-clusterkit", editable = "packages/clusterkit" },
+    { name = "wft-compat", editable = "packages/compat" },
+    { name = "wft-compile", editable = "packages/compile" },
+    { name = "wft-dispatchapi", editable = "packages/dispatchapi" },
+    { name = "wft-events", editable = "packages/events" },
+    { name = "wft-eventstore", editable = "packages/eventstore" },
+    { name = "wft-itest", editable = "packages/itest" },
+    { name = "wft-jobcheck", editable = "packages/jobcheck" },
+    { name = "wft-jobdoc", editable = "packages/jobdoc" },
+    { name = "wft-jobexamples", editable = "packages/jobexamples" },
+    { name = "wft-jobpatch", editable = "packages/jobpatch" },
+    { name = "wft-jobstate", editable = "packages/jobstate" },
+    { name = "wft-jobtools", editable = "packages/jobtools" },
+    { name = "wft-kernel", editable = "packages/kernel" },
+    { name = "wft-keys", editable = "packages/keys" },
+    { name = "wft-migrate", editable = "packages/migrate" },
+    { name = "wft-placement", editable = "packages/placement" },
+    { name = "wft-plan", editable = "packages/plan" },
+    { name = "wft-runtime", editable = "packages/runtime" },
+    { name = "wft-stages", editable = "packages/stages" },
+    { name = "wft-stateops", editable = "packages/stateops" },
+    { name = "wft-storecheck", editable = "packages/storecheck" },
+    { name = "wft-temporal", editable = "packages/temporal" },
+    { name = "wft-worker", editable = "packages/worker" },
+    { name = "wft-workflow", editable = "packages/workflow" },
+    { name = "wft-workloads", editable = "packages/workloads" },
 ]
 
 [[package]]
-name = "wdf-acceptance"
+name = "wft-acceptance"
 version = "0.0.0"
 source = { editable = "packages/acceptance" }
 dependencies = [
     { name = "temporalio" },
-    { name = "wdf-broker" },
-    { name = "wdf-clusterkit" },
-    { name = "wdf-kernel" },
-    { name = "wdf-workflow" },
-    { name = "wdf-workloads" },
+    { name = "wft-broker" },
+    { name = "wft-clusterkit" },
+    { name = "wft-kernel" },
+    { name = "wft-workflow" },
+    { name = "wft-workloads" },
 ]
 
 [package.metadata]
 requires-dist = [
     { name = "temporalio" },
-    { name = "wdf-broker", editable = "packages/broker" },
-    { name = "wdf-clusterkit", editable = "packages/clusterkit" },
-    { name = "wdf-kernel", editable = "packages/kernel" },
-    { name = "wdf-workflow", editable = "packages/workflow" },
-    { name = "wdf-workloads", editable = "packages/workloads" },
+    { name = "wft-broker", editable = "packages/broker" },
+    { name = "wft-clusterkit", editable = "packages/clusterkit" },
+    { name = "wft-kernel", editable = "packages/kernel" },
+    { name = "wft-workflow", editable = "packages/workflow" },
+    { name = "wft-workloads", editable = "packages/workloads" },
 ]
 
 [[package]]
-name = "wdf-admission"
+name = "wft-admission"
 version = "0.0.0"
 source = { editable = "packages/admission" }
 dependencies = [
     { name = "psycopg", extra = ["binary"] },
     { name = "pydantic" },
     { name = "temporalio" },
-    { name = "wdf-broker" },
-    { name = "wdf-compat" },
-    { name = "wdf-events" },
-    { name = "wdf-eventstore" },
-    { name = "wdf-jobstate" },
-    { name = "wdf-keys" },
-    { name = "wdf-stages" },
-    { name = "wdf-temporal" },
-    { name = "wdf-workflow" },
+    { name = "wft-broker" },
+    { name = "wft-compat" },
+    { name = "wft-events" },
+    { name = "wft-eventstore" },
+    { name = "wft-jobstate" },
+    { name = "wft-keys" },
+    { name = "wft-stages" },
+    { name = "wft-temporal" },
+    { name = "wft-workflow" },
 ]
 
 [package.optional-dependencies]
 cluster = [
-    { name = "wdf-clusterkit" },
+    { name = "wft-clusterkit" },
 ]
 
 [package.metadata]
@@ -811,42 +811,42 @@ requires-dist = [
     { name = "psycopg", extras = ["binary"] },
     { name = "pydantic" },
     { name = "temporalio" },
-    { name = "wdf-broker", editable = "packages/broker" },
-    { name = "wdf-clusterkit", marker = "extra == 'cluster'", editable = "packages/clusterkit" },
-    { name = "wdf-compat", editable = "packages/compat" },
-    { name = "wdf-events", editable = "packages/events" },
-    { name = "wdf-eventstore", editable = "packages/eventstore" },
-    { name = "wdf-jobstate", editable = "packages/jobstate" },
-    { name = "wdf-keys", editable = "packages/keys" },
-    { name = "wdf-stages", editable = "packages/stages" },
-    { name = "wdf-temporal", editable = "packages/temporal" },
-    { name = "wdf-workflow", editable = "packages/workflow" },
+    { name = "wft-broker", editable = "packages/broker" },
+    { name = "wft-clusterkit", marker = "extra == 'cluster'", editable = "packages/clusterkit" },
+    { name = "wft-compat", editable = "packages/compat" },
+    { name = "wft-events", editable = "packages/events" },
+    { name = "wft-eventstore", editable = "packages/eventstore" },
+    { name = "wft-jobstate", editable = "packages/jobstate" },
+    { name = "wft-keys", editable = "packages/keys" },
+    { name = "wft-stages", editable = "packages/stages" },
+    { name = "wft-temporal", editable = "packages/temporal" },
+    { name = "wft-workflow", editable = "packages/workflow" },
 ]
 provides-extras = ["cluster"]
 
 [[package]]
-name = "wdf-aggregate"
+name = "wft-aggregate"
 version = "0.0.0"
 source = { editable = "packages/aggregate" }
 dependencies = [
     { name = "numpy" },
     { name = "pandas" },
-    { name = "wdf-artifactclient" },
-    { name = "wdf-kernel" },
-    { name = "wdf-storecheck" },
+    { name = "wft-artifactclient" },
+    { name = "wft-kernel" },
+    { name = "wft-storecheck" },
 ]
 
 [package.metadata]
 requires-dist = [
     { name = "numpy", specifier = ">=2.5.4" },
     { name = "pandas", specifier = ">=3.1.1" },
-    { name = "wdf-artifactclient", editable = "packages/artifactclient" },
-    { name = "wdf-kernel", editable = "packages/kernel" },
-    { name = "wdf-storecheck", editable = "packages/storecheck" },
+    { name = "wft-artifactclient", editable = "packages/artifactclient" },
+    { name = "wft-kernel", editable = "packages/kernel" },
+    { name = "wft-storecheck", editable = "packages/storecheck" },
 ]
 
 [[package]]
-name = "wdf-artifactclient"
+name = "wft-artifactclient"
 version = "0.0.0"
 source = { editable = "packages/artifactclient" }
 dependencies = [
@@ -854,10 +854,10 @@ dependencies = [
     { name = "pydantic" },
     { name = "pytest" },
     { name = "pyyaml" },
-    { name = "wdf-artifactindex" },
-    { name = "wdf-compat" },
-    { name = "wdf-events" },
-    { name = "wdf-storecheck" },
+    { name = "wft-artifactindex" },
+    { name = "wft-compat" },
+    { name = "wft-events" },
+    { name = "wft-storecheck" },
 ]
 
 [package.metadata]
@@ -866,21 +866,21 @@ requires-dist = [
     { name = "pydantic" },
     { name = "pytest" },
     { name = "pyyaml" },
-    { name = "wdf-artifactindex", editable = "packages/artifactindex" },
-    { name = "wdf-compat", editable = "packages/compat" },
-    { name = "wdf-events", editable = "packages/events" },
-    { name = "wdf-storecheck", editable = "packages/storecheck" },
+    { name = "wft-artifactindex", editable = "packages/artifactindex" },
+    { name = "wft-compat", editable = "packages/compat" },
+    { name = "wft-events", editable = "packages/events" },
+    { name = "wft-storecheck", editable = "packages/storecheck" },
 ]
 
 [[package]]
-name = "wdf-artifactindex"
+name = "wft-artifactindex"
 version = "0.0.0"
 source = { editable = "packages/artifactindex" }
 dependencies = [
     { name = "psycopg", extra = ["binary"] },
     { name = "pydantic" },
     { name = "pyyaml" },
-    { name = "wdf-events" },
+    { name = "wft-events" },
 ]
 
 [package.metadata]
@@ -888,20 +888,20 @@ requires-dist = [
     { name = "psycopg", extras = ["binary"] },
     { name = "pydantic" },
     { name = "pyyaml" },
-    { name = "wdf-events", editable = "packages/events" },
+    { name = "wft-events", editable = "packages/events" },
 ]
 
 [[package]]
-name = "wdf-artifactreaper"
+name = "wft-artifactreaper"
 version = "0.0.0"
 source = { editable = "packages/artifactreaper" }
 dependencies = [
     { name = "psycopg", extra = ["binary"] },
     { name = "pyyaml" },
     { name = "temporalio" },
-    { name = "wdf-artifactclient" },
-    { name = "wdf-artifactindex" },
-    { name = "wdf-storecheck" },
+    { name = "wft-artifactclient" },
+    { name = "wft-artifactindex" },
+    { name = "wft-storecheck" },
 ]
 
 [package.metadata]
@@ -909,23 +909,23 @@ requires-dist = [
     { name = "psycopg", extras = ["binary"] },
     { name = "pyyaml" },
     { name = "temporalio" },
-    { name = "wdf-artifactclient", editable = "packages/artifactclient" },
-    { name = "wdf-artifactindex", editable = "packages/artifactindex" },
-    { name = "wdf-storecheck", editable = "packages/storecheck" },
+    { name = "wft-artifactclient", editable = "packages/artifactclient" },
+    { name = "wft-artifactindex", editable = "packages/artifactindex" },
+    { name = "wft-storecheck", editable = "packages/storecheck" },
 ]
 
 [[package]]
-name = "wdf-broker"
+name = "wft-broker"
 version = "0.0.0"
 source = { editable = "packages/broker" }
 dependencies = [
     { name = "pydantic" },
     { name = "python-qpid-proton" },
     { name = "pyyaml" },
-    { name = "wdf-compat" },
-    { name = "wdf-events" },
-    { name = "wdf-itest" },
-    { name = "wdf-jobdoc" },
+    { name = "wft-compat" },
+    { name = "wft-events" },
+    { name = "wft-itest" },
+    { name = "wft-jobdoc" },
 ]
 
 [package.metadata]
@@ -933,55 +933,55 @@ requires-dist = [
     { name = "pydantic" },
     { name = "python-qpid-proton", specifier = "==0.40.0" },
     { name = "pyyaml" },
-    { name = "wdf-compat", editable = "packages/compat" },
-    { name = "wdf-events", editable = "packages/events" },
-    { name = "wdf-itest", editable = "packages/itest" },
-    { name = "wdf-jobdoc", editable = "packages/jobdoc" },
+    { name = "wft-compat", editable = "packages/compat" },
+    { name = "wft-events", editable = "packages/events" },
+    { name = "wft-itest", editable = "packages/itest" },
+    { name = "wft-jobdoc", editable = "packages/jobdoc" },
 ]
 
 [[package]]
-name = "wdf-clusterkit"
+name = "wft-clusterkit"
 version = "0.0.0"
 source = { editable = "packages/clusterkit" }
 dependencies = [
-    { name = "wdf-storecheck" },
+    { name = "wft-storecheck" },
 ]
 
 [package.metadata]
-requires-dist = [{ name = "wdf-storecheck", editable = "packages/storecheck" }]
+requires-dist = [{ name = "wft-storecheck", editable = "packages/storecheck" }]
 
 [[package]]
-name = "wdf-compat"
+name = "wft-compat"
 version = "0.0.0"
 source = { editable = "packages/compat" }
 dependencies = [
-    { name = "wdf-events" },
+    { name = "wft-events" },
 ]
 
 [package.metadata]
-requires-dist = [{ name = "wdf-events", editable = "packages/events" }]
+requires-dist = [{ name = "wft-events", editable = "packages/events" }]
 
 [[package]]
-name = "wdf-compile"
+name = "wft-compile"
 version = "0.0.0"
 source = { editable = "packages/compile" }
 dependencies = [
     { name = "componentize-py" },
-    { name = "wdf-jobcheck" },
-    { name = "wdf-keys" },
-    { name = "wdf-runtime" },
+    { name = "wft-jobcheck" },
+    { name = "wft-keys" },
+    { name = "wft-runtime" },
 ]
 
 [package.metadata]
 requires-dist = [
     { name = "componentize-py", specifier = "==0.25.1" },
-    { name = "wdf-jobcheck", editable = "packages/jobcheck" },
-    { name = "wdf-keys", editable = "packages/keys" },
-    { name = "wdf-runtime", editable = "packages/runtime" },
+    { name = "wft-jobcheck", editable = "packages/jobcheck" },
+    { name = "wft-keys", editable = "packages/keys" },
+    { name = "wft-runtime", editable = "packages/runtime" },
 ]
 
 [[package]]
-name = "wdf-dispatchapi"
+name = "wft-dispatchapi"
 version = "0.0.0"
 source = { editable = "packages/dispatchapi" }
 dependencies = [
@@ -990,27 +990,27 @@ dependencies = [
     { name = "pydantic" },
     { name = "pyyaml" },
     { name = "temporalio" },
-    { name = "wdf-artifactclient" },
-    { name = "wdf-artifactindex" },
-    { name = "wdf-broker" },
-    { name = "wdf-compile" },
-    { name = "wdf-events" },
-    { name = "wdf-eventstore" },
-    { name = "wdf-itest" },
-    { name = "wdf-jobcheck" },
-    { name = "wdf-jobpatch" },
-    { name = "wdf-jobstate" },
-    { name = "wdf-keys" },
-    { name = "wdf-plan" },
-    { name = "wdf-stages" },
-    { name = "wdf-temporal" },
-    { name = "wdf-workflow" },
+    { name = "wft-artifactclient" },
+    { name = "wft-artifactindex" },
+    { name = "wft-broker" },
+    { name = "wft-compile" },
+    { name = "wft-events" },
+    { name = "wft-eventstore" },
+    { name = "wft-itest" },
+    { name = "wft-jobcheck" },
+    { name = "wft-jobpatch" },
+    { name = "wft-jobstate" },
+    { name = "wft-keys" },
+    { name = "wft-plan" },
+    { name = "wft-stages" },
+    { name = "wft-temporal" },
+    { name = "wft-workflow" },
 ]
 
 [package.optional-dependencies]
 cluster = [
-    { name = "wdf-acceptance" },
-    { name = "wdf-clusterkit" },
+    { name = "wft-acceptance" },
+    { name = "wft-clusterkit" },
 ]
 
 [package.metadata]
@@ -1020,28 +1020,28 @@ requires-dist = [
     { name = "pydantic" },
     { name = "pyyaml" },
     { name = "temporalio" },
-    { name = "wdf-acceptance", marker = "extra == 'cluster'", editable = "packages/acceptance" },
-    { name = "wdf-artifactclient", editable = "packages/artifactclient" },
-    { name = "wdf-artifactindex", editable = "packages/artifactindex" },
-    { name = "wdf-broker", editable = "packages/broker" },
-    { name = "wdf-clusterkit", marker = "extra == 'cluster'", editable = "packages/clusterkit" },
-    { name = "wdf-compile", editable = "packages/compile" },
-    { name = "wdf-events", editable = "packages/events" },
-    { name = "wdf-eventstore", editable = "packages/eventstore" },
-    { name = "wdf-itest", editable = "packages/itest" },
-    { name = "wdf-jobcheck", editable = "packages/jobcheck" },
-    { name = "wdf-jobpatch", editable = "packages/jobpatch" },
-    { name = "wdf-jobstate", editable = "packages/jobstate" },
-    { name = "wdf-keys", editable = "packages/keys" },
-    { name = "wdf-plan", editable = "packages/plan" },
-    { name = "wdf-stages", editable = "packages/stages" },
-    { name = "wdf-temporal", editable = "packages/temporal" },
-    { name = "wdf-workflow", editable = "packages/workflow" },
+    { name = "wft-acceptance", marker = "extra == 'cluster'", editable = "packages/acceptance" },
+    { name = "wft-artifactclient", editable = "packages/artifactclient" },
+    { name = "wft-artifactindex", editable = "packages/artifactindex" },
+    { name = "wft-broker", editable = "packages/broker" },
+    { name = "wft-clusterkit", marker = "extra == 'cluster'", editable = "packages/clusterkit" },
+    { name = "wft-compile", editable = "packages/compile" },
+    { name = "wft-events", editable = "packages/events" },
+    { name = "wft-eventstore", editable = "packages/eventstore" },
+    { name = "wft-itest", editable = "packages/itest" },
+    { name = "wft-jobcheck", editable = "packages/jobcheck" },
+    { name = "wft-jobpatch", editable = "packages/jobpatch" },
+    { name = "wft-jobstate", editable = "packages/jobstate" },
+    { name = "wft-keys", editable = "packages/keys" },
+    { name = "wft-plan", editable = "packages/plan" },
+    { name = "wft-stages", editable = "packages/stages" },
+    { name = "wft-temporal", editable = "packages/temporal" },
+    { name = "wft-workflow", editable = "packages/workflow" },
 ]
 provides-extras = ["cluster"]
 
 [[package]]
-name = "wdf-events"
+name = "wft-events"
 version = "0.0.0"
 source = { editable = "packages/events" }
 dependencies = [
@@ -1049,7 +1049,7 @@ dependencies = [
     { name = "psycopg", extra = ["binary"] },
     { name = "pydantic" },
     { name = "pyyaml" },
-    { name = "wdf-keys" },
+    { name = "wft-keys" },
 ]
 
 [package.metadata]
@@ -1058,30 +1058,30 @@ requires-dist = [
     { name = "psycopg", extras = ["binary"] },
     { name = "pydantic" },
     { name = "pyyaml" },
-    { name = "wdf-keys", editable = "packages/keys" },
+    { name = "wft-keys", editable = "packages/keys" },
 ]
 
 [[package]]
-name = "wdf-eventstore"
+name = "wft-eventstore"
 version = "0.0.0"
 source = { editable = "packages/eventstore" }
 dependencies = [
     { name = "pydantic" },
     { name = "pyyaml" },
-    { name = "wdf-compat" },
-    { name = "wdf-events" },
+    { name = "wft-compat" },
+    { name = "wft-events" },
 ]
 
 [package.metadata]
 requires-dist = [
     { name = "pydantic" },
     { name = "pyyaml" },
-    { name = "wdf-compat", editable = "packages/compat" },
-    { name = "wdf-events", editable = "packages/events" },
+    { name = "wft-compat", editable = "packages/compat" },
+    { name = "wft-events", editable = "packages/events" },
 ]
 
 [[package]]
-name = "wdf-itest"
+name = "wft-itest"
 version = "0.0.0"
 source = { editable = "packages/itest" }
 dependencies = [
@@ -1096,22 +1096,22 @@ requires-dist = [
 ]
 
 [[package]]
-name = "wdf-jobcheck"
+name = "wft-jobcheck"
 version = "0.0.0"
 source = { editable = "packages/jobcheck" }
 dependencies = [
-    { name = "wdf-jobdoc" },
-    { name = "wdf-plan" },
+    { name = "wft-jobdoc" },
+    { name = "wft-plan" },
 ]
 
 [package.metadata]
 requires-dist = [
-    { name = "wdf-jobdoc", editable = "packages/jobdoc" },
-    { name = "wdf-plan", editable = "packages/plan" },
+    { name = "wft-jobdoc", editable = "packages/jobdoc" },
+    { name = "wft-plan", editable = "packages/plan" },
 ]
 
 [[package]]
-name = "wdf-jobdoc"
+name = "wft-jobdoc"
 version = "0.0.0"
 source = { editable = "packages/jobdoc" }
 dependencies = [
@@ -1128,46 +1128,46 @@ requires-dist = [
 ]
 
 [[package]]
-name = "wdf-jobexamples"
+name = "wft-jobexamples"
 version = "0.0.0"
 source = { editable = "packages/jobexamples" }
 dependencies = [
-    { name = "wdf-jobcheck" },
-    { name = "wdf-jobdoc" },
-    { name = "wdf-plan" },
+    { name = "wft-jobcheck" },
+    { name = "wft-jobdoc" },
+    { name = "wft-plan" },
 ]
 
 [package.metadata]
 requires-dist = [
-    { name = "wdf-jobcheck", editable = "packages/jobcheck" },
-    { name = "wdf-jobdoc", editable = "packages/jobdoc" },
-    { name = "wdf-plan", editable = "packages/plan" },
+    { name = "wft-jobcheck", editable = "packages/jobcheck" },
+    { name = "wft-jobdoc", editable = "packages/jobdoc" },
+    { name = "wft-plan", editable = "packages/plan" },
 ]
 
 [[package]]
-name = "wdf-jobpatch"
+name = "wft-jobpatch"
 version = "0.0.0"
 source = { editable = "packages/jobpatch" }
 dependencies = [
-    { name = "wdf-jobdoc" },
-    { name = "wdf-plan" },
+    { name = "wft-jobdoc" },
+    { name = "wft-plan" },
 ]
 
 [package.metadata]
 requires-dist = [
-    { name = "wdf-jobdoc", editable = "packages/jobdoc" },
-    { name = "wdf-plan", editable = "packages/plan" },
+    { name = "wft-jobdoc", editable = "packages/jobdoc" },
+    { name = "wft-plan", editable = "packages/plan" },
 ]
 
 [[package]]
-name = "wdf-jobstate"
+name = "wft-jobstate"
 version = "0.0.0"
 source = { editable = "packages/jobstate" }
 dependencies = [
     { name = "psycopg", extra = ["binary"] },
     { name = "pydantic" },
     { name = "pyyaml" },
-    { name = "wdf-events" },
+    { name = "wft-events" },
 ]
 
 [package.metadata]
@@ -1175,133 +1175,133 @@ requires-dist = [
     { name = "psycopg", extras = ["binary"] },
     { name = "pydantic" },
     { name = "pyyaml" },
-    { name = "wdf-events", editable = "packages/events" },
+    { name = "wft-events", editable = "packages/events" },
 ]
 
 [[package]]
-name = "wdf-jobtools"
+name = "wft-jobtools"
 version = "0.0.0"
 source = { editable = "packages/jobtools" }
 dependencies = [
-    { name = "wdf-jobcheck" },
-    { name = "wdf-jobdoc" },
-    { name = "wdf-jobexamples" },
-    { name = "wdf-jobpatch" },
-    { name = "wdf-plan" },
+    { name = "wft-jobcheck" },
+    { name = "wft-jobdoc" },
+    { name = "wft-jobexamples" },
+    { name = "wft-jobpatch" },
+    { name = "wft-plan" },
 ]
 
 [package.metadata]
 requires-dist = [
-    { name = "wdf-jobcheck", editable = "packages/jobcheck" },
-    { name = "wdf-jobdoc", editable = "packages/jobdoc" },
-    { name = "wdf-jobexamples", editable = "packages/jobexamples" },
-    { name = "wdf-jobpatch", editable = "packages/jobpatch" },
-    { name = "wdf-plan", editable = "packages/plan" },
+    { name = "wft-jobcheck", editable = "packages/jobcheck" },
+    { name = "wft-jobdoc", editable = "packages/jobdoc" },
+    { name = "wft-jobexamples", editable = "packages/jobexamples" },
+    { name = "wft-jobpatch", editable = "packages/jobpatch" },
+    { name = "wft-plan", editable = "packages/plan" },
 ]
 
 [[package]]
-name = "wdf-kernel"
+name = "wft-kernel"
 version = "0.0.0"
 source = { editable = "packages/kernel" }
 
 [[package]]
-name = "wdf-keys"
+name = "wft-keys"
 version = "0.0.0"
 source = { editable = "packages/keys" }
 
 [[package]]
-name = "wdf-migrate"
+name = "wft-migrate"
 version = "0.0.0"
 source = { editable = "packages/migrate" }
 dependencies = [
     { name = "psycopg", extra = ["binary"] },
     { name = "pytest" },
-    { name = "wdf-itest" },
+    { name = "wft-itest" },
 ]
 
 [package.metadata]
 requires-dist = [
     { name = "psycopg", extras = ["binary"] },
     { name = "pytest" },
-    { name = "wdf-itest", editable = "packages/itest" },
+    { name = "wft-itest", editable = "packages/itest" },
 ]
 
 [[package]]
-name = "wdf-placement"
+name = "wft-placement"
 version = "0.0.0"
 source = { editable = "packages/placement" }
 dependencies = [
-    { name = "wdf-workflow" },
+    { name = "wft-workflow" },
 ]
 
 [package.metadata]
-requires-dist = [{ name = "wdf-workflow", editable = "packages/workflow" }]
+requires-dist = [{ name = "wft-workflow", editable = "packages/workflow" }]
 
 [[package]]
-name = "wdf-plan"
+name = "wft-plan"
 version = "0.0.0"
 source = { editable = "packages/plan" }
 dependencies = [
-    { name = "wdf-jobdoc" },
+    { name = "wft-jobdoc" },
 ]
 
 [package.metadata]
-requires-dist = [{ name = "wdf-jobdoc", editable = "packages/jobdoc" }]
+requires-dist = [{ name = "wft-jobdoc", editable = "packages/jobdoc" }]
 
 [[package]]
-name = "wdf-runtime"
+name = "wft-runtime"
 version = "0.0.0"
 source = { editable = "packages/runtime" }
 dependencies = [
     { name = "pydantic" },
     { name = "pyyaml" },
-    { name = "wdf-jobdoc" },
-    { name = "wdf-kernel" },
-    { name = "wdf-keys" },
+    { name = "wft-jobdoc" },
+    { name = "wft-kernel" },
+    { name = "wft-keys" },
 ]
 
 [package.metadata]
 requires-dist = [
     { name = "pydantic" },
     { name = "pyyaml" },
-    { name = "wdf-jobdoc", editable = "packages/jobdoc" },
-    { name = "wdf-kernel", editable = "packages/kernel" },
-    { name = "wdf-keys", editable = "packages/keys" },
+    { name = "wft-jobdoc", editable = "packages/jobdoc" },
+    { name = "wft-kernel", editable = "packages/kernel" },
+    { name = "wft-keys", editable = "packages/keys" },
 ]
 
 [[package]]
-name = "wdf-stages"
+name = "wft-stages"
 version = "0.0.0"
 source = { editable = "packages/stages" }
 dependencies = [
     { name = "jsonschema" },
     { name = "pyyaml" },
-    { name = "wdf-events" },
-    { name = "wdf-keys" },
+    { name = "wft-events" },
+    { name = "wft-keys" },
 ]
 
 [package.metadata]
 requires-dist = [
     { name = "jsonschema" },
     { name = "pyyaml" },
-    { name = "wdf-events", editable = "packages/events" },
-    { name = "wdf-keys", editable = "packages/keys" },
+    { name = "wft-events", editable = "packages/events" },
+    { name = "wft-keys", editable = "packages/keys" },
 ]
 
 [[package]]
-name = "wdf-stateops"
+name = "wft-stateops"
 version = "0.0.0"
 source = { editable = "packages/stateops" }
 dependencies = [
     { name = "psycopg", extra = ["binary"] },
     { name = "pydantic" },
     { name = "pyyaml" },
-    { name = "wdf-events" },
-    { name = "wdf-eventstore" },
-    { name = "wdf-jobstate" },
-    { name = "wdf-keys" },
-    { name = "wdf-migrate" },
-    { name = "wdf-storecheck" },
+    { name = "wft-events" },
+    { name = "wft-eventstore" },
+    { name = "wft-jobstate" },
+    { name = "wft-keys" },
+    { name = "wft-migrate" },
+    { name = "wft-storecheck" },
 ]
 
 [package.metadata]
@@ -1309,16 +1309,16 @@ requires-dist = [
     { name = "psycopg", extras = ["binary"] },
     { name = "pydantic" },
     { name = "pyyaml" },
-    { name = "wdf-events", editable = "packages/events" },
-    { name = "wdf-eventstore", editable = "packages/eventstore" },
-    { name = "wdf-jobstate", editable = "packages/jobstate" },
-    { name = "wdf-keys", editable = "packages/keys" },
-    { name = "wdf-migrate", editable = "packages/migrate" },
-    { name = "wdf-storecheck", editable = "packages/storecheck" },
+    { name = "wft-events", editable = "packages/events" },
+    { name = "wft-eventstore", editable = "packages/eventstore" },
+    { name = "wft-jobstate", editable = "packages/jobstate" },
+    { name = "wft-keys", editable = "packages/keys" },
+    { name = "wft-migrate", editable = "packages/migrate" },
+    { name = "wft-storecheck", editable = "packages/storecheck" },
 ]
 
 [[package]]
-name = "wdf-storecheck"
+name = "wft-storecheck"
 version = "0.0.0"
 source = { editable = "packages/storecheck" }
 dependencies = [
@@ -1337,7 +1337,7 @@ requires-dist = [
 ]
 
 [[package]]
-name = "wdf-temporal"
+name = "wft-temporal"
 version = "0.0.0"
 source = { editable = "packages/temporal" }
 dependencies = [
@@ -1345,9 +1345,9 @@ dependencies = [
     { name = "opentelemetry-sdk" },
     { name = "pyyaml" },
     { name = "temporalio" },
-    { name = "wdf-events" },
-    { name = "wdf-itest" },
-    { name = "wdf-keys" },
+    { name = "wft-events" },
+    { name = "wft-itest" },
+    { name = "wft-keys" },
 ]
 
 [package.metadata]
@@ -1356,55 +1356,55 @@ requires-dist = [
     { name = "opentelemetry-sdk" },
     { name = "pyyaml" },
     { name = "temporalio" },
-    { name = "wdf-events", editable = "packages/events" },
-    { name = "wdf-itest", editable = "packages/itest" },
-    { name = "wdf-keys", editable = "packages/keys" },
+    { name = "wft-events", editable = "packages/events" },
+    { name = "wft-itest", editable = "packages/itest" },
+    { name = "wft-keys", editable = "packages/keys" },
 ]
 
 [[package]]
-name = "wdf-worker"
+name = "wft-worker"
 version = "0.0.0"
 source = { editable = "packages/worker" }
 dependencies = [
     { name = "temporalio" },
-    { name = "wdf-artifactclient" },
-    { name = "wdf-events" },
-    { name = "wdf-keys" },
-    { name = "wdf-stages" },
-    { name = "wdf-temporal" },
-    { name = "wdf-workflow" },
+    { name = "wft-artifactclient" },
+    { name = "wft-events" },
+    { name = "wft-keys" },
+    { name = "wft-stages" },
+    { name = "wft-temporal" },
+    { name = "wft-workflow" },
 ]
 
 [package.optional-dependencies]
 aggregate = [
-    { name = "wdf-aggregate" },
+    { name = "wft-aggregate" },
 ]
 compile = [
     { name = "uv" },
-    { name = "wdf-compile" },
+    { name = "wft-compile" },
 ]
 simulate = [
-    { name = "wdf-runtime" },
+    { name = "wft-runtime" },
 ]
 
 [package.metadata]
 requires-dist = [
     { name = "temporalio" },
     { name = "uv", marker = "extra == 'compile'", specifier = "==0.11.21" },
-    { name = "wdf-aggregate", marker = "extra == 'aggregate'", editable = "packages/aggregate" },
-    { name = "wdf-artifactclient", editable = "packages/artifactclient" },
-    { name = "wdf-compile", marker = "extra == 'compile'", editable = "packages/compile" },
-    { name = "wdf-events", editable = "packages/events" },
-    { name = "wdf-keys", editable = "packages/keys" },
-    { name = "wdf-runtime", marker = "extra == 'simulate'", editable = "packages/runtime" },
-    { name = "wdf-stages", editable = "packages/stages" },
-    { name = "wdf-temporal", editable = "packages/temporal" },
-    { name = "wdf-workflow", editable = "packages/workflow" },
+    { name = "wft-aggregate", marker = "extra == 'aggregate'", editable = "packages/aggregate" },
+    { name = "wft-artifactclient", editable = "packages/artifactclient" },
+    { name = "wft-compile", marker = "extra == 'compile'", editable = "packages/compile" },
+    { name = "wft-events", editable = "packages/events" },
+    { name = "wft-keys", editable = "packages/keys" },
+    { name = "wft-runtime", marker = "extra == 'simulate'", editable = "packages/runtime" },
+    { name = "wft-stages", editable = "packages/stages" },
+    { name = "wft-temporal", editable = "packages/temporal" },
+    { name = "wft-workflow", editable = "packages/workflow" },
 ]
 provides-extras = ["compile", "simulate", "aggregate"]
 
 [[package]]
-name = "wdf-workflow"
+name = "wft-workflow"
 version = "0.0.0"
 source = { editable = "packages/workflow" }
 dependencies = [
@@ -1412,27 +1412,27 @@ dependencies = [
     { name = "pydantic" },
     { name = "pyyaml" },
     { name = "temporalio" },
-    { name = "wdf-artifactclient" },
-    { name = "wdf-artifactindex" },
-    { name = "wdf-artifactreaper" },
-    { name = "wdf-compat" },
-    { name = "wdf-compile" },
-    { name = "wdf-events" },
-    { name = "wdf-eventstore" },
-    { name = "wdf-itest" },
-    { name = "wdf-jobdoc" },
-    { name = "wdf-jobpatch" },
-    { name = "wdf-jobstate" },
-    { name = "wdf-keys" },
-    { name = "wdf-plan" },
-    { name = "wdf-runtime" },
-    { name = "wdf-stages" },
-    { name = "wdf-temporal" },
+    { name = "wft-artifactclient" },
+    { name = "wft-artifactindex" },
+    { name = "wft-artifactreaper" },
+    { name = "wft-compat" },
+    { name = "wft-compile" },
+    { name = "wft-events" },
+    { name = "wft-eventstore" },
+    { name = "wft-itest" },
+    { name = "wft-jobdoc" },
+    { name = "wft-jobpatch" },
+    { name = "wft-jobstate" },
+    { name = "wft-keys" },
+    { name = "wft-plan" },
+    { name = "wft-runtime" },
+    { name = "wft-stages" },
+    { name = "wft-temporal" },
 ]
 
 [package.optional-dependencies]
 cluster = [
-    { name = "wdf-clusterkit" },
+    { name = "wft-clusterkit" },
 ]
 
 [package.metadata]
@@ -1441,33 +1441,33 @@ requires-dist = [
     { name = "pydantic" },
     { name = "pyyaml" },
     { name = "temporalio" },
-    { name = "wdf-artifactclient", editable = "packages/artifactclient" },
-    { name = "wdf-artifactindex", editable = "packages/artifactindex" },
-    { name = "wdf-artifactreaper", editable = "packages/artifactreaper" },
-    { name = "wdf-clusterkit", marker = "extra == 'cluster'", editable = "packages/clusterkit" },
-    { name = "wdf-compat", editable = "packages/compat" },
-    { name = "wdf-compile", editable = "packages/compile" },
-    { name = "wdf-events", editable = "packages/events" },
-    { name = "wdf-eventstore", editable = "packages/eventstore" },
-    { name = "wdf-itest", editable = "packages/itest" },
-    { name = "wdf-jobdoc", editable = "packages/jobdoc" },
-    { name = "wdf-jobpatch", editable = "packages/jobpatch" },
-    { name = "wdf-jobstate", editable = "packages/jobstate" },
-    { name = "wdf-keys", editable = "packages/keys" },
-    { name = "wdf-plan", editable = "packages/plan" },
-    { name = "wdf-runtime", editable = "packages/runtime" },
-    { name = "wdf-stages", editable = "packages/stages" },
-    { name = "wdf-temporal", editable = "packages/temporal" },
+    { name = "wft-artifactclient", editable = "packages/artifactclient" },
+    { name = "wft-artifactindex", editable = "packages/artifactindex" },
+    { name = "wft-artifactreaper", editable = "packages/artifactreaper" },
+    { name = "wft-clusterkit", marker = "extra == 'cluster'", editable = "packages/clusterkit" },
+    { name = "wft-compat", editable = "packages/compat" },
+    { name = "wft-compile", editable = "packages/compile" },
+    { name = "wft-events", editable = "packages/events" },
+    { name = "wft-eventstore", editable = "packages/eventstore" },
+    { name = "wft-itest", editable = "packages/itest" },
+    { name = "wft-jobdoc", editable = "packages/jobdoc" },
+    { name = "wft-jobpatch", editable = "packages/jobpatch" },
+    { name = "wft-jobstate", editable = "packages/jobstate" },
+    { name = "wft-keys", editable = "packages/keys" },
+    { name = "wft-plan", editable = "packages/plan" },
+    { name = "wft-runtime", editable = "packages/runtime" },
+    { name = "wft-stages", editable = "packages/stages" },
+    { name = "wft-temporal", editable = "packages/temporal" },
 ]
 provides-extras = ["cluster"]
 
 [[package]]
-name = "wdf-workloads"
+name = "wft-workloads"
 version = "0.0.0"
 source = { editable = "packages/workloads" }
 dependencies = [
-    { name = "wdf-kernel" },
+    { name = "wft-kernel" },
 ]
 
 [package.metadata]
-requires-dist = [{ name = "wdf-kernel", editable = "packages/kernel" }]
+requires-dist = [{ name = "wft-kernel", editable = "packages/kernel" }]

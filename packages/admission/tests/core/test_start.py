@@ -6,14 +6,14 @@ import asyncio
 import pytest
 from temporalio.common import SearchAttributeKey
 from temporalio.converter import PayloadConverter
-from wdf_admission.claim import accepted_of
-from wdf_admission.start import params_of, start
-from wdf_events import Event
-from wdf_events.models import JobParams
-from wdf_keys import workflow_id
-from wdf_temporal import trace_id_of
-from wdf_workflow.contract import naming
-from wdf_workflow.taskpath import QUEUE_PREFIX_MEMO
+from wft_admission.claim import accepted_of
+from wft_admission.start import params_of, start
+from wft_events import Event
+from wft_events.models import JobParams
+from wft_keys import workflow_id
+from wft_temporal import trace_id_of
+from wft_workflow.contract import naming
+from wft_workflow.taskpath import QUEUE_PREFIX_MEMO
 
 pytestmark = pytest.mark.integration
 
@@ -49,7 +49,7 @@ def test_start_options_match_naming(client, claimed_row):
 
     found = run(body)
     assert naming().workflow.type == "JobWorkflow"
-    assert naming().workflow.queue == "wdf-workflow"
+    assert naming().workflow.queue == "wft-workflow"
     for row, memo in ((plain, {}), (prefixed, {QUEUE_PREFIX_MEMO: prefix})):
         description, stored_memo, started, arguments = found[row.job_id]
         assert description.workflow_type == naming().workflow.type
@@ -58,11 +58,11 @@ def test_start_options_match_naming(client, claimed_row):
         attributes = description.typed_search_attributes
         assert set(naming().search_attributes) == {pair.key.name for pair in attributes}
         expected = {
-            "WdfTenant": row.tenant,
-            "WdfPriorityClass": row.priority_class,
-            "WdfJobClass": row.job_class,
-            "WdfJobId": row.job_id,
-            "WdfSubmittedAt": row.created_at,
+            "WftTenant": row.tenant,
+            "WftPriorityClass": row.priority_class,
+            "WftJobClass": row.job_class,
+            "WftJobId": row.job_id,
+            "WftSubmittedAt": row.created_at,
         }
         for name, kind in naming().search_attributes.items():
             key = (

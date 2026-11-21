@@ -7,7 +7,7 @@ from importlib.metadata import entry_points
 
 def test_plugin_fixture_is_registered_under_pytest11():
     points = {e.name: e.value for e in entry_points(group="pytest11")}
-    assert points["wdf_storecheck"] == "wdf_storecheck.fixtures"
+    assert points["wft_storecheck"] == "wft_storecheck.fixtures"
 
 
 def test_plugin_fixture_resolves_store_and_store_session_with_no_conftest(tmp_path):
@@ -21,4 +21,4 @@ def test_plugin_fixture_resolves_store_and_store_session_with_no_conftest(tmp_pa
     assert not list(tmp_path.rglob("conftest.py"))
     for name, scope in (("store", "module"), ("store_session", "session")):
         line = next(line for line in listing.splitlines() if line.startswith(f"{name} "))
-        assert f"[{scope} scope]" in line and "wdf_storecheck/fixtures.py" in line, line
+        assert f"[{scope} scope]" in line and "wft_storecheck/fixtures.py" in line, line

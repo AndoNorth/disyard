@@ -8,12 +8,12 @@ import asyncio
 import pytest
 from temporalio.api.enums.v1 import EventType
 from temporalio.service import RPCError, RPCStatusCode
-from wdf_jobdoc.plan_models import Plan
-from wdf_stages.recording import type_name
-from wdf_workflow.contract import naming
-from wdf_workflow.job import JobWorkflow
-from wdf_workflow.taskpath import LOCAL_RETRY_THRESHOLD
-from wdf_workflow.testing import Die, Fail, Hang, Succeed, Zombie, connect
+from wft_jobdoc.plan_models import Plan
+from wft_stages.recording import type_name
+from wft_workflow.contract import naming
+from wft_workflow.job import JobWorkflow
+from wft_workflow.taskpath import LOCAL_RETRY_THRESHOLD
+from wft_workflow.testing import Die, Fail, Hang, Succeed, Zombie, connect
 
 pytestmark = pytest.mark.integration
 
@@ -85,7 +85,7 @@ def test_lost_completion_job_finishes(temporal, rig, plan, placer, meter):
         ("task.succeeded", 2),
         ("task.result.ready", 2),
     ]
-    assert counted(updates, "wdf_workflow_retries_total") == {"infra": 1}
+    assert counted(updates, "wft_workflow_retries_total") == {"infra": 1}
 
 
 def test_zombie_fenced(temporal, rig, plan, placer):
@@ -162,8 +162,8 @@ def test_schedule_to_start_replaces(temporal, rig, plan, placer, meter):
         "schedule_to_start_timeout",
     )
     assert (task.guest_left, task.infra_left) == (1, 10)
-    assert counted(updates, "wdf_workflow_reschedules_total") == {"": reschedules}
-    assert "wdf_workflow_retries_total" not in {u.metric.name for u in updates}
+    assert counted(updates, "wft_workflow_reschedules_total") == {"": reschedules}
+    assert "wft_workflow_retries_total" not in {u.metric.name for u in updates}
 
 
 def test_scheduler_down_beyond_task_timeout(temporal, rig, plan, placer):

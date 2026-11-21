@@ -9,7 +9,7 @@ import pytest
 ROOT = Path(__file__).resolve().parents[3]
 
 PROBE = """
-import wdf_aggregate.__main__, wdf_aggregate.read, wdf_aggregate.reduce, wdf_aggregate.run
+import wft_aggregate.__main__, wft_aggregate.read, wft_aggregate.reduce, wft_aggregate.run
 """
 
 
@@ -24,14 +24,14 @@ def clean_python(tmp_path_factory) -> Path:
     work = tmp_path_factory.mktemp("wheel")
     wheels = work / "wheels"
     for package in (
-        "wdf-aggregate",
-        "wdf-artifactclient",
-        "wdf-artifactindex",
-        "wdf-compat",
-        "wdf-events",
-        "wdf-kernel",
-        "wdf-keys",
-        "wdf-storecheck",
+        "wft-aggregate",
+        "wft-artifactclient",
+        "wft-artifactindex",
+        "wft-compat",
+        "wft-events",
+        "wft-kernel",
+        "wft-keys",
+        "wft-storecheck",
     ):
         run("uv", "build", "--wheel", "--package", package, "-o", str(wheels), cwd=ROOT)
     venv = work / "venv"

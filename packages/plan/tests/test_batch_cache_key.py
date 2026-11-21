@@ -1,7 +1,7 @@
 import json
 
-from wdf_keys import compile_cache_key
-from wdf_plan import bind
+from wft_keys import compile_cache_key
+from wft_plan import bind
 
 
 def test_batch_shares_one_cache_key(good, plan_of, ci):

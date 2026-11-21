@@ -1,6 +1,6 @@
 name: appdb
 group: infra
-namespace: wdf-infra
+namespace: wft-infra
 artifact:
   kind: image
   pin: timescale/timescaledb

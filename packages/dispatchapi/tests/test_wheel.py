@@ -12,10 +12,10 @@ ROOT = Path(__file__).resolve().parents[3]
 # The API contract and the contracts it is checked against come from package data, the tenancy
 # profile from the broker's, and the stub of Temporal runs with no repository around it.
 PROBE = """
-from wdf_broker.tenancy import load
-from wdf_dispatchapi.contract import control_table, reasons, routes
-from wdf_dispatchapi.models import CONTRACT
-from wdf_dispatchapi.testing import FakeGateway, gateway_contract
+from wft_broker.tenancy import load
+from wft_dispatchapi.contract import control_table, reasons, routes
+from wft_dispatchapi.models import CONTRACT
+from wft_dispatchapi.testing import FakeGateway, gateway_contract
 
 for name in ("routes.yaml", "reasons.yaml", "control.yaml", "status.yaml", "stages.yaml"):
     assert (CONTRACT / name).read_text(), name
@@ -55,7 +55,7 @@ def run(*cmd, **kwargs) -> subprocess.CompletedProcess:
 def clean_python(tmp_path_factory) -> Path:
     work = tmp_path_factory.mktemp("wheel")
     wheels = work / "wheels"
-    for package in workspace_closure("wdf-dispatchapi"):
+    for package in workspace_closure("wft-dispatchapi"):
         run("uv", "build", "--wheel", "--package", package, "-o", str(wheels), cwd=ROOT)
     venv = work / "venv"
     run("uv", "venv", "--python", sys.executable, str(venv))
@@ -77,7 +77,7 @@ def test_wheel_loader_checks_a_file_away_from_the_repository(clean_python, tmp_p
     copy = tmp_path / name
     copy.write_text((ROOT / "contracts/api" / name).read_text())
     result = subprocess.run(
-        [clean_python, "-I", "-m", "wdf_dispatchapi.contract", "--check", str(copy)],
+        [clean_python, "-I", "-m", "wft_dispatchapi.contract", "--check", str(copy)],
         capture_output=True,
         text=True,
         cwd=tmp_path,

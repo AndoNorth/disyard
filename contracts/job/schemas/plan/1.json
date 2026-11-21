@@ -261,7 +261,7 @@
           "type": "integer"
         },
         "uri": {
-          "pattern": "^s3://wdf-sources/sha256/[0-9a-f]{2}/[0-9a-f]{64}$",
+          "pattern": "^s3://wft-sources/sha256/[0-9a-f]{2}/[0-9a-f]{64}$",
           "title": "Uri",
           "type": "string"
         }
@@ -497,7 +497,7 @@
           "type": "integer"
         },
         "uri": {
-          "pattern": "^s3://wdf-sources/sha256/[0-9a-f]{2}/[0-9a-f]{64}$",
+          "pattern": "^s3://wft-sources/sha256/[0-9a-f]{2}/[0-9a-f]{64}$",
           "title": "Uri",
           "type": "string"
         }
@@ -607,7 +607,7 @@
       "type": "object"
     }
   },
-  "$id": "urn:wdf:schema:plan:1",
+  "$id": "urn:wft:schema:plan:1",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
   "description": "Tasks in topological order, ties broken by task id.",

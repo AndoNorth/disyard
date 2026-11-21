@@ -4,10 +4,10 @@ changing one layer's answer."""
 import time
 
 import pytest
-from wdf_acceptance import smoke
-from wdf_acceptance.clients import broker
-from wdf_clusterkit import Refused
-from wdf_workflow.harness.cluster import CurrentBuild
+from wft_acceptance import smoke
+from wft_acceptance.clients import broker
+from wft_clusterkit import Refused
+from wft_workflow.harness.cluster import CurrentBuild
 
 JOB_SKIPS = [
     "skip job-submit after broker failed",
@@ -29,7 +29,7 @@ def test_boundary_rows_all_ok(healthy, capsys):
     assert lines[1:5] == [
         "ok api dispatch and control /readyz ready",
         "ok broker 0 dead letters before the job",
-        "ok temporal namespace wdf, build exit-a current, deployed exit-a",
+        "ok temporal namespace wft, build exit-a current, deployed exit-a",
         "ok placement 3 pools",
     ]
     assert code == 0
@@ -40,18 +40,18 @@ def test_boundary_forwards_reach_the_layers(healthy, capsys):
     forwarded = [line.split()[1:] for line in healthy.log.read_text().splitlines()]
     # The job rows then read the store twice and count the dead letters again.
     assert [(ns, args[-2], args[-1].split(":")[1]) for ns, *args in forwarded] == [
-        ("--namespace=wdf-infra", "svc/rabbitmq", "5672"),
-        ("--namespace=wdf-infra", "svc/temporal-frontend", "7233"),
-        ("--namespace=wdf-control", "svc/placement", "8080"),
-        ("--namespace=wdf-infra", "svc/objectstore", "8333"),
-        ("--namespace=wdf-infra", "svc/objectstore", "8333"),
-        ("--namespace=wdf-infra", "svc/rabbitmq", "5672"),
+        ("--namespace=wft-infra", "svc/rabbitmq", "5672"),
+        ("--namespace=wft-infra", "svc/temporal-frontend", "7233"),
+        ("--namespace=wft-control", "svc/placement", "8080"),
+        ("--namespace=wft-infra", "svc/objectstore", "8333"),
+        ("--namespace=wft-infra", "svc/objectstore", "8333"),
+        ("--namespace=wft-infra", "svc/rabbitmq", "5672"),
     ]
 
 
 @pytest.mark.parametrize("code", [2, 4])
 def test_boundary_refusal_or_usage_ends_the_run(healthy, verify, capsys, code):
-    verify(code, stderr="refused: no kind cluster named wdf, start one with: just up\n")
+    verify(code, stderr="refused: no kind cluster named wft, start one with: just up\n")
     assert smoke.main() == code
     out, err = capsys.readouterr()
     assert out == ""
@@ -66,7 +66,7 @@ def test_boundary_cluster_verify_failure_names_its_fail_lines(healthy, verify, c
     assert lines[1:5] == [
         "ok api dispatch and control /readyz ready",
         "ok broker 0 dead letters before the job",
-        "ok temporal namespace wdf, build exit-a current, deployed exit-a",
+        "ok temporal namespace wft, build exit-a current, deployed exit-a",
         "ok placement 3 pools",
     ]
     assert lines[5] == "skip job-submit after cluster-verify failed"
@@ -99,7 +99,7 @@ def test_boundary_forward_that_never_listens(healthy, forwards, capsys, monkeypa
     monkeypatch.setattr(smoke.Gate, "add", timed)
     code, lines = run(capsys)
     assert lines[2] == (
-        "FAIL broker kubectl --context=kind-wdf --namespace=wdf-infra port-forward "
+        "FAIL broker kubectl --context=kind-wft --namespace=wft-infra port-forward "
         "--address=127.0.0.1 svc/rabbitmq did not listen in 2 s"
     )
     assert printed[2] - printed[1] < smoke.PROBE_S + 1
@@ -135,7 +135,7 @@ def test_boundary_temporal_makes_the_build_current(healthy, capsys, monkeypatch)
     _, lines = run(capsys)
     assert (
         lines[3]
-        == "ok temporal namespace wdf, build exit-a current (made current), deployed exit-a"
+        == "ok temporal namespace wft, build exit-a current (made current), deployed exit-a"
     )
 
 

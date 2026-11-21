@@ -197,7 +197,7 @@
           "type": "integer"
         },
         "uri": {
-          "pattern": "^s3://wdf-sources/sha256/[0-9a-f]{2}/[0-9a-f]{64}$",
+          "pattern": "^s3://wft-sources/sha256/[0-9a-f]{2}/[0-9a-f]{64}$",
           "title": "Uri",
           "type": "string"
         }
@@ -416,7 +416,7 @@
           "type": "integer"
         },
         "uri": {
-          "pattern": "^s3://wdf-sources/sha256/[0-9a-f]{2}/[0-9a-f]{64}$",
+          "pattern": "^s3://wft-sources/sha256/[0-9a-f]{2}/[0-9a-f]{64}$",
           "title": "Uri",
           "type": "string"
         }
@@ -526,7 +526,7 @@
       "type": "object"
     }
   },
-  "$id": "urn:wdf:schema:job:1.0",
+  "$id": "urn:wft:schema:job:1.0",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
   "description": "A job template: tasks keyed by id, and the declarations of the per-job parameters.",
@@ -561,7 +561,7 @@
       "type": "object"
     },
     "schema": {
-      "const": "urn:wdf:schema:job:1.0",
+      "const": "urn:wft:schema:job:1.0",
       "title": "Schema",
       "type": "string"
     },

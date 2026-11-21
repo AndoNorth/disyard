@@ -12,13 +12,13 @@ pool = {"key": topology["pool_label"], "value": "infra"}
 tenancy = read_yaml("../../contracts/tenancy/tenancy.yaml")
 ports = {p["name"]: p["node_port"] for p in read_yaml("../host/ports.yaml")["ports"]}
 
-tilt_profile = os.getenv("WDF_TILT_PROFILE", "")
+tilt_profile = os.getenv("WFT_TILT_PROFILE", "")
 if not tilt_profile:
-    fail("WDF_TILT_PROFILE is unset: load this module through the root Tiltfile")
+    fail("WFT_TILT_PROFILE is unset: load this module through the root Tiltfile")
 if tilt_profile not in tenancy["tilt_profiles"]:
     fail("no tenancy profile for Tilt profile %r in contracts/tenancy/tenancy.yaml" % tilt_profile)
 
-image = "wdf-" + name
+image = "wft-" + name
 custom_build(
     image,
     os.path.abspath("image.sh"),
@@ -50,21 +50,21 @@ k8s_yaml(encode_yaml({
     "kind": "Secret",
     "metadata": {"name": name + "-broker", "namespace": namespace},
     "type": "Opaque",
-    "stringData": {"WDF_BROKER_PASSWORD": broker_password},
+    "stringData": {"WFT_BROKER_PASSWORD": broker_password},
 }))
 
-svc = lambda service, port: "%s.wdf-infra.svc.cluster.local:%d" % (service, port)
-credentials = "/etc/wdf/store/credentials.json"
+svc = lambda service, port: "%s.wft-infra.svc.cluster.local:%d" % (service, port)
+credentials = "/etc/wft/store/credentials.json"
 labels = {"app.kubernetes.io/name": name}
 # Each listener at the container port the service binds by default, behind the NodePort of its row in the host map.
 listeners = {"dispatch-api": 8081, "control-api": 8080}
 env = {
-    "WDF_TEMPORAL_ADDRESS": svc("temporal-frontend", 7233),
-    "WDF_STORE_ENDPOINT": "http://" + svc("objectstore", 8333),
-    "WDF_SUBMIT_CREDENTIALS": credentials,
-    "WDF_BROKER_ADDRESS": svc("rabbitmq", 5672),
-    "WDF_TENANCY_PROFILE": tenancy["tilt_profiles"][tilt_profile],
-    "WDF_METRICS_ADDRESS": "0.0.0.0:9090",
+    "WFT_TEMPORAL_ADDRESS": svc("temporal-frontend", 7233),
+    "WFT_STORE_ENDPOINT": "http://" + svc("objectstore", 8333),
+    "WFT_SUBMIT_CREDENTIALS": credentials,
+    "WFT_BROKER_ADDRESS": svc("rabbitmq", 5672),
+    "WFT_TENANCY_PROFILE": tenancy["tilt_profiles"][tilt_profile],
+    "WFT_METRICS_ADDRESS": "0.0.0.0:9090",
 }
 
 k8s_yaml(encode_yaml({
@@ -113,7 +113,7 @@ k8s_yaml(encode_yaml({
                         "capabilities": {"drop": ["ALL"]},
                     },
                     "volumeMounts": [
-                        {"name": "store", "mountPath": "/etc/wdf/store", "readOnly": True},
+                        {"name": "store", "mountPath": "/etc/wft/store", "readOnly": True},
                         {"name": "tmp", "mountPath": "/tmp"},
                     ],
                 }],

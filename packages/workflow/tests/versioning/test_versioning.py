@@ -24,19 +24,19 @@ from temporalio.client import Client, WorkflowHandle, WorkflowQueryFailedError
 from temporalio.common import VersioningBehavior
 from temporalio.worker import UnsandboxedWorkflowRunner, Worker
 from temporalio.worker.workflow_sandbox import SandboxedWorkflowRunner
-from wdf_artifactreaper import schedule
-from wdf_events import Event, build_event
-from wdf_events.models import JobParams
-from wdf_jobdoc.plan_models import Plan
-from wdf_keys import workflow_id
-from wdf_workflow import versioning
-from wdf_workflow.contract import naming
-from wdf_workflow.job import JobWorkflow
-from wdf_workflow.placement import StaticPlacer
-from wdf_workflow.service import Config, serve
-from wdf_workflow.testing import Fail, FakeControl, FakePool, Succeed, connect
-from wdf_workflow.testing.control import Emit, Emitted, LoadedPlan
-from wdf_workflow.worker import workflow_worker
+from wft_artifactreaper import schedule
+from wft_events import Event, build_event
+from wft_events.models import JobParams
+from wft_jobdoc.plan_models import Plan
+from wft_keys import workflow_id
+from wft_workflow import versioning
+from wft_workflow.contract import naming
+from wft_workflow.job import JobWorkflow
+from wft_workflow.placement import StaticPlacer
+from wft_workflow.service import Config, serve
+from wft_workflow.testing import Fail, FakeControl, FakePool, Succeed, connect
+from wft_workflow.testing.control import Emit, Emitted, LoadedPlan
+from wft_workflow.worker import workflow_worker
 
 pytestmark = pytest.mark.integration
 
@@ -119,7 +119,7 @@ def plan(checkpoint: bool = False) -> Plan:
                     "checkpoint": False,
                     "params": {
                         "source": {
-                            "uri": f"s3://wdf-sources/sha256/aa/{HASH}",
+                            "uri": f"s3://wft-sources/sha256/aa/{HASH}",
                             "sha256": HASH,
                             "size": 2048,
                             "name": "bundle.tar.gz",
@@ -183,7 +183,7 @@ async def start_job(client: Client, control: FakeControl, job_plan: Plan) -> Wor
     sha256 = uuid.uuid4().hex * 2
     accepted = build_event(
         "job.accepted",
-        source="/wdf/dispatch",
+        source="/wft/dispatch",
         tenant="acme",
         jobid=str(uuid.uuid4()),
         priorityclass="standard",
@@ -192,7 +192,7 @@ async def start_job(client: Client, control: FakeControl, job_plan: Plan) -> Wor
         time=datetime(2026, 11, 12, 12, 0, tzinfo=UTC),
         data={
             "manifest": {
-                "uri": f"s3://wdf-sources/sha256/{sha256[:2]}/{sha256}",
+                "uri": f"s3://wft-sources/sha256/{sha256[:2]}/{sha256}",
                 "sha256": sha256,
                 "size": 2048,
                 "name": "manifest.json",

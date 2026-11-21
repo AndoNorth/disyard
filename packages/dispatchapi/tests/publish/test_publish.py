@@ -1,5 +1,5 @@
 """Publishing after the answer and the reconciler, against Postgres and SeaweedFS behind the submit
-route, with wdf_broker's FakeBroker as the broker."""
+route, with wft_broker's FakeBroker as the broker."""
 
 import json
 import logging
@@ -8,18 +8,18 @@ from collections import Counter
 from datetime import timedelta
 
 import pytest
-from wdf_broker.contract import topology
-from wdf_broker.models import Outcome, TopologyError
-from wdf_dispatchapi import submit as submit_module
-from wdf_dispatchapi.reconciler import Reconciler
-from wdf_dispatchapi.submit import accepted_event
-from wdf_events import from_bytes, to_bytes
-from wdf_jobstate import get_job, transition
+from wft_broker.contract import topology
+from wft_broker.models import Outcome, TopologyError
+from wft_dispatchapi import submit as submit_module
+from wft_dispatchapi.reconciler import Reconciler
+from wft_dispatchapi.submit import accepted_event
+from wft_events import from_bytes, to_bytes
+from wft_jobstate import get_job, transition
 
 pytestmark = [pytest.mark.integration, pytest.mark.pair]
 
-ACCEPTED = "dev.wdf.job.accepted.v1"
-PUBLISHED = "dev.wdf.job.published.v1"
+ACCEPTED = "dev.wft.job.accepted.v1"
+PUBLISHED = "dev.wft.job.published.v1"
 QUEUE = "intake.acme.standard"
 DLQ = topology().dead_letter_queue.name
 
@@ -309,7 +309,7 @@ def test_topology_error_stops_publishing(
 
         def publish(self, routing_key, body, timeout_s=5.0):
             Missing.publishes += 1
-            raise TopologyError("amqp:not-found: no exchange wdf.intake")
+            raise TopologyError("amqp:not-found: no exchange wft.intake")
 
     publisher = make_publisher(lambda address, credentials: Missing())
     call(make_submit(), body(template, entries, batch_key="first"))

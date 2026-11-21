@@ -6,9 +6,9 @@ import hashlib
 import pytest
 from hypothesis import given
 from hypothesis import strategies as st
-from wdf_kernel import rows
-from wdf_kernel.expected import expected_blocks, expected_digest
-from wdf_kernel.rng import GAMMA, MASK, SplitMix64
+from wft_kernel import rows
+from wft_kernel.expected import expected_blocks, expected_digest
+from wft_kernel.rng import GAMMA, MASK, SplitMix64
 
 SEEDS = st.integers(min_value=0, max_value=2**53 - 1)
 SMALL = st.integers(min_value=0, max_value=20)

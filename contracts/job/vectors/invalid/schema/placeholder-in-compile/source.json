@@ -1,5 +1,5 @@
 {
-  "schema": "urn:wdf:schema:job:1.0",
+  "schema": "urn:wft:schema:job:1.0",
   "parameters": {
     "seed": "seed"
   },

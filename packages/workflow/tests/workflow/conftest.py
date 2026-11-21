@@ -22,27 +22,27 @@ from temporalio.client import Client
 from temporalio.runtime import MetricBuffer, Runtime, TelemetryConfig
 from temporalio.service import RPCError
 from temporalio.worker import Worker
-from wdf_events import Event, build_event
-from wdf_events.models import JobParams
-from wdf_jobdoc.plan_models import Plan
-from wdf_keys import workflow_id
-from wdf_temporal import event_data_converter, tracing_interceptor
-from wdf_workflow.contract import naming
-from wdf_workflow.models import TaskInput
-from wdf_workflow.placement import StaticPlacer
-from wdf_workflow.testing import FakeControl, FakePool, Succeed, connect
-from wdf_workflow.testing.control import Commit, Emit, Emitted, LoadedPlan
+from wft_events import Event, build_event
+from wft_events.models import JobParams
+from wft_jobdoc.plan_models import Plan
+from wft_keys import workflow_id
+from wft_temporal import event_data_converter, tracing_interceptor
+from wft_workflow.contract import naming
+from wft_workflow.models import TaskInput
+from wft_workflow.placement import StaticPlacer
+from wft_workflow.testing import FakeControl, FakePool, Succeed, connect
+from wft_workflow.testing.control import Commit, Emit, Emitted, LoadedPlan
 
 os.environ.setdefault(naming().workflow.build_id_env, "test-build")
 BUILD_ID = os.environ[naming().workflow.build_id_env]
 
-from wdf_workflow.job import JobWorkflow  # noqa: E402
-from wdf_workflow.taskpath import control_queue  # noqa: E402
-from wdf_workflow.worker import workflow_worker  # noqa: E402
+from wft_workflow.job import JobWorkflow  # noqa: E402
+from wft_workflow.taskpath import control_queue  # noqa: E402
+from wft_workflow.worker import workflow_worker  # noqa: E402
 
 HASH = "a" * 64
 SOURCE = {
-    "uri": f"s3://wdf-sources/sha256/aa/{HASH}",
+    "uri": f"s3://wft-sources/sha256/aa/{HASH}",
     "sha256": HASH,
     "size": 2048,
     "name": "bundle.tar.gz",
@@ -118,7 +118,7 @@ def _accepted(manifest_hash: str | None = None) -> Event:
     sha256 = manifest_hash or uuid.uuid4().hex * 2
     return build_event(
         "job.accepted",
-        source="/wdf/dispatch",
+        source="/wft/dispatch",
         tenant="acme",
         jobid=str(uuid.uuid4()),
         priorityclass="standard",
@@ -127,7 +127,7 @@ def _accepted(manifest_hash: str | None = None) -> Event:
         time=datetime(2026, 11, 12, 12, 0, tzinfo=UTC),
         data={
             "manifest": {
-                "uri": f"s3://wdf-sources/sha256/{sha256[:2]}/{sha256}",
+                "uri": f"s3://wft-sources/sha256/{sha256[:2]}/{sha256}",
                 "sha256": sha256,
                 "size": 2048,
                 "name": "manifest.json",
@@ -242,7 +242,7 @@ def _rig(
 ):
     """An async context of a Rig whose pools run `scripts`, each succeeding by default, the pools
     of `idle` waiting to be served, and whose workers carry the tracing interceptor of
-    wdf_temporal."""
+    wft_temporal."""
     scripts = {pool: lambda task: Succeed() for pool in naming().pools} | (scripts or {})
     this = Rig(client, control or RecordingControl(), placer or CountingPlacer())
     workflow = workflow_worker(

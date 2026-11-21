@@ -1,10 +1,10 @@
 """A task input keeps the bytes of its request through the payload converter of the workflow."""
 
 import pytest
-from wdf_events import to_bytes
-from wdf_temporal import event_data_converter
-from wdf_workflow.contract import canonical
-from wdf_workflow.models import TaskInput
+from wft_events import to_bytes
+from wft_temporal import event_data_converter
+from wft_workflow.contract import canonical
+from wft_workflow.models import TaskInput
 
 CONVERTER = event_data_converter.payload_converter
 

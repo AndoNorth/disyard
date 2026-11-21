@@ -10,18 +10,18 @@ set -uo pipefail
 root=$(cd "$(dirname "${BASH_SOURCE[0]}")/../../../../.." && pwd)
 cd "$root" || exit 2
 [ $# -le 1 ] || { echo "usage: run.sh [out-dir]" >&2; exit 2; }
-out=${1:-$(mktemp -d "${TMPDIR:-/tmp}/wdf-s8.XXXXXX")}
+out=${1:-$(mktemp -d "${TMPDIR:-/tmp}/wft-s8.XXXXXX")}
 mkdir -p "$out"
 
 # The cluster is the shared resource, so a measurement waits for whoever holds it.
-if [ -z "${WDF_CLUSTER_LOCK_HELD:-}" ]; then
-    exec flock /tmp/wdf-cluster.lock env WDF_CLUSTER_LOCK_HELD=1 "$0" "$out"
+if [ -z "${WFT_CLUSTER_LOCK_HELD:-}" ]; then
+    exec flock /tmp/wft-cluster.lock env WFT_CLUSTER_LOCK_HELD=1 "$0" "$out"
 fi
 
 timescale="timescale/timescaledb:2.31.0-pg16@sha256:322ae364eca3321cf2a48f1ef31213b87843413b3cf8feeebf54e999a26bb731"
 seaweed="chrislusf/seaweedfs:4.51@sha256:f7a49e3f3972ebed5be2ed4befa4a0c68eb7bdddba6e692d42729ceb545134b8"
-label=wdf.dev/verify-run
-slot=${WDF_SLOT:-$(basename "$(dirname "$root")")}
+label=wft.dev/verify-run
+slot=${WFT_SLOT:-$(basename "$(dirname "$root")")}
 [[ $slot =~ ^[0-9]$ ]] || slot=0
 run_id="s8-$(date -u +%Y%m%dT%H%M%SZ)-$slot"
 port() { echo $((19000 + slot * 10 + $1)); }
@@ -40,12 +40,12 @@ cleanup() {
 }
 trap cleanup EXIT
 
-# One of the two T1 lock files of wdf_itest, so this run counts toward the two containers across the host.
+# One of the two T1 lock files of wft_itest, so this run counts toward the two containers across the host.
 deadline=$(($(date +%s) + 1800))
 while :; do
     for i in 0 1; do
-        exec 9>"/tmp/wdf-t1.$i.lock"
-        flock -n 9 && { echo "pid=$$ run=$run_id" >"/tmp/wdf-t1.$i.lock"; break 2; }
+        exec 9>"/tmp/wft-t1.$i.lock"
+        flock -n 9 && { echo "pid=$$ run=$run_id" >"/tmp/wft-t1.$i.lock"; break 2; }
     done
     [ "$(date +%s)" -lt "$deadline" ] || { say "no T1 lock file became free"; exit 1; }
     sleep 2
@@ -73,21 +73,21 @@ import secrets
 import sys
 
 names = ["admin", "submit", "compile", "simulate", "aggregate"]
-json.dump({n: {"ak": f"wdf{n}ak", "sk": secrets.token_hex(16)} for n in names}, open(sys.argv[1], "w"))
+json.dump({n: {"ak": f"wft{n}ak", "sk": secrets.token_hex(16)} for n in names}, open(sys.argv[1], "w"))
 PY
 
 run_pg() {
     say "app Postgres with TimescaleDB"
     local t0
     t0=$(date +%s.%N)
-    docker run -d --name "wdf-$run_id-pg" --label "$label=$run_id" --memory "$cap" --memory-swap "$cap" \
+    docker run -d --name "wft-$run_id-pg" --label "$label=$run_id" --memory "$cap" --memory-swap "$cap" \
         -p "127.0.0.1:$(port 0):5432" -e "POSTGRES_PASSWORD=$password" "$timescale" \
         postgres -c timescaledb.telemetry_level=off >/dev/null || return 1
-    S8_CONTAINER="wdf-$run_id-pg" S8_PORT=$(port 0) S8_PASSWORD=$password S8_T0=$t0 \
+    S8_CONTAINER="wft-$run_id-pg" S8_PORT=$(port 0) S8_PASSWORD=$password S8_T0=$t0 \
         uv run --frozen python docs/delivery/spikes/S8/code/pg_measure.py | tee -a "$out/figures.txt"
     local rc=${PIPESTATUS[0]}
-    docker logs "wdf-$run_id-pg" >"$out/pg.log" 2>&1
-    docker rm -fv "wdf-$run_id-pg" >/dev/null
+    docker logs "wft-$run_id-pg" >"$out/pg.log" 2>&1
+    docker rm -fv "wft-$run_id-pg" >/dev/null
     return "$rc"
 }
 
@@ -114,7 +114,7 @@ print(json.dumps({"identities": ids}))
 PY
     )
     t0=$(date +%s.%N)
-    docker run -d --name "wdf-$run_id-$prefix" --label "$label=$run_id" --memory "$cap" --memory-swap "$cap" \
+    docker run -d --name "wft-$run_id-$prefix" --label "$label=$run_id" --memory "$cap" --memory-swap "$cap" \
         -p "127.0.0.1:$(port 1):8333" -e "S3_JSON=$identities" ${gomem:+-e "GOMEMLIMIT=$gomem"} --entrypoint sh "$seaweed" -c '
 printf %s "$S3_JSON" >/tmp/s3.json
 mkdir -p /data /tmp/admin /tmp/worker
@@ -124,16 +124,16 @@ weed admin -port=12535 -master=localhost:9333 -dataDir=/tmp/admin >/tmp/admin.lo
 sleep 4
 weed worker -admin=localhost:12535 -jobType=s3_lifecycle -workingDir=/tmp/worker >/tmp/worker.log 2>&1 &
 wait' >/dev/null || return 1
-    S8_CONTAINER="wdf-$run_id-$prefix" S8_PORT=$(port 1) S8_CREDS="$out/creds.json" S8_T0=$t0 \
+    S8_CONTAINER="wft-$run_id-$prefix" S8_PORT=$(port 1) S8_CREDS="$out/creds.json" S8_T0=$t0 \
         S8_VOLUME_MB=$volume_mb S8_PREFIX=$prefix S8_SKIP_CONTRACT=$skip \
         uv run --no-project --quiet --with boto3==1.43.119 --with pyyaml python docs/delivery/spikes/S8/code/store_measure.py |
         tee -a "$out/figures.txt"
     local rc=${PIPESTATUS[0]}
-    docker logs "wdf-$run_id-$prefix" >"$out/$prefix.log" 2>&1
-    docker exec "wdf-$run_id-$prefix" sh -c 'tail -n 30 /tmp/admin.log /tmp/worker.log' >>"$out/$prefix.log" 2>&1
+    docker logs "wft-$run_id-$prefix" >"$out/$prefix.log" 2>&1
+    docker exec "wft-$run_id-$prefix" sh -c 'tail -n 30 /tmp/admin.log /tmp/worker.log' >>"$out/$prefix.log" 2>&1
     docker inspect --format 'oom_killed={{.State.OOMKilled}} status={{.State.Status}} exit={{.State.ExitCode}}' \
-        "wdf-$run_id-$prefix" >>"$out/$prefix.log" 2>&1
-    docker rm -fv "wdf-$run_id-$prefix" >/dev/null
+        "wft-$run_id-$prefix" >>"$out/$prefix.log" 2>&1
+    docker rm -fv "wft-$run_id-$prefix" >/dev/null
     return "$rc"
 }
 

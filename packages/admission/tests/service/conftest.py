@@ -21,28 +21,28 @@ from temporalio.client import Client
 from temporalio.common import WorkerDeploymentVersion
 from temporalio.runtime import Runtime
 from temporalio.worker import Worker, WorkerDeploymentConfig
-from wdf_admission.service import Config, prometheus
-from wdf_events import build_event, to_bytes
-from wdf_eventstore import insert_events
-from wdf_jobdoc.plan_models import Plan
-from wdf_jobstate import JobRow, insert_accepted, mark_published
-from wdf_temporal import event_data_converter, new_traceparent, tracing_interceptor
-from wdf_workflow import versioning
-from wdf_workflow.activities import Emitter
-from wdf_workflow.contract import naming
-from wdf_workflow.placement import StaticPlacer, place_activity
-from wdf_workflow.service import control_queue
-from wdf_workflow.testing import Fail, FakeControl, FakePool, Succeed, connect
-from wdf_workflow.testing.control import Emit, Emitted, LoadedPlan
+from wft_admission.service import Config, prometheus
+from wft_events import build_event, to_bytes
+from wft_eventstore import insert_events
+from wft_jobdoc.plan_models import Plan
+from wft_jobstate import JobRow, insert_accepted, mark_published
+from wft_temporal import event_data_converter, new_traceparent, tracing_interceptor
+from wft_workflow import versioning
+from wft_workflow.activities import Emitter
+from wft_workflow.contract import naming
+from wft_workflow.placement import StaticPlacer, place_activity
+from wft_workflow.service import control_queue
+from wft_workflow.testing import Fail, FakeControl, FakePool, Succeed, connect
+from wft_workflow.testing.control import Emit, Emitted, LoadedPlan
 
 os.environ.setdefault(naming().workflow.build_id_env, "admission-test")
 BUILD_ID = os.environ[naming().workflow.build_id_env]
 
-from wdf_workflow.job import JobWorkflow  # noqa: E402
+from wft_workflow.job import JobWorkflow  # noqa: E402
 
 SHA = "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08"
 MANIFEST = {
-    "uri": f"s3://wdf-sources/sha256/9f/{SHA}",
+    "uri": f"s3://wft-sources/sha256/9f/{SHA}",
     "sha256": SHA,
     "size": 2048,
     "name": "manifest.json",
@@ -92,7 +92,7 @@ def _free_port() -> int:
 def accepted_event(job_id: str):
     return build_event(
         "job.accepted",
-        source="/wdf/dispatch",
+        source="/wft/dispatch",
         tenant="acme",
         jobid=job_id,
         priorityclass="standard",
@@ -173,10 +173,10 @@ def prefix() -> str:
 
 @pytest.fixture
 def admission_dsn(appdb, db):
-    """The DSN of a fresh login in `wdf_admission`, the group of admission's service login."""
+    """The DSN of a fresh login in `wft_admission`, the group of admission's service login."""
     user = f"admission_{time.time_ns()}"
     db.execute(
-        sql.SQL("CREATE ROLE {} LOGIN PASSWORD 'standin' IN ROLE wdf_admission").format(
+        sql.SQL("CREATE ROLE {} LOGIN PASSWORD 'standin' IN ROLE wft_admission").format(
             sql.Identifier(user)
         )
     )

@@ -8,12 +8,12 @@ import uuid
 from pathlib import Path
 
 import pytest
-from wdf_dispatchapi.contract import routes
-from wdf_dispatchapi.limits import ConfigError
-from wdf_dispatchapi.service import ENV, Config, limits_profile
-from wdf_dispatchapi.service.routes import ROUTES
-from wdf_dispatchapi.testing import FakeGateway
-from wdf_jobdoc.profile_files import load_profile
+from wft_dispatchapi.contract import routes
+from wft_dispatchapi.limits import ConfigError
+from wft_dispatchapi.service import ENV, Config, limits_profile
+from wft_dispatchapi.service.routes import ROUTES
+from wft_dispatchapi.testing import FakeGateway
+from wft_jobdoc.profile_files import load_profile
 
 JOB = str(uuid.uuid4())
 VALUES = {
@@ -105,5 +105,5 @@ def test_limits_profile_equals_the_ci_files(root: Path):
 
 def test_config_names_every_missing_variable():
     with pytest.raises(ConfigError) as refused:
-        Config.from_env({"WDF_TENANCY_PROFILE": "ci"})
-    assert all(name in str(refused.value) for name in ENV.values() if name != "WDF_TENANCY_PROFILE")
+        Config.from_env({"WFT_TENANCY_PROFILE": "ci"})
+    assert all(name in str(refused.value) for name in ENV.values() if name != "WFT_TENANCY_PROFILE")

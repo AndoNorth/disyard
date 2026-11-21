@@ -6,7 +6,7 @@ import sys
 from pathlib import Path
 
 import yaml
-from wdf_broker.contract import dead_letter_codes, reasons
+from wft_broker.contract import dead_letter_codes, reasons
 
 ROOT = Path(__file__).resolve().parents[3]
 MISMATCH = ROOT / "contracts/broker/vectors/reasons/invalid/event-code-mismatch"
@@ -26,7 +26,7 @@ ROWS = {
 
 def check(path: Path) -> subprocess.CompletedProcess:
     return subprocess.run(
-        [sys.executable, "-m", "wdf_broker.contract", "--check", str(path)],
+        [sys.executable, "-m", "wft_broker.contract", "--check", str(path)],
         capture_output=True,
         text=True,
     )
@@ -53,5 +53,5 @@ def test_reason_rows_are_those_of_the_spec():
 def test_dead_letter_counter_counts_the_application_codes():
     metrics = yaml.safe_load(METRICS.read_text())["metrics"]
     application = [row.code for row in reasons().reasons if row.source == "application"]
-    counted = metrics["wdf_broker_dead_letter_total"]["labels"]["reason"]["values"]
+    counted = metrics["wft_broker_dead_letter_total"]["labels"]["reason"]["values"]
     assert counted == application

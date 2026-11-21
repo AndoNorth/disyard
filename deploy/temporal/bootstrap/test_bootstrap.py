@@ -1,4 +1,4 @@
-"""The bootstrap against a Temporal dev server that starts without namespace `wdf`: it creates every
+"""The bootstrap against a Temporal dev server that starts without namespace `wft`: it creates every
 item once, a second run changes nothing, and `check` tells the two states apart."""
 
 import asyncio
@@ -11,8 +11,8 @@ from google.protobuf.duration_pb2 import Duration
 from temporalio.api.namespace.v1 import NamespaceConfig
 from temporalio.api.workflowservice.v1 import UpdateNamespaceRequest
 from temporalio.client import Client, ScheduleUpdate
-from wdf_artifactreaper.schedule import SCHEDULE_ID
-from wdf_workflow.contract import naming
+from wft_artifactreaper.schedule import SCHEDULE_ID
+from wft_workflow.contract import naming
 
 pytestmark = pytest.mark.integration
 
@@ -23,9 +23,9 @@ bootstrap = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(bootstrap)
 
 ITEMS = (
-    ["namespace: wdf", "retention: 24h"]
+    ["namespace: wft", "retention: 24h"]
     + [f"search_attribute: {a} {t}" for a, t in naming().search_attributes.items()]
-    + [f"schedule: {SCHEDULE_ID} in wdf"]
+    + [f"schedule: {SCHEDULE_ID} in wft"]
 )
 
 
@@ -68,7 +68,7 @@ def states(lines: list[str]) -> dict[str, str]:
 
 def test_apply_twice_then_check(temporal, capsys):
     code, out, err = run("check", temporal, capsys)
-    assert (code, out, err) == (1, ["namespace: wdf missing"], ["differs: namespace: wdf"])
+    assert (code, out, err) == (1, ["namespace: wft missing"], ["differs: namespace: wft"])
 
     code, out, _ = run("apply", temporal, capsys)
     assert code == 0
@@ -88,7 +88,7 @@ def test_drift_is_found_and_repaired(temporal, capsys):
     and a paused Schedule stays paused. It applies first, so it holds when run alone."""
 
     async def connect():
-        client = await Client.connect(temporal, namespace="wdf")
+        client = await Client.connect(temporal, namespace="wft")
         return client, client.get_schedule_handle(SCHEDULE_ID)
 
     async def drift():
@@ -103,7 +103,7 @@ def test_drift_is_found_and_repaired(temporal, capsys):
         await handle.update(slower)
         await client.workflow_service.update_namespace(
             UpdateNamespaceRequest(
-                namespace="wdf",
+                namespace="wft",
                 config=NamespaceConfig(
                     workflow_execution_retention_ttl=Duration(seconds=2 * 86400)
                 ),
@@ -117,11 +117,11 @@ def test_drift_is_found_and_repaired(temporal, capsys):
     asyncio.run(drift())
     code, _, err = run("check", temporal, capsys)
     assert code == 1
-    assert err == ["differs: retention: 24h", f"differs: schedule: {SCHEDULE_ID} in wdf"]
+    assert err == ["differs: retention: 24h", f"differs: schedule: {SCHEDULE_ID} in wft"]
 
     code, out, _ = run("apply", temporal, capsys)
     found = states(out)
-    assert (found["retention: 24h"], found[f"schedule: {SCHEDULE_ID} in wdf"]) == (
+    assert (found["retention: 24h"], found[f"schedule: {SCHEDULE_ID} in wft"]) == (
         "updated from 48h",
         "updated",
     )

@@ -1,13 +1,13 @@
 [project]
-name = "wdf-jobcheck"
+name = "wft-jobcheck"
 version = "0.0.0"
 license = "Apache-2.0"
 requires-python = ">=3.13,<3.14"
-dependencies = ["wdf-jobdoc", "wdf-plan"]
+dependencies = ["wft-jobdoc", "wft-plan"]
 
 [tool.uv.sources]
-wdf-jobdoc = { workspace = true }
-wdf-plan = { workspace = true }
+wft-jobdoc = { workspace = true }
+wft-plan = { workspace = true }
 
 [build-system]
 requires = ["hatchling"]

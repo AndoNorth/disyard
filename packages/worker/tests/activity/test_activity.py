@@ -6,9 +6,9 @@ import asyncio
 import pytest
 from temporalio.exceptions import ApplicationError
 from temporalio.testing import ActivityEnvironment
-from wdf_artifactclient.errors import ArtifactNotFound, StoreUnavailable
-from wdf_stages import Facts, run_stage_contract
-from wdf_worker.activity import heartbeat_details, path_of, run_task
+from wft_artifactclient.errors import ArtifactNotFound, StoreUnavailable
+from wft_stages import Facts, run_stage_contract
+from wft_worker.activity import heartbeat_details, path_of, run_task
 
 STARTED = "2026-11-15T00:00:00.000000Z"
 

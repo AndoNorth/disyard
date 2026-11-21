@@ -15,8 +15,8 @@ from pathlib import Path
 
 import pytest
 import yaml
-from wdf_storecheck.s3 import Creds, dump_credentials
-from wdf_worker.config import ENV, MIRROR_ENV
+from wft_storecheck.s3 import Creds, dump_credentials
+from wft_worker.config import ENV, MIRROR_ENV
 
 ROOT = Path(__file__).resolve().parents[2]
 POOLS = ("compile", "simulate", "aggregate")
@@ -30,12 +30,12 @@ INPUTS = [
 DEPENDS = ["temporal-bootstrap", "objectstore-bootstrap", "mirror"]
 ROLES = ("admin", "workflow", "compile", "simulate", "aggregate")
 SCRATCH_ENV = {
-    "WDF_SCRATCH": "/var/wdf",
-    "WDF_READY_FILE": "/var/wdf/ready",
-    "HOME": "/var/wdf/home",
-    "TMPDIR": "/var/wdf/tmp",
-    "XDG_CACHE_HOME": "/var/wdf/cache",
-    "UV_CACHE_DIR": "/var/wdf/cache/uv",
+    "WFT_SCRATCH": "/var/wft",
+    "WFT_READY_FILE": "/var/wft/ready",
+    "HOME": "/var/wft/home",
+    "TMPDIR": "/var/wft/tmp",
+    "XDG_CACHE_HOME": "/var/wft/cache",
+    "UV_CACHE_DIR": "/var/wft/cache/uv",
 }
 
 pytestmark = pytest.mark.skipif(shutil.which("tilt") is None, reason="tilt not on PATH")
@@ -70,8 +70,8 @@ def rendered(tmp_path_factory):
         cwd=root,
         env=os.environ
         | {
-            "KUBECONFIG": str(ROOT / "scripts/tilt/fixtures/kubeconfig-wdf.yaml"),
-            "WDF_STATE_DIR": str(state),
+            "KUBECONFIG": str(ROOT / "scripts/tilt/fixtures/kubeconfig-wft.yaml"),
+            "WFT_STATE_DIR": str(state),
         },
         capture_output=True,
         text=True,
@@ -95,13 +95,13 @@ def pod(objects, pool: str) -> dict:
 def test_one_slot_pod_on_the_pool_node(rendered, pool):
     _, objects = rendered
     deployment = objects["Deployment", f"{pool}-worker"]
-    assert deployment["metadata"]["namespace"] == "wdf-workers"
+    assert deployment["metadata"]["namespace"] == "wft-workers"
     assert deployment["spec"]["replicas"] == 1
     assert deployment["spec"]["strategy"] == {"type": "Recreate"}
     spec = pod(objects, pool)
-    assert spec["nodeSelector"] == {"wdf.dev/pool": pool}
+    assert spec["nodeSelector"] == {"wft.dev/pool": pool}
     assert spec["tolerations"] == [
-        {"key": "wdf.dev/pool", "operator": "Equal", "value": pool, "effect": "NoSchedule"}
+        {"key": "wft.dev/pool", "operator": "Equal", "value": pool, "effect": "NoSchedule"}
     ]
     slot = yaml.safe_load((ROOT / "deploy/presets/slots/ci.yaml").read_text())["pools"][pool]
     module = yaml.safe_load((ROOT / f"deploy/workers/{pool}/module.yaml").read_text())
@@ -127,17 +127,17 @@ def test_environment_has_no_database_prefix_or_build(rendered, pool):
     env = {e["name"]: e.get("value", e.get("valueFrom")) for e in container["env"]}
     assert "envFrom" not in container
     assert {*ENV.values(), *([MIRROR_ENV] if pool == "compile" else [])} <= set(env)
-    assert not [n for n in env if n.startswith("WDF_") and n.endswith("_DSN")]
-    assert "WDF_POOL_QUEUE_PREFIX" not in env
+    assert not [n for n in env if n.startswith("WFT_") and n.endswith("_DSN")]
+    assert "WFT_POOL_QUEUE_PREFIX" not in env
     assert not [n for n in env if "BUILD" in n or "DEPLOYMENT" in n]
-    assert env["WDF_NAMESPACE"] == "wdf"
-    assert env["WDF_TEMPORAL_ADDRESS"] == "temporal-frontend.wdf-infra.svc.cluster.local:7233"
-    assert env["WDF_STORE_ENDPOINT"] == "http://objectstore.wdf-infra.svc.cluster.local:8333"
-    assert env["WDF_STORE_CREDENTIALS"] == "/etc/wdf/store/credentials.json"
-    assert env["WDF_SLOT_MEMORY_MIB"] == {
+    assert env["WFT_NAMESPACE"] == "wft"
+    assert env["WFT_TEMPORAL_ADDRESS"] == "temporal-frontend.wft-infra.svc.cluster.local:7233"
+    assert env["WFT_STORE_ENDPOINT"] == "http://objectstore.wft-infra.svc.cluster.local:8333"
+    assert env["WFT_STORE_CREDENTIALS"] == "/etc/wft/store/credentials.json"
+    assert env["WFT_SLOT_MEMORY_MIB"] == {
         "resourceFieldRef": {"resource": "limits.memory", "divisor": "1Mi"}
     }
-    assert ("WDF_MIRROR" in env) == (pool == "compile")
+    assert ("WFT_MIRROR" in env) == (pool == "compile")
     assert {k: env[k] for k in SCRATCH_ENV} == SCRATCH_ENV
 
 
@@ -150,8 +150,8 @@ def test_disk_scratch_volume_with_its_directories(rendered, pool):
     [init] = spec["initContainers"]
     [container] = spec["containers"]
     for c in (init, container):
-        assert {"name": "scratch", "mountPath": "/var/wdf"} in c["volumeMounts"]
-    assert init["image"] == container["image"] == f"wdf-{pool}-worker"
+        assert {"name": "scratch", "mountPath": "/var/wft"} in c["volumeMounts"]
+    assert init["image"] == container["image"] == f"wft-{pool}-worker"
     assert init["command"][:2] == ["mkdir", "-p"]
     assert set(init["command"][2:]) == {
         SCRATCH_ENV[k] for k in ("HOME", "TMPDIR", "XDG_CACHE_HOME", "UV_CACHE_DIR")
@@ -170,7 +170,7 @@ def test_pod_settings_and_readiness(rendered, pool):
         assert c["securityContext"]["readOnlyRootFilesystem"] is True
         assert c["securityContext"]["allowPrivilegeEscalation"] is False
     [container] = spec["containers"]
-    assert container["readinessProbe"]["exec"]["command"] == ["test", "-e", "/var/wdf/ready"]
+    assert container["readinessProbe"]["exec"]["command"] == ["test", "-e", "/var/wft/ready"]
     assert "ports" not in container
     template = objects["Deployment", f"{pool}-worker"]["spec"]["template"]["metadata"]
     assert template["annotations"]["kubectl.kubernetes.io/default-container"] == container["name"]
@@ -198,11 +198,11 @@ def test_egress_only_to_the_platform_endpoints(rendered, pool):
     expected = {
         ("kube-system", json.dumps({"k8s-app": "kube-dns"}), "UDP", 53),
         ("kube-system", json.dumps({"k8s-app": "kube-dns"}), "TCP", 53),
-        ("wdf-infra", json.dumps(temporal, sort_keys=True), "TCP", 7233),
-        ("wdf-infra", json.dumps({"app": "objectstore"}), "TCP", 8333),
+        ("wft-infra", json.dumps(temporal, sort_keys=True), "TCP", 7233),
+        ("wft-infra", json.dumps({"app": "objectstore"}), "TCP", 8333),
     }
     if pool == "compile":
-        expected.add(("wdf-infra", json.dumps({"app": "mirror"}), "TCP", 8080))
+        expected.add(("wft-infra", json.dumps({"app": "mirror"}), "TCP", 8080))
     assert reached == expected
 
 

@@ -62,7 +62,7 @@ def node_mib(doc, role):
 
 
 def render_quota(name, infra_mib):
-    """The wdf-infra `limits.memory` that `namespaces.sh render` gives for this infra node size."""
+    """The wft-infra `limits.memory` that `namespaces.sh render` gives for this infra node size."""
     doc = preset(name)
     for node in doc["nodes"]:
         if node["role"] == "infra":
@@ -78,7 +78,7 @@ def render_quota(name, infra_mib):
         ).stdout
     finally:
         probe.unlink()
-    block = text.split("namespace: wdf-infra", 1)[1].split("---", 1)[0]
+    block = text.split("namespace: wft-infra", 1)[1].split("---", 1)[0]
     return int(re.search(r"limits\.memory: (\d+)Mi", block).group(1))
 
 
@@ -91,14 +91,14 @@ def main():
         components[name] = (peak, roundup(peak * LIMIT_FACTOR, 64))
     for name, (peak, limit, _) in CARRIED.items():
         components[name] = (peak, limit)
-    wdf_infra = ["appdb", "objectstore", "temporal", "temporaldb", "rabbitmq"]
-    for name in wdf_infra:
+    wft_infra = ["appdb", "objectstore", "temporal", "temporaldb", "rabbitmq"]
+    for name in wft_infra:
         peak, limit = components[name]
         figure(f"node.component.{name}.peak_mib", f"{peak:.0f}")
         figure(f"node.component.{name}.limit_mib", limit)
     figure("node.component.control_reserve.limit_mib", CONTROL_MIB)
-    limits = sum(components[n][1] for n in wdf_infra)
-    peaks = sum(components[n][0] for n in wdf_infra)
+    limits = sum(components[n][1] for n in wft_infra)
+    peaks = sum(components[n][0] for n in wft_infra)
     figure("node.sum_limits_mib", limits)
     figure("node.sum_peaks_mib", f"{peaks:.0f}")
     figure("node.sum_limits_with_control_mib", limits + CONTROL_MIB)

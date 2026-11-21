@@ -7,13 +7,13 @@ import json
 
 import pytest
 from temporalio import activity
-from wdf_events.models import ContentReference
-from wdf_jobdoc.plan_models import Plan
-from wdf_stages.recording import type_name
-from wdf_workflow.contract import check_task_input
-from wdf_workflow.job import JobWorkflow
-from wdf_workflow.testing import Fail, FakeControl, Succeed, Zombie, connect
-from wdf_workflow.testing.control import BuildIndex
+from wft_events.models import ContentReference
+from wft_jobdoc.plan_models import Plan
+from wft_stages.recording import type_name
+from wft_workflow.contract import check_task_input
+from wft_workflow.job import JobWorkflow
+from wft_workflow.testing import Fail, FakeControl, Succeed, Zombie, connect
+from wft_workflow.testing.control import BuildIndex
 
 pytestmark = pytest.mark.integration
 
@@ -22,7 +22,7 @@ LIMIT_S = 120
 INDEX_HASH = "b" * 64
 # An index a submitter put and names in the aggregate's params.
 INDEX = {
-    "uri": f"s3://wdf-sources/sha256/bb/{INDEX_HASH}",
+    "uri": f"s3://wft-sources/sha256/bb/{INDEX_HASH}",
     "sha256": INDEX_HASH,
     "size": 512,
     "name": "index.jsonl",
@@ -52,7 +52,7 @@ def entries(request: BuildIndex) -> list[tuple[str, str]]:
 def with_source(plan: Plan, task_id: str, sha256: str) -> Plan:
     """The plan with another source on one compile task, so its cache key is its own."""
     source = {
-        "uri": f"s3://wdf-sources/sha256/{sha256[:2]}/{sha256}",
+        "uri": f"s3://wft-sources/sha256/{sha256[:2]}/{sha256}",
         "sha256": sha256,
         "size": 2048,
         "name": "bundle.tar.gz",

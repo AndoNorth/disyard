@@ -10,17 +10,17 @@ from importlib.resources import files
 from pathlib import Path
 
 import pytest
-from wdf_compile.build import build
-from wdf_kernel.expected import expected_blocks
-from wdf_kernel.reader import read, same_blocks
-from wdf_runtime.classify import RESULTS
-from wdf_runtime.contract import canonical
-from wdf_runtime.contract import check as check_contract
-from wdf_runtime.heartbeat import beats
-from wdf_runtime.run import run, warm
-from wdf_workloads import bundle, level1, main
+from wft_compile.build import build
+from wft_kernel.expected import expected_blocks
+from wft_kernel.reader import read, same_blocks
+from wft_runtime.classify import RESULTS
+from wft_runtime.contract import canonical
+from wft_runtime.contract import check as check_contract
+from wft_runtime.heartbeat import beats
+from wft_runtime.run import run, warm
+from wft_workloads import bundle, level1, main
 
-LEVEL1 = sorted(files("wdf_kernel").joinpath("fixtures/level1").iterdir(), key=lambda d: d.name)
+LEVEL1 = sorted(files("wft_kernel").joinpath("fixtures/level1").iterdir(), key=lambda d: d.name)
 # The simulate slot of the ci preset, whose guest cap is this less GUEST_OVERHEAD_MIB.
 MEMORY_MIB = 384
 
@@ -29,7 +29,7 @@ MEMORY_MIB = 384
 def component(tmp_path_factory) -> tuple[Path, Path]:
     """The workload component and a module cache it is already warm in, so a timed run is warm."""
     work = tmp_path_factory.mktemp("workloads")
-    built = build(bundle.write(work), "wdf_workloads.main", work / "built").component
+    built = build(bundle.write(work), "wft_workloads.main", work / "built").component
     warm(built, work / "cache")
     return built, work / "cache"
 
@@ -130,7 +130,7 @@ def test_io_churn_million_rows_in_guest(component, tmp_path):
     assert ran.heartbeats == 10
 
     checked = subprocess.run(
-        [sys.executable, "-m", "wdf_kernel.check", "results"]
+        [sys.executable, "-m", "wft_kernel.check", "results"]
         + ["--input", str(input_file), "--results", str(results)],
         capture_output=True,
         text=True,

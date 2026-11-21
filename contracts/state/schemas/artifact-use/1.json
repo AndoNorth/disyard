@@ -1,5 +1,5 @@
 {
-  "$id": "urn:wdf:schema:state.artifact-use:1",
+  "$id": "urn:wft:schema:state.artifact-use:1",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
   "description": "The link of a job to a content-addressed blob that it holds, as in the state README.",

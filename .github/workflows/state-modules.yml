@@ -26,7 +26,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
-      WDF_PRESET: ci
+      WFT_PRESET: ci
     steps:
       - uses: actions/checkout@v7
       - uses: DeterminateSystems/nix-installer-action@v23
@@ -48,7 +48,7 @@ jobs:
       - name: Store contract script
         shell: nix develop -c bash -euo pipefail {0}
         run: |
-          kubectl --context kind-wdf -n wdf-infra port-forward --address 127.0.0.1 svc/objectstore 18333:8333 &
+          kubectl --context kind-wft -n wft-infra port-forward --address 127.0.0.1 svc/objectstore 18333:8333 &
           forward=$!
           trap 'kill "$forward"' EXIT
           for _ in $(seq 60); do
@@ -57,14 +57,14 @@ jobs:
           done
           credentials=$(scripts/storage/store/identities.sh path)
           for mode in base access; do
-            uv run --frozen python -m wdf_storecheck run --endpoint http://127.0.0.1:18333 \
+            uv run --frozen python -m wft_storecheck run --endpoint http://127.0.0.1:18333 \
               --credentials "$credentials" --mode "$mode"
           done
       - name: Migration check
         run: nix develop -c scripts/storage/db/migrate.sh check
       - name: Export cluster logs
         if: ${{ failure() }}
-        run: nix develop -c kind export logs --name wdf "$RUNNER_TEMP/cluster-logs"
+        run: nix develop -c kind export logs --name wft "$RUNNER_TEMP/cluster-logs"
       - name: Upload cluster logs
         if: ${{ failure() }}
         uses: actions/upload-artifact@v4

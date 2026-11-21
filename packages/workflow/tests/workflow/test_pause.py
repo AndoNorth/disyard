@@ -7,12 +7,12 @@ import asyncio
 import uuid
 
 import pytest
-from wdf_events.models import ManifestReference
-from wdf_stages.recording import type_name
-from wdf_workflow.job import JobWorkflow
-from wdf_workflow.models import ControlSignal, ResumeSignal
-from wdf_workflow.testing import Fail, Interruptible, Succeed, connect
-from wdf_workflow.testing.control import LoadedPlan
+from wft_events.models import ManifestReference
+from wft_stages.recording import type_name
+from wft_workflow.job import JobWorkflow
+from wft_workflow.models import ControlSignal, ResumeSignal
+from wft_workflow.testing import Fail, Interruptible, Succeed, connect
+from wft_workflow.testing.control import LoadedPlan
 
 pytestmark = pytest.mark.integration
 
@@ -35,7 +35,7 @@ def by_attempt(*outcomes):
 def source(name: str) -> dict:
     sha256 = uuid.uuid5(uuid.NAMESPACE_URL, name).hex * 2
     return {
-        "uri": f"s3://wdf-sources/sha256/{sha256[:2]}/{sha256}",
+        "uri": f"s3://wft-sources/sha256/{sha256[:2]}/{sha256}",
         "sha256": sha256,
         "size": 2048,
         "name": "bundle.tar.gz",
@@ -46,7 +46,7 @@ def source(name: str) -> dict:
 def manifest() -> ManifestReference:
     sha256 = uuid.uuid4().hex * 2
     return ManifestReference(
-        uri=f"s3://wdf-sources/sha256/{sha256[:2]}/{sha256}",
+        uri=f"s3://wft-sources/sha256/{sha256[:2]}/{sha256}",
         sha256=sha256,
         size=2048,
         name="manifest.json",

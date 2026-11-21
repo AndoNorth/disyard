@@ -47,7 +47,7 @@ REASONS = {
 
 def check(path: Path) -> subprocess.CompletedProcess:
     return subprocess.run(
-        [sys.executable, "-m", "wdf_artifactclient.contract", "--check", str(path)],
+        [sys.executable, "-m", "wft_artifactclient.contract", "--check", str(path)],
         capture_output=True,
         text=True,
     )
@@ -75,7 +75,7 @@ def test_each_reason_has_a_vector(contract):
 def test_a_missing_file_or_a_missing_flag_is_a_usage_error():
     assert check(ARTIFACT / "nothing.yaml").returncode == 2
     bare = subprocess.run(
-        [sys.executable, "-m", "wdf_artifactclient.contract", str(COMMITTED[0])],
+        [sys.executable, "-m", "wft_artifactclient.contract", str(COMMITTED[0])],
         capture_output=True,
         text=True,
     )
@@ -156,7 +156,7 @@ def test_the_three_entry_index_holds_each_status_in_task_order():
 
 
 def test_the_same_entries_give_the_same_bytes_whatever_the_key_order(tmp_path):
-    from wdf_artifactclient.contract import canonical
+    from wft_artifactclient.contract import canonical
 
     path = VECTORS / "index/valid/three-entries.jsonl"
     lines = [json.loads(line) for line in path.read_text().splitlines()]

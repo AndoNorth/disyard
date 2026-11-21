@@ -1,13 +1,13 @@
 [project]
-name = "wdf-workloads"
+name = "wft-workloads"
 version = "0.0.0"
 license = "Apache-2.0"
 requires-python = ">=3.13"
 # Runs inside a guest too, so the only dependency is the standard library kernel.
-dependencies = ["wdf-kernel"]
+dependencies = ["wft-kernel"]
 
 [tool.uv.sources]
-wdf-kernel = { workspace = true }
+wft-kernel = { workspace = true }
 
 [build-system]
 requires = ["hatchling"]

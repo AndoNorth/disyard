@@ -21,7 +21,7 @@ class Run(exports.Run):
             sys.exit(1)
         held = b"\x01" * (params["args"].get("hold_mib", 0) * 1048576)
         root = ET.Element(
-            "results", schema="wdf.sim.v1", seed=str(params["seed"]), held=str(len(held))
+            "results", schema="wft.sim.v1", seed=str(params["seed"]), held=str(len(held))
         )
         ET.SubElement(root, "block", id="noop", kind="digest")
         digest = hashlib.sha256(struct.pack(">Q", params["seed"])).hexdigest()

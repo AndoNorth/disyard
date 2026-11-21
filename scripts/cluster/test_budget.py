@@ -13,13 +13,13 @@ PRESETS = ["ci", "dev", "soak"]
 def budget(preset, modules=None):
     env = {**os.environ}
     if modules is not None:
-        env["WDF_MODULES_DIR"] = str(modules)
+        env["WFT_MODULES_DIR"] = str(modules)
     script = ROOT / "scripts/cluster/budget.sh"
     return subprocess.run([script, preset], cwd=ROOT, env=env, capture_output=True, text=True)
 
 
 def module(root, name, namespace, memory, tiltfile=""):
-    group = namespace.removeprefix("wdf-")
+    group = namespace.removeprefix("wft-")
     path = root / name
     path.mkdir()
     size = f"{{cpu: 100m, memory: {memory}}}"
@@ -44,11 +44,11 @@ def test_ci_infra_node_figures():
     assert "workflow-worker (workflow-worker, second build)" in run.stdout
     assert "temporal-schema (temporal)" in run.stdout
     assert "appdb-migrate" not in run.stdout
-    assert "item wdf-infra rabbitmq (rabbitmq): cpu 100m/500m, memory 320Mi/320Mi" in run.stdout
+    assert "item wft-infra rabbitmq (rabbitmq): cpu 100m/500m, memory 320Mi/320Mi" in run.stdout
     assert "rabbitmq (reserve)" not in run.stdout
-    assert "item wdf-control admission (admission): cpu 50m/250m, memory 128Mi/128Mi" in run.stdout
+    assert "item wft-control admission (admission): cpu 50m/250m, memory 128Mi/128Mi" in run.stdout
     assert "admission (reserve)" not in run.stdout
-    assert "item wdf-control dispatch (dispatch): cpu 100m/500m, memory 256Mi/256Mi" in run.stdout
+    assert "item wft-control dispatch (dispatch): cpu 100m/500m, memory 256Mi/256Mi" in run.stdout
     assert "dispatch (reserve)" not in run.stdout
 
 
@@ -66,8 +66,8 @@ def test_infra_node_of_5120_mib_is_over():
 
 
 def test_module_set_over_the_node_is_refused(tmp_path):
-    module(tmp_path, "big", "wdf-infra", "5000Mi")
-    module(tmp_path, "side", "wdf-control", "512Mi", tiltfile='build_id_env = "WDF_BUILD_ID"\n')
+    module(tmp_path, "big", "wft-infra", "5000Mi")
+    module(tmp_path, "side", "wft-control", "512Mi", tiltfile='build_id_env = "WFT_BUILD_ID"\n')
     run = budget("ci", tmp_path)
     assert run.returncode == 1
     assert "side (side, second build)" in run.stdout
@@ -75,9 +75,9 @@ def test_module_set_over_the_node_is_refused(tmp_path):
 
 
 def test_module_replaces_the_reserve_of_its_name(tmp_path):
-    module(tmp_path, "rabbitmq", "wdf-infra", "300Mi")
+    module(tmp_path, "rabbitmq", "wft-infra", "300Mi")
     run = budget("ci", tmp_path)
     assert run.returncode == 0, run.stdout + run.stderr
-    assert "item wdf-infra rabbitmq (rabbitmq): cpu 100m/100m, memory 300Mi/300Mi" in run.stdout
+    assert "item wft-infra rabbitmq (rabbitmq): cpu 100m/100m, memory 300Mi/300Mi" in run.stdout
     assert "rabbitmq (reserve)" not in run.stdout
     assert "dispatch (reserve)" in run.stdout

@@ -1,4 +1,4 @@
-# wdf-artifactclient
+# wft-artifactclient
 
 The artifact client library of the artifact passing epic, and the loader of the artifact contract files.
 The contract it loads is pinned in `contracts/artifact/README.md`.
@@ -25,7 +25,7 @@ Every call takes `deadline`, the seconds that the call may take from its start, 
 - `get` writes a temporary file beside the destination and renames it only when the size and the SHA-256 match the reference.
   `get_bytes` does the same into memory for objects up to a limit, `head` reads the stored size, and `verify` reads an object through the hash check and keeps nothing.
 - A missing or corrupt object is fetched once more, and the second failure is `ArtifactLost` carrying the first as its `cause`.
-- `put_content` with `conn` and `job_id` is the caller that holds a database connection, which is the dispatch API under the `wdf_artifacts` role.
+- `put_content` with `conn` and `job_id` is the caller that holds a database connection, which is the dispatch API under the `wft_artifacts` role.
   It indexes the row first and revives a soft deleted or purged one, then sends the bytes, then links the job, so a revived row is never left without its object.
   If a purge lands between the steps, the link finds the row purged and the three steps run again, up to three rounds, and then `OutputUploadFailed` is raised.
   `conn` and `job_id` come together, and either one alone is a `ValueError`.
@@ -36,7 +36,7 @@ Both are `ValueError`, because the failure taxonomy has no code for a caller's o
 
 ## Commit by reference
 
-`commit(conn, client, references, job_id, task, accepted_attempt=None)` is what the workflow's record activity calls for an accepted attempt, with a client of the `workflow` store role and a connection of the `wdf_artifacts` role.
+`commit(conn, client, references, job_id, task, accepted_attempt=None)` is what the workflow's record activity calls for an accepted attempt, with a client of the `workflow` store role and a connection of the `wft_artifacts` role.
 A worker only returns references, and the commit is the one place where they become rows of the index.
 
 - An attempt-scoped reference is refused with `CommitRefused` unless it names this job, task and accepted attempt, and nothing is read or written first.
@@ -81,7 +81,7 @@ The client compares an entity tag that has the shape of an MD5 with the MD5 take
 
 ## Testing helpers
 
-`wdf_artifactclient.testing` is a pytest plugin, registered by the package entry point.
+`wft_artifactclient.testing` is a pytest plugin, registered by the package entry point.
 It offers a stand-in guest runner and the fixtures `scratch` and `runner`.
 A guest is a callable that reads `input/` and writes `output/`.
 A real runner joins the staging tests by adding itself to `RUNNERS`.
@@ -89,12 +89,12 @@ A real runner joins the staging tests by adding itself to `RUNNERS`.
 ## Commands
 
 ```sh
-nix develop -c uv run --frozen python -m wdf_artifactclient.contract --check contracts/artifact/failures.yaml
-nix develop -c uv run --frozen python -m wdf_artifactclient.gen --check
-nix develop -c uv run --frozen python -m wdf_artifactclient verify --endpoint URL --credentials FILE --role ROLE REF.json
+nix develop -c uv run --frozen python -m wft_artifactclient.contract --check contracts/artifact/failures.yaml
+nix develop -c uv run --frozen python -m wft_artifactclient.gen --check
+nix develop -c uv run --frozen python -m wft_artifactclient verify --endpoint URL --credentials FILE --role ROLE REF.json
 nix develop -c uv run --frozen pytest packages/artifactclient -q -rs
 nix develop -c uv run --frozen pytest packages/artifactclient -q -m isolated -k test_client
-nix develop -c uv run --frozen python -m wdf_artifactclient.faults delete|flip-byte|corrupt-checkpoint --endpoint URL --credentials FILE --role ROLE --uri URI
+nix develop -c uv run --frozen python -m wft_artifactclient.faults delete|flip-byte|corrupt-checkpoint --endpoint URL --credentials FILE --role ROLE --uri URI
 nix develop -c uv run --frozen pytest packages/artifactclient -q -rs -m isolated -k faults
 scripts/artifacts/store-outage.sh stop|start
 ```

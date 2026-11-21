@@ -133,9 +133,9 @@ Every acceptance line is a command with an observable result.
   Reason: outside the shell `kind`, `kubectl` and `helm` resolve via `~/.nix-profile` and `readlink -f` ends in `/nix/store` [ran], so a plain "under `/nix/store`" check would pass while shadowing.
 - Outside the shell: exit 1 with `fail in-dev-shell`.
 - The `inotify-instances` threshold is 512.
-- Self-test `scripts/doctor.test.sh` injects each fault with fake commands and files (`WDF_DOCTOR_ROOT` points at a fixture tree): no docker, cgroup v1, repo under `/mnt/c`, `inotify` below 512, shadow `helm` first on PATH, flakes disabled, memory below the preset.
+- Self-test `scripts/doctor.test.sh` injects each fault with fake commands and files (`WFT_DOCTOR_ROOT` points at a fixture tree): no docker, cgroup v1, repo under `/mnt/c`, `inotify` below 512, shadow `helm` first on PATH, flakes disabled, memory below the preset.
   Each makes doctor exit 1 and names exactly that check id, and the healthy fixture exits 0.
-- `memory-vs-preset` reads `deploy/presets/<WDF_PRESET>.yaml` if it exists (#2 writes it), else prints `warn memory-vs-preset: no preset file yet` and does not fail.
+- `memory-vs-preset` reads `deploy/presets/<WFT_PRESET>.yaml` if it exists (#2 writes it), else prints `warn memory-vs-preset: no preset file yet` and does not fail.
 - Proof: `scripts/doctor.test.sh`, the fault-injection self-test.
 
 **D.1 Lint and format wiring** [5] Lane D, T0. Status: open.

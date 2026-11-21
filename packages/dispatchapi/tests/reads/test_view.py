@@ -2,8 +2,8 @@
 
 from typing import get_args
 
-from wdf_dispatchapi.models import Action, Status
-from wdf_dispatchapi.reads import view
+from wft_dispatchapi.models import Action, Status
+from wft_dispatchapi.reads import view
 
 TERMINAL = {"succeeded", "partial", "failed", "cancelled", "terminated"}
 

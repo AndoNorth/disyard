@@ -1,36 +1,36 @@
 #!/usr/bin/env bash
-# Checks that the cluster wdf is the one its preset describes and that every module the preset's profile enables is
+# Checks that the cluster wft is the one its preset describes and that every module the preset's profile enables is
 # ready, without starting a pod or changing anything, so smoke can call it before it drives a workload.
 # Static checks need no cluster: the preset and topology loaders, the pod slots and the module budget.
 # Live checks: nodes, pool labels and taints; node container limits and allocatable; the namespace quotas and
 # LimitRanges; each module's own readiness; live requests per node within the budget; no Pending pod, quota refusal,
 # OOM kill or memory pressure in the infra and control namespaces; and every host port bound to loopback only.
 # The worker namespace is left out of the pressure check, because pool OOM kills are workload behaviour.
-# WDF_PRESET selects the preset (default ci). Every check prints "ok <check> <detail>" or "FAIL <check> <detail>",
+# WFT_PRESET selects the preset (default ci). Every check prints "ok <check> <detail>" or "FAIL <check> <detail>",
 # then a count line follows.
-# Exit 0 every check ok, 1 a check failed, 2 usage, 4 refused: no cluster wdf, or one started for another preset.
+# Exit 0 every check ok, 1 a check failed, 2 usage, 4 refused: no cluster wft, or one started for another preset.
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 # shellcheck source=/dev/null
 source scripts/verify/cluster/lib/tools.sh
 
-[ $# -eq 0 ] || { echo "usage: cluster-verify.sh, with the preset in WDF_PRESET" >&2; exit 2; }
-preset=${WDF_PRESET:-ci}
+[ $# -eq 0 ] || { echo "usage: cluster-verify.sh, with the preset in WFT_PRESET" >&2; exit 2; }
+preset=${WFT_PRESET:-ci}
 file=deploy/presets/$preset.yaml
 [ -f "$file" ] || { echo "usage: no preset $file" >&2; exit 2; }
-state=${WDF_STATE_DIR:-${XDG_STATE_HOME:-$HOME/.local/state}/wasm-dag-forge}
-context=kind-wdf
+state=${WFT_STATE_DIR:-${XDG_STATE_HOME:-$HOME/.local/state}/wasm-dag-forge}
+context=kind-wft
 k() { kubectl --context "$context" "$@"; }
 refuse() { echo "refused: $*" >&2; exit 4; }
 
-if [ -z "${WDF_CLUSTER_LOCK_HELD:-}" ]; then
-    exec 9>/tmp/wdf-cluster.lock
-    flock -w 900 9 || { echo "could not take /tmp/wdf-cluster.lock" >&2; exit 1; }
+if [ -z "${WFT_CLUSTER_LOCK_HELD:-}" ]; then
+    exec 9>/tmp/wft-cluster.lock
+    flock -w 900 9 || { echo "could not take /tmp/wft-cluster.lock" >&2; exit 1; }
 fi
 
-kind get clusters 2>/dev/null | grep -qx wdf || refuse "no kind cluster named wdf, start one with: just up"
+kind get clusters 2>/dev/null | grep -qx wft || refuse "no kind cluster named wft, start one with: just up"
 started=$(cat "$state/cluster.owner" 2>/dev/null || true)
-[ "$started" = "$preset" ] || refuse "cluster wdf was started for preset ${started:-unknown}, not $preset"
+[ "$started" = "$preset" ] || refuse "cluster wft was started for preset ${started:-unknown}, not $preset"
 
 topology=contracts/topology/topology.yaml
 pool_label=$(yq '.pool_label' "$topology")
@@ -108,7 +108,7 @@ check_nodes() {
 
 check_limits() {
     local container cpus mem swap got want bad=""
-    if ! WDF_RENDER_DIR="$work/render" scripts/cluster/render.sh "$preset" >/dev/null 2>"$work/render.err"; then
+    if ! WFT_RENDER_DIR="$work/render" scripts/cluster/render.sh "$preset" >/dev/null 2>"$work/render.err"; then
         fail limits "render: $(tail -n 1 "$work/render.err")"
         return
     fi
@@ -189,7 +189,7 @@ check_drift() {
 
 check_pressure() {
     local ns found=""
-    for ns in wdf-infra wdf-control; do
+    for ns in wft-infra wft-control; do
         found+=$(k -n "$ns" get pods --field-selector=status.phase=Pending -o jsonpath='{range .items[*]}'"$ns"'/{.metadata.name} Pending: {.status.conditions[?(@.type=="PodScheduled")].message}{"\n"}{end}')
         found+=$(k -n "$ns" get pods -o jsonpath='{range .items[*]}'"$ns"'/{.metadata.name} {.status.containerStatuses[*].lastState.terminated.reason} {.status.containerStatuses[*].state.terminated.reason}{"\n"}{end}' |
             awk '/OOMKilled/ { print $1 " OOMKilled" }')
@@ -199,7 +199,7 @@ check_pressure() {
     found+=$(k get nodes -o jsonpath='{range .items[*]}{.metadata.name} {.status.conditions[?(@.type=="MemoryPressure")].status}{"\n"}{end}' |
         awk '$2 == "True" { print $1 " MemoryPressure" }')
     if [ -z "$found" ]; then
-        ok pressure "no Pending pod, quota refusal or OOM kill in wdf-infra and wdf-control, no node under memory pressure"
+        ok pressure "no Pending pod, quota refusal or OOM kill in wft-infra and wft-control, no node under memory pressure"
     else
         fail pressure "$(sed '/^$/d' <<<"$found" | paste -sd ';' | sed 's/;/; /g')"
     fi

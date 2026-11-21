@@ -43,7 +43,7 @@
               "type": "object",
               "required": ["source"],
               "additionalProperties": false,
-              "properties": { "source": { "type": "string", "pattern": "^/wdf/[a-z][a-z0-9-]*$" } }
+              "properties": { "source": { "type": "string", "pattern": "^/wft/[a-z][a-z0-9-]*$" } }
             }
           }
         }

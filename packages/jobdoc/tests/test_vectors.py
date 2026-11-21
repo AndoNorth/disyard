@@ -4,8 +4,8 @@ from pathlib import Path
 
 import pytest
 import yaml
-from wdf_jobdoc import DocumentInvalid, parse_document
-from wdf_jobdoc.profile_files import load_profile
+from wft_jobdoc import DocumentInvalid, parse_document
+from wft_jobdoc.profile_files import load_profile
 
 CONTRACT = Path(__file__).resolve().parents[3] / "contracts/job"
 VECTORS = CONTRACT / "vectors/invalid/schema"

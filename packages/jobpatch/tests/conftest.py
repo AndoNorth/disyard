@@ -2,9 +2,9 @@ import json
 from pathlib import Path
 
 import pytest
-from wdf_jobdoc import parse_document
-from wdf_jobdoc.profile_files import load_profile
-from wdf_plan import bind, compile_plan
+from wft_jobdoc import parse_document
+from wft_jobdoc.profile_files import load_profile
+from wft_plan import bind, compile_plan
 
 ROOT = Path(__file__).resolve().parents[3]
 SLOTS_FIXTURE = ROOT / "contracts/job/vectors/slots-fixture"

@@ -1,5 +1,5 @@
 [project]
-name = "wdf-workflow"
+name = "wft-workflow"
 version = "0.0.0"
 license = "Apache-2.0"
 requires-python = ">=3.13,<3.14"
@@ -8,46 +8,46 @@ dependencies = [
     "pydantic",
     "pyyaml",
     "temporalio",
-    "wdf-artifactclient",
-    "wdf-artifactindex",
-    "wdf-artifactreaper",
-    "wdf-compat",
-    "wdf-compile",
-    "wdf-events",
-    "wdf-eventstore",
-    "wdf-itest",
-    "wdf-jobdoc",
-    "wdf-jobpatch",
-    "wdf-jobstate",
-    "wdf-keys",
-    "wdf-plan",
-    "wdf-runtime",
-    "wdf-stages",
-    "wdf-temporal",
+    "wft-artifactclient",
+    "wft-artifactindex",
+    "wft-artifactreaper",
+    "wft-compat",
+    "wft-compile",
+    "wft-events",
+    "wft-eventstore",
+    "wft-itest",
+    "wft-jobdoc",
+    "wft-jobpatch",
+    "wft-jobstate",
+    "wft-keys",
+    "wft-plan",
+    "wft-runtime",
+    "wft-stages",
+    "wft-temporal",
 ]
 
 # The drivers of a deployed cluster, which no image runs.
 [project.optional-dependencies]
-cluster = ["wdf-clusterkit"]
+cluster = ["wft-clusterkit"]
 
 [tool.uv.sources]
-wdf-artifactclient = { workspace = true }
-wdf-artifactindex = { workspace = true }
-wdf-artifactreaper = { workspace = true }
-wdf-clusterkit = { workspace = true }
-wdf-compat = { workspace = true }
-wdf-compile = { workspace = true }
-wdf-events = { workspace = true }
-wdf-eventstore = { workspace = true }
-wdf-itest = { workspace = true }
-wdf-jobdoc = { workspace = true }
-wdf-jobpatch = { workspace = true }
-wdf-jobstate = { workspace = true }
-wdf-keys = { workspace = true }
-wdf-plan = { workspace = true }
-wdf-runtime = { workspace = true }
-wdf-stages = { workspace = true }
-wdf-temporal = { workspace = true }
+wft-artifactclient = { workspace = true }
+wft-artifactindex = { workspace = true }
+wft-artifactreaper = { workspace = true }
+wft-clusterkit = { workspace = true }
+wft-compat = { workspace = true }
+wft-compile = { workspace = true }
+wft-events = { workspace = true }
+wft-eventstore = { workspace = true }
+wft-itest = { workspace = true }
+wft-jobdoc = { workspace = true }
+wft-jobpatch = { workspace = true }
+wft-jobstate = { workspace = true }
+wft-keys = { workspace = true }
+wft-plan = { workspace = true }
+wft-runtime = { workspace = true }
+wft-stages = { workspace = true }
+wft-temporal = { workspace = true }
 
 [build-system]
 requires = ["hatchling"]

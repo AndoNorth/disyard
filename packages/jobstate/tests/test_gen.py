@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 
 ROOT = Path(__file__).resolve().parents[3]
-VOCAB = "packages/jobstate/src/wdf_jobstate/migrations/R__job_vocab.sql"
+VOCAB = "packages/jobstate/src/wft_jobstate/migrations/R__job_vocab.sql"
 STATUS = "contracts/status/status.yaml"
 FILES = ["contracts/state/schemas/job-row/1.json", VOCAB]
 INPUTS = [STATUS, "contracts/job/limits.yaml"]
@@ -16,7 +16,7 @@ INPUTS = [STATUS, "contracts/job/limits.yaml"]
 
 def run(*args):
     return subprocess.run(
-        [sys.executable, "-m", "wdf_jobstate.gen", *args], capture_output=True, text=True
+        [sys.executable, "-m", "wft_jobstate.gen", *args], capture_output=True, text=True
     )
 
 

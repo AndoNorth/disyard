@@ -4,7 +4,7 @@ import subprocess
 import sys
 
 import pytest
-from wdf_storecheck.s3 import dump_credentials
+from wft_storecheck.s3 import dump_credentials
 
 pytestmark = [pytest.mark.integration, pytest.mark.pair]
 
@@ -13,14 +13,14 @@ pytestmark = [pytest.mark.integration, pytest.mark.pair]
 def run_once(shelf, login, tmp_path):
     credentials = tmp_path / "credentials.json"
     dump_credentials(credentials, shelf.credentials)
-    dsn = login.dsn("wdf_reaper")
+    dsn = login.dsn("wft_reaper")
 
     def run(*extra: str, dsn: str = dsn) -> subprocess.CompletedProcess:
         return subprocess.run(
             [
                 sys.executable,
                 "-m",
-                "wdf_artifactreaper",
+                "wft_artifactreaper",
                 "run-once",
                 "--dsn",
                 dsn,
@@ -48,7 +48,7 @@ def snapshot(world) -> tuple:
         "SELECT row_id, deleted_at, cache_key FROM artifact ORDER BY row_id"
     ).fetchall()
     progress = world.db.execute("SELECT * FROM reaper_job ORDER BY job_id").fetchall()
-    return rows, progress, [world.keys(b) for b in ("wdf-results", "wdf-checkpoints")]
+    return rows, progress, [world.keys(b) for b in ("wft-results", "wft-checkpoints")]
 
 
 def test_reap_dry_run_prints_the_counters_and_changes_no_row_or_object(world, run_once, ago):

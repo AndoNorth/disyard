@@ -75,7 +75,7 @@
           "type": "integer"
         },
         "schema": {
-          "const": "wdf.summary/1",
+          "const": "wft.summary/1",
           "title": "Schema",
           "type": "string"
         }
@@ -230,7 +230,7 @@
           "type": "integer"
         },
         "schema": {
-          "const": "wdf.summary/1",
+          "const": "wft.summary/1",
           "title": "Schema",
           "type": "string"
         }
@@ -248,7 +248,7 @@
       "type": "object"
     }
   },
-  "$id": "urn:wdf:schema:workload:summary:1",
+  "$id": "urn:wft:schema:workload:summary:1",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "description": "summary.json: the canonical output of an aggregate task.",
   "discriminator": {

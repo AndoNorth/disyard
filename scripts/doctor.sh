@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # Host preflight: one line per check "ok|warn|fail <id>: <detail>", exit 1 if any fail.
-# WDF_DOCTOR_ROOT prefixes every host path read (proc, sys, flake store) so the self-test can point at a fixture tree.
+# WFT_DOCTOR_ROOT prefixes every host path read (proc, sys, flake store) so the self-test can point at a fixture tree.
 set -uo pipefail
 
-ROOT="${WDF_DOCTOR_ROOT:-}"
-REPO="${WDF_DOCTOR_REPO:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
-PRESET="${WDF_PRESET:-ci}"
+ROOT="${WFT_DOCTOR_ROOT:-}"
+REPO="${WFT_DOCTOR_REPO:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
+PRESET="${WFT_PRESET:-ci}"
 MIN_INOTIFY=512
 MIN_DOCKER_MAJOR=24
 TOOLS=(kind ctlptl kubectl helm tilt just uv python3 node ruff yamllint shellcheck actionlint kubeconform nixfmt yq wasmtime wasm-tools)

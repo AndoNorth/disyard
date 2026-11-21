@@ -4,7 +4,7 @@ import subprocess
 import sys
 
 import pytest
-from wdf_itest.fixtures import names_isolated
+from wft_itest.fixtures import names_isolated
 
 SAMPLE = """
 import pytest

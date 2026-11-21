@@ -47,7 +47,7 @@ Does the official chart `temporal` 1.8.0 (server 1.32.2), with Postgres persiste
 | SDK | `temporalio` 1.35.0 from `uv.lock`, Python 3.13.15, `uv.lock` unchanged |
 | Left behind | nothing: the run ended with `scripts/nuke.sh`, after which `kind get clusters` printed `No kind clusters found.` and no process held the cluster lock |
 
-The values follow the issue: the stores `default` and `visibility`, each `sql` with `pluginName: postgres12`, the databases `temporal` and `temporal_visibility` on `temporaldb.wdf-infra.svc:5432`, the password from the `temporaldb` Secret (key `POSTGRES_PASSWORD`), `createDatabase: false` and `manageSchema: true`, `numHistoryShards: 512`, `web.enabled: false`, `server.config.namespaces.create: false`, and no top-level `cassandra`, `elasticsearch`, `mysql`, `postgresql`, `prometheus` or `grafana` key.
+The values follow the issue: the stores `default` and `visibility`, each `sql` with `pluginName: postgres12`, the databases `temporal` and `temporal_visibility` on `temporaldb.wft-infra.svc:5432`, the password from the `temporaldb` Secret (key `POSTGRES_PASSWORD`), `createDatabase: false` and `manageSchema: true`, `numHistoryShards: 512`, `web.enabled: false`, `server.config.namespaces.create: false`, and no top-level `cassandra`, `elasticsearch`, `mysql`, `postgresql`, `prometheus` or `grafana` key.
 Every pod carries the infra pool's node selector and toleration, and requests equal limits.
 
 ## Load
@@ -78,7 +78,7 @@ A throttled period is a 100 ms CFS period in which the container hit its quota, 
 | Sum | 1,024 MiB | 502 MiB | 1,000m | | 609m | | | |
 
 The memory sum adds peaks reached at different times, so it bounds the joint peak from above.
-The `wdf-infra` quota with Temporal running used 2,990m of 3,045m CPU limits and 3,632 MiB of 4,772 MiB memory limits (`quota_used`, `quota_hard`).
+The `wft-infra` quota with Temporal running used 2,990m of 3,045m CPU limits and 3,632 MiB of 4,772 MiB memory limits (`quota_used`, `quota_hard`).
 
 ## Do the keys reach the history service
 

@@ -1,5 +1,5 @@
 {
-  "$id": "urn:wdf:schema:state.artifact-row:1",
+  "$id": "urn:wft:schema:state.artifact-row:1",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
   "description": "A reference or a compile cache entry, with the columns of contracts/state/README.md.\n\nThe producer fields have no default, because the attempt is stored as the reference carries it\nand never computed: all three are null for the content-addressed kinds and for a cache entry.",

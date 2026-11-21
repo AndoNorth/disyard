@@ -7,21 +7,21 @@ namespace = module["namespace"]
 res = module["resources"]
 topology = read_yaml("../../contracts/topology/topology.yaml")
 pool = {"key": topology["pool_label"], "value": "infra"}
-role = "wdf-placement-read"
+role = "wft-placement-read"
 port = 8080
 
-image = "wdf-" + name
+image = "wft-" + name
 custom_build(
     image,
     os.path.abspath("image.sh"),
     deps = ["../../packages", "../../uv.lock", "Dockerfile", "image.sh", "../versions.yaml"],
 )
 
-ready = "/tmp/wdf-ready"
+ready = "/tmp/wft-ready"
 labels = {"app.kubernetes.io/name": name}
 env = {
-    "WDF_PLACEMENT_LISTEN": "0.0.0.0:%d" % port,
-    "WDF_READY_FILE": ready,
+    "WFT_PLACEMENT_LISTEN": "0.0.0.0:%d" % port,
+    "WFT_READY_FILE": ready,
 }
 
 k8s_yaml(encode_yaml_stream([

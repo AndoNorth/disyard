@@ -1,5 +1,5 @@
 {
-  "$id": "urn:wdf:schema:temporal:control-signal:1",
+  "$id": "urn:wft:schema:temporal:control-signal:1",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
   "description": "The argument of the signals cancel, terminate and pause.",

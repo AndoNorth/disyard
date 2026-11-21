@@ -1,20 +1,20 @@
 ---
 roles:
   admin:
-    wdf-sources: [bucket]
+    wft-sources: [bucket]
   submit:
-    wdf-sources: [put]
+    wft-sources: [put]
   indexer:
-    wdf-sources: [put]
+    wft-sources: [put]
   compile:
-    wdf-sources: [get]
+    wft-sources: [get]
   simulate:
-    wdf-results: [put]
+    wft-results: [put]
   aggregate:
-    wdf-results: [get]
+    wft-results: [get]
   workflow:
-    wdf-sources: [get]
+    wft-sources: [get]
   export:
-    wdf-results: [get]
+    wft-results: [get]
   reaper:
-    wdf-results: [delete]
+    wft-results: [delete]

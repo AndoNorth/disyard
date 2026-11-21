@@ -1,6 +1,6 @@
 name: workflow-worker
 group: control
-namespace: wdf-control
+namespace: wft-control
 artifact:
   kind: image
   pin: python
@@ -22,8 +22,8 @@ resources:
 readiness:
   command:
     - kubectl
-    - --context=kind-wdf
-    - --namespace=wdf-control
+    - --context=kind-wft
+    - --namespace=wft-control
     - wait
     - --for=condition=Available
     - deployment

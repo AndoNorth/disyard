@@ -89,8 +89,8 @@ The lane issue template is a markdown template, not an issue form, because worke
 4. `main` stays green (`nix develop -c just ci`).
    There is no long-lived integration branch, and a lane that falls more than a day behind rebases.
    Within a lane, issues merge in order when the issue says `needs`, and across lanes any order works.
-5. Containers use a worker slot: project name `wdf-<slot>`, host ports `127.0.0.1:<base+slot*10+k>`, label `wdf.dev/verify-run=<run id>`.
-   The kind cluster is single-owner: every recipe that touches it takes `flock /tmp/wdf-cluster.lock`, and a recipe refuses to drive a cluster it did not start.
+5. Containers use a worker slot: project name `wft-<slot>`, host ports `127.0.0.1:<base+slot*10+k>`, label `wft.dev/verify-run=<run id>`.
+   The kind cluster is single-owner: every recipe that touches it takes `flock /tmp/wft-cluster.lock`, and a recipe refuses to drive a cluster it did not start.
 6. An out-of-lane edit is a review rejection, not a merge conflict to resolve.
    The worker comments on the issue and the spec author fixes the lane table.
 

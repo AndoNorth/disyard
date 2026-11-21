@@ -5,9 +5,9 @@ import os
 from pathlib import Path
 
 import pytest
-from wdf_artifactclient.contract import registry_outputs
-from wdf_artifactclient.errors import OutputMissing
-from wdf_artifactclient.staging import (
+from wft_artifactclient.contract import registry_outputs
+from wft_artifactclient.errors import OutputMissing
+from wft_artifactclient.staging import (
     Skipped,
     capture_tail,
     collect_outputs,
@@ -15,7 +15,7 @@ from wdf_artifactclient.staging import (
     stage_inputs,
     upload_tail,
 )
-from wdf_events.models import ProducerRef
+from wft_events.models import ProducerRef
 
 JOB = "123e4567-e89b-42d3-a456-426614174000"
 PRODUCER = ProducerRef(job=JOB, task="t0", attempt="r0a1")
@@ -47,7 +47,7 @@ def _bytes(source) -> bytes:
 
 
 def reference(name: str, kind: str = "component") -> dict:
-    uri = f"s3://wdf-components/sha256/{SHA[:2]}/{SHA}"
+    uri = f"s3://wft-components/sha256/{SHA[:2]}/{SHA}"
     return {"uri": uri, "sha256": SHA, "size": 3, "name": name, "kind": kind}
 
 

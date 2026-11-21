@@ -1,7 +1,7 @@
 """The summary format and the exit mapping of the smoke recipe contract."""
 
 import pytest
-from wdf_acceptance.report import (
+from wft_acceptance.report import (
     EXIT_FAILED,
     EXIT_OK,
     EXIT_REFUSED,
@@ -19,7 +19,7 @@ EXAMPLE = [
     ok("cluster-verify", "ci: 10 ok, 0 failed"),
     ok("api", "dispatch and control /readyz ready"),
     ok("broker", "0 dead letters before the job"),
-    ok("temporal", "namespace wdf, build exit-a current (made current), deployed exit-a"),
+    ok("temporal", "namespace wft, build exit-a current (made current), deployed exit-a"),
     ok("placement", "3 pools"),
     ok("job-submit", "accepted 0b6e2f0a-..."),
     ok("job-run", "succeeded, build ran (attempt 1)"),
@@ -34,7 +34,7 @@ def test_row_line_format():
         "ok cluster-verify ci: 10 ok, 0 failed",
         "ok api dispatch and control /readyz ready",
         "ok broker 0 dead letters before the job",
-        "ok temporal namespace wdf, build exit-a current (made current), deployed exit-a",
+        "ok temporal namespace wft, build exit-a current (made current), deployed exit-a",
         "ok placement 3 pools",
         "ok job-submit accepted 0b6e2f0a-...",
         "ok job-run succeeded, build ran (attempt 1)",

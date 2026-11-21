@@ -1,5 +1,5 @@
 {
-  "$id": "urn:wdf:schema:job.partial:1.0",
+  "$id": "urn:wft:schema:job.partial:1.0",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
   "description": "The tasks that did not run to completion, so a partial run is never read as complete.",

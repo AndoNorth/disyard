@@ -4,8 +4,8 @@ the pool's NetworkPolicy allows: the mirror from the compile pod alone, the app 
 import socket
 
 import pytest
-from wdf_worker import probe
-from wdf_worker.config import MIRROR_ENV
+from wft_worker import probe
+from wft_worker.config import MIRROR_ENV
 
 
 @pytest.fixture

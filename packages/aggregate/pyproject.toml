@@ -1,20 +1,20 @@
 [project]
-name = "wdf-aggregate"
+name = "wft-aggregate"
 version = "0.0.0"
 license = "Apache-2.0"
 requires-python = ">=3.13,<3.14"
 dependencies = [
     "numpy>=2.5.4",
     "pandas>=3.1.1",
-    "wdf-artifactclient",
-    "wdf-kernel",
-    "wdf-storecheck",
+    "wft-artifactclient",
+    "wft-kernel",
+    "wft-storecheck",
 ]
 
 [tool.uv.sources]
-wdf-artifactclient = { workspace = true }
-wdf-kernel = { workspace = true }
-wdf-storecheck = { workspace = true }
+wft-artifactclient = { workspace = true }
+wft-kernel = { workspace = true }
+wft-storecheck = { workspace = true }
 
 [build-system]
 requires = ["hatchling"]

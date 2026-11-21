@@ -1,10 +1,10 @@
-"""`python -m wdf_placement.show` prints one line per task pool of the service's view, then the
+"""`python -m wft_placement.show` prints one line per task pool of the service's view, then the
 snapshot's age and the error of its last read."""
 
 import subprocess
 import sys
 
-from wdf_placement import show
+from wft_placement import show
 
 
 def test_show_prints_each_pool(ci_api, running, until, capsys):
@@ -12,9 +12,9 @@ def test_show_prints_each_pool(ci_api, running, until, capsys):
     served = running()
     assert show.main(["--url", served.url]) == 0
     assert capsys.readouterr().out.splitlines() == [
-        "compile queue=wdf-compile slot=1000m/1024Mi ready_workers=none free=none images=none",
-        "simulate queue=wdf-simulate slot=250m/512Mi ready_workers=none free=none images=none",
-        "aggregate queue=wdf-aggregate slot=1000m/1024Mi ready_workers=none free=none images=none",
+        "compile queue=wft-compile slot=1000m/1024Mi ready_workers=none free=none images=none",
+        "simulate queue=wft-simulate slot=250m/512Mi ready_workers=none free=none images=none",
+        "aggregate queue=wft-aggregate slot=1000m/1024Mi ready_workers=none free=none images=none",
         "snapshot_age_s=none",
         "last_error=none",
     ]
@@ -22,18 +22,18 @@ def test_show_prints_each_pool(ci_api, running, until, capsys):
     ci_api.hold.set()
     until(lambda: served.snapshotter.current()[0] is not None)
     result = subprocess.run(
-        [sys.executable, "-m", "wdf_placement.show", "--url", served.url],
+        [sys.executable, "-m", "wft_placement.show", "--url", served.url],
         capture_output=True,
         text=True,
         check=True,
     )
     assert result.stdout.splitlines() == [
-        "compile queue=wdf-compile slot=1000m/1024Mi ready_workers=1 free=300m/110Mi"
-        " images=wdf-compile-worker:tilt-6c1f2b9e0a4d7e31",
-        "simulate queue=wdf-simulate slot=250m/512Mi ready_workers=1 free=50m/22Mi"
-        " images=wdf-simulate-worker:tilt-0d5a8e3c7b2f1946",
-        "aggregate queue=wdf-aggregate slot=1000m/1024Mi ready_workers=1 free=300m/110Mi"
-        " images=wdf-aggregate-worker:tilt-9e4b1c7f2a6d0853",
+        "compile queue=wft-compile slot=1000m/1024Mi ready_workers=1 free=300m/110Mi"
+        " images=wft-compile-worker:tilt-6c1f2b9e0a4d7e31",
+        "simulate queue=wft-simulate slot=250m/512Mi ready_workers=1 free=50m/22Mi"
+        " images=wft-simulate-worker:tilt-0d5a8e3c7b2f1946",
+        "aggregate queue=wft-aggregate slot=1000m/1024Mi ready_workers=1 free=300m/110Mi"
+        " images=wft-aggregate-worker:tilt-9e4b1c7f2a6d0853",
         "snapshot_age_s=0",
         "last_error=none",
     ]

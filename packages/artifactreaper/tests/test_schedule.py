@@ -7,8 +7,8 @@ from concurrent.futures import ThreadPoolExecutor
 
 import pytest
 from temporalio.client import Client, ScheduleOverlapPolicy
-from wdf_artifactreaper import schedule
-from wdf_artifactreaper.__main__ import main
+from wft_artifactreaper import schedule
+from wft_artifactreaper.__main__ import main
 
 pytestmark = pytest.mark.integration
 

@@ -1,5 +1,5 @@
 [project]
-name = "wdf-artifactreaper"
+name = "wft-artifactreaper"
 version = "0.0.0"
 license = "Apache-2.0"
 requires-python = ">=3.13,<3.14"
@@ -7,15 +7,15 @@ dependencies = [
     "psycopg[binary]",
     "pyyaml",
     "temporalio",
-    "wdf-artifactclient",
-    "wdf-artifactindex",
-    "wdf-storecheck",
+    "wft-artifactclient",
+    "wft-artifactindex",
+    "wft-storecheck",
 ]
 
 [tool.uv.sources]
-wdf-artifactclient = { workspace = true }
-wdf-artifactindex = { workspace = true }
-wdf-storecheck = { workspace = true }
+wft-artifactclient = { workspace = true }
+wft-artifactindex = { workspace = true }
+wft-storecheck = { workspace = true }
 
 [build-system]
 requires = ["hatchling"]

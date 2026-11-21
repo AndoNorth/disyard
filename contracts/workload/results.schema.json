@@ -9,7 +9,7 @@
           "type": "string"
         },
         "type": {
-          "description": "One of the column types of wdf_kernel.format.",
+          "description": "One of the column types of wft_kernel.format.",
           "pattern": "^[a-z]+$",
           "title": "Type",
           "type": "string"
@@ -41,10 +41,10 @@
       "type": "object"
     }
   },
-  "$id": "urn:wdf:schema:workload:results:1",
+  "$id": "urn:wft:schema:workload:results:1",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
-  "description": "results.yaml: the block kinds of wdf.sim.v1 with their columns.",
+  "description": "results.yaml: the block kinds of wft.sim.v1 with their columns.",
   "properties": {
     "kinds": {
       "minProperties": 1,
@@ -57,7 +57,7 @@
       "type": "object"
     },
     "schema": {
-      "const": "wdf.sim.v1",
+      "const": "wft.sim.v1",
       "title": "Schema",
       "type": "string"
     }

@@ -3,10 +3,10 @@
 import time
 
 import pytest
-from wdf_artifactclient.client import PART_BYTES, ArtifactClient, RetryPolicy
-from wdf_artifactclient.errors import OutputUploadFailed
-from wdf_events.models import ProducerRef
-from wdf_storecheck.fullness import HEARTBEAT_SECONDS, OBJECT, FullDisk, fill
+from wft_artifactclient.client import PART_BYTES, ArtifactClient, RetryPolicy
+from wft_artifactclient.errors import OutputUploadFailed
+from wft_events.models import ProducerRef
+from wft_storecheck.fullness import HEARTBEAT_SECONDS, OBJECT, FullDisk, fill
 
 pytestmark = [pytest.mark.integration, pytest.mark.isolated]
 
@@ -32,7 +32,7 @@ def test_full_store_maps_to_output_upload_failed(start_capped, product):
         try:
             time.sleep(HEARTBEAT_SECONDS)
             run = FullDisk()
-            fill(target, "wdf-results", run)
+            fill(target, "wft-results", run)
             assert run.refusal[1] == 500
 
             # An object of the size that filled the volume, since a few bytes can still fit.

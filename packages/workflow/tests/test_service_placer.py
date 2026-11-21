@@ -1,6 +1,6 @@
 """ServicePlacer passes the placer contract over a placement server in this process, raises on a
 refusal or a timeout so the `place` local activity retries, and the service picks it only when
-WDF_PLACEMENT_URL is set."""
+WFT_PLACEMENT_URL is set."""
 
 import threading
 import time
@@ -8,15 +8,15 @@ from contextlib import contextmanager
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 import pytest
-from wdf_workflow.placement import (
+from wft_workflow.placement import (
     PlaceCall,
     PlacementRequest,
     PlaceResult,
     ServicePlacer,
     StaticPlacer,
 )
-from wdf_workflow.service import ENV, REAPER_ENV, Config
-from wdf_workflow.testing import placer_contract
+from wft_workflow.service import ENV, REAPER_ENV, Config
+from wft_workflow.testing import placer_contract
 
 SIMULATE = PlacementRequest(task_type="simulate", cpu_milli=250, memory_mib=512, run_timeout_s=900)
 
@@ -91,15 +91,15 @@ def environ(**changes) -> dict[str, str]:
 
 def test_service_uses_static_without_url():
     absent = environ()
-    del absent["WDF_PLACEMENT_URL"]
-    for unset in (absent, environ(WDF_PLACEMENT_URL="")):
+    del absent["WFT_PLACEMENT_URL"]
+    for unset in (absent, environ(WFT_PLACEMENT_URL="")):
         config = Config.from_env(unset)
         assert config.placement_url is None
         assert isinstance(config.placer(), StaticPlacer)
 
 
 def test_service_uses_service_placer_with_url():
-    url = "http://placement.wdf-control.svc:8080"
-    placer = Config.from_env(environ(WDF_PLACEMENT_URL=url)).placer()
+    url = "http://placement.wft-control.svc:8080"
+    placer = Config.from_env(environ(WFT_PLACEMENT_URL=url)).placer()
     assert isinstance(placer, ServicePlacer)
     assert placer.url == f"{url}/place"

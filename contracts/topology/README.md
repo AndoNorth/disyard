@@ -1,7 +1,7 @@
 # Topology contract
 
 Owner epic: #2 (fixed-resource cluster and Tilt).
-Version: 1
+Version: 2
 Consumers: placement and workers, observability, load and chaos, and the cluster and namespace work inside the owner epic.
 
 The topology fixes how nodes are labelled and tainted into pools and which namespaces exist.
@@ -9,17 +9,17 @@ The table is [topology.yaml](topology.yaml), validated by [topology.schema.json]
 
 ## Pools
 
-Each pool node carries the label `wdf.dev/pool=<pool>` and the taint `wdf.dev/pool=<pool>:NoSchedule`.
+Each pool node carries the label `wft.dev/pool=<pool>` and the taint `wft.dev/pool=<pool>:NoSchedule`.
 Pool nodes are the preset roles `infra`, `obs`, `compile`, `simulate` and `aggregate`, and the pool name equals the role name.
 The `control-plane` role has no pool and keeps its own taint.
-The `wdf.dev` prefix is a placeholder, and consumers read the label key from `pool_label` in the table.
+The `wft.dev` prefix is a placeholder, and consumers read the label key from `pool_label` in the table.
 A label alone lets infra pods distort pool capacity, so the taint is part of the contract.
 
 ## Namespaces
 
-Four namespaces exist: `wdf-infra`, `wdf-control`, `wdf-workers` and `wdf-obs`, one per module group.
+Four namespaces exist: `wft-infra`, `wft-control`, `wft-workers` and `wft-obs`, one per module group.
 Each carries a ResourceQuota and a LimitRange, because a quota without defaults rejects pods that lack requests and limits.
-The `wdf-workers` quota is set slightly above pool allocatable, which is a guardrail against runaway creation while the scheduler's own accounting stays binding.
+The `wft-workers` quota is set slightly above pool allocatable, which is a guardrail against runaway creation while the scheduler's own accounting stays binding.
 The quota numbers are derived from the preset, so they are not stored in the table.
 
 ## Rule for consumers

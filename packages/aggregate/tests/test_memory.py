@@ -8,13 +8,13 @@ from pathlib import Path
 
 import pytest
 import yaml
-from wdf_aggregate.read import max_bytes
+from wft_aggregate.read import max_bytes
 
 ROOT = Path(__file__).resolve().parents[3]
 SLOTS = ROOT / "deploy/presets/slots/ci.yaml"
 HEAD = (
     b'<?xml version="1.0" encoding="UTF-8"?>\n'
-    b'<results schema="wdf.sim.v1" seed="3">\n'
+    b'<results schema="wft.sim.v1" seed="3">\n'
     b'<block id="b" kind="scalar">\n'
 )
 # The smallest valid row, so the cap holds the most rows a result can carry.
@@ -48,7 +48,7 @@ def test_cap_sized_result_peak(tmp_path, cap_sized, aggregation):
 
     result = subprocess.run(
         [
-            sys.executable, "-m", "wdf_aggregate", "files",
+            sys.executable, "-m", "wft_aggregate", "files",
             "--aggregation", aggregation,
             "--args", "{}",
             "--out", str(tmp_path / "out"),

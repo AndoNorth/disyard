@@ -5,8 +5,8 @@ import random
 import uuid
 
 import pytest
-from wdf_events import SchemaInvalid, UnsupportedMajor, from_bytes, to_bytes
-from wdf_events.profile import CONTRACT_DIR
+from wft_events import SchemaInvalid, UnsupportedMajor, from_bytes, to_bytes
+from wft_events.profile import CONTRACT_DIR
 
 VECTORS = sorted(CONTRACT_DIR.glob("vectors/accepted/valid/*.json")) + sorted(
     CONTRACT_DIR.glob("vectors/types/*/valid.json")
@@ -56,7 +56,7 @@ def test_generated_events_survive_a_round_trip():
 
 
 def test_a_known_major_with_an_unknown_type_is_an_unknown_type():
-    document = {**ACCEPTED, "type": "dev.wdf.job.nosuchthing.v1"}
+    document = {**ACCEPTED, "type": "dev.wft.job.nosuchthing.v1"}
     with pytest.raises(SchemaInvalid) as raised:
         from_bytes(canonical(document))
     assert raised.value.reason == "unknown-type"
@@ -65,8 +65,8 @@ def test_a_known_major_with_an_unknown_type_is_an_unknown_type():
 def test_an_unknown_major_is_unsupported_before_the_data_is_opened():
     document = {
         **ACCEPTED,
-        "type": "dev.wdf.job.accepted.v2",
-        "dataschema": "urn:wdf:schema:job.accepted:2.0",
+        "type": "dev.wft.job.accepted.v2",
+        "dataschema": "urn:wft:schema:job.accepted:2.0",
     }
     document["data"] = {"nothing": "the v1 schema would accept"}
     with pytest.raises(UnsupportedMajor):
@@ -83,7 +83,7 @@ def test_data_failing_the_named_schema_is_schema_invalid():
 
 def test_an_unknown_minor_ignores_added_fields_and_a_known_minor_rejects_them():
     unknown = json.loads(json.dumps(ACCEPTED))
-    unknown["dataschema"] = "urn:wdf:schema:job.accepted:1.9"
+    unknown["dataschema"] = "urn:wft:schema:job.accepted:1.9"
     unknown["data"]["added_optional"] = 1
     assert from_bytes(canonical(unknown)).data["added_optional"] == 1
     known = json.loads(json.dumps(ACCEPTED))

@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 
 import pytest
-import wdf_keys
+import wft_keys
 import yaml
 
 CONTRACTS = Path(__file__).resolve().parents[3] / "contracts"
@@ -14,9 +14,9 @@ SCENARIOS = json.loads((CONTRACTS / "events/vectors/keys.json").read_text())["wo
 @pytest.mark.parametrize("scenario", SCENARIOS, ids=lambda s: s["note"][:30])
 def test_vectors_match_the_functions(scenario):
     for run in scenario["runs"]:
-        identity = wdf_keys.attempt_identity(run["task_attempt"], scenario["resume_counter"])
+        identity = wft_keys.attempt_identity(run["task_attempt"], scenario["resume_counter"])
         assert identity == run["identity"]
-        event_id = wdf_keys.cloudevent_id(
+        event_id = wft_keys.cloudevent_id(
             scenario["job_id"],
             scenario["task_key"],
             identity,
@@ -36,10 +36,10 @@ def test_retries_get_distinct_identities_and_event_ids():
 def test_an_activity_attempt_that_is_always_1_would_collide():
     scenario = SCENARIOS[0]
     ids = {
-        wdf_keys.cloudevent_id(
+        wft_keys.cloudevent_id(
             scenario["job_id"],
             scenario["task_key"],
-            wdf_keys.attempt_identity(1, scenario["resume_counter"]),
+            wft_keys.attempt_identity(1, scenario["resume_counter"]),
             scenario["kind"],
             scenario["sequence"],
         )

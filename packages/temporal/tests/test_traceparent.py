@@ -4,8 +4,8 @@ import re
 from datetime import UTC, datetime
 
 import pytest
-from wdf_events import SchemaInvalid, build_event, to_bytes
-from wdf_temporal import new_traceparent, trace_id_of
+from wft_events import SchemaInvalid, build_event, to_bytes
+from wft_temporal import new_traceparent, trace_id_of
 
 JOB = "3a9617fa-df7c-5760-a644-42d559e0f433"
 
@@ -13,7 +13,7 @@ JOB = "3a9617fa-df7c-5760-a644-42d559e0f433"
 def event(traceparent, tracestate=None):
     return build_event(
         "job.started",
-        source="/wdf/workflow",
+        source="/wft/workflow",
         tenant="acme",
         jobid=JOB,
         priorityclass="standard",

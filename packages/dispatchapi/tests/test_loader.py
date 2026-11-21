@@ -7,8 +7,8 @@ import sys
 from pathlib import Path
 
 import pytest
-from wdf_dispatchapi import contract
-from wdf_dispatchapi.models import FILES, HEADER_LINE_MAX_BYTES
+from wft_dispatchapi import contract
+from wft_dispatchapi.models import FILES, HEADER_LINE_MAX_BYTES
 
 ROOT = Path(__file__).resolve().parents[3]
 API = ROOT / "contracts/api"
@@ -58,7 +58,7 @@ REASONS = {
 
 def check(*args) -> subprocess.CompletedProcess:
     return subprocess.run(
-        [sys.executable, "-m", "wdf_dispatchapi.contract", "--check", *map(str, args)],
+        [sys.executable, "-m", "wft_dispatchapi.contract", "--check", *map(str, args)],
         capture_output=True,
         text=True,
     )
@@ -125,7 +125,7 @@ def test_loader_usage_errors(tmp_path):
     assert check(tmp_path / "missing.yaml", "--as", "routes").returncode == 2
     assert check(unnamed, "--as", "no-such-schema").returncode == 2
     bare = subprocess.run(
-        [sys.executable, "-m", "wdf_dispatchapi.contract", str(PINNED[0])], capture_output=True
+        [sys.executable, "-m", "wft_dispatchapi.contract", str(PINNED[0])], capture_output=True
     )
     assert bare.returncode == 2
 

@@ -1,25 +1,25 @@
 # The dead-letter reasons, one row per code. Rules: README.md. Schema: reasons.schema.json.
-# An application code is set by the consumer in x-opt-wdf-reason, and a broker code is the x-last-death-reason that
+# An application code is set by the consumer in x-opt-wft-reason, and a broker code is the x-last-death-reason that
 # RabbitMQ sets when no application reason is present.
 # recovery: never, after-fix (fix the cause, then replay) or replay. dlq replay refuses never unless --force.
 reasons:
   - code: MALFORMED
     source: application
-    read_from: x-opt-wdf-reason
+    read_from: x-opt-wft-reason
     on_intake: expected
     event: job.dead.lettered
     recovery: never
     action: show, then purge, and end the named job through the control API
   - code: UNSUPPORTED_VERSION
     source: application
-    read_from: x-opt-wdf-reason
+    read_from: x-opt-wft-reason
     on_intake: expected
     event: job.dead.lettered
     recovery: after-fix
     action: deploy a reader of that major inside the replay window of a previous major, then replay
   - code: ADMISSION_FAILED
     source: application
-    read_from: x-opt-wdf-reason
+    read_from: x-opt-wft-reason
     on_intake: expected
     event: null
     recovery: replay

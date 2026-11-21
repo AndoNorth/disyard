@@ -54,7 +54,7 @@
       "type": "object"
     }
   },
-  "$id": "urn:wdf:schema:artifact:retention:3",
+  "$id": "urn:wft:schema:artifact:retention:3",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
   "description": "retention.yaml: the windows of the artifact reaper, all below the safety net of the store.",

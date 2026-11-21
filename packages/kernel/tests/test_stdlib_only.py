@@ -7,7 +7,7 @@ import tomllib
 from pathlib import Path
 
 PACKAGE = Path(__file__).resolve().parents[1]
-ALLOWED = sys.stdlib_module_names | {"wdf_kernel"}
+ALLOWED = sys.stdlib_module_names | {"wft_kernel"}
 
 
 def imported(tree: ast.AST) -> list[str]:

@@ -9,29 +9,29 @@ import pytest
 ROOT = Path(__file__).resolve().parents[3]
 
 PACKAGES = (
-    "wdf-stateops",
-    "wdf-jobstate",
-    "wdf-events",
-    "wdf-eventstore",
-    "wdf-compat",
-    "wdf-keys",
-    "wdf-migrate",
-    "wdf-storecheck",
-    "wdf-itest",
+    "wft-stateops",
+    "wft-jobstate",
+    "wft-events",
+    "wft-eventstore",
+    "wft-compat",
+    "wft-keys",
+    "wft-migrate",
+    "wft-storecheck",
+    "wft-itest",
 )
 
 PROBE = """
-import wdf_stateops
-from wdf_stateops.invariants import queries
-from wdf_stateops.inputs import load
+import wft_stateops
+from wft_stateops.invariants import queries
+from wft_stateops.inputs import load
 assert load().inputs
 from importlib import resources
-assert (resources.files('wdf_stateops.migrations') / 'R__roles.sql').is_file()
+assert (resources.files('wft_stateops.migrations') / 'R__roles.sql').is_file()
 assert len(queries()) == 6, sorted(queries())
-from wdf_stateops.windows import params
+from wft_stateops.windows import params
 assert params()['failure_codes'] and params()['unreferenced_grace']
 from datetime import UTC, datetime
-from wdf_stateops.bench import EVENTS_PER_JOB, job_events, job_row
+from wft_stateops.bench import EVENTS_PER_JOB, job_events, job_row
 assert len(job_events(0, job_row(0), datetime.now(UTC))) == EVENTS_PER_JOB
 
 """

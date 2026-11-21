@@ -14,10 +14,10 @@ def workspace(tmp_path):
     """Members a <- b <- c, where c depends on b and b on a, and an unrelated d."""
     deps = {"a": [], "b": ["a"], "c": ["b"], "d": []}
     for folder, needs in deps.items():
-        sources = "".join(f"wdf-{n} = {{ workspace = true }}\n" for n in needs)
+        sources = "".join(f"wft-{n} = {{ workspace = true }}\n" for n in needs)
         (tmp_path / "packages" / folder).mkdir(parents=True)
         (tmp_path / "packages" / folder / "pyproject.toml").write_text(
-            f'[project]\nname = "wdf-{folder}"\n\n[tool.uv.sources]\n{sources}'
+            f'[project]\nname = "wft-{folder}"\n\n[tool.uv.sources]\n{sources}'
         )
     return tmp_path
 
@@ -29,7 +29,7 @@ def affected(root, *paths):
 
 
 def test_a_change_runs_its_dependents_unit_tests(workspace):
-    run = affected(workspace, "packages/a/src/wdf_a/core.py")
+    run = affected(workspace, "packages/a/src/wft_a/core.py")
     assert run.returncode == 0, run.stderr
     assert run.stdout.splitlines() == [
         "itest packages/a",
@@ -58,10 +58,10 @@ def test_documentation_outside_packages_runs_no_tests(workspace):
         "pyproject.toml",
         "flake.nix",
         "packages/README.md",
-        "packages/gone/src/wdf_gone/__init__.py",
+        "packages/gone/src/wft_gone/__init__.py",
     ],
 )
 def test_a_path_no_package_owns_names_the_full_run(workspace, path):
-    run = affected(workspace, "packages/a/src/wdf_a/core.py", path)
+    run = affected(workspace, "packages/a/src/wft_a/core.py", path)
     assert run.returncode == 1
     assert run.stdout == f"full {path}\n"

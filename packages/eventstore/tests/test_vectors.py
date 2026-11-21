@@ -2,13 +2,13 @@
 
 import inspect
 
-import wdf_eventstore
-from wdf_eventstore import STUBBED
+import wft_eventstore
+from wft_eventstore import STUBBED
 
 FUNCTIONS = [
-    getattr(wdf_eventstore, name)
-    for name in wdf_eventstore.__all__
-    if inspect.isfunction(getattr(wdf_eventstore, name))
+    getattr(wft_eventstore, name)
+    for name in wft_eventstore.__all__
+    if inspect.isfunction(getattr(wft_eventstore, name))
 ]
 
 

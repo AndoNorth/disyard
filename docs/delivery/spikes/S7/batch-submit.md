@@ -26,33 +26,33 @@ The limit of 100,000 entries per call stands: a call of that size takes about th
 
 ## Question
 
-How long does the submit sequence of D8 take for 100,000 jobs on this host, with `wdf_jobstate.insert_accepted`, `wdf_eventstore.insert_events`, `index_reference` once and `link_use` per job, in chunks of 500, 1,000 and 2,000, against the `wdf_itest` Postgres?
+How long does the submit sequence of D8 take for 100,000 jobs on this host, with `wft_jobstate.insert_accepted`, `wft_eventstore.insert_events`, `index_reference` once and `link_use` per job, in chunks of 500, 1,000 and 2,000, against the `wft_itest` Postgres?
 
 ## Environment
 
 | Item | Value |
 | --- | --- |
 | Host | WSL2, 20,002 MiB `MemTotal` (`host.mem_total_mib`), 16,284 MiB available at the start (`host.mem_available_mib`), 8 CPUs of an AMD Ryzen 5 7500F (`host.cpus`, `host.cpu_model`), kernel 6.6.87.2 (`host.kernel`) |
-| Other work on the host | one T1 container of another worker held the other `wdf-t1` lock file for part of the run, and was not touched |
-| Postgres | the `timescale/timescaledb` pin of `deploy/versions.yaml`, Postgres 16.15 (`postgres.version`), started by `wdf_itest.Session(containers=1)` at its 1 GiB memory cap, with the image's defaults: `shared_buffers` 256 MB, `synchronous_commit` on (`postgres.*`) |
+| Other work on the host | one T1 container of another worker held the other `wft-t1` lock file for part of the run, and was not touched |
+| Postgres | the `timescale/timescaledb` pin of `deploy/versions.yaml`, Postgres 16.15 (`postgres.version`), started by `wft_itest.Session(containers=1)` at its 1 GiB memory cap, with the image's defaults: `shared_buffers` 256 MB, `synchronous_commit` on (`postgres.*`) |
 | Client | Python 3.13.15 of the dev shell (`host.python`), `psycopg` as locked in `uv.lock`, the workspace packages at `main` |
 
 ## Method
 
-- [code/measure.py](code/measure.py) starts one Postgres through `wdf_itest`, and for each run creates a fresh database, applies every migration with `wdf_migrate.apply`, and runs [code/submit.py](code/submit.py) in a process of its own, so each call's memory peak is its own.
-- The call logs in twice, as the service of D13 does: once as a member of `wdf_dispatch` and once as a member of `wdf_artifacts`, so every write runs under the grants of `R__roles.sql`.
-- The template is the three-task template of the plan tests with one integer parameter, compiled once with `wdf_plan.compile_plan` under the `ci` limits profile; its manifest reference is the one object indexed, and in run 7 the source bundle the template names is a second.
+- [code/measure.py](code/measure.py) starts one Postgres through `wft_itest`, and for each run creates a fresh database, applies every migration with `wft_migrate.apply`, and runs [code/submit.py](code/submit.py) in a process of its own, so each call's memory peak is its own.
+- The call logs in twice, as the service of D13 does: once as a member of `wft_dispatch` and once as a member of `wft_artifacts`, so every write runs under the grants of `R__roles.sql`.
+- The template is the three-task template of the plan tests with one integer parameter, compiled once with `wft_plan.compile_plan` under the `ci` limits profile; its manifest reference is the one object indexed, and in run 7 the source bundle the template names is a second.
 - The entries are generated one line at a time as bytes and parsed with `json.loads`, so the call holds no more of the body than a chunk, as a stream reader would.
 - Per chunk, in the order of D8:
-  - prepare: parse each line, check its index against the indexes seen so far in the call, `check_job_params`, derive the key `<batch key>/<index>` and the job id with `wdf_keys`, the fingerprint of D9, a fresh `traceparent`, and a `JobRow`;
+  - prepare: parse each line, check its index against the indexes seen so far in the call, `check_job_params`, derive the key `<batch key>/<index>` and the job id with `wft_keys`, the fingerprint of D9, a fresh `traceparent`, and a `JobRow`;
   - links transaction, on the artifacts login: `link_use` for each job and each object, then commit (`index_reference` ran once per object before the first chunk);
   - rows transaction, on the dispatch login: `SELECT now()`, `insert_accepted` of the chunk, `build_event("job.accepted", ...)` for each inserted row with `time` equal to that `now()`, `insert_events`, commit;
   - answer: one JSON line per entry written to `/dev/null`.
 - A chunk transaction is the longer of the two transactions of the chunk, and the pass line takes the longest over the call.
 - Memory is the process's own: a warm-up call of 20 jobs loads every import and cache, then `VmRSS` after a garbage collection is the baseline, `VmHWM` is reset through `/proc/self/clear_refs` (`peak_reset` True in every run), and the call's peak is `VmHWM` at its end less the baseline.
-- After each call the database is counted as the superuser: rows, `dev.wdf.job.accepted.v1` events and `artifact_use` rows of the call's jobs.
+- After each call the database is counted as the superuser: rows, `dev.wft.job.accepted.v1` events and `artifact_use` rows of the call's jobs.
 - With `--resend` the same call is sent again on the same connections, and every entry must come back `duplicate` with nothing new stored.
-- The Python cost of 1,000 rows and events is timed apart from the database at the end of each process: `JobRow` to insert parameters, `build_event`, the event row conversion of `insert_events` (`wdf_events.to_event_row`), and `check_job_params`.
+- The Python cost of 1,000 rows and events is timed apart from the database at the end of each process: `JobRow` to insert parameters, `build_event`, the event row conversion of `insert_events` (`wft_events.to_event_row`), and `check_job_params`.
 - Publishing is not measured: the spike has no broker, and the publish follows the answer lines outside both transactions (D8).
 
 ## Measured numbers

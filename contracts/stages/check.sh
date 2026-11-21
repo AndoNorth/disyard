@@ -5,4 +5,4 @@ set -euo pipefail
 here=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
 [ $# -eq 1 ] && [ -f "$1" ] || { echo "usage: check.sh <stages.yaml>" >&2; exit 2; }
-exec uv run --frozen --quiet --project "$here/../.." python -m wdf_stages.check "$1"
+exec uv run --frozen --quiet --project "$here/../.." python -m wft_stages.check "$1"

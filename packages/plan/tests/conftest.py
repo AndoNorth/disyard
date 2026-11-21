@@ -3,8 +3,8 @@ import json
 from pathlib import Path
 
 import pytest
-from wdf_jobdoc import parse_document
-from wdf_jobdoc.profile_files import load_profile
+from wft_jobdoc import parse_document
+from wft_jobdoc.profile_files import load_profile
 
 ROOT = Path(__file__).resolve().parents[3]
 CONTRACT = ROOT / "contracts/job"
@@ -12,14 +12,14 @@ SLOTS_FIXTURE = CONTRACT / "vectors/slots-fixture"
 
 HASH = "a" * 64
 SOURCE = {
-    "uri": f"s3://wdf-sources/sha256/aa/{HASH}",
+    "uri": f"s3://wft-sources/sha256/aa/{HASH}",
     "sha256": HASH,
     "size": 2048,
     "name": "bundle.tar.gz",
     "kind": "source",
 }
 GOOD = {
-    "schema": "urn:wdf:schema:job:1.0",
+    "schema": "urn:wft:schema:job:1.0",
     "parameters": {"seed": "seed"},
     "tasks": {
         "build": {"type": "compile", "params": {"source": SOURCE, "entry": "sim"}},
@@ -73,7 +73,7 @@ def parse():
 @pytest.fixture(scope="session")
 def plan_of():
     """The plan of a dict or bytes under the named profile, `ci` by default."""
-    from wdf_plan import compile_plan
+    from wft_plan import compile_plan
 
     return lambda data, name="ci": compile_plan(_document(data), _profile(name))
 
@@ -122,8 +122,8 @@ def _agg(*sims, timeout=600):
 @pytest.fixture(scope="session")
 def shapes():
     """Documents of the shapes the stats are checked on, each a dict keyed by shape name."""
-    index = {**SOURCE, "kind": "index", "uri": f"s3://wdf-sources/sha256/aa/{HASH}"}
-    schema = "urn:wdf:schema:job:1.0"
+    index = {**SOURCE, "kind": "index", "uri": f"s3://wft-sources/sha256/aa/{HASH}"}
+    schema = "urn:wft:schema:job:1.0"
     return {
         "chain": GOOD,
         "fan-out": {

@@ -1,7 +1,7 @@
 """The compile cache client against a real store and database.
 
-The database login is a stand-in member of `wdf_artifacts`, the group role of the workflow's record
-activity, and expiry is run by a stand-in member of `wdf_reaper`.
+The database login is a stand-in member of `wft_artifacts`, the group role of the workflow's record
+activity, and expiry is run by a stand-in member of `wft_reaper`.
 """
 
 import hashlib
@@ -14,15 +14,15 @@ import psycopg
 import pytest
 from psycopg import sql
 from psycopg.conninfo import make_conninfo
-from wdf_artifactclient import cache
-from wdf_artifactclient import commit as commit_module
-from wdf_artifactclient.cache import Hit, Lost, Miss, WasmGone, Won, lookup
-from wdf_artifactclient.client import ArtifactClient, RetryPolicy
-from wdf_artifactclient.errors import ArtifactLost, StoreUnavailable
-from wdf_artifactclient.keys import split_uri
-from wdf_artifactindex import Invalidated, NoEntry, expired_cache_entries, uses_of
-from wdf_storecheck.fixtures import running
-from wdf_storecheck.s3 import client as s3_client
+from wft_artifactclient import cache
+from wft_artifactclient import commit as commit_module
+from wft_artifactclient.cache import Hit, Lost, Miss, WasmGone, Won, lookup
+from wft_artifactclient.client import ArtifactClient, RetryPolicy
+from wft_artifactclient.errors import ArtifactLost, StoreUnavailable
+from wft_artifactclient.keys import split_uri
+from wft_artifactindex import Invalidated, NoEntry, expired_cache_entries, uses_of
+from wft_storecheck.fixtures import running
+from wft_storecheck.s3 import client as s3_client
 
 pytestmark = [pytest.mark.integration, pytest.mark.pair]
 
@@ -79,12 +79,12 @@ def login(appdb):
 
 @pytest.fixture
 def artifacts(login):
-    return login("wdf_artifacts")
+    return login("wft_artifacts")
 
 
 @pytest.fixture
 def reaper(login):
-    return login("wdf_reaper")
+    return login("wft_reaper")
 
 
 @pytest.fixture
@@ -204,7 +204,7 @@ def test_lookup_error_is_raised_and_never_a_miss(shelf, role, artifacts, login, 
     with pytest.raises(StoreUnavailable):
         lookup(artifacts, unreachable, key)
 
-    stale = login("wdf_artifacts")
+    stale = login("wft_artifacts")
     stale.close()
     with pytest.raises(psycopg.OperationalError):
         lookup(stale, role("workflow"), key)

@@ -5,10 +5,10 @@ from datetime import date
 from pathlib import Path
 
 import pytest
-from wdf_compat import Registry, read_event, window
-from wdf_events import SchemaInvalid, UnsupportedMajor
-from wdf_events.metrics import registry as metrics
-from wdf_events.profile import CONTRACT_DIR
+from wft_compat import Registry, read_event, window
+from wft_events import SchemaInvalid, UnsupportedMajor
+from wft_events.metrics import registry as metrics
+from wft_events.profile import CONTRACT_DIR
 
 FIXTURES = Path(__file__).parent / "fixtures/schemas"
 V2_INTRODUCED = "2026-02-01"
@@ -21,8 +21,8 @@ def upgrade_v1(document: dict) -> dict:
     data = {"name": document["data"]["label"]}
     return {
         **document,
-        "type": "dev.wdf.job.fixture.v2",
-        "dataschema": "urn:wdf:schema:job.fixture:2.0",
+        "type": "dev.wft.job.fixture.v2",
+        "dataschema": "urn:wft:schema:job.fixture:2.0",
         "data": data,
     }
 
@@ -37,21 +37,21 @@ REGISTRY = Registry(
 def event_bytes(major: int, minor: int = 0, **data) -> bytes:
     document = {
         **BASE,
-        "type": f"dev.wdf.job.fixture.v{major}",
-        "dataschema": f"urn:wdf:schema:job.fixture:{major}.{minor}",
+        "type": f"dev.wft.job.fixture.v{major}",
+        "dataschema": f"urn:wft:schema:job.fixture:{major}.{minor}",
         "data": data,
     }
     return json.dumps(document, sort_keys=True, separators=(",", ":")).encode()
 
 
 def upgraded_count() -> int:
-    return metrics.count("wdf_event_upgraded_total", type="job.fixture", from_major="1")
+    return metrics.count("wft_event_upgraded_total", type="job.fixture", from_major="1")
 
 
 def test_the_current_major_is_read_directly():
     before = upgraded_count()
     event = read_event(event_bytes(2, name="a"), REGISTRY, INSIDE_WINDOW)
-    assert (event.type, event.data) == ("dev.wdf.job.fixture.v2", {"name": "a"})
+    assert (event.type, event.data) == ("dev.wft.job.fixture.v2", {"name": "a"})
     assert upgraded_count() == before
 
 
@@ -59,8 +59,8 @@ def test_the_previous_major_is_read_through_its_upgrade():
     before = upgraded_count()
     event = read_event(event_bytes(1, label="a"), REGISTRY, INSIDE_WINDOW)
     assert (event.type, event.dataschema, event.data) == (
-        "dev.wdf.job.fixture.v2",
-        "urn:wdf:schema:job.fixture:2.0",
+        "dev.wft.job.fixture.v2",
+        "urn:wft:schema:job.fixture:2.0",
         {"name": "a"},
     )
     assert (event.id, event.source, event.time) == (BASE["id"], BASE["source"], BASE["time"])

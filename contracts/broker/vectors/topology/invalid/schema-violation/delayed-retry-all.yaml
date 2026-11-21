@@ -1,32 +1,32 @@
 # The delayed retry also delays an uncounted release.
 vhost: /
-intake_exchange: {name: wdf.intake, type: direct, durable: true}
+intake_exchange: {name: wft.intake, type: direct, durable: true}
 intake_queue: {template: intake.<tenant>.<class>, type: quorum, initial_group_size: 1, binding: queue-name}
 intake_policy:
-  name: wdf-intake
+  name: wft-intake
   pattern: '^intake\.[a-z0-9][a-z0-9-]*\.[a-z0-9][a-z0-9-]*$'
   apply_to: quorum_queues
   definition:
     delivery_limit: 5
     max_length: {value: 1000, estimate: true}
     overflow: reject-publish
-    dead_letter_exchange: wdf.dlx
+    dead_letter_exchange: wft.dlx
     dead_letter_strategy: at-least-once
     # Only a counted retry waits before its redelivery, delayed_retry_min times its delivery count in ms,
     # up to delayed_retry_max.
     delayed_retry_type: all
     delayed_retry_min: 1000
     delayed_retry_max: 30000
-dead_letter_exchange: {name: wdf.dlx, type: fanout, durable: true}
+dead_letter_exchange: {name: wft.dlx, type: fanout, durable: true}
 dead_letter_queue: {name: intake.dlq, type: quorum, initial_group_size: 1}
 dlq_policy:
-  name: wdf-dlq
+  name: wft-dlq
   pattern: '^intake\.dlq$'
   apply_to: quorum_queues
   # -1 turns the delivery limit off, and no message TTL is set, so a dead letter leaves only by replay or purge.
   definition: {delivery_limit: -1}
 addresses:
-  publish: /exchanges/wdf.intake/<routing key>
+  publish: /exchanges/wft.intake/<routing key>
   consume: /queues/<queue>
 message:
   sections: [data]
@@ -35,16 +35,16 @@ message:
   application_properties: false
   annotations_on_publish: false
 annotations:
-  reason: x-opt-wdf-reason
-  detail: x-opt-wdf-detail
+  reason: x-opt-wft-reason
+  detail: x-opt-wft-detail
   detail_max_chars: 1024
 # Each permission is a RabbitMQ regular expression on vhost /, and the empty string grants nothing.
 users:
-  dispatch: {configure: '', write: '^wdf\.intake$', read: ''}
+  dispatch: {configure: '', write: '^wft\.intake$', read: ''}
   admission: {configure: '', write: '', read: '^intake\.[a-z0-9][a-z0-9-]*\.[a-z0-9][a-z0-9-]*$'}
   operator:
     configure: ''
-    write: '^wdf\.intake$'
+    write: '^wft\.intake$'
     read: '^intake\.dlq$|^intake\.[a-z0-9][a-z0-9-]*\.[a-z0-9][a-z0-9-]*$'
 ports: {amqp: 5672, prometheus: 15692}
 # The memory request and limit of the broker, and its absolute high watermark at 0.6 of the limit,

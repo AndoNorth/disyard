@@ -1,4 +1,4 @@
-"""The emit local activity against a real database, as a plain function under a `wdf_workflow`
+"""The emit local activity against a real database, as a plain function under a `wft_workflow`
 login."""
 
 import asyncio
@@ -7,10 +7,10 @@ from datetime import UTC, datetime, timedelta
 import psycopg
 import pytest
 from temporalio.exceptions import ApplicationError
-from wdf_events import build_event, to_event_row
-from wdf_jobstate import transition
-from wdf_workflow.activities import Emitter
-from wdf_workflow.testing.control import ControlCase, Emit, Transition, control_activity_contract
+from wft_events import build_event, to_event_row
+from wft_jobstate import transition
+from wft_workflow.activities import Emitter
+from wft_workflow.testing.control import ControlCase, Emit, Transition, control_activity_contract
 
 pytestmark = [pytest.mark.integration, pytest.mark.pair]
 
@@ -19,7 +19,7 @@ FACT = datetime(2026, 11, 12, 9, 30, tzinfo=UTC)
 
 @pytest.fixture
 def emitter(login):
-    return Emitter(login("wdf_workflow"))
+    return Emitter(login("wft_workflow"))
 
 
 @pytest.fixture
@@ -28,7 +28,7 @@ def batch(started_event):
 
     def build(job_id: str, name: str, expected: str | None, to: str | None, shift=timedelta(0)):
         common = {
-            "source": "/wdf/workflow",
+            "source": "/wft/workflow",
             "tenant": started_event.tenant,
             "jobid": job_id,
             "priorityclass": started_event.priorityclass,
@@ -93,7 +93,7 @@ def test_emit_without_move_writes_each_id_once(emitter, job, batch, stored):
 
 
 def test_emit_lost_cases(emitter, job, batch, status, stored, db, login):
-    control = psycopg.connect(login("wdf_control"), autocommit=True)
+    control = psycopg.connect(login("wft_control"), autocommit=True)
 
     # The row holds the target: an earlier send moved it, so the batch counts as moved.
     at_target = job("admitted", "running")
@@ -150,12 +150,12 @@ def test_activities_run_under_their_role(emitter, job, batch, db, login):
         " FROM pg_roles r WHERE rolname = %s",
         (user,),
     ).fetchone()
-    assert (superuser, groups) == (False, ["wdf_workflow"])
+    assert (superuser, groups) == (False, ["wft_workflow"])
     assert emitter.emit(batch(job("admitted"), "job.started", "admitted", "running")).inserted == 2
 
     # The same batch under a writer without the workflow's grants is refused by the database.
     with pytest.raises(psycopg.errors.InsufficientPrivilege):
-        Emitter(login("wdf_artifacts")).emit(
+        Emitter(login("wft_artifacts")).emit(
             batch(job("admitted"), "job.started", "admitted", "running")
         )
 

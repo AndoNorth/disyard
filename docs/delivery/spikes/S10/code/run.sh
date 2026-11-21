@@ -1,17 +1,17 @@
 #!/usr/bin/env bash
 # Chart spike: brings up the ci preset with its ci profile modules, installs the official chart temporal 1.8.0 into
-# wdf-infra from the manifests of `helm template --skip-tests`, runs the stand-in load of load.py with host workers
+# wft-infra from the manifests of `helm template --skip-tests`, runs the stand-in load of load.py with host workers
 # through a port-forward on 127.0.0.1, samples every Temporal pod's cgroup and the history service's cache series,
 # and prints one `figure <name> <value>` line for every number of docs/delivery/spikes/S10/helm-install.md.
 # Run in the dev shell from the repository root:
 #   nix develop -c docs/delivery/spikes/S10/code/run.sh [out-dir]
-# Takes the cluster lock and destroys the cluster at the end, unless WDF_S10_KEEP=1.
+# Takes the cluster lock and destroys the cluster at the end, unless WFT_S10_KEEP=1.
 # Exit 0 the run completed (the verdict is a figure), 1 a step failed, 2 usage, 4 refused: too little memory.
 set -uo pipefail
 root=$(cd "$(dirname "${BASH_SOURCE[0]}")/../../../../.." && pwd)
 cd "$root" || exit 2
 [ $# -le 1 ] || { echo "usage: run.sh [out-dir]" >&2; exit 2; }
-out=${1:-$(mktemp -d "${TMPDIR:-/tmp}/wdf-s10.XXXXXX")}
+out=${1:-$(mktemp -d "${TMPDIR:-/tmp}/wft-s10.XXXXXX")}
 mkdir -p "$out"
 
 # The 10,880 MiB of the ci preset plus 1,024 MiB for the host workers and the port-forwards.
@@ -21,15 +21,15 @@ docker ps --format '{{.Names}}'
 have_kb=$(awk '/^MemAvailable:/ { print $2 }' /proc/meminfo)
 [ "$have_kb" -ge "$need_kb" ] || { echo "refused: MemAvailable $have_kb kB, need $need_kb kB" >&2; exit 4; }
 
-if [ -z "${WDF_CLUSTER_LOCK_HELD:-}" ]; then
-    exec flock /tmp/wdf-cluster.lock env WDF_CLUSTER_LOCK_HELD=1 "$root/docs/delivery/spikes/S10/code/run.sh" "$out"
+if [ -z "${WFT_CLUSTER_LOCK_HELD:-}" ]; then
+    exec flock /tmp/wft-cluster.lock env WFT_CLUSTER_LOCK_HELD=1 "$root/docs/delivery/spikes/S10/code/run.sh" "$out"
 fi
 
 chart_version=1.8.0
 chart_digest=sha256:e65b454d620129f3d7da2c16611a7f754e2d89b20b7a135dc5f0916a062f3a9e
-jobs=${WDF_S10_JOBS:-3000}
-ctx=kind-wdf
-ns=wdf-infra
+jobs=${WFT_S10_JOBS:-3000}
+ctx=kind-wft
+ns=wft-infra
 services=(frontend history matching worker)
 slot=$(basename "$(dirname "$root")")
 [[ $slot =~ ^[0-9]$ ]] || slot=0
@@ -48,7 +48,7 @@ figure docker_version "$(docker version --format '{{.Server.Version}}')"
 # shellcheck disable=SC2329
 cleanup() {
     for p in "${pids[@]}"; do kill "$p" 2>/dev/null; done
-    if [ "${WDF_S10_KEEP:-}" != 1 ]; then
+    if [ "${WFT_S10_KEEP:-}" != 1 ]; then
         say "destroying the cluster"
         scripts/nuke.sh >"$out/nuke.log" 2>&1 || say "nuke failed, see $out/nuke.log"
     fi

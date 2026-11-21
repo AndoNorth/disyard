@@ -1,4 +1,4 @@
-"""The value formats and the document rules of wdf.sim.v1."""
+"""The value formats and the document rules of wft.sim.v1."""
 
 import io
 import math
@@ -7,13 +7,13 @@ from xml.parsers import expat
 import pytest
 from hypothesis import given
 from hypothesis import strategies as st
-from wdf_kernel.format import FormatError, check_document, escape, format_value, parse_value
+from wft_kernel.format import FormatError, check_document, escape, format_value, parse_value
 
 KINDS = {"scalar": {"name": "str", "value": "int"}, "series": {"step": "int", "value": "float"}}
 
 
 def document(body: str) -> io.BytesIO:
-    return io.BytesIO(f'<results schema="wdf.sim.v1" seed="1">{body}</results>'.encode())
+    return io.BytesIO(f'<results schema="wft.sim.v1" seed="1">{body}</results>'.encode())
 
 
 @pytest.mark.parametrize(
@@ -103,7 +103,7 @@ def test_a_doctype_is_refused_before_its_entities_expand():
     entities = ['<!ENTITY e0 "aaaaaaaaaa">'] + [
         f'<!ENTITY e{i} "{f"&e{i - 1};" * 10}">' for i in range(1, 10)
     ]
-    text = f'<!DOCTYPE results [{"".join(entities)}]><results schema="wdf.sim.v1" seed="1">&e9;'
+    text = f'<!DOCTYPE results [{"".join(entities)}]><results schema="wft.sim.v1" seed="1">&e9;'
     with pytest.raises(FormatError) as refused:
         check_document(io.BytesIO(text.encode() + b"</results>"), KINDS)
     assert refused.value.reason == "doctype-present"

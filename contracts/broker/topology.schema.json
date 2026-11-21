@@ -9,7 +9,7 @@
           "type": "string"
         },
         "publish": {
-          "const": "/exchanges/wdf.intake/<routing key>",
+          "const": "/exchanges/wft.intake/<routing key>",
           "title": "Publish",
           "type": "string"
         }
@@ -25,7 +25,7 @@
       "additionalProperties": false,
       "properties": {
         "detail": {
-          "const": "x-opt-wdf-detail",
+          "const": "x-opt-wft-detail",
           "title": "Detail",
           "type": "string"
         },
@@ -35,7 +35,7 @@
           "type": "integer"
         },
         "reason": {
-          "const": "x-opt-wdf-reason",
+          "const": "x-opt-wft-reason",
           "title": "Reason",
           "type": "string"
         }
@@ -461,7 +461,7 @@
       "type": "object"
     }
   },
-  "$id": "urn:wdf:schema:broker:topology:1",
+  "$id": "urn:wft:schema:broker:topology:1",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
   "description": "topology.yaml: the exchanges, queues, policies, message shape, users, ports and memory.",

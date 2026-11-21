@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Bootstraps Temporal in the cluster through a port-forward to the frontend bound to 127.0.0.1: namespace wdf with its
+# Bootstraps Temporal in the cluster through a port-forward to the frontend bound to 127.0.0.1: namespace wft with its
 # retention, the search attributes of the naming contract and the reaper's Schedule. Waits for the frontend first, so
 # it can run as a Tilt local_resource or by hand.
 #   apply  create or converge what differs and print what changed (default)
@@ -11,8 +11,8 @@ cd "$(dirname "${BASH_SOURCE[0]}")/../../.."
 mode=${1:-apply}
 case $mode in apply | check) ;; *) echo "usage: bootstrap.sh [apply|check]" >&2; exit 2 ;; esac
 
-context=kind-wdf
-namespace=wdf-infra
+context=kind-wft
+namespace=wft-infra
 port=7233
 k() { kubectl --context "$context" -n "$namespace" "$@"; }
 

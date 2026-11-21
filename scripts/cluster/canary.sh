@@ -16,8 +16,8 @@ source scripts/verify/cluster/lib/tools.sh
 
 which=${1:-all}
 case $which in memory | schedule | pool | cpu | all) ;; *) echo "usage: canary.sh [memory|schedule|pool|cpu|all]" >&2; exit 2 ;; esac
-context=${WDF_CONTEXT:-kind-wdf}
-ns=wdf-canary
+context=${WFT_CONTEXT:-kind-wft}
+ns=wft-canary
 k() { kubectl --context "$context" "$@"; }
 # Pod manifests carry the pool, so the node is found by the same label.
 node=$(k get nodes -l "$(yq '.pool_label' contracts/topology/topology.yaml)=obs" -o jsonpath='{.items[0].metadata.name}')

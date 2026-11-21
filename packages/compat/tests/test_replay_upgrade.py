@@ -5,10 +5,10 @@ from datetime import date
 from pathlib import Path
 
 import pytest
-from wdf_compat import Registry, upgrade_for_replay
-from wdf_events import EventTooLarge, SchemaInvalid, UnsupportedMajor
-from wdf_events.metrics import registry as metrics
-from wdf_events.profile import CONTRACT_DIR
+from wft_compat import Registry, upgrade_for_replay
+from wft_events import EventTooLarge, SchemaInvalid, UnsupportedMajor
+from wft_events.metrics import registry as metrics
+from wft_events.profile import CONTRACT_DIR
 
 FIXTURES = Path(__file__).parent / "fixtures/schemas"
 INSIDE_WINDOW = date(2026, 2, 15)
@@ -18,8 +18,8 @@ BASE = json.loads((CONTRACT_DIR / "vectors/types/job.failed/valid.json").read_te
 def upgrade_v1(document: dict) -> dict:
     return {
         **document,
-        "type": "dev.wdf.job.fixture.v2",
-        "dataschema": "urn:wdf:schema:job.fixture:2.0",
+        "type": "dev.wft.job.fixture.v2",
+        "dataschema": "urn:wft:schema:job.fixture:2.0",
         "data": {"name": document["data"]["label"]},
     }
 
@@ -34,8 +34,8 @@ REGISTRY = Registry(
 def event_bytes(major: int, pretty: bool = False, **data) -> bytes:
     document = {
         **BASE,
-        "type": f"dev.wdf.job.fixture.v{major}",
-        "dataschema": f"urn:wdf:schema:job.fixture:{major}.0",
+        "type": f"dev.wft.job.fixture.v{major}",
+        "dataschema": f"urn:wft:schema:job.fixture:{major}.0",
         "data": data,
     }
     if pretty:
@@ -44,14 +44,14 @@ def event_bytes(major: int, pretty: bool = False, **data) -> bytes:
 
 
 def upgraded_count() -> int:
-    return metrics.count("wdf_event_upgraded_total", type="job.fixture", from_major="1")
+    return metrics.count("wft_event_upgraded_total", type="job.fixture", from_major="1")
 
 
 def test_the_previous_major_returns_as_canonical_bytes_of_the_current_major():
     before = upgraded_count()
     out = upgrade_for_replay(event_bytes(1, label="a"), REGISTRY, INSIDE_WINDOW)
     document = json.loads(out)
-    assert (document["type"], document["data"]) == ("dev.wdf.job.fixture.v2", {"name": "a"})
+    assert (document["type"], document["data"]) == ("dev.wft.job.fixture.v2", {"name": "a"})
     assert (document["id"], document["source"], document["time"]) == (
         BASE["id"],
         BASE["source"],

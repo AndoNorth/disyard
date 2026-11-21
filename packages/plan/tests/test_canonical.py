@@ -1,7 +1,7 @@
 import hashlib
 import json
 
-from wdf_plan import canonical_bytes, plan_hash
+from wft_plan import canonical_bytes, plan_hash
 
 
 def outside_strings(data: bytes) -> str:

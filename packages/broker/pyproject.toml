@@ -1,5 +1,5 @@
 [project]
-name = "wdf-broker"
+name = "wft-broker"
 version = "0.0.0"
 license = "Apache-2.0"
 requires-python = ">=3.13,<3.14"
@@ -7,17 +7,17 @@ dependencies = [
     "pydantic",
     "python-qpid-proton==0.40.0",
     "pyyaml",
-    "wdf-compat",
-    "wdf-events",
-    "wdf-itest",
-    "wdf-jobdoc",
+    "wft-compat",
+    "wft-events",
+    "wft-itest",
+    "wft-jobdoc",
 ]
 
 [tool.uv.sources]
-wdf-compat = { workspace = true }
-wdf-events = { workspace = true }
-wdf-itest = { workspace = true }
-wdf-jobdoc = { workspace = true }
+wft-compat = { workspace = true }
+wft-events = { workspace = true }
+wft-itest = { workspace = true }
+wft-jobdoc = { workspace = true }
 
 [build-system]
 requires = ["hatchling"]

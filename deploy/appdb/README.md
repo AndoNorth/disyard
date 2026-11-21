@@ -23,7 +23,7 @@ A credential file deleted while the volume survives no longer matches the initia
 
 ## Migrations
 
-`scripts/storage/db/migrate.sh` waits for the pod, forwards `127.0.0.1` to it and runs `wdf_migrate apply`.
+`scripts/storage/db/migrate.sh` waits for the pod, forwards `127.0.0.1` to it and runs `wft_migrate apply`.
 Tilt runs it as the resource `appdb-migrate`, and it can be run by hand.
 
 ## Disk probe

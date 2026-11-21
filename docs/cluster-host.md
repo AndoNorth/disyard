@@ -77,12 +77,12 @@ The renderer places the mappings on the control plane node as `extraPortMappings
 | `control-api` | `127.0.0.1:18080` | 30080 |
 | `dispatch-api` | `127.0.0.1:18081` | 30081 |
 
-`deploy/host/dummy-endpoint.yaml` is a stand-in for the `control-api` endpoint, one busybox replica in `wdf-control`, until a real module serves it.
+`deploy/host/dummy-endpoint.yaml` is a stand-in for the `control-api` endpoint, one busybox replica in `wft-control`, until a real module serves it.
 Port mappings are fixed when the cluster is created, so a changed table takes effect after `just nuke` and `just up`.
 A mapped port answers only once the Service behind it has endpoints, and a request before that is reset.
 
 ```sh
-kubectl --context kind-wdf apply -f deploy/host/dummy-endpoint.yaml
+kubectl --context kind-wft apply -f deploy/host/dummy-endpoint.yaml
 ss -ltn | grep -E ':(18080|18081)\b'
 curl http://127.0.0.1:18080/
 ```
@@ -100,7 +100,7 @@ The renderer creates the directory so it belongs to the user, while the node con
 
 `just nuke` can be repeated, and a run with nothing left exits 0.
 It removes only a directory that a preset in `deploy/presets/` names, and otherwise exits 4 before deleting anything.
-`WDF_DATA_DIR` names another directory for it, which makes the refusal testable and is refused for every path outside the presets.
+`WFT_DATA_DIR` names another directory for it, which makes the refusal testable and is refused for every path outside the presets.
 
 `just up` also applies the namespaces and their quotas, rendered from the preset by `scripts/cluster/namespaces.sh`, once every node is Ready.
 A preset resize needs `just nuke` first on a host that holds a cluster.

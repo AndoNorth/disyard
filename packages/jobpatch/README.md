@@ -1,4 +1,4 @@
-# wdf_jobpatch
+# wft_jobpatch
 
 Decides whether a changed plan may replace the plan of a paused job.
 The contract is [contracts/job/](../../contracts/job/README.md), and the rationale is in [docs/delivery/epics/04-validator.md](../../docs/delivery/epics/04-validator.md).

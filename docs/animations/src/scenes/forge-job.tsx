@@ -80,9 +80,9 @@ export default makeScene2D(function* (view) {
           color: taskColor[i],
         }),
       )}
-      {box({ref: buckets[0], x: -450, y: 390, w: 300, h: 70, title: 'wdf-components', color: C.violet})}
-      {box({ref: buckets[1], x: 0, y: 390, w: 300, h: 70, title: 'wdf-results', color: C.blue})}
-      {box({ref: buckets[2], x: 450, y: 390, w: 300, h: 70, title: 'wdf-results', color: C.amber})}
+      {box({ref: buckets[0], x: -450, y: 390, w: 300, h: 70, title: 'wft-components', color: C.violet})}
+      {box({ref: buckets[1], x: 0, y: 390, w: 300, h: 70, title: 'wft-results', color: C.blue})}
+      {box({ref: buckets[2], x: 450, y: 390, w: 300, h: 70, title: 'wft-results', color: C.amber})}
       <Txt
         ref={log}
         text=""
@@ -119,7 +119,7 @@ export default makeScene2D(function* (view) {
   token().opacity(1);
   yield* waitFor(2.5);
   setStatus('status: accepted', C.amber);
-  logLine('dev.wdf.job.accepted.v1');
+  logLine('dev.wft.job.accepted.v1');
   yield* waitFor(1.5);
 
   // 2. intake
@@ -154,9 +154,9 @@ export default makeScene2D(function* (view) {
     'agg (aggregate): a native task reads results through an index object, never by listing a bucket.',
   ];
   const outs = [
-    'component stored in wdf-components',
-    'result stored in wdf-results',
-    'summary stored in wdf-results',
+    'component stored in wft-components',
+    'result stored in wft-results',
+    'summary stored in wft-results',
   ];
   for (let i = 0; i < 3; i++) {
     say(notes[i]);

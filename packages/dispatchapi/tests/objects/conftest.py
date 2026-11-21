@@ -4,9 +4,9 @@ and source bundles that no other test uploaded."""
 import secrets
 
 import pytest
-from wdf_artifactclient.client import ArtifactClient, RetryPolicy
-from wdf_compile import bundle
-from wdf_dispatchapi.objects import Uploads
+from wft_artifactclient.client import ArtifactClient, RetryPolicy
+from wft_compile import bundle
+from wft_dispatchapi.objects import Uploads
 
 NO_WAIT = RetryPolicy(sleep=lambda seconds: None)
 

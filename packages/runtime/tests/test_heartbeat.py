@@ -1,6 +1,6 @@
 """The heartbeats of a guest's stderr, counted from the lines that match the guest contract."""
 
-from wdf_runtime.heartbeat import beats
+from wft_runtime.heartbeat import beats
 
 LINES = [
     "starting\n",

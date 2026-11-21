@@ -1,4 +1,4 @@
-"""expected_summary over inputs keyed by task id, python -m wdf_kernel.check summary, and the
+"""expected_summary over inputs keyed by task id, python -m wft_kernel.check summary, and the
 level 1 fixtures that the summaries and the calibration run."""
 
 import hashlib
@@ -9,11 +9,11 @@ import sys
 from importlib.resources import files
 
 import pytest
-from wdf_kernel import check
-from wdf_kernel.expected import expected_digest
-from wdf_kernel.summary import expected_summary
+from wft_kernel import check
+from wft_kernel.expected import expected_digest
+from wft_kernel.summary import expected_summary
 
-LEVEL1 = files("wdf_kernel") / "fixtures/level1"
+LEVEL1 = files("wft_kernel") / "fixtures/level1"
 WORKLOADS = ("noop", "cpu_burn", "mem_hold", "io_churn")
 
 
@@ -58,7 +58,7 @@ def test_summary_stats_of_scalars_by_hand():
     }
     summary = expected_summary("summary_stats", {}, inputs)
     assert summary == {
-        "schema": "wdf.summary/1",
+        "schema": "wft.summary/1",
         "aggregation": "summary_stats",
         "args": {},
         "inputs": 4,
@@ -167,7 +167,7 @@ def test_check_summary_prints_the_digest_of_the_summary(tmp_path):
     pairs = write_inputs(tmp_path, inputs)
     summary = tmp_path / "summary.json"
     summary.write_text(canonical(expected_summary("summary_stats", {}, inputs)))
-    argv = [sys.executable, "-m", "wdf_kernel.check", "summary", "--summary", str(summary)]
+    argv = [sys.executable, "-m", "wft_kernel.check", "summary", "--summary", str(summary)]
     result = subprocess.run([*argv, "--inputs", *pairs], capture_output=True, text=True)
     assert result.returncode == 0, result.stderr
     assert result.stdout == f"digest: {hashlib.sha256(summary.read_bytes()).hexdigest()}\n"

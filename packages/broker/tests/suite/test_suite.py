@@ -6,9 +6,9 @@ import subprocess
 import sys
 
 import pytest
-from wdf_broker import suite
-from wdf_broker.models import BrokerUnavailable, Outcome
-from wdf_broker.testing.container import broker_container
+from wft_broker import suite
+from wft_broker.models import BrokerUnavailable, Outcome
+from wft_broker.testing.container import broker_container
 
 pytestmark = pytest.mark.integration
 
@@ -85,7 +85,7 @@ def test_held_delivery_across_connection_drop(broker, open_as):
     (dead,) = open_as("operator").consumer(suite.DLQ).pull(1, suite.TIMEOUT_S)
     assert dead.body == GOLDEN
     assert dead.annotations["x-last-death-reason"] == "delivery_limit"
-    assert "x-opt-wdf-reason" not in dead.annotations
+    assert "x-opt-wft-reason" not in dead.annotations
     dead.ack()
 
 
@@ -111,7 +111,7 @@ def suite_args(broker, credentials_dir) -> list[str]:
 def test_check_command_exits_zero(broker, credentials_dir):
     quiet(broker)
     run = subprocess.run(
-        [sys.executable, "-m", "wdf_broker.suite", *suite_args(broker, credentials_dir), "check"],
+        [sys.executable, "-m", "wft_broker.suite", *suite_args(broker, credentials_dir), "check"],
         capture_output=True,
         text=True,
         timeout=600,
@@ -130,7 +130,7 @@ def test_check_refuses_a_busy_queue(broker, open_as, credentials_dir, capsys):
 
 
 def reason(annotations: dict) -> str:
-    return annotations.get("x-opt-wdf-reason") or annotations["x-last-death-reason"]
+    return annotations.get("x-opt-wft-reason") or annotations["x-last-death-reason"]
 
 
 def test_tool_commands(broker, open_as, credentials_dir, capsys):

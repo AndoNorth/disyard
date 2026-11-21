@@ -18,10 +18,10 @@ from temporalio.api.taskqueue.v1 import TaskQueue
 from temporalio.api.workflowservice.v1 import DescribeTaskQueueRequest
 from temporalio.client import WorkflowExecutionStatus
 from temporalio.service import RPCError
-from wdf_artifactreaper import schedule
-from wdf_storecheck.s3 import Creds, dump_credentials
-from wdf_workflow.contract import naming
-from wdf_workflow.service import (
+from wft_artifactreaper import schedule
+from wft_storecheck.s3 import Creds, dump_credentials
+from wft_workflow.contract import naming
+from wft_workflow.service import (
     DRAIN,
     ENV,
     REAPER_ENV,
@@ -30,8 +30,8 @@ from wdf_workflow.service import (
     real_control,
     serve,
 )
-from wdf_workflow.testing import FakeControl, FakePool, Succeed, connect
-from wdf_workflow.testing.control import Commit
+from wft_workflow.testing import FakeControl, FakePool, Succeed, connect
+from wft_workflow.testing.control import Commit
 
 # A job of these tests ends within seconds, so a wedged service fails its test.
 LIMIT_S = 120
@@ -43,7 +43,7 @@ def succeed(task) -> Succeed:
 
 @pytest.mark.integration
 def test_service_starts_three_workers(temporal, config, running, start_job, reap_report, caplog):
-    caplog.set_level(logging.INFO, logger="wdf_workflow.service")
+    caplog.set_level(logging.INFO, logger="wft_workflow.service")
     control = FakeControl()
 
     async def body():
@@ -60,8 +60,8 @@ def test_service_starts_three_workers(temporal, config, running, start_job, reap
     assert {"load_plan", "cache_lookup", "commit", "cache_record", "emit"} <= set(control.calls)
     assert report == reap_report
     assert (
-        "polling in namespace wdf: wdf-workflow as build three of wdf-workflow-worker,"
-        " wdf-control-three and wdf-artifact-reaper"
+        "polling in namespace wft: wft-workflow as build three of wft-workflow-worker,"
+        " wft-control-three and wft-artifact-reaper"
     ) in caplog.messages
 
 
@@ -77,11 +77,11 @@ def test_control_queue_per_build(temporal, config, running, start_job):
         async with FakePool(client, "compile", succeed):
             for build, control in controls.items():
                 async with running(config(build), control):
-                    polled.append((build, await _polled(client, f"wdf-control-{build}")))
+                    polled.append((build, await _polled(client, f"wft-control-{build}")))
                     # The server lists a poller that stopped for a while, so only the build
                     # that has not run yet shows that no other build polls its queue.
                     if build == "build-a":
-                        polled.append(("build-b", await _polled(client, "wdf-control-build-b", 2)))
+                        polled.append(("build-b", await _polled(client, "wft-control-build-b", 2)))
                     assert await (await start_job(client, control, build)).result() == "succeeded"
 
     asyncio.run(asyncio.wait_for(body(), LIMIT_S))
@@ -167,11 +167,11 @@ def test_metrics_endpoint(temporal, config, running, start_job):
     text = asyncio.run(asyncio.wait_for(body(), LIMIT_S))
     lines = [line for line in text.splitlines() if not line.startswith("#")]
     assert any(line.startswith("temporal_workflow_completed") for line in lines)
-    [count] = [line for line in lines if line.startswith("wdf_workflow_history_events_count")]
+    [count] = [line for line in lines if line.startswith("wft_workflow_history_events_count")]
     assert 'workflow_type="JobWorkflow"' in count
     assert float(count.rsplit(" ", 1)[1]) > 0
     for line in lines:
-        if line.startswith("wdf_"):
+        if line.startswith("wft_"):
             assert not any(f"{label}=" in line for label in ("job_id", "jobid", "taskid"))
 
 
@@ -206,7 +206,7 @@ def test_ready_file_while_polling(temporal, config, tmp_path):
             if service.done():
                 await service
             await asyncio.sleep(0.1)
-        polled = await _polled(client, "wdf-control-ready")
+        polled = await _polled(client, "wft-control-ready")
         stop.set()
         await service
         return polled
@@ -217,12 +217,12 @@ def test_ready_file_while_polling(temporal, config, tmp_path):
 
 def test_missing_env_refused():
     """The service names every missing variable and exits 2 before it connects anywhere."""
-    environ = {k: v for k, v in os.environ.items() if not k.startswith("WDF_")}
+    environ = {k: v for k, v in os.environ.items() if not k.startswith("WFT_")}
     given = {name: "x" for name in [*ENV.values(), *REAPER_ENV]}
-    given |= {"WDF_TEMPORAL_ADDRESS": "127.0.0.1:1", "WDF_WORKFLOW_DSN": "", "WDF_REAPER_DSN": ""}
-    del given["WDF_BUILD_ID"]
+    given |= {"WFT_TEMPORAL_ADDRESS": "127.0.0.1:1", "WFT_WORKFLOW_DSN": "", "WFT_REAPER_DSN": ""}
+    del given["WFT_BUILD_ID"]
     done = subprocess.run(
-        [sys.executable, "-m", "wdf_workflow.service"],
+        [sys.executable, "-m", "wft_workflow.service"],
         env=environ | given,
         capture_output=True,
         text=True,
@@ -230,11 +230,11 @@ def test_missing_env_refused():
     )
     assert done.returncode == 2, done.stderr
     assert done.stderr.strip().endswith(
-        "missing environment: WDF_BUILD_ID, WDF_WORKFLOW_DSN, WDF_REAPER_DSN"
+        "missing environment: WFT_BUILD_ID, WFT_WORKFLOW_DSN, WFT_REAPER_DSN"
     )
-    with pytest.raises(MissingEnv, match="WDF_BUILD_ID"):
+    with pytest.raises(MissingEnv, match="WFT_BUILD_ID"):
         Config.from_env(given)
-    filled = {"WDF_BUILD_ID": "b1", "WDF_WORKFLOW_DSN": "d", "WDF_REAPER_DSN": "r"}
+    filled = {"WFT_BUILD_ID": "b1", "WFT_WORKFLOW_DSN": "d", "WFT_REAPER_DSN": "r"}
     assert Config.from_env(given | filled).build_id == "b1"
 
 
@@ -260,7 +260,7 @@ def test_build_id_other_than_env_refused(monkeypatch):
     refused before anything connects, and the printed configuration holds no DSN."""
     dsn = {"workflow_dsn": "postgresql://u:secret@db/app"}
     other = Config(**dict.fromkeys(ENV, "unused") | {"build_id": "other"} | dsn)
-    monkeypatch.setenv("WDF_BUILD_ID", "env-build")
+    monkeypatch.setenv("WFT_BUILD_ID", "env-build")
     with pytest.raises(ValueError, match="build id other is not the environment's env-build"):
         asyncio.run(serve(other, [], None, None))
     assert "secret" not in repr(other)

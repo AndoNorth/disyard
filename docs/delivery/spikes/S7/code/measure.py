@@ -1,5 +1,5 @@
 """Runs the submit call of submit.py once per chunk size, each in a fresh database of one T1
-Postgres started through wdf_itest, checks the counts it left, and prints one figure line, `figure
+Postgres started through wft_itest, checks the counts it left, and prints one figure line, `figure
 <name> <value>`, per number of docs/delivery/spikes/S7/batch-submit.md, then a summary table.
 
     python measure.py [--jobs 100000] [--chunks 500,1000,2000] [--repeat 1] [--resend]
@@ -18,12 +18,12 @@ from pathlib import Path
 
 from psycopg import sql
 from psycopg.conninfo import make_conninfo
-from wdf_itest import Session
-from wdf_migrate import apply, discover
-from wdf_migrate.fixtures import IMAGE, PASSWORD, TELEMETRY_OFF, _connect
+from wft_itest import Session
+from wft_migrate import apply, discover
+from wft_migrate.fixtures import IMAGE, PASSWORD, TELEMETRY_OFF, _connect
 
 HERE = Path(__file__).resolve().parent
-LOGINS = {"wdf_dispatch": "s7_dispatch", "wdf_artifacts": "s7_artifacts"}
+LOGINS = {"wft_dispatch": "s7_dispatch", "wft_artifacts": "s7_artifacts"}
 # The pass line of the spike block: no chunk transaction above 5 s, and a call peak above the
 # process baseline of at most 24 MiB.
 MAX_TX_S = 5.0
@@ -47,7 +47,7 @@ def counts(admin) -> dict:
         "rows": one("SELECT count(*) FROM accepted_job WHERE submission_key NOT LIKE 'warm-%'"),
         "events": one(
             "SELECT count(*) FROM event e JOIN accepted_job j USING (job_id)"
-            " WHERE e.type = 'dev.wdf.job.accepted.v1' AND j.submission_key NOT LIKE 'warm-%'"
+            " WHERE e.type = 'dev.wft.job.accepted.v1' AND j.submission_key NOT LIKE 'warm-%'"
         ),
         "links": one(
             "SELECT count(*) FROM artifact_use u JOIN accepted_job j USING (job_id)"
@@ -73,8 +73,8 @@ def run_one(port: int, out: Path, name: str, jobs: int, chunk: int, objects: int
                 )
     command = [sys.executable, str(HERE / "submit.py"), "--jobs", str(jobs), "--chunk", str(chunk)]
     command += ["--objects", str(objects)] + (["--resend"] if resend else [])
-    command += ["--dispatch", make_conninfo(dsn, user=LOGINS["wdf_dispatch"], password=PASSWORD)]
-    command += ["--artifacts", make_conninfo(dsn, user=LOGINS["wdf_artifacts"], password=PASSWORD)]
+    command += ["--dispatch", make_conninfo(dsn, user=LOGINS["wft_dispatch"], password=PASSWORD)]
+    command += ["--artifacts", make_conninfo(dsn, user=LOGINS["wft_artifacts"], password=PASSWORD)]
     say(f"{name}: {jobs} jobs in chunks of {chunk}, {objects} object(s) per job")
     done = subprocess.run(command, capture_output=True, text=True, check=False)
     if done.returncode != 0:
@@ -156,7 +156,7 @@ def main(argv=None) -> int:
     parser.add_argument("--objects-run", type=int, default=0, help="chunk size of a 2-object run")
     parser.add_argument("--out", type=Path, default=None)
     args = parser.parse_args(argv)
-    out = args.out or Path(os.environ.get("TMPDIR", "/tmp")) / f"wdf-s7.{int(time.time())}"
+    out = args.out or Path(os.environ.get("TMPDIR", "/tmp")) / f"wft-s7.{int(time.time())}"
     out.mkdir(parents=True, exist_ok=True)
     (out / "figures.txt").write_text("")
     say(f"out {out}")

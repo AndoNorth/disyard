@@ -1,8 +1,8 @@
 """The identities handed to each product follow the contract roles."""
 
 import yaml
-from wdf_storecheck.models import CONTRACT
-from wdf_storecheck.provision import generate_credentials, policy, roles, seaweedfs_config
+from wft_storecheck.models import CONTRACT
+from wft_storecheck.provision import generate_credentials, policy, roles, seaweedfs_config
 
 GRANTS = yaml.safe_load((CONTRACT / "roles.yaml").read_text())["roles"]
 
@@ -17,13 +17,13 @@ def test_every_role_of_the_contract_gets_a_distinct_credential():
 def test_a_policy_names_only_the_actions_of_the_grants():
     document = policy(roles()["compile"])
     actions = {(s["Resource"][0], a) for s in document["Statement"] for a in s["Action"]}
-    assert ("arn:aws:s3:::wdf-sources/*", "s3:GetObject") in actions
-    assert ("arn:aws:s3:::wdf-sources", "s3:ListBucket") in actions
-    assert ("arn:aws:s3:::wdf-components/*", "s3:PutObject") in actions
+    assert ("arn:aws:s3:::wft-sources/*", "s3:GetObject") in actions
+    assert ("arn:aws:s3:::wft-sources", "s3:ListBucket") in actions
+    assert ("arn:aws:s3:::wft-components/*", "s3:PutObject") in actions
     assert not any("Delete" in action for _, action in actions)
-    assert ("arn:aws:s3:::wdf-results/*", "s3:PutObject") in actions
-    assert not any("wdf-results/*" in r and a == "s3:GetObject" for r, a in actions)
-    assert not any("wdf-checkpoints" in resource for resource, _ in actions)
+    assert ("arn:aws:s3:::wft-results/*", "s3:PutObject") in actions
+    assert not any("wft-results/*" in r and a == "s3:GetObject" for r, a in actions)
+    assert not any("wft-checkpoints" in resource for resource, _ in actions)
 
 
 def test_seaweedfs_identities_use_one_policy_per_role():

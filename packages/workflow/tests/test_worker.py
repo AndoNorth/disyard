@@ -10,18 +10,18 @@ from datetime import UTC, datetime
 
 import pytest
 from temporalio.worker import Worker
-from wdf_events import build_event
-from wdf_events.models import JobParams
-from wdf_jobdoc.plan_models import Plan
-from wdf_keys import workflow_id
-from wdf_workflow import versioning
-from wdf_workflow.contract import naming
-from wdf_workflow.job import JobWorkflow
-from wdf_workflow.placement import StaticPlacer, place_activity
-from wdf_workflow.taskpath import control_queue
-from wdf_workflow.testing import FakeControl, FakePool, Succeed, connect
-from wdf_workflow.testing.control import LoadedPlan
-from wdf_workflow.worker import THREAD_PREFIX, workflow_worker
+from wft_events import build_event
+from wft_events.models import JobParams
+from wft_jobdoc.plan_models import Plan
+from wft_keys import workflow_id
+from wft_workflow import versioning
+from wft_workflow.contract import naming
+from wft_workflow.job import JobWorkflow
+from wft_workflow.placement import StaticPlacer, place_activity
+from wft_workflow.taskpath import control_queue
+from wft_workflow.testing import FakeControl, FakePool, Succeed, connect
+from wft_workflow.testing.control import LoadedPlan
+from wft_workflow.worker import THREAD_PREFIX, workflow_worker
 
 BUILD = "worker-test"
 LIMIT_S = 120
@@ -66,7 +66,7 @@ def one_compile() -> Plan:
                     "checkpoint": False,
                     "params": {
                         "source": {
-                            "uri": f"s3://wdf-sources/sha256/aa/{HASH}",
+                            "uri": f"s3://wft-sources/sha256/aa/{HASH}",
                             "sha256": HASH,
                             "size": 2048,
                             "name": "bundle.tar.gz",
@@ -94,7 +94,7 @@ def test_workflow_worker_owns_the_executor(temporal, monkeypatch):
         sha256 = uuid.uuid4().hex * 2
         accepted = build_event(
             "job.accepted",
-            source="/wdf/dispatch",
+            source="/wft/dispatch",
             tenant="acme",
             jobid=str(uuid.uuid4()),
             priorityclass="standard",
@@ -103,7 +103,7 @@ def test_workflow_worker_owns_the_executor(temporal, monkeypatch):
             time=datetime(2026, 11, 18, 12, 0, tzinfo=UTC),
             data={
                 "manifest": {
-                    "uri": f"s3://wdf-sources/sha256/{sha256[:2]}/{sha256}",
+                    "uri": f"s3://wft-sources/sha256/{sha256[:2]}/{sha256}",
                     "sha256": sha256,
                     "size": 2048,
                     "name": "manifest.json",

@@ -1,5 +1,5 @@
 {
-  "schema": "urn:wdf:schema:job:1.0",
+  "schema": "urn:wft:schema:job:1.0",
   "parameters": {
     "seed": "seed"
   },
@@ -8,7 +8,7 @@
       "type": "compile",
       "params": {
         "source": {
-          "uri": "s3://wdf-sources/sha256/bb/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "uri": "s3://wft-sources/sha256/bb/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
           "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
           "size": 2048,
           "name": "bundle.tar.gz",

@@ -7,10 +7,10 @@
 set -uo pipefail
 root=$(cd "$(dirname "${BASH_SOURCE[0]}")/../../../../.." && pwd)
 code=$root/docs/delivery/spikes/S11/code
-out=$(realpath -m "${1:-$(mktemp -d "${TMPDIR:-/tmp}/wdf-s11.XXXXXX")}")
+out=$(realpath -m "${1:-$(mktemp -d "${TMPDIR:-/tmp}/wft-s11.XXXXXX")}")
 shift $(($# > 0 ? 1 : 0))
 mkdir -p "$out"
-image=wdf-s11-worker:local
+image=wft-s11-worker:local
 say() { echo "[$(date +%T)] $*" >&2; }
 figure() { echo "figure $1 $2" | tee -a "$out/figures.txt"; }
 : >"$out/figures.txt"
@@ -34,7 +34,7 @@ say "build $image"
 context=$(mktemp -d)
 trap 'rm -rf "$context"' EXIT
 mkdir -p "$context/bin"
-packages=(--package wdf-workflow --package wdf-aggregate)
+packages=(--package wft-workflow --package wft-aggregate)
 (cd "$root" && uv export --frozen --quiet --no-dev "${packages[@]}" --no-emit-workspace -o "$context/requirements.txt") ||
     exit 1
 (cd "$root" && uv export --frozen --quiet --no-dev "${packages[@]}" --only-emit-workspace --no-editable --no-hashes \
@@ -59,5 +59,5 @@ figure image.bytes "$(docker image inspect --format '{{.Size}}' "$image")"
 rc=${PIPESTATUS[0]}
 [ "$rc" -eq 0 ] || say "a measurement step failed"
 figure host.mem_available_mib.after "$(awk '/^MemAvailable:/ { print int($2 / 1024) }' /proc/meminfo)"
-figure containers.left.label_all "$(docker ps -aq --filter label=wdf.dev/verify-run | wc -l)"
+figure containers.left.label_all "$(docker ps -aq --filter label=wft.dev/verify-run | wc -l)"
 [ "$rc" -eq 0 ] || exit 1

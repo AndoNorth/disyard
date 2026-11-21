@@ -2,9 +2,9 @@
 
 import psycopg
 import pytest
-from wdf_artifactclient.bench import main
-from wdf_storecheck.fixtures import running
-from wdf_storecheck.s3 import dump_credentials
+from wft_artifactclient.bench import main
+from wft_storecheck.fixtures import running
+from wft_storecheck.s3 import dump_credentials
 
 pytestmark = [pytest.mark.integration, pytest.mark.pair]
 

@@ -8,10 +8,10 @@ import re
 from pathlib import Path
 
 import pytest
-from wdf_broker import topology
-from wdf_broker.contract import parse
-from wdf_broker.models import Tenant
-from wdf_broker.tenancy import load
+from wft_broker import topology
+from wft_broker.contract import parse
+from wft_broker.models import Tenant
+from wft_broker.tenancy import load
 
 ROOT = Path(__file__).resolve().parents[4]
 VECTORS = ROOT / "contracts/tenancy/vectors/tenancy/valid"
@@ -34,8 +34,8 @@ def test_topology_matches_tenancy():
     defs = topology.definitions(load("ci"))
     assert defs["vhosts"] == [{"name": "/"}]
     assert {(e["name"], e["type"], e["durable"]) for e in defs["exchanges"]} == {
-        ("wdf.intake", "direct", True),
-        ("wdf.dlx", "fanout", True),
+        ("wft.intake", "direct", True),
+        ("wft.dlx", "fanout", True),
     }
     queues = by_name(defs["queues"])
     assert set(queues) == {"intake.acme.standard", "intake.dlq"}
@@ -43,25 +43,25 @@ def test_topology_matches_tenancy():
         assert queue["durable"] is True
         assert queue["arguments"] == {"x-queue-type": "quorum", "x-quorum-initial-group-size": 1}
     assert {(b["source"], b["destination"], b["routing_key"]) for b in defs["bindings"]} == {
-        ("wdf.intake", "intake.acme.standard", "intake.acme.standard"),
-        ("wdf.dlx", "intake.dlq", ""),
+        ("wft.intake", "intake.acme.standard", "intake.acme.standard"),
+        ("wft.dlx", "intake.dlq", ""),
     }
     policies = by_name(defs["policies"])
-    assert set(policies) == {"wdf-intake", "wdf-dlq"}
-    assert re.search(policies["wdf-intake"]["pattern"], "intake.acme.standard")
-    assert not re.search(policies["wdf-intake"]["pattern"], "intake.dlq")
-    assert re.search(policies["wdf-dlq"]["pattern"], "intake.dlq")
-    assert policies["wdf-intake"]["definition"] == {
+    assert set(policies) == {"wft-intake", "wft-dlq"}
+    assert re.search(policies["wft-intake"]["pattern"], "intake.acme.standard")
+    assert not re.search(policies["wft-intake"]["pattern"], "intake.dlq")
+    assert re.search(policies["wft-dlq"]["pattern"], "intake.dlq")
+    assert policies["wft-intake"]["definition"] == {
         "delivery-limit": 5,
         "max-length": 1000,
         "overflow": "reject-publish",
-        "dead-letter-exchange": "wdf.dlx",
+        "dead-letter-exchange": "wft.dlx",
         "dead-letter-strategy": "at-least-once",
         "delayed-retry-type": "failed",
         "delayed-retry-min": 1000,
         "delayed-retry-max": 30000,
     }
-    assert policies["wdf-dlq"]["definition"] == {"delivery-limit": -1}
+    assert policies["wft-dlq"]["definition"] == {"delivery-limit": -1}
     assert all(p["apply-to"] == "quorum_queues" for p in policies.values())
     assert "users" not in defs and "permissions" not in defs
 
@@ -147,7 +147,7 @@ def test_users_hold_salted_hashes_and_the_contract_permissions():
         "user": "dispatch",
         "vhost": "/",
         "configure": "",
-        "write": r"^wdf\.intake$",
+        "write": r"^wft\.intake$",
         "read": "",
     }
     assert all(p["configure"] == "" for p in permissions.values())

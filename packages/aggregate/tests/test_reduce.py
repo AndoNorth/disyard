@@ -6,7 +6,7 @@ import statistics
 import pytest
 from hypothesis import given
 from hypothesis import strategies as st
-from wdf_aggregate.reduce import (
+from wft_aggregate.reduce import (
     UsageError,
     check_args,
     combine,
@@ -14,7 +14,7 @@ from wdf_aggregate.reduce import (
     stats_summary,
     write_summary,
 )
-from wdf_runtime.contract import check
+from wft_runtime.contract import check
 
 FLOATS = st.floats(min_value=-1e6, max_value=1e6, allow_nan=False)
 

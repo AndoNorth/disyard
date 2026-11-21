@@ -3,9 +3,9 @@ fuel of componentize-py."""
 
 import tarfile
 
-from wdf_compile import bundle, heavy
-from wdf_compile.__main__ import main as compile_main
-from wdf_compile.heavy import main
+from wft_compile import bundle, heavy
+from wft_compile.__main__ import main as compile_main
+from wft_compile.heavy import main
 
 
 def test_heavy_bundle_size_and_bytes(tmp_path):

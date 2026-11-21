@@ -1,12 +1,12 @@
 [project]
-name = "wdf-clusterkit"
+name = "wft-clusterkit"
 version = "0.0.0"
 license = "Apache-2.0"
 requires-python = ">=3.13,<3.14"
-dependencies = ["wdf-storecheck"]
+dependencies = ["wft-storecheck"]
 
 [tool.uv.sources]
-wdf-storecheck = { workspace = true }
+wft-storecheck = { workspace = true }
 
 [build-system]
 requires = ["hatchling"]

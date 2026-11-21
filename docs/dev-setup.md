@@ -60,10 +60,10 @@ No logic lives in the justfile, and each real recipe calls `scripts/<name>.sh`.
 | `verify-lint` | real | - | checks each `verify-<domain>` skill has a `SKILL.md` named after its directory, passes when none exist |
 | `pre-push` | real | - | the fast gate that the pre-push hook runs, see [Git hooks](#git-hooks) |
 | `hooks-status` | real | - | prints whether the git hooks are installed for this checkout |
-| `up` | real | - | brings up the kind cluster `wdf` and its local registry for `WDF_PRESET` (default `ci`) |
+| `up` | real | - | brings up the kind cluster `wft` and its local registry for `WFT_PRESET` (default `ci`) |
 | `down` | real | - | stops the node containers and keeps the cluster, the registry and the host data directory |
 | `nuke` | real | - | destroys the cluster, its registry and the host data directory of the preset that started it |
-| `cluster-verify` | real | - | read-only checks that the cluster `wdf` matches `WDF_PRESET` (default `ci`): preset, pod slots, module budget, nodes, node limits, quotas, module readiness, live requests, pressure and loopback ports, one `ok` or `FAIL` line each |
+| `cluster-verify` | real | - | read-only checks that the cluster `wft` matches `WFT_PRESET` (default `ci`): preset, pod slots, module budget, nodes, node limits, quotas, module readiness, live requests, pressure and loopback ports, one `ok` or `FAIL` line each |
 | `smoke` | stub | acceptance | end-to-end smoke run |
 | `e2e` | stub | acceptance | end-to-end run |
 | `load-test` | stub | load | load generation |
@@ -94,7 +94,7 @@ A uv-managed `cpython` already present in `~/.local/share/uv/python` still wins 
 `UV_PYTHON` stays unset because setting it breaks `uv pip`.
 
 `scripts/env.sh` also adds a private directory with `libstdc++`, `libgcc_s` and `libz` from the host to `LD_LIBRARY_PATH`, so manylinux wheels such as numpy import under the Nix interpreter.
-`WDF_LD_EXTRA=<dir>[:<dir>...]` appends further library directories.
+`WFT_LD_EXTRA=<dir>[:<dir>...]` appends further library directories.
 
 Provenance check:
 
@@ -125,7 +125,7 @@ Outside the flake shell the only result is `fail in-dev-shell`, because host cop
 | `wsl-systemd` | PID 1 is systemd | set `[boot]` `systemd=true` in `/etc/wsl.conf`, then `wsl --shutdown` from Windows |
 | `repo-on-ext4` | the repo is not under `/mnt/<drive>/` and not on a 9p, drvfs, cifs or nfs mount | move the clone under the WSL home directory, a `warn` means a non-ext4 local filesystem |
 | `inotify-instances` | `fs.inotify.max_user_instances` is at least 512 | `sudo sysctl fs.inotify.max_user_instances=512`, persisted in `/etc/sysctl.d/` |
-| `memory-vs-preset` | host memory covers `memory_mib` in `deploy/presets/$WDF_PRESET.yaml` (default preset `ci`) | give WSL2 more memory in `.wslconfig`, a `warn` with `no preset file yet` is expected until cluster presets exist |
+| `memory-vs-preset` | host memory covers `memory_mib` in `deploy/presets/$WFT_PRESET.yaml` (default preset `ci`) | give WSL2 more memory in `.wslconfig`, a `warn` with `no preset file yet` is expected until cluster presets exist |
 | `path-provenance` | for every pinned tool (including `yq`, `wasmtime` and `wasm-tools`) the first match on PATH is a `/nix/store` path, not `~/.nix-profile` or `/nix/var/nix/profiles` | the detail prints `which -a` for each offender, so a profile copy ahead of the flake can be removed or PATH reordered |
 
 `scripts/doctor.test.sh` is the fault-injection self-test.
@@ -224,7 +224,7 @@ Each skipped job still reports as skipped, so a check made required later never 
 
 The image builds, `deploy/workers/image.sh` and `deploy/workflow/image.sh`, read the wheels that `uv.lock` pins and the release assets of `nix/wasm-tools.nix` from the build download cache before the network, locally as in CI.
 A second build on the same host downloads nothing, and every cached file is checked against its pinned hash before use.
-The cache is `~/.cache/wasm-dag-forge/build` (under `XDG_CACHE_HOME` when set, or `WDF_BUILD_CACHE`), removing it is always safe, and `actions/cache` carries it between runs of the `test` jobs and `state-modules`.
+The cache is `~/.cache/wasm-dag-forge/build` (under `XDG_CACHE_HOME` when set, or `WFT_BUILD_CACHE`), removing it is always safe, and `actions/cache` carries it between runs of the `test` jobs and `state-modules`.
 `actions/cache` also carries `~/.cache/uv`, keyed by `uv.lock` alone, so a `test` job neither downloads the wheels nor builds `python-qpid-proton` from its sdist again.
 
 CI can be switched off in two ways:

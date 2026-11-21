@@ -3,10 +3,10 @@
 import shutil
 
 import pytest
-from wdf_compat import read_event
-from wdf_compat.vectors import GOLDEN, MANIFEST, check_manifest, golden_files, main
-from wdf_events import from_bytes, to_bytes
-from wdf_events.models import DATA_MODELS
+from wft_compat import read_event
+from wft_compat.vectors import GOLDEN, MANIFEST, check_manifest, golden_files, main
+from wft_events import from_bytes, to_bytes
+from wft_events.models import DATA_MODELS
 
 FILES = golden_files()
 

@@ -1,5 +1,5 @@
 {
-  "$id": "urn:wdf:schema:state.job-row:1",
+  "$id": "urn:wft:schema:state.job-row:1",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
   "description": "One row per job, with the columns of contracts/state/README.md in the same order.",

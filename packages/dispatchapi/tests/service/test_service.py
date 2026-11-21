@@ -7,19 +7,19 @@ import urllib.request
 import pytest
 from psycopg import sql
 from psycopg.conninfo import conninfo_to_dict
-from wdf_dispatchapi.gateway import TemporalGateway
-from wdf_dispatchapi.testing import FakeGateway
+from wft_dispatchapi.gateway import TemporalGateway
+from wft_dispatchapi.testing import FakeGateway
 
 pytestmark = [pytest.mark.integration, pytest.mark.pair]
 
 D15 = {
-    "wdf_dispatch_jobs_total",
-    "wdf_dispatch_submit_seconds",
-    "wdf_dispatch_unpublished_jobs",
-    "wdf_dispatch_unpublished_oldest_seconds",
-    "wdf_control_requests_total",
-    "wdf_control_outbox_jobs",
-    "wdf_control_outbox_oldest_seconds",
+    "wft_dispatch_jobs_total",
+    "wft_dispatch_submit_seconds",
+    "wft_dispatch_unpublished_jobs",
+    "wft_dispatch_unpublished_oldest_seconds",
+    "wft_control_requests_total",
+    "wft_control_outbox_jobs",
+    "wft_control_outbox_oldest_seconds",
 }
 SAMPLE = re.compile(r"^(\w+?)(?:_bucket|_sum|_count)?(?:\{(.*)\})? \S+$")
 LABEL = re.compile(r'(\w+)="([^"]*)"')
@@ -73,7 +73,7 @@ def test_metrics_names_and_no_id_labels(start, logins, tmp_path, kit):
         text = scraped.read().decode()
     samples = {}
     for line in text.splitlines():
-        if line.startswith("#") or not line.startswith("wdf_"):
+        if line.startswith("#") or not line.startswith("wft_"):
             continue
         name, labels = SAMPLE.match(line).groups()
         found = dict(LABEL.findall(labels or ""))
@@ -83,11 +83,11 @@ def test_metrics_names_and_no_id_labels(start, logins, tmp_path, kit):
 
     assert set(samples) == D15
     jobs = {
-        (labels["outcome"], labels["reason"]): v for labels, v in samples["wdf_dispatch_jobs_total"]
+        (labels["outcome"], labels["reason"]): v for labels, v in samples["wft_dispatch_jobs_total"]
     }
     assert jobs["accepted", "none"] == "3"
     requests = {
         (labels["action"], labels["outcome"]): v
-        for labels, v in samples["wdf_control_requests_total"]
+        for labels, v in samples["wft_control_requests_total"]
     }
     assert (requests["cancel", "applied"], requests["pause", "refused"]) == ("1", "1")

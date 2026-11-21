@@ -10,7 +10,7 @@ ROOT = Path(__file__).resolve().parents[3]
 
 PROBE = """
 import json
-from wdf_eventstore.models import CONTRACT, EventRow
+from wft_eventstore.models import CONTRACT, EventRow
 
 for name in ['layout.yaml', 'retention.yaml', 'retention.schema.json', 'event-row/1.json']:
     assert (CONTRACT / name).is_file(), name
@@ -19,9 +19,9 @@ assert set(schema["properties"]) == set(EventRow.model_fields)
 
 from importlib import metadata, resources
 
-entry = metadata.entry_points(group='wdf.migrations', name='eventstore')
-assert [e.value for e in entry] == ['wdf_eventstore.migrations']
-shipped = {f.name for f in resources.files('wdf_eventstore.migrations').iterdir()}
+entry = metadata.entry_points(group='wft.migrations', name='eventstore')
+assert [e.value for e in entry] == ['wft_eventstore.migrations']
+shipped = {f.name for f in resources.files('wft_eventstore.migrations').iterdir()}
 shipped = {n for n in shipped if n.endswith('.sql')}
 assert shipped == {'0200_event.sql', '0201_event_job_index.sql', 'R__event_policies.sql'}, shipped
 
@@ -38,7 +38,7 @@ def run(*cmd, **kwargs) -> subprocess.CompletedProcess:
 def clean_python(tmp_path_factory) -> Path:
     work = tmp_path_factory.mktemp("wheel")
     wheels = work / "wheels"
-    for package in ("wdf-eventstore", "wdf-events", "wdf-keys", "wdf-compat"):
+    for package in ("wft-eventstore", "wft-events", "wft-keys", "wft-compat"):
         run("uv", "build", "--wheel", "--package", package, "-o", str(wheels), cwd=ROOT)
     venv = work / "venv"
     run("uv", "venv", "--python", sys.executable, str(venv))

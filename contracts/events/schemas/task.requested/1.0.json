@@ -36,7 +36,7 @@
           "type": "integer"
         },
         "uri": {
-          "pattern": "^s3://wdf-(sources|components|results|checkpoints)/.+$",
+          "pattern": "^s3://wft-(sources|components|results|checkpoints)/.+$",
           "title": "Uri",
           "type": "string"
         }
@@ -82,7 +82,7 @@
           "type": "integer"
         },
         "uri": {
-          "pattern": "^s3://wdf-checkpoints/.+$",
+          "pattern": "^s3://wft-checkpoints/.+$",
           "title": "Uri",
           "type": "string"
         }
@@ -131,7 +131,7 @@
           "type": "integer"
         },
         "uri": {
-          "pattern": "^s3://wdf-(sources|components|results|checkpoints)/.+$",
+          "pattern": "^s3://wft-(sources|components|results|checkpoints)/.+$",
           "title": "Uri",
           "type": "string"
         }
@@ -174,10 +174,10 @@
       "type": "object"
     }
   },
-  "$id": "urn:wdf:schema:task.requested:1.0",
+  "$id": "urn:wft:schema:task.requested:1.0",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
-  "description": "Data of dev.wdf.task.requested.v1, the input of a task activity.\n\n`inputs` is a list of references and is never the inputs themselves, so an aggregate over many\nresults passes one index reference and the size budget guards the rest.",
+  "description": "Data of dev.wft.task.requested.v1, the input of a task activity.\n\n`inputs` is a list of references and is never the inputs themselves, so an aggregate over many\nresults passes one index reference and the size budget guards the rest.",
   "properties": {
     "cpu_cores": {
       "exclusiveMinimum": 0,
