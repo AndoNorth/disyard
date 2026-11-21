@@ -34,7 +34,9 @@ No database login, DSN or Secret reaches `wft-workers`.
 ## Egress
 
 A NetworkPolicy per pool allows no ingress, and egress to DNS, the Temporal frontend and the object store only, plus the package mirror from the compile pod.
-The probe prints what the pod reaches, and exits 0 when that is what the policy allows:
+With the observability switch on, the same policy also allows ingress from the Prometheus pods in `wft-obs` on port 9464, the SDK metrics port named `metrics`, and egress to the collector (4318) and Pyroscope (4040) pods in `wft-obs`.
+With the switch off the policy is as above, and the pod has no `OTEL_EXPORTER_OTLP_ENDPOINT` and resolves no name in `wft-obs`.
+The probe prints what the pod reaches, `collector` and `pyroscope` among it, and exits 0 when that is what the policy allows: those two answer `ok` exactly when `OTEL_EXPORTER_OTLP_ENDPOINT` is set in the pod, and `refused` otherwise.
 
 ```sh
 kubectl --context kind-wft -n wft-workers exec deploy/compile-worker -- python -m wft_worker.probe

@@ -27,6 +27,7 @@ from wft_temporal import event_data_converter, tracing_interceptor
 
 from .activity import run_task, serving
 from .config import Config
+from .metrics import Metrics, runtime_of
 from .pools import Context
 
 STUBBED = ()
@@ -52,11 +53,13 @@ async def serve(config: Config, stop: asyncio.Event | None = None) -> None:
     for signum in (signal.SIGTERM, signal.SIGINT):
         loop.add_signal_handler(signum, stop.set)
     try:
+        runtime = runtime_of(os.environ)
         client = await Client.connect(
             config.temporal_address,
             namespace=config.namespace,
             data_converter=event_data_converter,
             interceptors=[tracing_interceptor()],
+            runtime=runtime,
         )
         await client.workflow_service.describe_namespace(
             DescribeNamespaceRequest(namespace=config.namespace)
@@ -76,7 +79,7 @@ async def serve(config: Config, stop: asyncio.Event | None = None) -> None:
             max_concurrent_activities=1,
             graceful_shutdown_timeout=DRAIN,
         )
-        with serving(context, tmp):
+        with serving(context, tmp, Metrics(runtime.metric_meter, config.pool)):
             log.info(
                 "polling %s in namespace %s for pool %s, unversioned",
                 config.queue,

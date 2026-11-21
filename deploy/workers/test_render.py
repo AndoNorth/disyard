@@ -26,6 +26,7 @@ INPUTS = [
     "contracts/temporal/naming.yaml",
     "scripts/storage/store/identities.sh",
     "nix/wasm-tools.nix",
+    "deploy/tilt/obs.star",
 ]
 DEPENDS = ["temporal-bootstrap", "objectstore-bootstrap", "mirror"]
 ROLES = ("admin", "workflow", "compile", "simulate", "aggregate")
@@ -41,9 +42,9 @@ SCRATCH_ENV = {
 pytestmark = pytest.mark.skipif(shutil.which("tilt") is None, reason="tilt not on PATH")
 
 
-@pytest.fixture(scope="module")
-def rendered(tmp_path_factory):
-    root = tmp_path_factory.mktemp("render")
+def render(tmp_path_factory, obs: str):
+    """The manifests and objects of the three pool modules with the observability switch `obs`."""
+    root = tmp_path_factory.mktemp(f"render-{obs}")
     shutil.copytree(
         ROOT / "deploy/workers",
         root / "deploy/workers",
@@ -72,6 +73,7 @@ def rendered(tmp_path_factory):
         | {
             "KUBECONFIG": str(ROOT / "scripts/tilt/fixtures/kubeconfig-wft.yaml"),
             "WFT_STATE_DIR": str(state),
+            "WFT_OBS": obs,
         },
         capture_output=True,
         text=True,
@@ -85,6 +87,16 @@ def rendered(tmp_path_factory):
         if o
     }
     return manifests, objects
+
+
+@pytest.fixture(scope="module")
+def rendered(tmp_path_factory):
+    return render(tmp_path_factory, "off")
+
+
+@pytest.fixture(scope="module")
+def rendered_on(tmp_path_factory):
+    return render(tmp_path_factory, "on")
 
 
 def pod(objects, pool: str) -> dict:
@@ -171,7 +183,6 @@ def test_pod_settings_and_readiness(rendered, pool):
         assert c["securityContext"]["allowPrivilegeEscalation"] is False
     [container] = spec["containers"]
     assert container["readinessProbe"]["exec"]["command"] == ["test", "-e", "/var/wft/ready"]
-    assert "ports" not in container
     template = objects["Deployment", f"{pool}-worker"]["spec"]["template"]["metadata"]
     assert template["annotations"]["kubectl.kubernetes.io/default-container"] == container["name"]
 
@@ -216,3 +227,61 @@ def test_waits_for_its_dependencies_and_carries_its_objects(rendered, pool):
     *_, script, built = image["BuildDetails"]["args"]
     assert script.endswith("deploy/workers/image.sh")
     assert built == pool
+
+
+OBS_ENV = {
+    "OTEL_EXPORTER_OTLP_ENDPOINT": "http://collector.wft-obs:4318",
+    "WFT_PYROSCOPE_ADDRESS": "http://pyroscope.wft-obs:4040",
+}
+
+
+def peers(rules: list, key: str) -> set:
+    return {
+        (
+            peer["namespaceSelector"]["matchLabels"]["kubernetes.io/metadata.name"],
+            json.dumps(peer["podSelector"]["matchLabels"], sort_keys=True),
+            port["port"],
+        )
+        for rule in rules
+        for peer in rule[key]
+        for port in rule["ports"]
+    }
+
+
+def env_of(objects, pool: str) -> dict:
+    [container] = pod(objects, pool)["containers"]
+    return {e["name"]: e.get("value") for e in container["env"]}
+
+
+@pytest.mark.parametrize("pool", POOLS)
+def test_metrics_port_is_named_and_the_address_is_set_either_way(rendered, rendered_on, pool):
+    for _, objects in (rendered, rendered_on):
+        [container] = pod(objects, pool)["containers"]
+        assert container["ports"] == [{"name": "metrics", "containerPort": 9464}]
+        assert env_of(objects, pool)["WFT_METRICS_ADDRESS"] == "0.0.0.0:9464"
+
+
+@pytest.mark.parametrize("pool", POOLS)
+def test_switch_off_has_no_obs_environment_and_the_policy_is_as_before(rendered, pool):
+    _, objects = rendered
+    env = env_of(objects, pool)
+    assert not set(OBS_ENV) & set(env)
+    policy = objects["NetworkPolicy", f"{pool}-worker"]["spec"]
+    assert "ingress" not in policy
+    assert not [p for p in peers(policy["egress"], "to") if p[0] == "wft-obs"]
+
+
+@pytest.mark.parametrize("pool", POOLS)
+def test_switch_on_adds_the_obs_environment_and_policy_rules(rendered_on, pool):
+    _, objects = rendered_on
+    env = env_of(objects, pool)
+    assert {k: env[k] for k in OBS_ENV} == OBS_ENV
+    policy = objects["NetworkPolicy", f"{pool}-worker"]["spec"]
+    assert peers(policy["ingress"], "from") == {
+        ("wft-obs", json.dumps({"app.kubernetes.io/name": "prometheus"}), 9464)
+    }
+    obs = {p for p in peers(policy["egress"], "to") if p[0] == "wft-obs"}
+    assert obs == {
+        ("wft-obs", json.dumps({"app.kubernetes.io/name": "collector"}), 4318),
+        ("wft-obs", json.dumps({"app.kubernetes.io/name": "pyroscope"}), 4040),
+    }
