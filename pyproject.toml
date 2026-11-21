@@ -33,6 +33,7 @@ wft-jobtools = { workspace = true }
 wft-kernel = { workspace = true }
 wft-keys = { workspace = true }
 wft-migrate = { workspace = true }
+wft-obs = { workspace = true }
 wft-placement = { workspace = true }
 wft-plan = { workspace = true }
 wft-runtime = { workspace = true }
@@ -71,6 +72,7 @@ dev = [
     "wft-kernel",
     "wft-keys",
     "wft-migrate",
+    "wft-obs",
     "wft-placement",
     "wft-plan",
     "wft-runtime",

@@ -1,0 +1,23 @@
+[project]
+name = "wft-obs"
+version = "0.0.0"
+license = "Apache-2.0"
+requires-python = ">=3.13,<3.14"
+# The dependency set of every module the package will hold, declared once so the wheel test catches an undeclared one.
+dependencies = [
+    "opentelemetry-exporter-otlp-proto-http",
+    "opentelemetry-sdk",
+    "pyroscope-io",
+    "pyyaml",
+    "temporalio",
+    "wft-events",
+    "wft-stateops",
+]
+
+[tool.uv.sources]
+wft-events = { workspace = true }
+wft-stateops = { workspace = true }
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
