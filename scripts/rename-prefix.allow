@@ -1,5 +1,5 @@
-# path-regex line-regex: lines that keep the old prefix wdf on purpose, read by rename-prefix.py.
-# The rename tooling and its test name the old prefix to find it.
+# path-regex line-regex: lines that keep an old name (wdf, wasm-dag-forge) on purpose, read by rename-prefix.py.
+# The rename tooling and its test name the old names to find them.
 ^scripts/(rename-prefix\.(py|allow)|test_rename_prefix\.py)$ .
 # The job id namespace is the version 5 UUID of the old domain, kept so job ids do not change.
 ^contracts/events/README\.md$ version 5 UUID of `wdf\.dev`
