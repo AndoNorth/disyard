@@ -1,8 +1,0 @@
----
-metrics:
-  wft_example_total:
-    type: counter
-    help: Things counted.
-    labels:
-      attempt_id:
-        values: ["1"]
