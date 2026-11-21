@@ -1,0 +1,128 @@
+---
+# Throwaway kube-state-metrics on the obs node, limited to the resources the rules read.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: s14-ksm
+  namespace: wft-obs
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: s14-ksm
+rules:
+  - apiGroups: [""]
+    resources: [pods, nodes]
+    verbs: [list, watch]
+  - apiGroups: [apps]
+    resources: [deployments]
+    verbs: [list, watch]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: s14-ksm
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: s14-ksm
+subjects:
+  - kind: ServiceAccount
+    name: s14-ksm
+    namespace: wft-obs
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: s14-ksm
+  namespace: wft-obs
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: s14-ksm
+  template:
+    metadata:
+      labels:
+        app: s14-ksm
+    spec:
+      serviceAccountName: s14-ksm
+      nodeSelector:
+        wft.dev/pool: obs
+      tolerations:
+        - key: wft.dev/pool
+          operator: Equal
+          value: obs
+          effect: NoSchedule
+      containers:
+        - name: ksm
+          image: KSM_IMAGE
+          args: ["--resources=pods,nodes,deployments", --port=8080, --telemetry-port=8081]
+          ports:
+            - name: metrics
+              containerPort: 8080
+          resources:
+            requests: {cpu: 20m, memory: 64Mi}
+            limits: {cpu: 20m, memory: 64Mi}
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65534
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
+---
+# Killed by the kernel at its 32 MiB limit, then restarted: kube-state-metrics reads the exit code of a container's
+# last termination, which exists only once the container has restarted.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: s14-oom
+  namespace: wft-obs
+spec:
+  restartPolicy: Always
+  nodeSelector:
+    wft.dev/pool: obs
+  tolerations:
+    - key: wft.dev/pool
+      operator: Equal
+      value: obs
+      effect: NoSchedule
+  containers:
+    - name: oom
+      image: CANARY_IMAGE
+      command: [tail, /dev/zero]
+      resources:
+        requests: {cpu: 10m, memory: 32Mi}
+        limits: {cpu: 10m, memory: 32Mi}
+---
+# Reaches its 32 MiB limit through page cache and is reclaimed, never killed: memory.events "max" rises.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: s14-limit
+  namespace: wft-obs
+spec:
+  restartPolicy: Never
+  nodeSelector:
+    wft.dev/pool: obs
+  tolerations:
+    - key: wft.dev/pool
+      operator: Equal
+      value: obs
+      effect: NoSchedule
+  containers:
+    - name: limit
+      image: CANARY_IMAGE
+      command: [sh, -c, "while :; do dd if=/dev/zero of=/scratch/f bs=1M count=128 2>/dev/null; sleep 5; done"]
+      resources:
+        requests: {cpu: 10m, memory: 32Mi}
+        limits: {cpu: 10m, memory: 32Mi}
+      volumeMounts:
+        - name: scratch
+          mountPath: /scratch
+  volumes:
+    - name: scratch
+      emptyDir: {}
