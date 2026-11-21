@@ -107,6 +107,7 @@ def spawn(api, account, tmp_path):
             "WFT_PLACEMENT_LISTEN": f"127.0.0.1:{port}",
             "WFT_SNAPSHOT_EVERY_S": str(every_s),
             "WFT_READY_FILE": str(ready),
+            "WFT_METRICS_ADDRESS": f"127.0.0.1:{free_port()}",
             "KUBERNETES_SERVICE_HOST": api_host,
             "KUBERNETES_SERVICE_PORT": api_port,
         }
