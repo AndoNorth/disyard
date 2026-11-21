@@ -1420,6 +1420,10 @@ dependencies = [
     { name = "pyyaml" },
     { name = "temporalio" },
     { name = "wft-events" },
+]
+
+[package.optional-dependencies]
+stateops = [
     { name = "wft-stateops" },
 ]
 
@@ -1431,8 +1435,9 @@ requires-dist = [
     { name = "pyyaml" },
     { name = "temporalio" },
     { name = "wft-events", editable = "packages/events" },
-    { name = "wft-stateops", editable = "packages/stateops" },
+    { name = "wft-stateops", marker = "extra == 'stateops'", editable = "packages/stateops" },
 ]
+provides-extras = ["stateops"]
 
 [[package]]
 name = "wft-placement"
@@ -1636,6 +1641,7 @@ dependencies = [
     { name = "wft-jobpatch" },
     { name = "wft-jobstate" },
     { name = "wft-keys" },
+    { name = "wft-obs" },
     { name = "wft-plan" },
     { name = "wft-runtime" },
     { name = "wft-stages" },
@@ -1666,6 +1672,7 @@ requires-dist = [
     { name = "wft-jobpatch", editable = "packages/jobpatch" },
     { name = "wft-jobstate", editable = "packages/jobstate" },
     { name = "wft-keys", editable = "packages/keys" },
+    { name = "wft-obs", editable = "packages/obs" },
     { name = "wft-plan", editable = "packages/plan" },
     { name = "wft-runtime", editable = "packages/runtime" },
     { name = "wft-stages", editable = "packages/stages" },

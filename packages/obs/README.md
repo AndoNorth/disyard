@@ -5,7 +5,7 @@ The rules it follows are the [instrumentation contract](../../contracts/instrume
 
 ## Dependencies
 
-`pyproject.toml` declares the dependency set of every module the package holds or will hold: `temporalio`, `opentelemetry-sdk`, `opentelemetry-exporter-otlp-proto-http`, `pyroscope-io`, `pyyaml`, `wft-events` and `wft-stateops`.
+`pyproject.toml` declares the dependency set of every module the package holds or will hold: `temporalio`, `opentelemetry-sdk`, `opentelemetry-exporter-otlp-proto-http`, `pyroscope-io`, `pyyaml`, and `wft-events`, with `wft-stateops` in the optional extra `stateops`, which the process that runs the state inputs exporter installs.
 `tests/test_wheel.py` builds the wheel, installs it with only those dependencies into a clean virtual environment, imports every module and `pyroscope`, and runs the client against the fake, so a module that imports an undeclared dependency fails there.
 
 ## State

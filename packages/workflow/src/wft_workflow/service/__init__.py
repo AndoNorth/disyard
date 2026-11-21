@@ -23,10 +23,11 @@ from pathlib import Path
 
 from temporalio.api.workflowservice.v1 import DescribeNamespaceRequest
 from temporalio.client import Client
-from temporalio.runtime import PrometheusConfig, Runtime, TelemetryConfig
+from temporalio.runtime import Runtime
 from temporalio.worker import Worker
 from wft_artifactreaper import schedule
 from wft_artifactreaper.schedule import RunPass
+from wft_obs import metrics
 from wft_temporal import event_data_converter, tracing_interceptor
 
 from ..contract import naming
@@ -44,6 +45,23 @@ WORKFLOW_TASKS = 8
 # the pod's 256 MiB however many jobs are open. A workflow out of it replays its history on its
 # next task.
 CACHED_WORKFLOWS = 150
+
+# The catalogue's buckets of the histograms the workflow creates on its own meter.
+BUCKETS = {
+    "wft_workflow_history_events": [
+        100,
+        500,
+        1000,
+        2500,
+        5000,
+        10000,
+        50000,
+        100000,
+        500000,
+        1000000,
+    ],
+    "wft_workflow_job_seconds": [60, 300, 900, 3600, 14400, 43200, 86400, 172800, 345600, 604800],
+}
 
 ENV = {
     "temporal_address": "WFT_TEMPORAL_ADDRESS",
@@ -132,7 +150,7 @@ def control_queue(build_id: str) -> str:
 
 
 def prometheus(address: str) -> Runtime:
-    return Runtime(telemetry=TelemetryConfig(metrics=PrometheusConfig(bind_address=address)))
+    return metrics.runtime(address, BUCKETS)
 
 
 async def serve(

@@ -22,7 +22,6 @@ import pyroscope
 import temporalio
 import wft_events
 import wft_obs
-import wft_stateops
 import yaml
 from wft_obs import query
 from wft_obs.targets import JOBS
@@ -80,7 +79,6 @@ def test_wheel_declares_the_dependency_set():
         "pyyaml",
         "temporalio",
         "wft-events",
-        "wft-stateops",
     ]
 
 

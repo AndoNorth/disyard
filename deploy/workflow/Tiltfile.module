@@ -2,6 +2,8 @@
 # infra pool, so a second build can run beside it during a rollout. The host-side resource workflow-worker-logins
 # creates the service logins in the app database before the service starts, and two generated Secrets carry their DSNs
 # and the store identities of the service.
+load("../tilt/obs.star", "obs_env")
+
 module = read_yaml("module.yaml")
 name = module["name"]
 namespace = module["namespace"]
@@ -58,6 +60,7 @@ env = {
     "WFT_READY_FILE": ready,
     "WFT_PLACEMENT_URL": "http://placement.wft-control.svc:8080",
 }
+env.update(obs_env())
 
 k8s_yaml(encode_yaml({
     "apiVersion": "apps/v1",
