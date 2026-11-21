@@ -63,3 +63,7 @@ images:
     version: 2.31.0-pg16
     # yamllint disable-line rule:line-length
     digest: sha256:322ae364eca3321cf2a48f1ef31213b87843413b3cf8feeebf54e999a26bb731
+  otel/opentelemetry-collector-contrib:
+    version: 0.165.0
+    # yamllint disable-line rule:line-length
+    digest: sha256:e40d61f10c9a617cca1ffd1be4d7e2b3a4b0f0001798ff07e58cabe82e618cea
