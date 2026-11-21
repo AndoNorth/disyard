@@ -74,7 +74,7 @@ The observability stack runs only on a `ci` or `soak` cluster brought up with th
 WFT_OBS=on nix develop -c just up
 ```
 
-With the switch on, each `obs` node takes the preset's `obs_stack` size instead of its own, so the host needs `obs_memory_mib` instead of `memory_mib` (13,696 MiB for `ci`, 15,872 MiB for `soak`).
+With the switch on, each `obs` node takes the preset's `obs_stack` size instead of its own, so the host needs `obs_memory_mib` instead of `memory_mib` (15,488 MiB for `ci`, 17,664 MiB for `soak`).
 `memory-vs-preset` reads `obs_memory_mib` when `WFT_OBS=on`, and warns when the host holds `memory_mib` but not `obs_memory_mib`, because the same host still runs the cluster with the switch off.
 `dev` has no `obs_stack`, so `WFT_OBS=on` with `dev` is a usage error (exit 2).
 
@@ -98,6 +98,8 @@ The renderer places the mappings on the control plane node as `extraPortMappings
 | --- | --- | --- |
 | `control-api` | `127.0.0.1:18080` | 30080 |
 | `dispatch-api` | `127.0.0.1:18081` | 30081 |
+| `grafana` | `127.0.0.1:13000` | 30300 |
+| `temporal-ui` | `127.0.0.1:18233` | 30233 |
 
 `deploy/host/dummy-endpoint.yaml` is a stand-in for the `control-api` endpoint, one busybox replica in `wft-control`, until a real module serves it.
 Port mappings are fixed when the cluster is created, so a changed table takes effect after `just nuke` and `just up`.
@@ -105,7 +107,7 @@ A mapped port answers only once the Service behind it has endpoints, and a reque
 
 ```sh
 kubectl --context kind-wft apply -f deploy/host/dummy-endpoint.yaml
-ss -ltn | grep -E ':(18080|18081)\b'
+ss -ltn | grep -E ':(18080|18081|13000|18233)\b'
 curl http://127.0.0.1:18080/
 ```
 
