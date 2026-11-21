@@ -49,10 +49,20 @@ want=$(yq '.memory_mib' "$file")
 want=$(yq '.cpus' "$file")
 [ "$want" = "$sum_cpus" ] || fail cpus-sum-mismatch "cpus is $want, the nodes sum to $sum_cpus"
 
+# With the observability switch on, every obs node takes the obs_stack size instead.
+if [ "$(yq 'has("obs_stack")' "$file")" = true ]; then
+    obs_mem=$(yq '.obs_stack.memory_mib' "$file")
+    sum_obs=$(yq '.nodes[] | .role + " " + .count + " " + .memory_mib' "$file" |
+        awk -v obs="$obs_mem" '{ mem += $2 * ($1 == "obs" ? obs : $3) } END { print mem }')
+    want=$(yq '.obs_memory_mib' "$file")
+    [ "$want" = "$sum_obs" ] ||
+        fail memory-sum-mismatch "obs_memory_mib is $want, the nodes with obs_stack sum to $sum_obs"
+fi
+
 while read -r role mem; do
     reserved=$((256 + (mem + 15) / 16))
     [ $((mem - reserved)) -ge "$MIN_ALLOCATABLE_MIB" ] ||
         fail node-memory-below-reservation "$role node has $mem MiB, reservation $reserved MiB leaves less than $MIN_ALLOCATABLE_MIB MiB"
-done < <(yq '.nodes[] | .role + " " + .memory_mib' "$file")
+done < <(yq '(.nodes[] | .role + " " + .memory_mib), (select(has("obs_stack")) | "obs_stack " + .obs_stack.memory_mib)' "$file")
 
 echo "ok $file"
