@@ -1,7 +1,9 @@
-# wasm-dag-forge
+# Weft
 
-A proof of concept for durable distributed job execution: batch jobs built from templates
-(compile, simulate, aggregate), run as WASM on a fixed-size local Kubernetes cluster.
+Durable batch simulation, woven at scale.
+
+Weft is a proof of concept that runs large scale digital validation as durable batch jobs on Temporal: a job compiles a testbench, runs it across many seeds and configurations, and aggregates the results, scaling to millions of jobs and to jobs that run for weeks on a fixed-size local Kubernetes cluster.
+Guest workloads run as WebAssembly components.
 
 ![System context](docs/architecture/01-system-context.drawio.svg)
 
