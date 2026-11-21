@@ -185,7 +185,8 @@ def test_ready_after_listen(ci_api, spawn, tmp_path, until):
     process.send_signal(signal.SIGTERM)
     assert process.wait(timeout=10) == 0
     assert not (tmp_path / "ready").exists()
-    assert stdout.read_text().splitlines() == [
+    lines = [json.loads(line)["msg"] for line in stdout.read_text().splitlines()]
+    assert lines == [
         f"listening address={url} snapshot_every_s=30.0",
         "snapshot first_read=true ready_workers=compile:1,simulate:1,aggregate:1",
     ]

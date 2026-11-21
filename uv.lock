@@ -1437,11 +1437,15 @@ name = "wft-placement"
 version = "0.0.0"
 source = { editable = "packages/placement" }
 dependencies = [
+    { name = "wft-obs" },
     { name = "wft-workflow" },
 ]
 
 [package.metadata]
-requires-dist = [{ name = "wft-workflow", editable = "packages/workflow" }]
+requires-dist = [
+    { name = "wft-obs", editable = "packages/obs" },
+    { name = "wft-workflow", editable = "packages/workflow" },
+]
 
 [[package]]
 name = "wft-plan"

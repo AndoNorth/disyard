@@ -516,4 +516,4 @@ Follow-ups found:
 
 Closure addenda, one dated line each, added after close when a `revisit` child issue is filed against this epic:
 
-- none yet
+- 2026-11-21: [#561](https://github.com/AndoNorth/weft/issues/561) serves the placement metrics on 9464 and sets up `wft_obs` with the decision line kept as the `msg` of its JSON log line, with `obs_env()` in the module Tiltfile.

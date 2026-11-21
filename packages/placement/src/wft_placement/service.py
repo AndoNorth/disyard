@@ -13,16 +13,20 @@ import os
 import re
 import signal
 import sys
+import time
 from collections.abc import Mapping
 from dataclasses import dataclass
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 from pydantic import ValidationError
+from wft_obs import metrics as obs_metrics
+from wft_obs.setup import setup
 from wft_workflow import contract, placement
 from wft_workflow.placement import PlaceCall, PlaceResult
 
 from . import kube, policy
+from .metrics import BUCKETS, Metrics
 
 log = logging.getLogger(__name__)
 
@@ -30,11 +34,13 @@ ENV = {
     "listen": "WFT_PLACEMENT_LISTEN",
     "snapshot_every_s": "WFT_SNAPSHOT_EVERY_S",
     "ready_file": "WFT_READY_FILE",
+    "metrics_address": "WFT_METRICS_ADDRESS",
     "api_host": "KUBERNETES_SERVICE_HOST",
     "api_port": "KUBERNETES_SERVICE_PORT",
 }
 LISTEN = "0.0.0.0:8080"
 SNAPSHOT_EVERY_S = 30.0
+METRICS_ADDRESS = "0.0.0.0:9464"
 ACCOUNT = Path("/var/run/secrets/kubernetes.io/serviceaccount")
 # A PlaceCall is a few hundred bytes, so a larger body is refused unread.
 MAX_BODY = 64 * 1024
@@ -58,6 +64,7 @@ class Config:
     snapshot_every_s: float
     ready_file: Path | None
     api_url: str
+    metrics_address: str = METRICS_ADDRESS
 
     @classmethod
     def from_env(cls, environ: Mapping[str, str]) -> "Config":
@@ -82,6 +89,7 @@ class Config:
             listen=(host, _port(port, ENV["listen"])),
             snapshot_every_s=every_s,
             ready_file=Path(ready) if ready else None,
+            metrics_address=environ.get(ENV["metrics_address"]) or METRICS_ADDRESS,
             api_url=f"https://[{api_host}]:{api_port}"
             if ":" in api_host
             else f"https://{api_host}:{api_port}",
@@ -104,7 +112,13 @@ def _line(verdict: str, **fields) -> str:
 class Service:
     """The HTTP server over the policy and a snapshotter, bound and listening once constructed."""
 
-    def __init__(self, listen: tuple[str, int], snapshotter: kube.Snapshotter):
+    def __init__(
+        self,
+        listen: tuple[str, int],
+        snapshotter: kube.Snapshotter,
+        metrics: Metrics | None = None,
+    ):
+        self.metrics = metrics
         self.placer = policy.policy()
         self.snapshotter = snapshotter
         self.queues = contract.naming().pools
@@ -118,9 +132,15 @@ class Service:
         return f"http://{host}:{port}"
 
     def place(self, call: PlaceCall) -> PlaceResult:
+        began = time.monotonic()
         answer = self.placer.place(call.request, call.escalate)
+        seconds = time.monotonic() - began
         snapshot, age_s, _ = self.snapshotter.current()
         pool = self.task_pools.get(call.request.task_type)
+        if self.metrics and pool:
+            verdict = "placed" if answer.kind == "placement" else "unschedulable"
+            self.metrics.decided(pool, verdict, call.escalate, seconds)
+            self.metrics.snapshot_age_s(age_s)
         capacity = snapshot.pools.get(pool) if snapshot else None
         known = {
             "snapshot_age_s": None if age_s is None else round(age_s),
@@ -222,7 +242,7 @@ def _handler(service: Service) -> type[BaseHTTPRequestHandler]:
 def main(environ: Mapping[str, str] = os.environ, account: Path = ACCOUNT) -> int:
     """Serves until SIGTERM or SIGINT, reading the API with the service account under `account`.
     Exit 2 when the configuration is refused."""
-    logging.basicConfig(level=logging.INFO, format="%(message)s", stream=sys.stdout)
+    setup("placement")
     try:
         config = Config.from_env(environ)
     except BadEnv as error:
@@ -244,7 +264,8 @@ def main(environ: Mapping[str, str] = os.environ, account: Path = ACCOUNT) -> in
         return snapshot
 
     snapshotter = kube.Snapshotter(reader, config.snapshot_every_s, build=build)
-    service = Service(config.listen, snapshotter)
+    runtime = obs_metrics.runtime(config.metrics_address, BUCKETS)
+    service = Service(config.listen, snapshotter, Metrics(runtime.metric_meter))
     snapshotter.start()
 
     def stop(signum, frame):

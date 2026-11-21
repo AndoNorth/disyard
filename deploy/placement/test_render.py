@@ -17,7 +17,7 @@ from wft_placement.service import ENV
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
-INPUTS = ["deploy/versions.yaml", "contracts/topology/topology.yaml"]
+INPUTS = ["deploy/versions.yaml", "contracts/topology/topology.yaml", "deploy/tilt/obs.star"]
 ROLE = "wft-placement-read"
 
 pytestmark = pytest.mark.skipif(shutil.which("tilt") is None, reason="tilt not on PATH")
@@ -102,7 +102,11 @@ def test_ready_probe_tests_the_ready_file(rendered):
 def test_service_configuration_from_env(rendered):
     _, objects = rendered
     env = env_of(objects)
-    assert env == {ENV["listen"]: "0.0.0.0:8080", ENV["ready_file"]: "/tmp/wft-ready"}
+    assert env == {
+        ENV["listen"]: "0.0.0.0:8080",
+        ENV["ready_file"]: "/tmp/wft-ready",
+        ENV["metrics_address"]: "0.0.0.0:9464",
+    }
     assert "envFrom" not in container_of(objects)
 
 
@@ -114,7 +118,10 @@ def test_cluster_ip_service_on_8080_and_no_node_port(rendered):
     assert service["spec"]["selector"] == {"app.kubernetes.io/name": "placement"}
     [port] = service["spec"]["ports"]
     assert port == {"name": "http", "port": 8080, "targetPort": "http"}
-    assert container_of(objects)["ports"] == [{"name": "http", "containerPort": 8080}]
+    assert container_of(objects)["ports"] == [
+        {"name": "http", "containerPort": 8080},
+        {"name": "metrics", "containerPort": 9464},
+    ]
     assert not any(
         o["kind"] == "Service" and o["spec"].get("type") == "NodePort" for o in objects.values()
     )
