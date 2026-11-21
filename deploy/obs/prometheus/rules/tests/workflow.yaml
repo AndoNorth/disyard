@@ -1,0 +1,118 @@
+rule_files:
+  - ../workflow.yaml
+evaluation_interval: 1m
+tests:
+  - interval: 1m
+    name: schedule to start fires on a reschedule and stays silent without one
+    input_series:
+      - series: 'wft_workflow_reschedules_total'
+        values: '0 0 1 1 1 1 1'
+    alert_rule_test:
+      - eval_time: 3m
+        alertname: WftScheduleToStartBreached
+        exp_alerts:
+          - exp_labels: {severity: warning}
+            exp_annotations:
+              summary: Tasks timed out waiting for a worker slot and were placed again.
+              description: A pool queue backs up past the schedule-to-start timeout.
+      - eval_time: 30m
+        alertname: WftScheduleToStartBreached
+        exp_alerts: []
+  - interval: 1m
+    name: schedule to start stays silent for a flat counter
+    input_series:
+      - series: 'wft_workflow_reschedules_total'
+        values: '4x30'
+    alert_rule_test:
+      - eval_time: 25m
+        alertname: WftScheduleToStartBreached
+        exp_alerts: []
+  - interval: 1m
+    name: history length fires for a wake above 10000 events
+    input_series:
+      - series: 'wft_workflow_history_events_bucket{le="10000"}'
+        values: '5 5 5 5 5'
+      - series: 'wft_workflow_history_events_bucket{le="+Inf"}'
+        values: '5 5 6 6 6'
+    alert_rule_test:
+      - eval_time: 3m
+        alertname: WftHistoryLengthHigh
+        exp_alerts:
+          - exp_labels: {severity: warning}
+            exp_annotations:
+              summary: A job workflow woke with a history over 10,000 events.
+              description: The history budget ends a job well before Temporal's hard limit of 51,200 events.
+  - interval: 1m
+    name: history length stays silent when every wake is below 10000 events
+    input_series:
+      - series: 'wft_workflow_history_events_bucket{le="10000"}'
+        values: '0+3x10'
+      - series: 'wft_workflow_history_events_bucket{le="+Inf"}'
+        values: '0+3x10'
+    alert_rule_test:
+      - eval_time: 9m
+        alertname: WftHistoryLengthHigh
+        exp_alerts: []
+  - interval: 1m
+    name: temporal worker unhealthy fires with no poller and stays silent with one
+    input_series:
+      - series: 'temporal_num_pollers{task_queue="wft-simulate",poller_type="activity_task"}'
+        values: '0x10'
+      - series: 'temporal_num_pollers{task_queue="wft-compile",poller_type="activity_task"}'
+        values: '1x10'
+    alert_rule_test:
+      - eval_time: 4m
+        alertname: WftTemporalWorkerUnhealthy
+        exp_alerts: []
+      - eval_time: 7m
+        alertname: WftTemporalWorkerUnhealthy
+        exp_alerts:
+          - exp_labels: {severity: critical, task_queue: wft-simulate}
+            exp_annotations:
+              summary: No worker polls Temporal task queue wft-simulate.
+              description: The worker exports its metrics but has no poller, and tasks on the queue wait.
+  - interval: 1m
+    name: old build id fires once the build is over 7 days old beside a newer one
+    input_series:
+      - series: 'kube_deployment_created{namespace="wft-control",deployment="workflow-worker-old"}'
+        values: '0x15100'
+      - series: 'kube_deployment_created{namespace="wft-control",deployment="workflow-worker-new"}'
+        values: '86400x15100'
+      - series: 'kube_deployment_status_replicas_available{namespace="wft-control",deployment="workflow-worker-old"}'
+        values: '1x15100'
+      - series: 'kube_deployment_status_replicas_available{namespace="wft-control",deployment="workflow-worker-new"}'
+        values: '1x15100'
+    alert_rule_test:
+      - eval_time: 200h
+        alertname: WftOldBuildIdLingering
+        exp_alerts:
+          - exp_labels: {severity: warning, namespace: wft-control, deployment: workflow-worker-old}
+            exp_annotations:
+              summary: Workflow build workflow-worker-old still runs after 7 days beside a newer build.
+              description: A build lives until its jobs finish, and no job lasts over 7 days, so a job is stuck on it.
+  - interval: 1m
+    name: old build id stays silent for a pinned build exactly 7 days old
+    input_series:
+      - series: 'kube_deployment_created{namespace="wft-control",deployment="workflow-worker-old"}'
+        values: '0x15100'
+      - series: 'kube_deployment_created{namespace="wft-control",deployment="workflow-worker-new"}'
+        values: '86400x15100'
+      - series: 'kube_deployment_status_replicas_available{namespace="wft-control",deployment="workflow-worker-old"}'
+        values: '1x15100'
+      - series: 'kube_deployment_status_replicas_available{namespace="wft-control",deployment="workflow-worker-new"}'
+        values: '1x15100'
+    alert_rule_test:
+      - eval_time: 168h
+        alertname: WftOldBuildIdLingering
+        exp_alerts: []
+  - interval: 1m
+    name: old build id stays silent for the only build however old
+    input_series:
+      - series: 'kube_deployment_created{namespace="wft-control",deployment="workflow-worker-only"}'
+        values: '0x15100'
+      - series: 'kube_deployment_status_replicas_available{namespace="wft-control",deployment="workflow-worker-only"}'
+        values: '1x15100'
+    alert_rule_test:
+      - eval_time: 250h
+        alertname: WftOldBuildIdLingering
+        exp_alerts: []

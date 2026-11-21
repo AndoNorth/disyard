@@ -1,0 +1,51 @@
+rule_files:
+  - ../dispatch.yaml
+evaluation_interval: 1m
+tests:
+  - interval: 1m
+    name: reconciler backlog fires when the oldest unpublished job is over 10 minutes
+    input_series:
+      - series: 'wft_dispatch_unpublished_oldest_seconds'
+        values: '700x10'
+    alert_rule_test:
+      - eval_time: 4m
+        alertname: WftReconcilerBacklogOld
+        exp_alerts: []
+      - eval_time: 7m
+        alertname: WftReconcilerBacklogOld
+        exp_alerts:
+          - exp_labels: {severity: warning}
+            exp_annotations:
+              summary: An accepted job has waited over 10 minutes for its publish to the broker.
+              description: The reconciler is not publishing accepted jobs.
+  - interval: 1m
+    name: reconciler backlog stays silent for a young backlog
+    input_series:
+      - series: 'wft_dispatch_unpublished_oldest_seconds'
+        values: '120x10'
+    alert_rule_test:
+      - eval_time: 9m
+        alertname: WftReconcilerBacklogOld
+        exp_alerts: []
+  - interval: 1m
+    name: control outbox fires when the oldest request is over 5 minutes
+    input_series:
+      - series: 'wft_control_outbox_oldest_seconds'
+        values: '400x10'
+    alert_rule_test:
+      - eval_time: 7m
+        alertname: WftControlOutboxOld
+        exp_alerts:
+          - exp_labels: {severity: warning}
+            exp_annotations:
+              summary: A control request has waited over 5 minutes for delivery to its workflow.
+              description: A cancel, terminate, pause or resume is not reaching its job.
+  - interval: 1m
+    name: control outbox stays silent for a young request
+    input_series:
+      - series: 'wft_control_outbox_oldest_seconds'
+        values: '30x10'
+    alert_rule_test:
+      - eval_time: 9m
+        alertname: WftControlOutboxOld
+        exp_alerts: []
