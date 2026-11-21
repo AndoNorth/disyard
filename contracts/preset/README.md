@@ -1,7 +1,7 @@
 # Preset contract
 
 Owner epic: #2 (fixed-resource cluster and Tilt).
-Version: 2
+Version: 3
 Consumers: every epic through `just up`, `just doctor` (reads `memory_mib`), the cluster renderer, the footprint spike and characterization.
 
 A preset fixes the numbers of one cluster size, and the same repo runs at each size.
@@ -21,11 +21,13 @@ Schema: [preset.schema.json](preset.schema.json).
 | `host.ports` | path of the host ports table, shaped as below |
 | `host.data_dir` | host directory for database and object storage data, `~/` or absolute |
 | `mirror` | `true` when the package mirror runs in the preset |
+| `obs_stack` | optional `{cpus, memory_mib}`, the size of each `obs` node when the observability switch is on; a preset without it cannot turn the switch on |
+| `obs_memory_mib` | sum over `nodes` of `count * memory_mib` with each `obs` node at `obs_stack.memory_mib`, checked by the loader; present exactly when `obs_stack` is, and read in place of `memory_mib` with the switch on |
 
 `role` is one of `control-plane`, `infra`, `obs`, `compile`, `simulate`, `aggregate`.
 Every preset has all six roles, and `aggregate` has its own node, so presets change only numbers.
 `cpus` is a multiple of 0.5.
-`just up` refuses a host below `memory_mib` whatever `fitted` says.
+`just up` refuses a host below `memory_mib` whatever `fitted` says, or below `obs_memory_mib` with the switch on.
 
 ## Kubelet reservation
 
@@ -35,6 +37,7 @@ For a node with `M` MiB:
 - eviction-hard memory is `256 + ceil(M / 16)` MiB
 - the node keeps at least 256 MiB allocatable after it, so a node is valid when `M - (256 + ceil(M / 16)) >= 256`
 
+The rule holds for `obs_stack.memory_mib` too.
 The renderer reads this rule from here, and the loader tests the boundary (547 MiB passes and 546 MiB fails).
 
 ## Host ports table
@@ -55,9 +58,9 @@ It exits 0 when valid, 1 with `reason: <code>: <detail>` on stderr when not, and
 | `unknown-role` | a node role is not one of the six |
 | `missing-role` | one of the six roles has no node |
 | `schema-violation` | the file does not match the schema |
-| `memory-sum-mismatch` | `memory_mib` is not the node sum |
+| `memory-sum-mismatch` | `memory_mib` is not the node sum, or `obs_memory_mib` is not the node sum with `obs_stack` |
 | `cpus-sum-mismatch` | `cpus` is not the node sum |
-| `node-memory-below-reservation` | a node leaves less than 256 MiB allocatable |
+| `node-memory-below-reservation` | a node or `obs_stack` leaves less than 256 MiB allocatable |
 | `duplicate-host-port` | the ports table maps a host port twice |
 
 ## Vectors and the loader test

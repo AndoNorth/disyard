@@ -34,6 +34,20 @@
         "data_dir": { "type": "string", "pattern": "^(~/|/).+" }
       }
     },
-    "mirror": { "type": "boolean" }
+    "mirror": { "type": "boolean" },
+    "obs_stack": {
+      "type": "object",
+      "required": ["cpus", "memory_mib"],
+      "additionalProperties": false,
+      "properties": {
+        "cpus": { "type": "number", "exclusiveMinimum": 0, "multipleOf": 0.5 },
+        "memory_mib": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "obs_memory_mib": { "type": "integer", "minimum": 1 }
+  },
+  "dependentRequired": {
+    "obs_stack": ["obs_memory_mib"],
+    "obs_memory_mib": ["obs_stack"]
   }
 }
