@@ -46,4 +46,13 @@ while read -r name; do
     done < <(N=$name yq '.metrics[strenv(N)].labels | keys | .[]' "$file")
 done < <(yq '.metrics | keys | .[]' "$file")
 
+# A third-party series keeps its own name, so only the label denylist applies to it.
+while read -r name; do
+    [ -n "$name" ] || continue
+    while read -r label; do
+        [ -n "$label" ] || continue
+        [[ " ${denied[*]} " != *" $label "* ]] || fail denied-label "external $name has the label $label, an unbounded identifier"
+    done < <(N=$name yq '.external[strenv(N)].labels[]' "$file")
+done < <(yq '.external // {} | keys | .[]' "$file")
+
 echo "ok $file"

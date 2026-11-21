@@ -1,5 +1,6 @@
 ---
-# Metrics defined by the event contract and the broker contract. Rules: README.md. Schema: metrics.schema.json.
+# The platform catalogue: every metric a component emits and every third-party series a dashboard or rule reads.
+# Rules: README.md. Schema: metrics.schema.json.
 metrics:
   wft_event_bytes:
     type: histogram
@@ -43,3 +44,391 @@ metrics:
     labels:
       reason:
         values: [MALFORMED, UNSUPPORTED_VERSION, ADMISSION_FAILED]
+
+  # Admission, as its service declares them.
+  wft_admission_admitted_total:
+    type: counter
+    help: Jobs admitted, by priority class and job class.
+    labels:
+      priority_class:
+        values: [standard]
+      job_class:
+        values: [short, long]
+  wft_admission_resumed_total:
+    type: counter
+    help: Paused jobs resumed, by priority class.
+    labels:
+      priority_class:
+        values: [standard]
+  wft_admission_readmitted_total:
+    type: counter
+    help: Jobs admitted again, by reason.
+    labels:
+      reason:
+        values: [resumed-before-start, stuck-admitted]
+  wft_admission_skipped_total:
+    type: counter
+    help: Intake messages settled without a start, by reason.
+    labels:
+      reason:
+        values: [started, ended, outstanding-action, no-workflow, stale-admitted]
+  wft_admission_start_failed_total:
+    type: counter
+    help: Workflow starts that failed.
+    labels: {}
+  wft_admission_queue_missing_total:
+    type: counter
+    help: Tries to consume an intake queue that the broker does not have.
+    labels: {}
+  wft_admission_duplicates_total:
+    type: counter
+    help: Starts that found the workflow already running.
+    labels: {}
+  wft_admission_row_message_mismatch_total:
+    type: counter
+    help: Intake messages whose tenant or classes differ from the job row, which wins.
+    labels: {}
+  wft_admission_dead_lettered_total:
+    type: counter
+    help: Intake messages dead-lettered by admission, by application reason.
+    labels:
+      reason:
+        values: [MALFORMED, UNSUPPORTED_VERSION, ADMISSION_FAILED]
+  wft_admission_live_jobs:
+    type: gauge
+    help: Live jobs, by job class.
+    labels:
+      job_class:
+        values: [short, long]
+  wft_admission_open_jobs:
+    type: gauge
+    help: Open jobs.
+    labels: {}
+  wft_admission_paused_jobs:
+    type: gauge
+    help: Paused jobs, by job class.
+    labels:
+      job_class:
+        values: [short, long]
+  wft_admission_resumes_waiting:
+    type: gauge
+    help: Resumes that wait for a free slot, by priority class.
+    labels:
+      priority_class:
+        values: [standard]
+  wft_admission_breaker_open:
+    type: gauge
+    help: 1 while the breaker of a dependency is open, else 0.
+    labels:
+      dependency:
+        values: [temporal, database, broker, internal]
+  wft_admission_wait_seconds:
+    type: histogram
+    unit: seconds
+    help: Time from acceptance to admission, by priority class.
+    buckets: [0.1, 1, 5, 15, 60, 300, 900, 3600, 14400, 86400]
+    labels:
+      priority_class:
+        values: [standard]
+  wft_admission_snapshot_seconds:
+    type: histogram
+    unit: seconds
+    help: Time to read the snapshot of the job rows.
+    buckets: [0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 1]
+    labels: {}
+  wft_admission_cap_jobs:
+    type: gauge
+    help: The cap in force, by scope.
+    labels:
+      scope:
+        values: [global, open]
+
+  # Dispatch and control, as their service declares them.
+  wft_dispatch_jobs_total:
+    type: counter
+    help: Submitted entries, by outcome and by the reason of a rejection.
+    labels:
+      outcome:
+        values: [accepted, duplicate, rejected]
+      reason:
+        values:
+          - none
+          - MALFORMED_LINE
+          - ENTRY_TOO_LARGE
+          - DUPLICATE_INDEX
+          - UNKNOWN_PRIORITY_CLASS
+          - UNKNOWN_JOB_CLASS
+          - INVALID_PARAMS
+          - KEY_CONFLICT
+  wft_control_requests_total:
+    type: counter
+    help: Control requests, by action and outcome.
+    labels:
+      action:
+        values: [cancel, terminate, pause, resume]
+      outcome:
+        values: [applied, requested, noop, refused]
+  wft_dispatch_unpublished_jobs:
+    type: gauge
+    help: Accepted jobs not yet published to the broker.
+    labels: {}
+  wft_control_outbox_jobs:
+    type: gauge
+    help: Control requests not yet delivered to their workflow.
+    labels: {}
+  wft_dispatch_unpublished_oldest_seconds:
+    type: gauge
+    unit: seconds
+    help: Age of the oldest accepted job not yet published.
+    labels: {}
+  wft_control_outbox_oldest_seconds:
+    type: gauge
+    unit: seconds
+    help: Age of the oldest control request not yet delivered.
+    labels: {}
+  wft_dispatch_submit_seconds:
+    type: histogram
+    unit: seconds
+    help: Duration of a submit call.
+    buckets: [0.1, 0.5, 1, 5, 15, 60, 180, 600, 1800]
+    labels: {}
+
+  # Workflow.
+  wft_workflow_history_events:
+    type: histogram
+    help: History length of a job workflow at each wake.
+    buckets: [100, 500, 1000, 2500, 5000, 10000, 50000, 100000, 500000, 1000000]
+    labels: {}
+  wft_workflow_lost_transitions_total:
+    type: counter
+    help: Status moves of the job row that lost.
+    labels: {}
+  wft_workflow_retries_total:
+    type: counter
+    help: Attempts run again after a failure, by budget charged.
+    labels:
+      budget:
+        values: [guest, infra, free]
+  wft_workflow_reschedules_total:
+    type: counter
+    help: Schedule-to-start timeouts followed by a new place.
+    labels: {}
+  wft_workflow_job_seconds:
+    type: histogram
+    unit: seconds
+    help: Duration of a job from its start to its terminal status, by job class and terminal status.
+    buckets: [60, 300, 900, 3600, 14400, 43200, 86400, 172800, 345600, 604800]
+    labels:
+      job_class:
+        values: [short, long]
+      outcome:
+        values: [succeeded, partial, failed, cancelled, terminated]
+  wft_workflow_jobs_total:
+    type: counter
+    help: Jobs ended, by job class and terminal status.
+    labels:
+      job_class:
+        values: [short, long]
+      outcome:
+        values: [succeeded, partial, failed, cancelled, terminated]
+
+  # Placement.
+  wft_placement_place_seconds:
+    type: histogram
+    unit: seconds
+    help: Duration of one placement decision.
+    buckets: [0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1]
+    labels: {}
+  wft_placement_decisions_total:
+    type: counter
+    help: Placement decisions, by pool and verdict.
+    labels:
+      pool:
+        values: [compile, simulate, aggregate]
+      verdict:
+        values: [placed, unschedulable]
+  wft_placement_escalations_total:
+    type: counter
+    help: Placement calls that asked to escalate, by pool.
+    labels:
+      pool:
+        values: [compile, simulate, aggregate]
+  wft_placement_snapshot_age_seconds:
+    type: gauge
+    unit: seconds
+    help: Age of the cluster snapshot placement decides from.
+    labels: {}
+
+  # Workers.
+  wft_worker_tasks_total:
+    type: counter
+    help: Task attempts run, by pool and exit class.
+    labels:
+      pool:
+        values: [compile, simulate, aggregate]
+      exit_class:
+        values: &exit_classes
+          - ok
+          - timeout
+          - guest_memory_cap
+          - guest_failed
+          - host_error
+          - oom_killed
+          - compile_failed
+          - compile_dependency_unavailable
+          - compile_timeout
+          - compile_oom
+          - aggregate_failed
+          - aggregate_input_unavailable
+          - aggregate_input_corrupt
+          - aggregate_input_refused
+          - aggregate_parse_failed
+          - aggregate_oom
+          - aggregate_timeout
+  wft_worker_task_seconds:
+    type: histogram
+    unit: seconds
+    help: Duration of a task attempt, by pool and exit class.
+    buckets: [1, 5, 15, 30, 60, 120, 300, 600, 1800, 3600, 14400, 86400]
+    labels:
+      pool:
+        values: [compile, simulate, aggregate]
+      exit_class:
+        values: *exit_classes
+  wft_worker_heartbeat_lag_seconds:
+    type: histogram
+    unit: seconds
+    help: Time between two heartbeats of a running task, by pool.
+    buckets: [0.5, 1, 2, 5, 10, 15, 30, 60, 120]
+    labels:
+      pool:
+        values: [compile, simulate, aggregate]
+  wft_worker_aggregate_inputs_total:
+    type: counter
+    help: Result files read by the aggregate pool.
+    labels: {}
+  wft_worker_aggregate_rows_total:
+    type: counter
+    help: Result rows the aggregate pool wrote.
+    labels: {}
+
+  # The smoke gate, pushed once per run.
+  wft_smoke_row_verdict:
+    type: gauge
+    help: 1 for the verdict a row of the smoke gate printed, by row and verdict.
+    labels:
+      row:
+        values: ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", run]
+      verdict:
+        values: [ok, FAIL, skip]
+  wft_smoke_row_seconds:
+    type: gauge
+    unit: seconds
+    help: Duration of a row of the smoke gate, by row.
+    labels:
+      row:
+        values: ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", run]
+
+  # The state inputs of contracts/state/inputs.yaml, without the store inputs.
+  wft_state_connections:
+    type: gauge
+    help: Connections to the database.
+    labels: {}
+  wft_state_database_size_bytes:
+    type: gauge
+    unit: bytes
+    help: Size of the database.
+    labels: {}
+  wft_state_event_chunks:
+    type: gauge
+    help: Chunks of the event table.
+    labels: {}
+  wft_state_event_ingest_lag_seconds:
+    type: gauge
+    unit: seconds
+    help: Age of the newest stored event.
+    labels: {}
+  wft_state_drift_rows:
+    type: gauge
+    help: Rows the invariant queries report.
+    labels: {}
+  wft_state_artifact_failures:
+    type: gauge
+    help: Failed task attempts, by artifact failure code.
+    labels:
+      code:
+        values:
+          - STORE_UNAVAILABLE
+          - STORE_FORBIDDEN
+          - ARTIFACT_NOT_FOUND
+          - ARTIFACT_CORRUPT
+          - ARTIFACT_LOST
+          - OUTPUT_UPLOAD_FAILED
+          - OUTPUT_MISSING
+          - CHECKPOINT_CORRUPT
+  wft_state_checkpoint_age_seconds:
+    type: gauge
+    unit: seconds
+    help: Age of the oldest newest checkpoint among open jobs.
+    labels: {}
+  wft_state_reaper_deleted:
+    type: gauge
+    help: Artifacts the reaper deleted in the last hour.
+    labels: {}
+  wft_state_reaper_overdue:
+    type: gauge
+    help: Artifacts past their window that the reaper has not deleted.
+    labels: {}
+  wft_state_cache_hits:
+    type: gauge
+    help: Compile tasks skipped by a cache hit.
+    labels: {}
+  wft_state_cache_misses:
+    type: gauge
+    help: Compile tasks that ran.
+    labels: {}
+
+  # The observability helper.
+  wft_obs_log_dropped_total:
+    type: counter
+    help: Log records dropped from a full export queue, by component.
+    labels:
+      component:
+        values: &components
+          - dispatch
+          - admission
+          - workflow
+          - placement
+          - compile-worker
+          - simulate-worker
+          - aggregate-worker
+          - state-inputs
+  wft_obs_span_dropped_total:
+    type: counter
+    help: Spans dropped from a full export queue, by component.
+    labels:
+      component:
+        values: *components
+
+# Third-party series that a dashboard or a rule reads, by the scrape job that collects them.
+external:
+  rabbitmq_detailed_queue_messages_ready:
+    type: gauge
+    help: Messages ready for delivery in a queue.
+    job: rabbitmq-detailed
+    labels: [vhost, queue]
+  rabbitmq_detailed_queue_messages_unacked:
+    type: gauge
+    help: Messages delivered and not yet acknowledged in a queue.
+    job: rabbitmq-detailed
+    labels: [vhost, queue]
+  rabbitmq_detailed_queue_messages:
+    type: gauge
+    help: Messages in a queue, ready and unacknowledged.
+    job: rabbitmq-detailed
+    labels: [vhost, queue]
+  rabbitmq_detailed_queue_consumers:
+    type: gauge
+    help: Consumers of a queue.
+    job: rabbitmq-detailed
+    labels: [vhost, queue]

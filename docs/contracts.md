@@ -37,7 +37,7 @@ Epic numbers link to the epic issues on GitHub.
 | [workload](../contracts/workload/README.md) | #11 | the `wft_runtime` models generate the input, error, results, exit class, summary and build info schemas, and `wft_kernel.format` holds the result format rules | #6, #10, #13, #15, #17, #18, #24 | Shared data format |
 | [status](../contracts/status/README.md) | #4 | a hand-written table, validated by its schema | #3, #6, #8, #24 | Shared data format |
 | [tenancy](../contracts/tenancy/README.md) | #7 | the `wft_broker` models generate the tenancy schema | #8, #24, #16 | Shared data format |
-| [instrumentation](../contracts/instrumentation/README.md) | #4, then #13 | a hand-written metrics file, validated by its schema | #13 and every component that emits a metric, a log line or a span | Shared data format |
+| [instrumentation](../contracts/instrumentation/README.md) | #13, taken over from #4 | a hand-written metrics file, the platform catalogue, validated by its schema | every component that emits a metric, a log line or a span, #14, #15, #16, #17 | Shared data format |
 | [preset](../contracts/preset/README.md) | #2 | the files in `deploy/presets/`, validated by its schema | every epic through `just up`, plus `just doctor` and the cluster renderer | Shared data format |
 | [versions](../contracts/versions.schema.json) (a schema only, see [versions policy](versions-policy.md)) | #1 | `deploy/versions.yaml`, checked by `just versions --check` | #2, #3, #6, #7, #13 | Shared data format |
 | [stages](../contracts/stages/README.md) | #4 | a hand-written table, validated by its schema and the event catalogue | #3, #6, #8, #9, #10, #24 | Test and process scaffolding |
