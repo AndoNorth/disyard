@@ -1,0 +1,19 @@
+# Extends the gitleaks default rules. An allowlist entry names a value or a path that is not a secret, and why.
+[extend]
+useDefault = true
+
+# Cache keys are SHA-256 digests of public inputs, and the contract vectors and workflow corpora store them verbatim.
+[[allowlists]]
+description = "SHA-256 cache keys in vectors, corpora and the epic that quotes one"
+targetRules = ["generic-api-key"]
+paths = [
+  '''^contracts/.*/vectors/''',
+  '''^packages/workflow/corpus/''',
+  '''^docs/delivery/epics/07-workload-toolchain\.md$''',
+]
+
+# A well-formed but invented access key id, planted by the test that proves the migrate package refuses to commit one.
+[[allowlists]]
+description = "Invented key id in the credentials test"
+targetRules = ["aws-access-token"]
+paths = ['''^packages/migrate/tests/test_credentials\.py$''']

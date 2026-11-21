@@ -140,6 +140,23 @@ Each fault must fail exactly the matching check, and the healthy tree must pass.
 nix develop -c scripts/doctor.test.sh
 ```
 
+## Security scans
+
+```sh
+nix develop -c just scan [deps | images | secrets]
+```
+
+`just scan` with no target runs all three, and `.github/workflows/scan.yml` runs each as a job on pushes to `main`, on pull requests and every Monday.
+`deps` has Trivy scan `uv.lock`, `images` builds every image of `deploy/*/image.sh` (one per worker pool) and has Trivy scan it, and `secrets` has gitleaks scan the whole git history.
+A finding of high or critical severity fails the scan, and lower severities are not reported.
+The images build on Docker, so `images` needs it running.
+Trivy and gitleaks come from `flake.lock` like the other shell tools, and the Trivy database is fetched on every run.
+
+`security/trivy-ignore.yaml` lists the accepted vulnerabilities.
+Every entry carries a statement saying why it cannot be fixed now and an `expired_at` date, and a finding comes back as a failure once its entry expires.
+`security/gitleaks.toml` extends the default rules with the paths that hold hashes or invented keys and no secret, each with its reason.
+The gitleaks pre-commit hook reads the same file.
+
 ## Lint
 
 ```sh
@@ -163,6 +180,7 @@ The one config in `flake.nix` also builds `checks.pre-commit`, which `nix flake 
 | Stage | Runs | On |
 | --- | --- | --- |
 | pre-commit | ruff format, ruff check, yamllint, shellcheck, actionlint, nixfmt | staged files |
+| pre-commit | gitleaks, over the staged changes | staged files |
 | pre-commit | trailing whitespace, end of file, merge conflict markers, large files | staged files |
 | pre-push | `just pre-push <check>` for each of the lint steps, `verify-lint` and the lint self-test, each only when the pushed commits changed a file it concerns | the whole tree |
 

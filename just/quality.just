@@ -21,3 +21,6 @@ pre-push *check:
 
 hooks-status:
     scripts/hooks/status.sh
+
+scan *target:
+    scripts/scan.sh {{ target }}
