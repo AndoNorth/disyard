@@ -1,0 +1,61 @@
+# yamllint disable rule:line-length
+# Grafana of the throwaway stack: the datasources of deploy/obs/grafana/dashboards/README.md, the nine dashboards from
+# a ConfigMap that apply.sh creates, anonymous Editor on the cluster-internal port.
+apiVersion: v1
+kind: ConfigMap
+metadata: {name: grafana-provisioning, namespace: wft-obs}
+data:
+  datasources.yaml: |
+    apiVersion: 1
+    datasources:
+      - {name: Prometheus, uid: prometheus, type: prometheus, url: "http://prometheus.wft-obs:9090", isDefault: true}
+      - {name: Loki, uid: loki, type: loki, url: "http://loki.wft-obs:3100"}
+      - {name: Tempo, uid: tempo, type: tempo, url: "http://tempo.wft-obs:3200"}
+      - {name: Pyroscope, uid: pyroscope, type: grafana-pyroscope-datasource, url: "http://pyroscope.wft-obs:4040"}
+  dashboards.yaml: |
+    apiVersion: 1
+    providers:
+      - {name: s13, type: file, options: {path: /var/lib/grafana-dashboards}}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata: {name: grafana, namespace: wft-obs}
+spec: {accessModes: [ReadWriteOnce], resources: {requests: {storage: 1Gi}}}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: grafana, namespace: wft-obs}
+spec:
+  replicas: 1
+  strategy: {type: Recreate}
+  selector: {matchLabels: {app: grafana}}
+  template:
+    metadata: {labels: {app: grafana}}
+    spec:
+      nodeSelector: {wft.dev/pool: obs}
+      tolerations: [{key: wft.dev/pool, operator: Equal, value: obs, effect: NoSchedule}]
+      securityContext: {runAsUser: 472, runAsGroup: 472, fsGroup: 472}
+      containers:
+        - name: grafana
+          image: grafana/grafana:13.2.6
+          env:
+            - {name: GF_AUTH_ANONYMOUS_ENABLED, value: "true"}
+            - {name: GF_AUTH_ANONYMOUS_ORG_ROLE, value: Editor}
+            - {name: GF_ANALYTICS_REPORTING_ENABLED, value: "false"}
+            - {name: GF_ANALYTICS_CHECK_FOR_UPDATES, value: "false"}
+          ports: [{name: http, containerPort: 3000}]
+          resources: {requests: {cpu: 100m, memory: 256Mi}, limits: {cpu: 100m, memory: 256Mi}}
+          volumeMounts:
+            - {name: data, mountPath: /var/lib/grafana}
+            - {name: provisioning, mountPath: /etc/grafana/provisioning/datasources/datasources.yaml, subPath: datasources.yaml}
+            - {name: provisioning, mountPath: /etc/grafana/provisioning/dashboards/dashboards.yaml, subPath: dashboards.yaml}
+            - {name: dashboards, mountPath: /var/lib/grafana-dashboards}
+      volumes:
+        - {name: data, persistentVolumeClaim: {claimName: grafana}}
+        - {name: provisioning, configMap: {name: grafana-provisioning}}
+        - {name: dashboards, configMap: {name: grafana-dashboards}}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: grafana, namespace: wft-obs}
+spec: {selector: {app: grafana}, ports: [{name: http, port: 3000}]}
