@@ -1,7 +1,7 @@
 # Module contract
 
 Owner epic: #2 (fixed-resource cluster and Tilt).
-Version: 2
+Version: 3
 Consumers: the epics that ship an infrastructure component (state and storage, workflow engine, broker, observability) and the Tilt skeleton that loads them.
 
 A module is how one component plugs into the cluster.
