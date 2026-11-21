@@ -43,6 +43,8 @@ echo "== ci-paths"
 scripts/ci-paths.test.sh
 echo "== ci-shards"
 scripts/ci-shards.test.sh
+echo "== check-dev-ports"
+scripts/check-dev-ports.test.sh
 echo "== verify-lint"
 scripts/lint.sh --verify-skills
 if [ "$mode" = full ]; then

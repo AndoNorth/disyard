@@ -1,3 +1,6 @@
+ports:
+    scripts/check-dev-ports.sh
+
 up:
     scripts/up.sh
 

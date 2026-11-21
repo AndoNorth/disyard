@@ -15,9 +15,19 @@ import yaml
 
 REPO_ROOT = Path(__file__).resolve().parents[4]
 RUN_LABEL = "wft.dev/verify-run"
-PORT_BASE = 19000
 MAX_SLOT = 9
-PORTS_PER_SLOT = 10
+
+
+def _t1_row() -> tuple[int, int]:
+    """First port and per-slot stride of the t1 row of the port map."""
+    for line in (REPO_ROOT / "scripts/dev-ports.map").read_text().splitlines():
+        fields = line.split()
+        if fields[:1] == ["t1"]:
+            return int(fields[1]), int(fields[3])
+    raise RuntimeError("scripts/dev-ports.map has no t1 row")
+
+
+PORT_BASE, PORTS_PER_SLOT = _t1_row()
 LOCK_COUNT = 2
 # Each lock file owns its own share of the slot's ports, so sessions holding different files never
 # publish on the same host port, whatever slot they run in.
@@ -64,6 +74,21 @@ def host_port(slot: int, k: int) -> int:
     if not 0 <= k < PORTS_PER_SLOT:
         raise ValueError(f"port index k must be 0 to {PORTS_PER_SLOT - 1}, got {k}")
     return PORT_BASE + slot * PORTS_PER_SLOT + k
+
+
+def _bindable(port: int) -> bool:
+    with socket.socket() as probe:
+        try:
+            probe.bind(("127.0.0.1", port))
+        except OSError:
+            return False
+        return True
+
+
+def _free_port() -> int:
+    with socket.socket() as probe:
+        probe.bind(("127.0.0.1", 0))
+        return probe.getsockname()[1]
 
 
 def _holders() -> str:
@@ -263,6 +288,7 @@ class Session:
         A container publishes on 127.0.0.1:<19000 + slot * 10 + lock * 5 + k> for k below 5, where
         `lock` is the index of a lock file the session holds and no other running container uses,
         so two containers that both ask for index 0 get different host ports, in one session or two.
+        A free port is used instead when something outside the session already listens on that port.
         `tmpfs` maps a container path to the size cap in MiB of a memory-backed mount there,
         which counts against the memory cap of the container.
         `mounts` maps an existing host file or directory to a container path, mounted read-only.
@@ -288,7 +314,11 @@ class Session:
                 raise ValueError(f"port index k must be 0 to {PORTS_PER_LOCK - 1}, got {k}")
         self._count += 1
         docker_name = f"wft-{self.run_id}-{self._count}"
-        mapping = {k: host_port(self.slot, lane * PORTS_PER_LOCK + k) for k in (ports or {})}
+        # A slot port that something else holds is swapped for a free one.
+        mapping = {}
+        for k in ports or {}:
+            preferred = host_port(self.slot, lane * PORTS_PER_LOCK + k)
+            mapping[k] = preferred if _bindable(preferred) else _free_port()
         args = ["run", "-d", "--name", docker_name, "--label", f"{RUN_LABEL}={self.run_id}"]
         args += ["--memory", MEMORY_CAP, "--memory-swap", MEMORY_CAP]
         for k, container_port in (ports or {}).items():

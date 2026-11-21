@@ -3,6 +3,7 @@
 import json
 import os
 import signal
+import socket
 import subprocess
 import sys
 import time
@@ -10,7 +11,7 @@ from contextlib import ExitStack
 from pathlib import Path
 
 import pytest
-from wft_itest.session import RUN_LABEL, image_ref
+from wft_itest.session import RUN_LABEL, host_port, image_ref
 
 pytestmark = [pytest.mark.integration, pytest.mark.pair, pytest.mark.isolated]
 
@@ -39,12 +40,24 @@ def test_container_carries_the_label_a_slot_port_and_the_memory_cap(t1):
         c.wait_ready(0)
         info = inspect(c.id)
         assert info["Config"]["Labels"][RUN_LABEL] == t1.run_id
-        assert c.host_ports[0] == 19000 + t1.slot * 10
         bindings = info["HostConfig"]["PortBindings"]["8080/tcp"]
         assert bindings == [{"HostIp": "127.0.0.1", "HostPort": str(c.host_ports[0])}]
         assert info["HostConfig"]["Memory"] == 1024**3
         assert run_ids(t1.run_id) == [c.id[:12]]
     assert run_ids(t1.run_id) == []
+
+
+def test_a_held_slot_port_is_replaced_by_a_free_one(t1):
+    slot_port = host_port(t1.slot, 0)
+    with socket.socket() as squatter:
+        try:
+            squatter.bind(("127.0.0.1", slot_port))
+            squatter.listen()
+        except OSError:
+            pass  # another process already holds it, which is the case under test
+        with t1.container("canary", ports={0: 8080}, command=["httpd", "-f", "-p", "8080"]) as c:
+            c.wait_ready(0)
+            assert c.host_ports[0] != slot_port
 
 
 def test_a_container_beyond_the_session_count_cannot_start(t1):

@@ -148,7 +148,7 @@ def test_two_sessions_in_the_same_slot_publish_on_different_host_ports(t1, tmp_p
     ]
     assert max(start for start, _ in spans) < min(end for _, end in spans), spans
     ports = {out.split("port ")[1].split()[0] for out, _ in results}
-    assert ports == {"19000", "19005"}
+    assert len(ports) == 2
 
 
 def test_a_session_opened_inside_a_session_shares_its_containers_and_ports(t1):

@@ -38,7 +38,7 @@ taint_effect=$(yq '.taint_effect' contracts/topology/topology.yaml)
 image="kindest/node:$(yq '.kind_node_image.version' deploy/versions.yaml)@$(yq '.kind_node_image.digest' deploy/versions.yaml)"
 registry_image="registry:$(yq '.images.registry.version' deploy/versions.yaml)@$(yq '.images.registry.digest' deploy/versions.yaml)"
 registry_name=wft-registry
-registry_port=5001
+registry_port=$(awk '$1 == "registry" { print $2 }' scripts/dev-ports.map)
 # The control plane keeps kubeadm's own taint, so it is registered without a pool label or taint of its own.
 # A cpu reservation for system daemons is not part of the preset contract, so every node reserves the same amount.
 SYSTEM_RESERVED_CPU=100m
