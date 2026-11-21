@@ -1,7 +1,7 @@
-# wasm-dag-forge
+# Weft
 
-A proof of concept for durable distributed job execution: batch jobs built from templates
-(compile, simulate, aggregate), run as WASM on a fixed-size local Kubernetes cluster.
+A proof of concept for durable batch simulation: a job compiles a testbench, runs it across many seeds and configurations,
+and aggregates the results, on Temporal and a fixed-size local Kubernetes cluster. Guest workloads run as WebAssembly components.
 
 ## Shape
 Temporal owns job state. RabbitMQ carries job intake only. Layer 1 admission releases jobs,
