@@ -38,5 +38,5 @@ if [ -d "$data_dir" ]; then
     docker run --rm -v "$data_dir:/data" "$image" sh -c 'rm -rf /data/* /data/.[!.]* /data/..?*'
     rmdir "$data_dir"
 fi
-rm -f "$state/cluster.owner"
+rm -f "$state/cluster.owner" "$state/cluster.obs"
 echo "cluster wft, registry wft-registry and $data_dir are gone"

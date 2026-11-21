@@ -107,18 +107,28 @@ else
   emit fail inotify-instances "fs.inotify.max_user_instances=${inotify:-unreadable}, need >= $MIN_INOTIFY"
 fi
 
+# With the observability switch on the preset needs obs_memory_mib; a host that holds only memory_mib is a warning,
+# because the same host still runs the cluster with the switch off.
 preset="$REPO/deploy/presets/$PRESET.yaml"
+obs=${WFT_OBS:-off}
 if [ ! -f "$preset" ]; then
   emit warn memory-vs-preset "no preset file yet"
 else
   need=$(sed -n 's/^memory_mib: *\([0-9][0-9]*\).*/\1/p' "$preset" | head -n1)
+  obs_need=$(sed -n 's/^obs_memory_mib: *\([0-9][0-9]*\).*/\1/p' "$preset" | head -n1)
   have=$(sed -n 's/^MemTotal: *\([0-9][0-9]*\) kB.*/\1/p' "$ROOT/proc/meminfo" 2>/dev/null | head -n1)
   if [ -z "$need" ] || [ -z "$have" ]; then
     emit warn memory-vs-preset "cannot read memory_mib from $preset or MemTotal"
-  elif [ $((have / 1024)) -ge "$need" ]; then
-    emit ok memory-vs-preset "host $((have / 1024)) MiB >= preset $PRESET $need MiB"
-  else
+  elif [ "$obs" = on ] && [ -z "$obs_need" ]; then
+    emit fail memory-vs-preset "WFT_OBS=on, and preset $PRESET has no obs_memory_mib, so it cannot turn the switch on"
+  elif [ $((have / 1024)) -lt "$need" ]; then
     emit fail memory-vs-preset "host $((have / 1024)) MiB < preset $PRESET $need MiB"
+  elif [ "$obs" = on ] && [ $((have / 1024)) -lt "$obs_need" ]; then
+    emit warn memory-vs-preset "host $((have / 1024)) MiB < preset $PRESET with WFT_OBS=on $obs_need MiB, it fits only with the switch off"
+  elif [ "$obs" = on ]; then
+    emit ok memory-vs-preset "host $((have / 1024)) MiB >= preset $PRESET with WFT_OBS=on $obs_need MiB"
+  else
+    emit ok memory-vs-preset "host $((have / 1024)) MiB >= preset $PRESET $need MiB"
   fi
 fi
 

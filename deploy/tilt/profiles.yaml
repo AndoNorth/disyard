@@ -1,7 +1,9 @@
 ---
 # Tilt profile table: the resource groups each profile enables.
-# A module is enabled when its group is listed here and the profile is in its manifest `profiles`,
-# which is how `full` and `ci` pick different observability tiers and how only `ci` gets the mirror.
+# A module is enabled when its group is enabled here and the profile is in its manifest `profiles`,
+# which is how only `ci` gets the mirror.
+# `opt_in` groups are enabled only with the observability switch on (WFT_OBS=on at `just up`), so a `ci` or `soak`
+# cluster runs the observability stack only when it was brought up with its larger obs node.
 # `live_update` turns on live-update steps for modules that opt in, so only the iteration profile has it.
 # `modules` names the profile whose module selection applies, defaulting to the profile itself.
 profiles:
@@ -13,8 +15,10 @@ profiles:
   full:
     groups: [infra, control, workers, obs]
   ci:
-    groups: [infra, control, workers, obs]
+    groups: [infra, control, workers]
+    opt_in: [obs]
   soak:
-    groups: [infra, control, workers, obs]
+    groups: [infra, control, workers]
+    opt_in: [obs]
     modules: ci
     live_update: false

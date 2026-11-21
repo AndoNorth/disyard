@@ -78,6 +78,10 @@ not implemented: owned by #17
 error: recipe `smoke` failed on line 2 with exit code 3
 ```
 
+### Observability switch
+
+A local or smoke run that wants the observability stack brings the cluster up with `WFT_OBS=on nix develop -c just up` (after `just nuke` when the cluster exists with the switch off), and `scripts/tilt/run.sh ci` and `just cluster-verify` then follow the recorded value; the [Observability switch](cluster-host.md#observability-switch) section has the detail.
+
 ## Python with uv
 
 `pyproject.toml` declares a uv workspace with `members = ["packages/*"]` and `requires-python = ">=3.13,<3.14"`.
@@ -125,7 +129,7 @@ Outside the flake shell the only result is `fail in-dev-shell`, because host cop
 | `wsl-systemd` | PID 1 is systemd | set `[boot]` `systemd=true` in `/etc/wsl.conf`, then `wsl --shutdown` from Windows |
 | `repo-on-ext4` | the repo is not under `/mnt/<drive>/` and not on a 9p, drvfs, cifs or nfs mount | move the clone under the WSL home directory, a `warn` means a non-ext4 local filesystem |
 | `inotify-instances` | `fs.inotify.max_user_instances` is at least 512 | `sudo sysctl fs.inotify.max_user_instances=512`, persisted in `/etc/sysctl.d/` |
-| `memory-vs-preset` | host memory covers `memory_mib` in `deploy/presets/$WFT_PRESET.yaml` (default preset `ci`) | give WSL2 more memory in `.wslconfig`, a `warn` with `no preset file yet` is expected until cluster presets exist |
+| `memory-vs-preset` | host memory covers `memory_mib` in `deploy/presets/$WFT_PRESET.yaml` (default preset `ci`), or `obs_memory_mib` with `WFT_OBS=on` | give WSL2 more memory in `.wslconfig`, a `warn` with `no preset file yet` is expected until cluster presets exist, and a `warn` with `WFT_OBS=on` means the host fits the preset only with the [observability switch](cluster-host.md#observability-switch) off |
 | `path-provenance` | for every pinned tool (including `yq`, `wasmtime` and `wasm-tools`) the first match on PATH is a `/nix/store` path, not `~/.nix-profile` or `/nix/var/nix/profiles` | the detail prints `which -a` for each offender, so a profile copy ahead of the flake can be removed or PATH reordered |
 
 `scripts/doctor.test.sh` is the fault-injection self-test.
