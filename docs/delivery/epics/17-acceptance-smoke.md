@@ -272,7 +272,7 @@ Risks:
 
 Run on 2026-11-20 and 2026-11-21 by a worker who did not write the lanes, on a clean `git archive` export of `main` at `1c74d1e` under `/tmp`.
 Host: WSL2 with 20,002 MiB `MemTotal` and 8 CPUs, no other cluster, and one other container (`open-webui`) that was running before and after and was not touched.
-Every row held `flock /tmp/wdf-cluster.lock` for its whole sequence, and every `scripts/tilt/run.sh ci` set `WDF_BUILD_ID=exit-a`.
+Every row held `flock /tmp/wft-cluster.lock` for its whole sequence, and every `scripts/tilt/run.sh ci` set `WFT_BUILD_ID=exit-a`.
 Real command output is in the pull request that records the run.
 
 | Row | Result | Evidence |
@@ -282,7 +282,7 @@ Real command output is in the pull request that records the run.
 | 3 | pass | ten consecutive exit 0 with every row `ok`; the first run's row 4 reads `build exit-a current (made current), deployed exit-a` |
 | 4 | pass | both cycles exit 0, row 4 reads `build exit-a current (made current)` and row 7 reads `succeeded, build ran (attempt 1)` |
 | 5 | pass | exit 2, `usage: smoke needs preset ci, the only preset that deploys the pool workers, not dev` |
-| 6 | pass | exit 4, `refused: no kind cluster named wdf, start one with: just up` |
+| 6 | pass | exit 4, `refused: no kind cluster named wft, start one with: just up` |
 
 Elapsed figures are the seconds on each run's `smoke ci:` summary line; the `just smoke` wall clock, which adds `uv` start-up, is in brackets.
 
