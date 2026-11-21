@@ -1,0 +1,49 @@
+groups:
+  - name: wft-cluster
+    rules:
+      - alert: WftContainerOOM
+        expr: |
+          max by (namespace, pod, container) (
+            kube_pod_container_status_last_terminated_exitcode == 137
+            and on (namespace, pod, container)
+            kube_pod_container_status_last_terminated_reason{reason="OOMKilled"} == 1
+          )
+          or
+          max by (namespace, pod, container) (
+            rate(container_pressure_memory_stalled_seconds_total{container!=""}[5m]) > 0.05
+          )
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: Container {{ $labels.container }} of pod {{ $labels.pod }} was OOM killed or is stalled on memory.
+          description: >-
+            The last exit was 137 with reason OOMKilled, or the container waits on memory over 5 percent
+            of the time, which is a container at its limit or a node short of memory.
+      - alert: WftPodRestartUnexpected
+        expr: |
+          sum by (namespace, pod, container) (
+            increase(kube_pod_container_status_restarts_total{namespace=~"wft(-.+)?"}[15m])
+          ) > 0
+          unless on (namespace, pod, container)
+          kube_pod_container_status_last_terminated_reason{reason="OOMKilled"} == 1
+        labels:
+          severity: warning
+        annotations:
+          summary: Container {{ $labels.container }} of pod {{ $labels.pod }} restarted.
+          description: The restart was not an OOM kill, which WftContainerOOM reports.
+      - alert: WftTargetDown
+        expr: up == 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: Prometheus cannot scrape {{ $labels.job }} target {{ $labels.instance }}.
+          description: Series and alerts that depend on the target are blind.
+      - alert: WftWatchdog
+        expr: vector(1)
+        labels:
+          severity: info
+        annotations:
+          summary: The alerting pipeline is alive.
+          description: This alert always fires, and its absence means rules are not evaluated.

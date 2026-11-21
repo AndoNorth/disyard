@@ -1,0 +1,30 @@
+groups:
+  - name: wft-artifacts
+    rules:
+      - alert: WftCompileCacheMissStorm
+        expr: |
+          delta(wft_state_cache_misses[1h]) >= 20
+          and
+          delta(wft_state_cache_misses[1h])
+            / (delta(wft_state_cache_misses[1h]) + delta(wft_state_cache_hits[1h])) > 0.9
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: Over 90 percent of the compiles of the last hour ran instead of hitting the cache.
+          description: The compile cache is not being reused, so a key may vary between identical sources.
+      - alert: WftStoreCapacityHigh
+        expr: |
+          100 * sum(SeaweedFS_volumeServer_resource{name="/data", type="used"})
+          / (
+              sum(SeaweedFS_volumeServer_resource{name="/data", type="used"})
+              + sum(SeaweedFS_volumeServer_resource{name="/data", type="avail"})
+            ) > 70
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: The object store data volume is {{ $value | printf "%.0f" }} percent used.
+          description: >-
+            The share is the df figure of the data volume, above the 70 percent threshold of the store
+            capacity input.

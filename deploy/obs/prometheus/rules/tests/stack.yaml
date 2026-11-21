@@ -1,0 +1,30 @@
+rule_files:
+  - ../stack.yaml
+evaluation_interval: 1m
+tests:
+  - interval: 1m
+    name: obs data loss fires for dropped logs and spans and stays silent when flat
+    input_series:
+      - series: 'wft_obs_log_dropped_total{component="dispatch"}'
+        values: '0 0 5 5 5'
+      - series: 'wft_obs_span_dropped_total{component="workflow"}'
+        values: '0 0 0 2 2'
+      - series: 'wft_obs_log_dropped_total{component="admission"}'
+        values: '7x4'
+      - series: 'wft_obs_span_dropped_total{component="admission"}'
+        values: '7x4'
+    alert_rule_test:
+      - eval_time: 4m
+        alertname: WftObsDataLoss
+        exp_alerts:
+          - exp_labels: {severity: warning, component: dispatch}
+            exp_annotations:
+              summary: Component dispatch dropped log records or spans from a full export queue.
+              description: The collector or a backend behind it is not keeping up, and the missing telemetry is gone.
+          - exp_labels: {severity: warning, component: workflow}
+            exp_annotations:
+              summary: Component workflow dropped log records or spans from a full export queue.
+              description: The collector or a backend behind it is not keeping up, and the missing telemetry is gone.
+      - eval_time: 30m
+        alertname: WftObsDataLoss
+        exp_alerts: []
