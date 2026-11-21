@@ -1,0 +1,146 @@
+# Accepted vulnerabilities. Every entry needs a statement saying why it cannot be fixed now and an expired_at date,
+# after which the finding fails the scan again. Most entries come from the python base image the services build on.
+vulnerabilities:
+  - id: CVE-2025-47273
+    statement: >-
+      Listed by vendor.txt of the pip in the python base image, which no service runs. The newest
+      python:3.13-slim-trixie still vendors it. Bump the base in deploy/versions.yaml once pip vendors the
+      fix, then drop the entry.
+    expired_at: 2027-01-15
+  - id: CVE-2025-69720
+    statement: >-
+      No fixed Debian package exists yet. The package comes from the python base image, and the service
+      does not run the affected tool or code path. Recheck on the next base image bump and drop the entry
+      once Debian ships a fix.
+    expired_at: 2027-02-15
+  - id: CVE-2026-103111
+    statement: >-
+      Debian has published a fix that the pinned python base image does not carry yet, and the newest
+      python:3.13-slim-trixie still lacks it. Bump the base in deploy/versions.yaml when a rebuilt tag
+      carries the fix, then drop the entry.
+    expired_at: 2027-01-15
+  - id: CVE-2026-109518
+    statement: >-
+      Debian has published a fix that the pinned python base image does not carry yet, and the newest
+      python:3.13-slim-trixie still lacks it. Bump the base in deploy/versions.yaml when a rebuilt tag
+      carries the fix, then drop the entry.
+    expired_at: 2027-01-15
+  - id: CVE-2026-114613
+    statement: >-
+      Listed by vendor.txt of the pip in the python base image, which no service runs. The newest
+      python:3.13-slim-trixie still vendors it. Bump the base in deploy/versions.yaml once pip vendors the
+      fix, then drop the entry.
+    expired_at: 2027-01-15
+  - id: CVE-2026-119373
+    statement: >-
+      No fixed Debian package exists yet. The package comes from the python base image, and the service
+      does not run the affected tool or code path. Recheck on the next base image bump and drop the entry
+      once Debian ships a fix.
+    expired_at: 2027-02-15
+  - id: CVE-2026-119374
+    statement: >-
+      No fixed Debian package exists yet. The package comes from the python base image, and the service
+      does not run the affected tool or code path. Recheck on the next base image bump and drop the entry
+      once Debian ships a fix.
+    expired_at: 2027-02-15
+  - id: CVE-2026-119379
+    statement: >-
+      No fixed Debian package exists yet. The package comes from the python base image, and the service
+      does not run the affected tool or code path. Recheck on the next base image bump and drop the entry
+      once Debian ships a fix.
+    expired_at: 2027-02-15
+  - id: CVE-2026-124709
+    statement: >-
+      No fixed Debian package exists yet. The package comes from the python base image, and the service
+      does not run the affected tool or code path. Recheck on the next base image bump and drop the entry
+      once Debian ships a fix.
+    expired_at: 2027-02-15
+  - id: CVE-2026-16742
+    statement: >-
+      No fixed Debian package exists yet. The package comes from the python base image, and the service
+      does not run the affected tool or code path. Recheck on the next base image bump and drop the entry
+      once Debian ships a fix.
+    expired_at: 2027-02-15
+  - id: CVE-2026-54369
+    statement: >-
+      No fixed Debian package exists yet. The package comes from the python base image, and the service
+      does not run the affected tool or code path. Recheck on the next base image bump and drop the entry
+      once Debian ships a fix.
+    expired_at: 2027-02-15
+  - id: CVE-2026-76642
+    statement: >-
+      No fixed Debian package exists yet. The package comes from the python base image, and the service
+      does not run the affected tool or code path. Recheck on the next base image bump and drop the entry
+      once Debian ships a fix.
+    expired_at: 2027-02-15
+  - id: CVE-2026-78408
+    statement: >-
+      No fixed Debian package exists yet. The package comes from the python base image, and the service
+      does not run the affected tool or code path. Recheck on the next base image bump and drop the entry
+      once Debian ships a fix.
+    expired_at: 2027-02-15
+  - id: CVE-2026-78409
+    statement: >-
+      No fixed Debian package exists yet. The package comes from the python base image, and the service
+      does not run the affected tool or code path. Recheck on the next base image bump and drop the entry
+      once Debian ships a fix.
+    expired_at: 2027-02-15
+  - id: CVE-2026-78410
+    statement: >-
+      No fixed Debian package exists yet. The package comes from the python base image, and the service
+      does not run the affected tool or code path. Recheck on the next base image bump and drop the entry
+      once Debian ships a fix.
+    expired_at: 2027-02-15
+  - id: CVE-2026-84782
+    statement: >-
+      Debian has published a fix that the pinned python base image does not carry yet, and the newest
+      python:3.13-slim-trixie still lacks it. Bump the base in deploy/versions.yaml when a rebuilt tag
+      carries the fix, then drop the entry.
+    expired_at: 2027-01-15
+  - id: CVE-2026-85091
+    statement: >-
+      Debian has published a fix that the pinned python base image does not carry yet, and the newest
+      python:3.13-slim-trixie still lacks it. Bump the base in deploy/versions.yaml when a rebuilt tag
+      carries the fix, then drop the entry.
+    expired_at: 2027-01-15
+  - id: CVE-2026-9538
+    statement: >-
+      No fixed Debian package exists yet. The package comes from the python base image, and the service
+      does not run the affected tool or code path. Recheck on the next base image bump and drop the entry
+      once Debian ships a fix.
+    expired_at: 2027-02-15
+  - id: CVE-2026-97687
+    statement: >-
+      Listed by vendor.txt of the pip in the python base image, which no service runs. The newest
+      python:3.13-slim-trixie still vendors it. Bump the base in deploy/versions.yaml once pip vendors the
+      fix, then drop the entry.
+    expired_at: 2027-01-15
+  - id: CVE-2026-97689
+    statement: >-
+      Listed by vendor.txt of the pip in the python base image, which no service runs. The newest
+      python:3.13-slim-trixie still vendors it. Bump the base in deploy/versions.yaml once pip vendors the
+      fix, then drop the entry.
+    expired_at: 2027-01-15
+  - id: GHSA-6q48-6c7w-9gw2
+    statement: >-
+      Listed by vendor.txt of the pip in the python base image, which no service runs. The newest
+      python:3.13-slim-trixie still vendors it. Bump the base in deploy/versions.yaml once pip vendors the
+      fix, then drop the entry.
+    expired_at: 2027-01-15
+  - id: GHSA-6v7p-g79w-8964
+    statement: >-
+      Listed by vendor.txt of the pip in the python base image, which no service runs. The newest
+      python:3.13-slim-trixie still vendors it. Bump the base in deploy/versions.yaml once pip vendors the
+      fix, then drop the entry.
+    expired_at: 2027-01-15
+  - id: GHSA-hq85-5cpj-mr62
+    statement: >-
+      Bundled CA store of uv, which uv.lock locks and the compile image ships. uv is pinned to the dev shell's
+      version, so a fix needs a nixpkgs update that carries uv 0.13.4. The compile image runs uv with no network.
+      Bump the dev shell and uv.lock together, then drop the entry.
+    expired_at: 2027-01-15
+  - id: GHSA-4w2j-m93h-cj5j
+    statement: >-
+      quinn-proto inside the uv binary of the compile image. uv is a client that never serves QUIC streams, and it
+      is pinned to the dev shell's version, so the fix comes with the same uv bump as GHSA-hq85-5cpj-mr62.
+    expired_at: 2027-01-15

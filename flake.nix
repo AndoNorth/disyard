@@ -78,6 +78,18 @@
           shellcheck.enable = true;
           actionlint.enable = true;
           nixfmt.enable = true;
+          gitleaks = {
+            enable = true;
+            args = [
+              "git"
+              "--pre-commit"
+              "--redact"
+              "--staged"
+              "--verbose"
+              "--config"
+              "security/gitleaks.toml"
+            ];
+          };
         }
         // pushHooks;
       };
@@ -105,6 +117,9 @@
             actionlint
             kubeconform
             nixfmt
+            # Trivy scans the locked dependencies and the service images, gitleaks scans for secrets.
+            trivy
+            gitleaks
             # promtool, for checking and testing the Prometheus rule files.
             prometheus.cli
             prek
