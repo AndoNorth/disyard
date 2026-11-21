@@ -25,6 +25,7 @@ INPUTS = [
     "contracts/topology/topology.yaml",
     "contracts/temporal/naming.yaml",
     "scripts/storage/store/identities.sh",
+    "deploy/tilt/obs.star",
 ]
 DEPENDS = ["appdb-migrate", "objectstore-bootstrap", "temporal-bootstrap"]
 ROLES = ("admin", "submit", "workflow", "indexer", "reaper", "compile")
