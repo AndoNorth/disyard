@@ -1,5 +1,5 @@
 {
-  description = "wasm-dag-forge dev shell";
+  description = "Weft dev shell";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";

@@ -1,7 +1,7 @@
 # Epic #11: Workload toolchain, guest contract and aggregate task - breakdown
 
 Status: closed 2026-11-10
-Epic: https://github.com/AndoNorth/wasm-dag-forge/issues/11
+Epic: https://github.com/AndoNorth/weft/issues/11
 Architecture note: docs/architecture/14-wasm-workload-library.drawio
 Verifier: none, per decision 16.
 Depends on (closed epics): Dev environment (#1), Fixed-resource cluster (#2), Job event envelope (#4), DAG configuration schema and validator (#5), Durable state and artifact storage (#3), Artifact passing (#12)
@@ -251,24 +251,24 @@ Commands are written without the `nix develop -c uv run --frozen` prefix that ev
 
 ### Filed issues
 
-- [#272](https://github.com/AndoNorth/wasm-dag-forge/issues/272) **0.1 Workload contract** Lane 0, tier T0. Needs: nothing. Blocks: every other issue but the spikes.
+- [#272](https://github.com/AndoNorth/weft/issues/272) **0.1 Workload contract** Lane 0, tier T0. Needs: nothing. Blocks: every other issue but the spikes.
   Its Owns also holds the scaffolding its modules need to import and pass their tests: `packages/{runtime,kernel}/pyproject.toml`, `packages/runtime/src/wft_runtime/__init__.py`, `packages/kernel/src/wft_kernel/__init__.py`, the package data links under `packages/runtime/src/wft_runtime/contract/`, the root `pyproject.toml` workspace sources and dev group entries for both packages, and their `uv.lock` workspace entries.
   The rest of the skeletons stays with 0.2.
-- [#273](https://github.com/AndoNorth/wasm-dag-forge/issues/273) **0.2 Package skeletons and the toolchain pin** Lane 0, tier T0, and T1 for the wheel test. Needs: 0.1. Blocks: every code issue.
-- [#274](https://github.com/AndoNorth/wasm-dag-forge/issues/274) **S1b Heavy compile spike** Lane S, spike, timebox 1.5 days, throwaway code in `docs/delivery/spikes/S1b/code/`. Needs: nothing. Blocks: C.2.
-- [#275](https://github.com/AndoNorth/wasm-dag-forge/issues/275) **K.1 Deterministic kernel** Lane K, tier T0. Needs: lane 0. Blocks: K.3, W.1.
-- [#276](https://github.com/AndoNorth/wasm-dag-forge/issues/276) **K.2 Result format writer, reader and host check** Lane K, tier T0. Needs: lane 0. Blocks: W.1, A.1.
-- [#277](https://github.com/AndoNorth/wasm-dag-forge/issues/277) **K.3 Expected summaries and level 1 fixtures** Lane K, tier T0. Needs: K.1, K.2. Blocks: A.2, R.3.
-- [#278](https://github.com/AndoNorth/wasm-dag-forge/issues/278) **C.1 Compile library and bundle reader** Lane C, tier T1 (real `componentize-py` and `wasm-tools` on the host). Needs: lane 0. Blocks: C.2, R.1 for the guest half, W.1.
-- [#279](https://github.com/AndoNorth/wasm-dag-forge/issues/279) **C.2 Compile limits and heavy-compile bundles** Lane C, tier T1. Needs: C.1, S1b.
-- [#280](https://github.com/AndoNorth/wasm-dag-forge/issues/280) **R.1 Runtime library** Lane R, tier T0 for the table, T1 for the guest half. Needs: lane 0, C.1 for the guest half. Blocks: W.1, R.2, R.3.
-- [#284](https://github.com/AndoNorth/wasm-dag-forge/issues/284) **R.2 Wasmtime behaviour pin tests** Lane R, tier T1. Needs: R.1, W.3.
-- [#285](https://github.com/AndoNorth/wasm-dag-forge/issues/285) **R.3 Calibration and catalogue** Lane R, tier T1. Needs: R.1, W.2, K.3.
-- [#281](https://github.com/AndoNorth/wasm-dag-forge/issues/281) **W.1 Level 0 workloads, entry module and bundle** Lane W, tier T1. Needs: K.1, K.2, C.1, R.1. Blocks: W.2, W.3.
-- [#282](https://github.com/AndoNorth/wasm-dag-forge/issues/282) **W.2 Level 1 workloads** Lane W, tier T1. Needs: W.1. Blocks: R.3.
-- [#283](https://github.com/AndoNorth/wasm-dag-forge/issues/283) **W.3 Fault workload** Lane W, tier T1. Needs: W.1. Blocks: R.2.
-- [#286](https://github.com/AndoNorth/wasm-dag-forge/issues/286) **A.1 Aggregate library** Lane A, tier T0 for the reduce, T1 for the store (marked `integration`, on `store_session`). Needs: K.1, K.2, K.3. Blocks: A.2.
-- [#287](https://github.com/AndoNorth/wasm-dag-forge/issues/287) **A.2 Aggregate hardening and memory** Lane A, tier T0. Needs: A.1, K.1, K.3.
+- [#273](https://github.com/AndoNorth/weft/issues/273) **0.2 Package skeletons and the toolchain pin** Lane 0, tier T0, and T1 for the wheel test. Needs: 0.1. Blocks: every code issue.
+- [#274](https://github.com/AndoNorth/weft/issues/274) **S1b Heavy compile spike** Lane S, spike, timebox 1.5 days, throwaway code in `docs/delivery/spikes/S1b/code/`. Needs: nothing. Blocks: C.2.
+- [#275](https://github.com/AndoNorth/weft/issues/275) **K.1 Deterministic kernel** Lane K, tier T0. Needs: lane 0. Blocks: K.3, W.1.
+- [#276](https://github.com/AndoNorth/weft/issues/276) **K.2 Result format writer, reader and host check** Lane K, tier T0. Needs: lane 0. Blocks: W.1, A.1.
+- [#277](https://github.com/AndoNorth/weft/issues/277) **K.3 Expected summaries and level 1 fixtures** Lane K, tier T0. Needs: K.1, K.2. Blocks: A.2, R.3.
+- [#278](https://github.com/AndoNorth/weft/issues/278) **C.1 Compile library and bundle reader** Lane C, tier T1 (real `componentize-py` and `wasm-tools` on the host). Needs: lane 0. Blocks: C.2, R.1 for the guest half, W.1.
+- [#279](https://github.com/AndoNorth/weft/issues/279) **C.2 Compile limits and heavy-compile bundles** Lane C, tier T1. Needs: C.1, S1b.
+- [#280](https://github.com/AndoNorth/weft/issues/280) **R.1 Runtime library** Lane R, tier T0 for the table, T1 for the guest half. Needs: lane 0, C.1 for the guest half. Blocks: W.1, R.2, R.3.
+- [#284](https://github.com/AndoNorth/weft/issues/284) **R.2 Wasmtime behaviour pin tests** Lane R, tier T1. Needs: R.1, W.3.
+- [#285](https://github.com/AndoNorth/weft/issues/285) **R.3 Calibration and catalogue** Lane R, tier T1. Needs: R.1, W.2, K.3.
+- [#281](https://github.com/AndoNorth/weft/issues/281) **W.1 Level 0 workloads, entry module and bundle** Lane W, tier T1. Needs: K.1, K.2, C.1, R.1. Blocks: W.2, W.3.
+- [#282](https://github.com/AndoNorth/weft/issues/282) **W.2 Level 1 workloads** Lane W, tier T1. Needs: W.1. Blocks: R.3.
+- [#283](https://github.com/AndoNorth/weft/issues/283) **W.3 Fault workload** Lane W, tier T1. Needs: W.1. Blocks: R.2.
+- [#286](https://github.com/AndoNorth/weft/issues/286) **A.1 Aggregate library** Lane A, tier T0 for the reduce, T1 for the store (marked `integration`, on `store_session`). Needs: K.1, K.2, K.3. Blocks: A.2.
+- [#287](https://github.com/AndoNorth/weft/issues/287) **A.2 Aggregate hardening and memory** Lane A, tier T0. Needs: A.1, K.1, K.3.
 
 ## 5. Order, stubs and spikes
 
@@ -379,7 +379,7 @@ Results:
 | 14 | pass | exit 0, `units_per_second: 705.9`, spread 696.0 to 716.0 over 3 runs, 4.1 percent above the catalogue's 677.9 |
 | 15 | pass | 5 passed, none skipped |
 | 16 | pass | `just ci` exit 0 in the export, full path, 2,226 passed and 4 skipped (the stubs of row 9) in `just test`, 402 passed in `just itest` |
-| 17 | pass | the `ci` run [42866858823](https://github.com/AndoNorth/wasm-dag-forge/actions/runs/42866858823), success on `fd18333` on `main` |
+| 17 | pass | the `ci` run [42866858823](https://github.com/AndoNorth/weft/actions/runs/42866858823), success on `fd18333` on `main` |
 
 The two components of row 5:
 

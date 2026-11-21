@@ -1,7 +1,7 @@
 # Epic #2: Fixed-resource cluster and Tilt - breakdown
 
 Status: approved
-Epic: https://github.com/AndoNorth/wasm-dag-forge/issues/2
+Epic: https://github.com/AndoNorth/weft/issues/2
 Architecture note: docs/architecture/09-cluster-and-tilt.drawio
 Depends on (closed epics): Dev environment (#1, closed)
 
@@ -48,7 +48,7 @@ Non-goals for this pass:
 | Dev environment | `deploy/versions.yaml`: `kind_node_image` (v1.35.0 with digest), empty `charts` and `images` maps | schema v1 | none, exists [read] |
 | Dev environment | `just doctor`, reading top-level `memory_mib:` from `deploy/presets/<preset>.yaml` with a `sed` match on `^memory_mib:` | doctor contract v1 | none, exists [read: `scripts/doctor.sh` line 113] |
 | Dev environment | Recipe stubs `up`, `down`, `nuke` exiting 3 with `not implemented: owned by #2` | recipe table v1 | the stubs are what this epic replaces |
-| Dev environment | `revisit` child issue [#49](https://github.com/AndoNorth/wasm-dag-forge/issues/49) for recipe table v2, the lint exclusion and the dev-setup count (decision 5) | recipe table v2 | none, blocks lane 0 |
+| Dev environment | `revisit` child issue [#49](https://github.com/AndoNorth/weft/issues/49) for recipe table v2, the lint exclusion and the dev-setup count (decision 5) | recipe table v2 | none, blocks lane 0 |
 | Spike reports | Temporal and its Postgres sizes at 100,000 jobs, object store idle size | S3b section 7, S5 section 4.5 | numbers are carried into section 5 as inputs, not as contracts |
 
 Host facts checked [ran]: 7,942 MiB total memory with 4,953 MiB available while other work shares the Docker daemon, 6 CPUs, `fs.inotify.max_user_instances` 512 (from the dev environment spec).
@@ -73,14 +73,14 @@ Shapes below are proposals made concrete in lane 0, and a change after the pin i
 
 | Lane | Workers | Owns (exclusive) | Issues | Needs |
 | --- | --- | --- | --- | --- |
-| 0 Contracts and skeleton | 1 | `contracts/preset/**`, `contracts/module/**`, `contracts/topology/**`, `deploy/dummy/**`, and until replaced the stub `Tiltfile` and `scripts/cluster/*.sh` | [#50](https://github.com/AndoNorth/wasm-dag-forge/issues/50), [#51](https://github.com/AndoNorth/wasm-dag-forge/issues/51) | the `revisit` child [#49](https://github.com/AndoNorth/wasm-dag-forge/issues/49) on the dev environment epic merged (barrier) |
-| A Cluster | 1 | `deploy/presets/*.yaml`, `deploy/cluster/**`, `scripts/cluster/**`, `scripts/up.sh`, `just/cluster.just` | [#52](https://github.com/AndoNorth/wasm-dag-forge/issues/52), [#55](https://github.com/AndoNorth/wasm-dag-forge/issues/55), [#56](https://github.com/AndoNorth/wasm-dag-forge/issues/56), [#58](https://github.com/AndoNorth/wasm-dag-forge/issues/58), then [#64](https://github.com/AndoNorth/wasm-dag-forge/issues/64) after S2 | lane 0 |
-| N Namespaces | 1 | `deploy/namespaces/**`, `scripts/cluster/namespaces.sh` | [#60](https://github.com/AndoNorth/wasm-dag-forge/issues/60) | lane 0, and A.4 for presets to read |
-| T Tilt | 1 | `Tiltfile`, `deploy/tilt/**`, `scripts/tilt/**` | [#53](https://github.com/AndoNorth/wasm-dag-forge/issues/53), [#62](https://github.com/AndoNorth/wasm-dag-forge/issues/62) | lane 0 (T.1 needs no cluster) |
-| H Host | 1 | `deploy/host/**`, `scripts/down.sh`, `scripts/nuke.sh`, `docs/cluster-host.md` | [#57](https://github.com/AndoNorth/wasm-dag-forge/issues/57), [#59](https://github.com/AndoNorth/wasm-dag-forge/issues/59), [#54](https://github.com/AndoNorth/wasm-dag-forge/issues/54) | lane 0, and A.2 for a cluster to exist |
-| W Mirror | 1 | `deploy/mirror/**` | [#61](https://github.com/AndoNorth/wasm-dag-forge/issues/61) | lane 0, and A.4 for the compile pool |
-| F Footprint | 1 | `docs/delivery/spikes/S2/code/**`, `docs/delivery/spikes/S2/footprint.md` | [#63](https://github.com/AndoNorth/wasm-dag-forge/issues/63) | lanes A to W merged, runs the cluster |
-| X Exit | 1 | `.github/workflows/kind-smoke.yml` | [#65](https://github.com/AndoNorth/wasm-dag-forge/issues/65) | lanes A to W merged |
+| 0 Contracts and skeleton | 1 | `contracts/preset/**`, `contracts/module/**`, `contracts/topology/**`, `deploy/dummy/**`, and until replaced the stub `Tiltfile` and `scripts/cluster/*.sh` | [#50](https://github.com/AndoNorth/weft/issues/50), [#51](https://github.com/AndoNorth/weft/issues/51) | the `revisit` child [#49](https://github.com/AndoNorth/weft/issues/49) on the dev environment epic merged (barrier) |
+| A Cluster | 1 | `deploy/presets/*.yaml`, `deploy/cluster/**`, `scripts/cluster/**`, `scripts/up.sh`, `just/cluster.just` | [#52](https://github.com/AndoNorth/weft/issues/52), [#55](https://github.com/AndoNorth/weft/issues/55), [#56](https://github.com/AndoNorth/weft/issues/56), [#58](https://github.com/AndoNorth/weft/issues/58), then [#64](https://github.com/AndoNorth/weft/issues/64) after S2 | lane 0 |
+| N Namespaces | 1 | `deploy/namespaces/**`, `scripts/cluster/namespaces.sh` | [#60](https://github.com/AndoNorth/weft/issues/60) | lane 0, and A.4 for presets to read |
+| T Tilt | 1 | `Tiltfile`, `deploy/tilt/**`, `scripts/tilt/**` | [#53](https://github.com/AndoNorth/weft/issues/53), [#62](https://github.com/AndoNorth/weft/issues/62) | lane 0 (T.1 needs no cluster) |
+| H Host | 1 | `deploy/host/**`, `scripts/down.sh`, `scripts/nuke.sh`, `docs/cluster-host.md` | [#57](https://github.com/AndoNorth/weft/issues/57), [#59](https://github.com/AndoNorth/weft/issues/59), [#54](https://github.com/AndoNorth/weft/issues/54) | lane 0, and A.2 for a cluster to exist |
+| W Mirror | 1 | `deploy/mirror/**` | [#61](https://github.com/AndoNorth/weft/issues/61) | lane 0, and A.4 for the compile pool |
+| F Footprint | 1 | `docs/delivery/spikes/S2/code/**`, `docs/delivery/spikes/S2/footprint.md` | [#63](https://github.com/AndoNorth/weft/issues/63) | lanes A to W merged, runs the cluster |
+| X Exit | 1 | `.github/workflows/kind-smoke.yml` | [#65](https://github.com/AndoNorth/weft/issues/65) | lanes A to W merged |
 
 Shared-file rules:
 
@@ -96,7 +96,7 @@ Shared-file rules:
 
 ## 4. Issues
 
-The `revisit` child on the dev environment epic is [#49](https://github.com/AndoNorth/wasm-dag-forge/issues/49), and it blocks lane 0.
+The `revisit` child on the dev environment epic is [#49](https://github.com/AndoNorth/weft/issues/49), and it blocks lane 0.
 Each lane issue below was filed on 2026-10-28 from the [lane issue template](../../../.github/ISSUE_TEMPLATE/lane-issue.md), as a sub-issue of #2, and its body holds the scope, owns, acceptance criteria and needs.
 Proposal numbering from the epic is in brackets.
 Every acceptance line is a command with an observable result.
@@ -120,26 +120,26 @@ Every acceptance line is a command with an observable result.
 | 13 Footprint measurement and sizing pass | F.1, A.5 |
 | 14 Package mirror and compile egress | W.1 |
 
-- [#50](https://github.com/AndoNorth/wasm-dag-forge/issues/50) **0.1 Pinned contracts** [4, 7] Lane 0, tier T0.
-- [#51](https://github.com/AndoNorth/wasm-dag-forge/issues/51) **0.2 Dummy modules and stubs** [7, 8, 12] Lane 0, T0.
-- [#52](https://github.com/AndoNorth/wasm-dag-forge/issues/52) **A.1 Preset renderer** [1] Lane A, T0. Needs lane 0.
-- [#55](https://github.com/AndoNorth/wasm-dag-forge/issues/55) **A.2 ctlptl cluster and registry** [3] Lane A, T2. Needs A.1.
-- [#56](https://github.com/AndoNorth/wasm-dag-forge/issues/56) **A.3 Hard node limits and canaries** [2] Lane A, T2. Needs A.2.
-- [#58](https://github.com/AndoNorth/wasm-dag-forge/issues/58) **A.4 Node pools and sizes** [4] Lane A, T2. Needs A.3.
-- [#64](https://github.com/AndoNorth/wasm-dag-forge/issues/64) **A.5 Apply the sizing result** [13] Lane A, T0. Needs F.1 merged.
-- [#60](https://github.com/AndoNorth/wasm-dag-forge/issues/60) **N.1 Namespaces, quotas and limit ranges** [5] Lane N, T2. Needs lane 0 and A.4.
-- [#53](https://github.com/AndoNorth/wasm-dag-forge/issues/53) **T.1 Tiltfile skeleton and profiles** [6, 8] Lane T, T0. Needs lane 0.
-- [#62](https://github.com/AndoNorth/wasm-dag-forge/issues/62) **T.2 Live-update convention and the immutable soak mode** [9] Lane T, T0. Needs T.1.
-- [#57](https://github.com/AndoNorth/wasm-dag-forge/issues/57) **H.1 Host access map** [10] Lane H, T2. Needs A.2.
-- [#59](https://github.com/AndoNorth/wasm-dag-forge/issues/59) **H.2 Persistence** [11] Lane H, T2. Needs H.1.
-- [#54](https://github.com/AndoNorth/wasm-dag-forge/issues/54) **H.3 WSL2 host guide** [12] Lane H, T0. Needs lane 0.
-- [#61](https://github.com/AndoNorth/wasm-dag-forge/issues/61) **W.1 Package mirror** [14] Lane W, T2. Needs lane 0 and A.4.
-- [#63](https://github.com/AndoNorth/wasm-dag-forge/issues/63) **F.1 Footprint spike S2** [13] Lane F, T2. Needs lanes A, N, T, H and W merged.
-- [#65](https://github.com/AndoNorth/wasm-dag-forge/issues/65) **X.1 Kind smoke CI job** Lane X, T2. Needs lanes A, N, T, H and W merged.
+- [#50](https://github.com/AndoNorth/weft/issues/50) **0.1 Pinned contracts** [4, 7] Lane 0, tier T0.
+- [#51](https://github.com/AndoNorth/weft/issues/51) **0.2 Dummy modules and stubs** [7, 8, 12] Lane 0, T0.
+- [#52](https://github.com/AndoNorth/weft/issues/52) **A.1 Preset renderer** [1] Lane A, T0. Needs lane 0.
+- [#55](https://github.com/AndoNorth/weft/issues/55) **A.2 ctlptl cluster and registry** [3] Lane A, T2. Needs A.1.
+- [#56](https://github.com/AndoNorth/weft/issues/56) **A.3 Hard node limits and canaries** [2] Lane A, T2. Needs A.2.
+- [#58](https://github.com/AndoNorth/weft/issues/58) **A.4 Node pools and sizes** [4] Lane A, T2. Needs A.3.
+- [#64](https://github.com/AndoNorth/weft/issues/64) **A.5 Apply the sizing result** [13] Lane A, T0. Needs F.1 merged.
+- [#60](https://github.com/AndoNorth/weft/issues/60) **N.1 Namespaces, quotas and limit ranges** [5] Lane N, T2. Needs lane 0 and A.4.
+- [#53](https://github.com/AndoNorth/weft/issues/53) **T.1 Tiltfile skeleton and profiles** [6, 8] Lane T, T0. Needs lane 0.
+- [#62](https://github.com/AndoNorth/weft/issues/62) **T.2 Live-update convention and the immutable soak mode** [9] Lane T, T0. Needs T.1.
+- [#57](https://github.com/AndoNorth/weft/issues/57) **H.1 Host access map** [10] Lane H, T2. Needs A.2.
+- [#59](https://github.com/AndoNorth/weft/issues/59) **H.2 Persistence** [11] Lane H, T2. Needs H.1.
+- [#54](https://github.com/AndoNorth/weft/issues/54) **H.3 WSL2 host guide** [12] Lane H, T0. Needs lane 0.
+- [#61](https://github.com/AndoNorth/weft/issues/61) **W.1 Package mirror** [14] Lane W, T2. Needs lane 0 and A.4.
+- [#63](https://github.com/AndoNorth/weft/issues/63) **F.1 Footprint spike S2** [13] Lane F, T2. Needs lanes A, N, T, H and W merged.
+- [#65](https://github.com/AndoNorth/weft/issues/65) **X.1 Kind smoke CI job** Lane X, T2. Needs lanes A, N, T, H and W merged.
 
 ## 5. Order, stubs and spikes
 
-- Barrier: the `revisit` child issue [#49](https://github.com/AndoNorth/wasm-dag-forge/issues/49) on the dev environment epic (decision 5), then lane 0 (0.1, then 0.2, one worker, merged alone).
+- Barrier: the `revisit` child issue [#49](https://github.com/AndoNorth/weft/issues/49) on the dev environment epic (decision 5), then lane 0 (0.1, then 0.2, one worker, merged alone).
   The estimate is one day and a half.
 - After lane 0: A.1, T.1 and H.3 start together, and none of them needs a cluster.
   A.2 gates every issue that runs a cluster (A.3, H.1, H.2).
@@ -265,5 +265,5 @@ Closure addenda, one dated line each, are added after close when a `revisit` chi
 - 2026-10-31: the slots files of `ci`, `dev` and `soak` gained a `simulate` pool entry at 250m and 384Mi, still marked `estimate: true`, as a `revisit` child of this epic.
 - 2026-11-01: the infra node of `ci` and `dev` grew to 5,120 MiB, which makes the `wft-infra` quota 4,772 MiB, and `just up` applies the namespaces and quotas, as a `revisit` child of this epic.
 - 2026-11-10: the infra node of `ci` grew to 3 CPUs, which makes the `wft-infra` CPU quota 3,045m and the preset 8 CPUs, so Temporal's 1 CPU fits beside the state modules, as a `revisit` child of this epic.
-- 2026-11-15: the infra node of `ci` and `dev` grew to 6,144 MiB, which makes the `wft-infra` and `wft-control` quotas 5,780 MiB, the quotas dropped `limits.cpu`, `scripts/cluster/budget.sh` checks the worst-case infra node budget in `just ci`, `just cluster-verify` is real, and `verify` and `verify-clean` are gone, so RabbitMQ, admission and dispatch fit beside the modules through a rollout, see https://github.com/AndoNorth/wasm-dag-forge/issues/366.
-- 2026-11-15: the `ci` simulate slot grew from 384 MiB to 512 MiB and its node from 768 MiB to 896 MiB, which makes the preset 12,032 MiB and the `wft-workers` quota 3,100 MiB, with the simulate row of `contracts/temporal/pools.yaml` at version 2, because spike S11 of the workers epic found the pool worker and the first-run warm-up do not fit 384 MiB, see https://github.com/AndoNorth/wasm-dag-forge/issues/380.
+- 2026-11-15: the infra node of `ci` and `dev` grew to 6,144 MiB, which makes the `wft-infra` and `wft-control` quotas 5,780 MiB, the quotas dropped `limits.cpu`, `scripts/cluster/budget.sh` checks the worst-case infra node budget in `just ci`, `just cluster-verify` is real, and `verify` and `verify-clean` are gone, so RabbitMQ, admission and dispatch fit beside the modules through a rollout, see https://github.com/AndoNorth/weft/issues/366.
+- 2026-11-15: the `ci` simulate slot grew from 384 MiB to 512 MiB and its node from 768 MiB to 896 MiB, which makes the preset 12,032 MiB and the `wft-workers` quota 3,100 MiB, with the simulate row of `contracts/temporal/pools.yaml` at version 2, because spike S11 of the workers epic found the pool worker and the first-run warm-up do not fit 384 MiB, see https://github.com/AndoNorth/weft/issues/380.

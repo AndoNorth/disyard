@@ -35,7 +35,7 @@ CREDENTIALS_FILE = "credentials.json"
 
 def state_file() -> Path:
     state = os.environ.get("WFT_STATE_DIR") or str(
-        Path(os.environ.get("XDG_STATE_HOME") or Path.home() / ".local/state") / "wasm-dag-forge"
+        Path(os.environ.get("XDG_STATE_HOME") or Path.home() / ".local/state") / "weft"
     )
     return Path(state) / "workflow-worker.logins.json"
 

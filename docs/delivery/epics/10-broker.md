@@ -1,7 +1,7 @@
 # Epic #7: Broker (RabbitMQ) - breakdown
 
 Status: closed 2026-11-16
-Epic: https://github.com/AndoNorth/wasm-dag-forge/issues/7
+Epic: https://github.com/AndoNorth/weft/issues/7
 Architecture note: docs/architecture/10-intake-and-admission.drawio, docs/architecture/04-intake-dedup-and-dead-letter.drawio, and a new broker intake and dead-letter diagram that 0.2 (issue) adds and numbers
 Depends on (closed epics): Dev environment (#1), Fixed-resource cluster (#2), Job event envelope (#4), Durable state and artifact storage (#3), Workflow engine (#6)
 
@@ -36,7 +36,7 @@ A change to a recorded decision changes only what its Applied in column names, a
 | 8 | Dead letters are kept for at least `DEAD_LETTER_RETENTION_DAYS` (14 days, a placeholder until real values are set), and a previous major stays readable for that retention plus the maximum job duration (21 days) | `packages/compat/src/wft_compat/window.py:5-16` [read] | D5, D7, 0.4, 0.1 (issue) |
 | 9 | Replay republishes through `wft_compat.upgrade_for_replay`, and the S4 checks are re-run with the golden events of the envelope as payloads and its poison events as the malformed cases | envelope detail issue 9 and the hand-over to #7 (`03-envelope.md:87,127,209,337`), `packages/compat/src/wft_compat/reader.py:84` [read] | C.2, D.1 |
 | 10 | No broker-side dedup. The unique key `(tenant, submission_key)` of the job row stops duplicates at submit, the publish receipt is `published_at`, and the reconciler of #24 republishes only rows without one | `packages/jobstate/src/wft_jobstate/migrations/0100_accepted_job.sql:16,27,31-32` [read] | 0.4, the #8 and #24 rules rows |
-| 11 | The capacity revisit of #2, #366 (realignment answer D4), has landed: the `ci` infra node is 6,144 MiB, the quotas have no `limits.cpu` line, and `scripts/cluster/budget.sh` holds a RabbitMQ reserve row of 100m and 256 MiB of requests beside dispatch at 256 MiB and admission at 128 MiB, so no lane waits for it | realignment answer D4 of 2026-11-13, landed by `c8fa830` (https://github.com/AndoNorth/wasm-dag-forge/pull/371): `deploy/presets/ci.yaml:18`, `scripts/cluster/budget.sh:35-39`, `02-cluster.md:268` [read] | D14, M.1, sections 2, 8 |
+| 11 | The capacity revisit of #2, #366 (realignment answer D4), has landed: the `ci` infra node is 6,144 MiB, the quotas have no `limits.cpu` line, and `scripts/cluster/budget.sh` holds a RabbitMQ reserve row of 100m and 256 MiB of requests beside dispatch at 256 MiB and admission at 128 MiB, so no lane waits for it | realignment answer D4 of 2026-11-13, landed by `c8fa830` (https://github.com/AndoNorth/weft/pull/371): `deploy/presets/ci.yaml:18`, `scripts/cluster/budget.sh:35-39`, `02-cluster.md:268` [read] | D14, M.1, sections 2, 8 |
 | 12 | The S4 checks are re-run on Python 3.13 before the client lane starts, because S4 ran on Python 3.14.6 while the repository pins 3.13 | `docs/delivery/spikes/broker-client.md:18`, `.python-version`, `pyproject.toml:4` [read] | S4b |
 | 13 | Admission re-admits a job resumed before it started and a row stuck at `admitted`, which #8 owns. Neither case goes through the dead-letter queue | realignment answer D8 of 2026-11-13 | the #8 rules row |
 | 14 | The epic body is refreshed as this breakdown starts (realignment answer D10), from section 1 of this spec | realignment answer D10 of 2026-11-13 | section 1 |
@@ -656,7 +656,7 @@ Not provable by this epic: publishing from the real submit sequence and reconcil
 
 ## 9. Closure
 
-Run on 2026-11-16 against `d0dfedc9ca9455ab1158ebfe340e1243b512ab7b`, the merge of D.1, from a `git archive` of that commit extracted into a scratch directory with no enclosing git repository, recorded by [#420](https://github.com/AndoNorth/wasm-dag-forge/issues/420).
+Run on 2026-11-16 against `d0dfedc9ca9455ab1158ebfe340e1243b512ab7b`, the merge of D.1, from a `git archive` of that commit extracted into a scratch directory with no enclosing git repository, recorded by [#420](https://github.com/AndoNorth/weft/issues/420).
 Every row passes.
 The pasted output of every row is in the pull request that records this run.
 
@@ -664,7 +664,7 @@ Method of the run:
 
 - The worker that ran it wrote none of the lanes.
 - The host is the 20 GiB WSL2 VM with Docker running for the whole run, and the one container not started by the run, `open-webui`, was left untouched.
-- Row 0's gate is computed from the `ci` preset on `main`, whose `memory_mib` is 12,032 after the simulate slot resize of [#380](https://github.com/AndoNorth/wasm-dag-forge/issues/380), so the gate is 13,056 MiB (13,369,344 kB) and not the 12,928 MiB that row 0 states.
+- Row 0's gate is computed from the `ci` preset on `main`, whose `memory_mib` is 12,032 after the simulate slot resize of [#380](https://github.com/AndoNorth/weft/issues/380), so the gate is 13,056 MiB (13,369,344 kB) and not the 12,928 MiB that row 0 states.
 - Rows 0 to 8 ran first in order, row 0 was repeated just before row 9, rows 9 to 15 ran in one sequence under the cluster lock, held by one `flock` process with `WFT_CLUSTER_LOCK_HELD=1` on each command, and rows 16 and 17 ran after the lock was released.
 - A stopped `wft` cluster of preset `ci`, left by an earlier run with no lock holder, was removed with `just nuke` under the lock before row 9, so row 9 started from no cluster.
 - The export has no git checkout, so row 9 runs `scripts/tilt/run.sh ci` with `WFT_BUILD_ID=exit-b`, which the workflow module requires outside one (`deploy/workflow/README.md`).
@@ -692,7 +692,7 @@ Results:
 | 14 | pass | `rabbitmq_detailed_queue_messages_ready` at 0 for `intake.acme.standard` and 2 for `intake.dlq` |
 | 15 | pass | both purges and the forwards closed, exit 0 for `just doctor`, `just down` and both `just nuke`, and after the second `kind get clusters` prints `No kind clusters found.` |
 | 16 | pass | `just ci --full` exit 0 in the export, with `--full` because the export has no `origin/main` to pick the path from, 2,769 passed in `just test` and 591 passed in `just itest`, then `all checks passed!` from `nix flake check` |
-| 17 | pass | the `ci` run [43859682113](https://github.com/AndoNorth/wasm-dag-forge/actions/runs/43859682113) and the `state-modules` run [43859682107](https://github.com/AndoNorth/wasm-dag-forge/actions/runs/43859682107), success on `d0dfedc` on `main`; no run on `main` holds this record yet, since it is the pull request that adds it |
+| 17 | pass | the `ci` run [43859682113](https://github.com/AndoNorth/weft/actions/runs/43859682113) and the `state-modules` run [43859682107](https://github.com/AndoNorth/weft/actions/runs/43859682107), success on `d0dfedc` on `main`; no run on `main` holds this record yet, since it is the pull request that adds it |
 
 Row 13 note: `S deadletter` dead-letters the same golden job for three of its four reasons, so `Q show --job <id>` prints the first message of that job in the queue, the `UNSUPPORTED_VERSION` one, as `show` is documented to do.
 `Q show --job <id> --reason ADMISSION_FAILED`, run as a supplement, prints the `ADMISSION_FAILED` message with its detail `no-row: regression suite`, delivery count 6 and its annotations.
@@ -724,7 +724,7 @@ What moved to which epic, unchanged from section 7 and the rules rows of 0.4:
 
 Follow-ups found:
 
-- [#421](https://github.com/AndoNorth/wasm-dag-forge/issues/421): the "State" section of `packages/broker/README.md` still says the client, the topology generator, the T1 container, the suite and the dead-letter tool are not built, which T.1, C.1, C.2 and D.1 each noted as lane 0's file.
+- [#421](https://github.com/AndoNorth/weft/issues/421): the "State" section of `packages/broker/README.md` still says the client, the topology generator, the T1 container, the suite and the dead-letter tool are not built, which T.1, C.1, C.2 and D.1 each noted as lane 0's file.
 - `02-cluster.md` and section 8 above quote 566 MiB free on the `ci` infra node, where `budget.sh ci` now prints 502 MiB, and row 0 above quotes the 12,928 MiB gate of the 11,904 MiB preset; neither changes a check, and the next spec that sizes the infra node or the host takes the figures of this Closure.
 
 Closure addenda, one dated line each, added after close when a `revisit` child issue is filed against this epic:

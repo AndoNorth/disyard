@@ -1,7 +1,7 @@
 # Epic #10: Kubernetes workers - breakdown
 
 Status: closed 2026-11-16
-Epic: https://github.com/AndoNorth/wasm-dag-forge/issues/10
+Epic: https://github.com/AndoNorth/weft/issues/10
 Architecture note: docs/architecture/11-placement-and-workers.drawio, and the worker detail in a new diagram `docs/architecture/NN-pool-worker.drawio`, which 0.1 (issue) adds with the next free number on `main`, because #8's spec has taken 17 (`docs/architecture/17-admission-cycle.drawio`) and #24's names its own diagram `NN`
 Depends on (closed epics): Dev environment (#1), Fixed-resource cluster (#2), Job event envelope (#4), DAG configuration schema and validator (#5), Durable state and artifact storage (#3), Artifact passing (#12), Workload toolchain (#11), Workflow engine (#6)
 
@@ -76,7 +76,7 @@ Numbers marked as estimates are fixed by S11, a lane's measurement or #16.
 | D14 | Probes, logs and metrics | Readiness is the file `/var/wft/ready`, touched once the worker polls, as the workflow worker touches its own. Logs are plain text on stdout. No metrics port and no SDK Prometheus endpoint in this pass | Metrics and JSON logs belong to #13, which defines slot usage, heartbeat lag, exit classes, OOM count and build per pod. A metrics port now would ship an unnamed catalogue | A.2, D.2, section 2 |
 | D15 | Profiles and dependencies | The three worker modules are in profile `ci` only and depend on `infra/temporal-bootstrap` and `infra/objectstore-bootstrap`, and the compile module also on `infra/mirror`, which exists in `ci` only (`deploy/mirror/module.yaml:18`). `dummy-workers` stays | Tilt fails a profile whose module depends on a disabled one (`Tiltfile:49-51`), so `dev` and `full` keep no worker until the mirror question of those presets is answered by their owner. The dummy fits beside the compile slot (`slots.sh ci`) | D.2 |
 | D16 | Images | One `deploy/workers/Dockerfile` with a build argument per pool and one `deploy/workers/image.sh <pool>`, from the `images.python` pin (`deploy/versions.yaml:34-37`), with the wheels of `uv export --package wft-worker --extra <pool>`, which include the `wft-workflow` chain of D1 on every pool, and the command `python -m wft_worker --pool <pool>`. `image.sh` downloads the upstream `wasm-tools` (compile image) and `wasmtime` (simulate image) release assets from the `url` of `nix/wasm-tools.nix` and refuses an asset whose SHA-256 differs from its `hash`, because the dev shell's binaries are patched to the Nix store's loader (`nix/wasm-tools.nix:16`) and do not run in the base image. The compile extra of D1 lists `uv` at the dev shell's version (0.11.21 today) as a Python dependency, so `uv.lock` holds its wheel hashes and the wheel's static binary lands on the image's `PATH`. The aggregate image gets no WASM tool. The image fixes each binary's modification time, which names the `wasmtime` module cache (`docs/delivery/spikes/S6/cold-start.md:138-139`), and the cache lives in the pod, so no equality with the host is needed. Each image runs as user 65532, and the pod settings of D.2 add a read-only root filesystem and no service account token | Decision 8, and `docs/versions-policy.md:15` says the compile image uses the dev shell's tool versions. No new pin enters `deploy/versions.yaml`: the two release assets reuse the Nix pins and `uv` rides `uv.lock`. The alternative, copying the Nix closure into the image, ships hundreds of MiB of store paths | D.1, D.2 |
-| D17 | Cluster budget | The three pods use the pool nodes only: compile 1,000m and 1,024 MiB, simulate 250m and 512 MiB, aggregate 1,000m and 1,024 MiB, which with `dummy-workers` is 2,260m and 2,568 MiB of the `wft-workers` quota of 3,360m and 3,100 MiB (`scripts/cluster/namespaces.sh render ci`). Nothing is added to the infra node or to `wft-control`, so the reserve rows of the capacity revisit (RabbitMQ 256 MiB, dispatch 256 MiB, admission 128 MiB on the 6,144 MiB infra node) are untouched | The capacity revisit has landed (`c8fa830`, `deploy/presets/ci.yaml:8,18`) and left the pool nodes and slots as they were. Under Q1 (a) a fail grows only the simulate node, which the S11 revisit did, to 896 MiB (https://github.com/AndoNorth/wasm-dag-forge/issues/380) | D.2 |
+| D17 | Cluster budget | The three pods use the pool nodes only: compile 1,000m and 1,024 MiB, simulate 250m and 512 MiB, aggregate 1,000m and 1,024 MiB, which with `dummy-workers` is 2,260m and 2,568 MiB of the `wft-workers` quota of 3,360m and 3,100 MiB (`scripts/cluster/namespaces.sh render ci`). Nothing is added to the infra node or to `wft-control`, so the reserve rows of the capacity revisit (RabbitMQ 256 MiB, dispatch 256 MiB, admission 128 MiB on the 6,144 MiB infra node) are untouched | The capacity revisit has landed (`c8fa830`, `deploy/presets/ci.yaml:8,18`) and left the pool nodes and slots as they were. Under Q1 (a) a fail grows only the simulate node, which the S11 revisit did, to 896 MiB (https://github.com/AndoNorth/weft/issues/380) | D.2 |
 | D18 | Real pool values for #9 | Closure lists per pool, as the input #9 turns into `pools.yaml`: the worker's idle and peak resident memory and the warm-up and staging seconds from S11, the cancel latency that A.1's `cancel_stops_child_and_withdraws` prints and the drain time that A.2's `sigterm_fails_long_task` prints, the heartbeat interval of D4 as configured, and the pod's peak working set (`memory.current` less `inactive_file`) and peak anon from S11, with exit row 10's `anon` as a check | Decision 2. This epic does not edit `contracts/temporal/pools.yaml`, which #9 owns | S11, section 7 |
 | D19 | Compile cache | The worker does no cache I/O. It returns the `build-info.json` that `wft_compile build` writes with its `cache_key`, and the workflow's `cache_record` refuses an entry whose key differs from its own (`08-workflow-engine.md:41`) | Decision 7 | T.2 |
 | D20 | Client and stage | The worker's client is built as the workflow service builds its own, with `event_data_converter` and `tracing_interceptor()` (`packages/workflow/src/wft_workflow/service/__init__.py:159-165`), because `activity_contract` asserts the converter (`testing/pool.py:469-471`). The worker passes `run_stage_contract("worker", ...)` (`packages/stages/src/wft_stages/contract.py:85`) | One wire format with the workflow, and the stage table is the source of what the worker reads | 0.1 (issue), A.1 |
@@ -471,7 +471,7 @@ Rows 6 to 11 take the cluster lock for their whole sequence, and row 12 runs out
 
 | # | Command | Expected |
 | --- | --- | --- |
-| 0 | `grep -E '^(MemTotal\|MemAvailable):' /proc/meminfo` and `docker ps --format '{{.Names}}'`, repeated just before row 6 | `MemAvailable` at least the `memory_mib` of `deploy/presets/ci.yaml` at the run's commit plus 1,024 MiB, in kB (13,369,344 kB at the 12,032 MiB of the S11 revisit, https://github.com/AndoNorth/wasm-dag-forge/issues/380), else the run stops and records the figure |
+| 0 | `grep -E '^(MemTotal\|MemAvailable):' /proc/meminfo` and `docker ps --format '{{.Names}}'`, repeated just before row 6 | `MemAvailable` at least the `memory_mib` of `deploy/presets/ci.yaml` at the run's commit plus 1,024 MiB, in kB (13,369,344 kB at the 12,032 MiB of the S11 revisit, https://github.com/AndoNorth/weft/issues/380), else the run stops and records the figure |
 | 1 | `uv sync --frozen` then `uv lock --check` | exit 0 for both, lock unchanged |
 | 2 | `pytest packages/worker -q -rs` | passes with no `SKIPPED` line |
 | 3 | `pytest packages/worker deploy/workers -v -k "stop_kills_grandchildren or parent_death_kills_child or heartbeats_during_silent_child or cancel_stops_child_and_withdraws or first_run_warms_then_runs_warm or echo_matches_level0_vector or every_failure_type_is_a_table_row or library_error_is_worker_shutdown or deadline_aggregate_timeout or activity_contract or sigterm_fails_long_task or stage_contract or render or image"` | each named test is listed `PASSED`, `activity_contract` once per pool |
@@ -499,7 +499,7 @@ Not provable by this epic: checkpoints, `operator_interrupt` and resume from a c
 
 ## 9. Closure
 
-Run on 2026-11-16 against `4ade873ac2563a269a0f8ea27f07ca1dd4abe93f`, the merge of D.2, from a `git archive origin/main` extracted into a scratch directory with no enclosing git repository, recorded by [#408](https://github.com/AndoNorth/wasm-dag-forge/issues/408).
+Run on 2026-11-16 against `4ade873ac2563a269a0f8ea27f07ca1dd4abe93f`, the merge of D.2, from a `git archive origin/main` extracted into a scratch directory with no enclosing git repository, recorded by [#408](https://github.com/AndoNorth/weft/issues/408).
 Every row passes.
 The pasted output of every row is in the pull request that records this run.
 
@@ -529,7 +529,7 @@ Results:
 | 10 | pass | `oom_kill 0` and `oom_group_kill 0` on every pool, with `anon` and `memory.peak` in the table below |
 | 11 | pass | exit 0 for `just doctor`, `just down` and both `just nuke`, the second `just nuke` deletes nothing, and `kind get clusters` prints `No kind clusters found.` |
 | 12 | pass | `just ci` exit 0 in the export, full path, 2,705 passed in `just test` and 557 passed in `just itest` |
-| 13 | pass | the `ci` run [43809383220](https://github.com/AndoNorth/wasm-dag-forge/actions/runs/43809383220) and the `state-modules` run [43809383212](https://github.com/AndoNorth/wasm-dag-forge/actions/runs/43809383212), success on `4ade873` on `main`; no run on `main` holds this record yet, since it is the pull request that adds it |
+| 13 | pass | the `ci` run [43809383220](https://github.com/AndoNorth/weft/actions/runs/43809383220) and the `state-modules` run [43809383212](https://github.com/AndoNorth/weft/actions/runs/43809383212), success on `4ade873` on `main`; no run on `main` holds this record yet, since it is the pull request that adds it |
 
 Row 10 per pool, read after rows 8 and 9 with every pod idle:
 
@@ -572,7 +572,7 @@ What moved to which epic, unchanged from section 7:
 - module cache growth over a soak and its pruning rule (#16)
 - the `dev`, `full` and `soak` profiles
 
-The Closure addendum of `08-workflow-engine.md` that decision 7 asks for is the 2026-11-15 line of [#374](https://github.com/AndoNorth/wasm-dag-forge/issues/374), and the one of `02-cluster.md` for the simulate slot is the 2026-11-15 line of [#380](https://github.com/AndoNorth/wasm-dag-forge/issues/380), both on `main` before this run.
+The Closure addendum of `08-workflow-engine.md` that decision 7 asks for is the 2026-11-15 line of [#374](https://github.com/AndoNorth/weft/issues/374), and the one of `02-cluster.md` for the simulate slot is the 2026-11-15 line of [#380](https://github.com/AndoNorth/weft/issues/380), both on `main` before this run.
 
 Follow-ups found, none filed by this run:
 

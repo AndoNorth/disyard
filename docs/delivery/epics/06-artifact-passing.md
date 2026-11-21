@@ -1,7 +1,7 @@
 # Epic #12: Artifact passing - breakdown
 
 Status: approved
-Epic: https://github.com/AndoNorth/wasm-dag-forge/issues/12
+Epic: https://github.com/AndoNorth/weft/issues/12
 Architecture note: docs/architecture/13-state-envelope-artifacts.drawio
 Depends on (closed epics): Dev environment (#1), Fixed-resource cluster (#2), Job event envelope (#4), DAG configuration schema and validator (#5), Durable state and artifact storage (#3)
 Verifier: none, per recorded decision 1.
@@ -340,23 +340,23 @@ The template's Consumes / produces section of each filed issue is its row below,
 
 ### Filed issues
 
-- [#215](https://github.com/AndoNorth/wasm-dag-forge/issues/215) **R.1 Reference models derive their kinds from the layout** Lane R, tier T0, with the events package tests that `just ci` already runs. Needs: nothing. Blocks: S.1, C.1. A `revisit` child of #4.
-- [#222](https://github.com/AndoNorth/wasm-dag-forge/issues/222) **R.2 Store contract version 3, the reusable store fixture and a second container per session** Lane R, tier T1, and T2 in the exit test. Needs: nothing. Blocks: C.1. A `revisit` child of #3 (and it touches #4).
-- [#223](https://github.com/AndoNorth/wasm-dag-forge/issues/223) **S.1 Artifact use links, cache entry changes and the index additions** Lane S, tier T1. Needs: R.1. Blocks: S.2, C.2, K.1, K.3. A `revisit` child of #3.
-- [#224](https://github.com/AndoNorth/wasm-dag-forge/issues/224) **S.2 Grants, progress tables, retention invariant and metric inputs** Lane S, tier T1 and T2. Needs: S.1, 0.1. Blocks: P.1. A `revisit` child of #3.
-- [#225](https://github.com/AndoNorth/wasm-dag-forge/issues/225) **0.1 Failure taxonomy, staging and limits contracts** Lane 0, tier T0. Needs: nothing. Blocks: S.2, 0.2, 0.3, C.1.
-- [#226](https://github.com/AndoNorth/wasm-dag-forge/issues/226) **0.2 Aggregate index format and reaper windows contracts** Lane 0, tier T0. Needs: 0.1. Blocks: C.1, K.2, P.1.
-- [#227](https://github.com/AndoNorth/wasm-dag-forge/issues/227) **0.3 Client and reaper package skeletons** Lane 0, tier T0 and T1 (the wheel test). Needs: 0.1. Blocks: C.1.
-- [#228](https://github.com/AndoNorth/wasm-dag-forge/issues/228) **C.1 Streaming put and get with typed errors and retries** Lane C, tier T0 and T1. Needs: 0.1, 0.2, 0.3, R.1, R.2. Blocks: C.2, C.3, K.1, K.2, P.1, F.1.
-- [#229](https://github.com/AndoNorth/wasm-dag-forge/issues/229) **C.2 Commit by reference and the zombie test** Lane C, tier T1 (marked `pair`, store and database in one session, through R.2). Needs: C.1, S.1. Blocks: K.3, P.2.
-- [#230](https://github.com/AndoNorth/wasm-dag-forge/issues/230) **C.3 Task I/O staging and the output tail** Lane C, tier T1. Needs: C.1.
-- [#231](https://github.com/AndoNorth/wasm-dag-forge/issues/231) **K.1 Checkpoints** Lane K, tier T1 (marked `pair`). Needs: C.1, S.1. Blocks: P.1, F.1.
-- [#232](https://github.com/AndoNorth/wasm-dag-forge/issues/232) **K.2 Aggregate index object** Lane K, tier T0 and T1. Needs: C.1, 0.2.
-- [#233](https://github.com/AndoNorth/wasm-dag-forge/issues/233) **K.3 Compile cache client** Lane K, tier T1 (marked `pair`). Needs: C.2, S.1. Blocks: P.2.
-- [#234](https://github.com/AndoNorth/wasm-dag-forge/issues/234) **P.1 Reaper core: results, checkpoints, prune and cache expiry** Lane P, tier T1 (marked `pair`). Needs: 0.2, C.1, K.1, S.2. Blocks: P.2, P.3.
-- [#235](https://github.com/AndoNorth/wasm-dag-forge/issues/235) **P.2 Content-addressed collection and the orphan sweep** Lane P, tier T1 (marked `pair`, and `isolated` for the orphan sweep). Needs: P.1, C.2, K.3. Blocks: P.3.
-- [#236](https://github.com/AndoNorth/wasm-dag-forge/issues/236) **P.3 Temporal Schedule** Lane P, tier T1 (Temporal dev server container only, the activity under test calls an injected pass function, so the session holds one container). Needs: P.1, P.2.
-- [#237](https://github.com/AndoNorth/wasm-dag-forge/issues/237) **F.1 Fault hooks** Lane F, tier T1 (the scenarios are marked `isolated`, the table test is T0), and T2 in the exit test. Needs: C.1, K.1.
+- [#215](https://github.com/AndoNorth/weft/issues/215) **R.1 Reference models derive their kinds from the layout** Lane R, tier T0, with the events package tests that `just ci` already runs. Needs: nothing. Blocks: S.1, C.1. A `revisit` child of #4.
+- [#222](https://github.com/AndoNorth/weft/issues/222) **R.2 Store contract version 3, the reusable store fixture and a second container per session** Lane R, tier T1, and T2 in the exit test. Needs: nothing. Blocks: C.1. A `revisit` child of #3 (and it touches #4).
+- [#223](https://github.com/AndoNorth/weft/issues/223) **S.1 Artifact use links, cache entry changes and the index additions** Lane S, tier T1. Needs: R.1. Blocks: S.2, C.2, K.1, K.3. A `revisit` child of #3.
+- [#224](https://github.com/AndoNorth/weft/issues/224) **S.2 Grants, progress tables, retention invariant and metric inputs** Lane S, tier T1 and T2. Needs: S.1, 0.1. Blocks: P.1. A `revisit` child of #3.
+- [#225](https://github.com/AndoNorth/weft/issues/225) **0.1 Failure taxonomy, staging and limits contracts** Lane 0, tier T0. Needs: nothing. Blocks: S.2, 0.2, 0.3, C.1.
+- [#226](https://github.com/AndoNorth/weft/issues/226) **0.2 Aggregate index format and reaper windows contracts** Lane 0, tier T0. Needs: 0.1. Blocks: C.1, K.2, P.1.
+- [#227](https://github.com/AndoNorth/weft/issues/227) **0.3 Client and reaper package skeletons** Lane 0, tier T0 and T1 (the wheel test). Needs: 0.1. Blocks: C.1.
+- [#228](https://github.com/AndoNorth/weft/issues/228) **C.1 Streaming put and get with typed errors and retries** Lane C, tier T0 and T1. Needs: 0.1, 0.2, 0.3, R.1, R.2. Blocks: C.2, C.3, K.1, K.2, P.1, F.1.
+- [#229](https://github.com/AndoNorth/weft/issues/229) **C.2 Commit by reference and the zombie test** Lane C, tier T1 (marked `pair`, store and database in one session, through R.2). Needs: C.1, S.1. Blocks: K.3, P.2.
+- [#230](https://github.com/AndoNorth/weft/issues/230) **C.3 Task I/O staging and the output tail** Lane C, tier T1. Needs: C.1.
+- [#231](https://github.com/AndoNorth/weft/issues/231) **K.1 Checkpoints** Lane K, tier T1 (marked `pair`). Needs: C.1, S.1. Blocks: P.1, F.1.
+- [#232](https://github.com/AndoNorth/weft/issues/232) **K.2 Aggregate index object** Lane K, tier T0 and T1. Needs: C.1, 0.2.
+- [#233](https://github.com/AndoNorth/weft/issues/233) **K.3 Compile cache client** Lane K, tier T1 (marked `pair`). Needs: C.2, S.1. Blocks: P.2.
+- [#234](https://github.com/AndoNorth/weft/issues/234) **P.1 Reaper core: results, checkpoints, prune and cache expiry** Lane P, tier T1 (marked `pair`). Needs: 0.2, C.1, K.1, S.2. Blocks: P.2, P.3.
+- [#235](https://github.com/AndoNorth/weft/issues/235) **P.2 Content-addressed collection and the orphan sweep** Lane P, tier T1 (marked `pair`, and `isolated` for the orphan sweep). Needs: P.1, C.2, K.3. Blocks: P.3.
+- [#236](https://github.com/AndoNorth/weft/issues/236) **P.3 Temporal Schedule** Lane P, tier T1 (Temporal dev server container only, the activity under test calls an injected pass function, so the session holds one container). Needs: P.1, P.2.
+- [#237](https://github.com/AndoNorth/weft/issues/237) **F.1 Fault hooks** Lane F, tier T1 (the scenarios are marked `isolated`, the table test is T0), and T2 in the exit test. Needs: C.1, K.1.
 
 ## 5. Order, stubs and spikes
 
@@ -448,7 +448,7 @@ Not provable by this epic: the real staging by a worker and a guest (#10, #11), 
 
 Run on 2026-11-06 against `872d53bee75a50acc45d1bb8466d68bc9d122c28`, the commit of the last lane merge (P.3), from a `git archive origin/main` extracted into a scratch directory with no enclosing git repository.
 Rows 1 to 4, 6 to 10, 12 to 20 pass, with departures on rows 12 to 14, 16 and 17 that the table states.
-Row 5 fails (11 tests of `packages/itest` when collected beside the session store, filed as [#258](https://github.com/AndoNorth/wasm-dag-forge/issues/258)) and row 11 cannot run as written (the bench has no `--dsn` and `--jobs` form, filed as [#259](https://github.com/AndoNorth/wasm-dag-forge/issues/259)).
+Row 5 fails (11 tests of `packages/itest` when collected beside the session store, filed as [#258](https://github.com/AndoNorth/weft/issues/258)) and row 11 cannot run as written (the bench has no `--dsn` and `--jobs` form, filed as [#259](https://github.com/AndoNorth/weft/issues/259)).
 The epic was therefore not closed by this run, and the pull request that recorded it did not close the epic issue.
 The pasted output of every row is in that pull request.
 
@@ -468,13 +468,13 @@ Results:
 | 2 | pass | no `DRIFT` line for the five packages |
 | 3 | pass | with a `report` kind added, `schemagen --check` exit 1 naming `contracts/artifact/reference.schema.json` (and the `task.requested` schema that embeds it), `wft_artifactindex.gen --check` exit 1 naming `R__artifact_kinds.sql` (and `artifact-row/2.json`), the library accepted the `report` reference before the regeneration, and both checks exit 0 after it and after the restore |
 | 4 | pass | the three valid files, the 12 valid reference vectors and `roles.yaml` exit 0, and all 41 invalid files (5 failures, 15 index, 11 retention, 10 staging) and the 14 invalid reference vectors exit 1 with a `reason:` line that names the directory they sit in |
-| 5 | fail | 881 passed, 11 failed and 2 skipped in the first invocation, see [#258](https://github.com/AndoNorth/wasm-dag-forge/issues/258), and both isolated invocations pass (9 and 6 passed). The two skips are the `STUBBED` parametrizations that are empty once every stub is replaced |
+| 5 | fail | 881 passed, 11 failed and 2 skipped in the first invocation, see [#258](https://github.com/AndoNorth/weft/issues/258), and both isolated invocations pass (9 and 6 passed). The two skips are the `STUBBED` parametrizations that are empty once every stub is replaced |
 | 6 | pass | 69 passed, each of the 17 named tests is listed `PASSED` |
 | 7 | pass | 10 passed, none skipped |
 | 8 | pass | exit 0, both runs `results_put: 100000`, `results_verified: 100000`, `index_entries: 100000`, `lists: 0` and `index_sha256: c227f3eca53c7549c9a47f6b5ab40dc480fde02cfd4e9912bcdfe502064b7f5f`, phase times in the next section |
 | 9 | pass | exit 0, `SUCCESS. All workloads are healthy.`, `appdb-0`, `temporaldb-0` and `objectstore-0` running and every `appdb-migrate` file applied, with the bucket rules printed by `objectstore-bootstrap` |
 | 10 | pass | `14 of 14 base checks passed`, and the access mode has no `FAIL` line, with `ok access matrix aggregate: 20 cells` and `ok access matrix compile: 20 cells` |
-| 11 | fail | exit 2, `unrecognized arguments: --dsn ... --jobs 2`, see [#259](https://github.com/AndoNorth/wasm-dag-forge/issues/259). Rows 12 to 17 used two jobs seeded by a scratch script built on the reaper test world, 2,000 results and two checkpoints each, one `succeeded` and one `running` |
+| 11 | fail | exit 2, `unrecognized arguments: --dsn ... --jobs 2`, see [#259](https://github.com/AndoNorth/weft/issues/259). Rows 12 to 17 used two jobs seeded by a scratch script built on the reaper test world, 2,000 results and two checkpoints each, one `succeeded` and one `running` |
 | 12 | pass, with a departure | first run `results_jobs: 1`, `checkpoint_jobs: 1`, `deleted_objects: 2004`, second run `deleted_objects: 0`. The running job had two checkpoints, so `kept_live` was 0, and a second running job with five checkpoints gave `kept_live: 2` and `pruned_checkpoints: 3` |
 | 13 | pass | exit 0 for the running job, exit 1 with `code: ARTIFACT_LOST` and `cause: ARTIFACT_NOT_FOUND` for the reaped one |
 | 14 | pass, with a departure | `--role simulate` as the row first read exits 1 with `AccessDenied 403` because `simulate` has no `get` on `wft-results`, so the row now names `aggregate`, which flipped a byte (exit 0), and `verify` then exits 1 with `code: ARTIFACT_LOST` and `cause: ARTIFACT_CORRUPT` |
@@ -483,7 +483,7 @@ Results:
 | 17 | pass | a value for each input, among them one `artifact_failures` value per code, `checkpoint_age_seconds`, `reaper_deleted`, `reaper_overdue`, `cache_hits` and `cache_misses` |
 | 18 | pass | `just doctor`, `just down`, `just nuke` and a second `just nuke` all exit 0 |
 | 19 | pass | `just ci` exit 0 in the export, 1,724 passed and 2 skipped in `just test`, 411 passed in `just itest` |
-| 20 | pass | the `ci` run [42256475026](https://github.com/AndoNorth/wasm-dag-forge/actions/runs/42256475026) and the `state-modules` run [42256474951](https://github.com/AndoNorth/wasm-dag-forge/actions/runs/42256474951), both success on `872d53b` on `main` |
+| 20 | pass | the `ci` run [42256475026](https://github.com/AndoNorth/weft/actions/runs/42256475026) and the `state-modules` run [42256474951](https://github.com/AndoNorth/weft/actions/runs/42256474951), both success on `872d53b` on `main` |
 
 Measured rates of the client for 100,000 small results (a SeaweedFS container with the heap bound, no timing guard):
 
@@ -518,9 +518,9 @@ What moved to which epic:
 
 Closure addenda, one dated line each, are added after close when a `revisit` child issue is filed against this epic (see [docs/delivery/method.md](../method.md#revisiting-a-closed-epic)).
 
-- 2026-11-06: [#258](https://github.com/AndoNorth/wasm-dag-forge/issues/258) makes the container accounting tests of `packages/itest` independent of the session store, so row 5 passes as written.
-- 2026-11-06: [#259](https://github.com/AndoNorth/wasm-dag-forge/issues/259) decides whether the bench gains the `--dsn` and `--jobs` seeding form of row 11 or the spec moves it to a script.
-- 2026-11-07: [#259](https://github.com/AndoNorth/wasm-dag-forge/issues/259) gave the bench the `--dsn` and `--jobs` seeding form of row 11, as section 2 pins it.
+- 2026-11-06: [#258](https://github.com/AndoNorth/weft/issues/258) makes the container accounting tests of `packages/itest` independent of the session store, so row 5 passes as written.
+- 2026-11-06: [#259](https://github.com/AndoNorth/weft/issues/259) decides whether the bench gains the `--dsn` and `--jobs` seeding form of row 11 or the spec moves it to a script.
+- 2026-11-07: [#259](https://github.com/AndoNorth/weft/issues/259) gave the bench the `--dsn` and `--jobs` seeding form of row 11, as section 2 pins it.
   Rows 11 to 17 were re-run on a clean `git archive` export of the branch under `/tmp/wft-cluster.lock` and all pass.
   The bench seeded one `succeeded` and one `running` job with 2,000 results and one checkpoint each, row 12 deleted 2,002 objects for the succeeded job and none on the repeat, and row 16 exits 0 with the two `skipped:` lines.
   The running job keeps all of its objects, and `kept_live` is 0 because the prune pass counts it only for a task that holds more checkpoints than the keep count.
@@ -528,6 +528,6 @@ Closure addenda, one dated line each, are added after close when a `revisit` chi
 - 2026-11-08: rows 5, 11 and 20 were re-run on a clean `git archive` export of `500e37b` on `main`, taken outside any git repository, and rows 5 and 11 now pass.
   Row 5 passes in all three invocations with no `SKIPPED` line: 879 passed and 33 deselected in the first, and 9 (`packages/artifactclient`), 6 (`packages/artifactreaper`) and 18 (`packages/itest`) passed in the isolated ones.
   Row 11 ran against the cluster under `/tmp/wft-cluster.lock` with `--dsn` and `--jobs 2` and exits 0 with `results_verified: 2000` and one `succeeded` and one `running` job seeded.
-  Row 20 holds on `500e37b` with the `ci` run [42501607357](https://github.com/AndoNorth/wasm-dag-forge/actions/runs/42501607357) and the `state-modules` run [42501607358](https://github.com/AndoNorth/wasm-dag-forge/actions/runs/42501607358), both success.
+  Row 20 holds on `500e37b` with the `ci` run [42501607357](https://github.com/AndoNorth/weft/actions/runs/42501607357) and the `state-modules` run [42501607358](https://github.com/AndoNorth/weft/actions/runs/42501607358), both success.
   Every one of the 20 rows has now passed, the earlier results table above stays as the record of the first run, and the items this epic cannot prove are those of the 'Not provable by this epic' paragraph in section 6.
   The epic is complete.

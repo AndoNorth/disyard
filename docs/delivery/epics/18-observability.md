@@ -1,8 +1,8 @@
 # Epic #13: Observability - breakdown
 
-Status: approved by the captain 2026-11-20, with the post-fix review fixes applied; the "Assumed" list of https://github.com/AndoNorth/wasm-dag-forge/pull/537 was accepted at approval.
+Status: approved by the captain 2026-11-20, with the post-fix review fixes applied; the "Assumed" list of https://github.com/AndoNorth/weft/pull/537 was accepted at approval.
 Lane issues filed 2026-11-20 as #546 to #574 (section 4).
-Epic: https://github.com/AndoNorth/wasm-dag-forge/issues/13
+Epic: https://github.com/AndoNorth/weft/issues/13
 Architecture note: `docs/architecture/05-observability-data-flow.drawio`, which still shows the shape before decisions 22 to 28 (it names Temporal's own timeline UI as the per-job drill-down).
 0.2 (issue) redraws it in place to the shape this spec builds (pull scrape, one collector for logs, events and traces, Tempo and Pyroscope, Explore by job id and the Temporal UI as the per-job view, the smoke results dashboard, the whole stack behind the observability switch), as the sibling specs refine their notes in lane 0 (`11-workers.md:5`, `12-admission.md:5`, `14-placement.md:5`); this spec PR does not change the diagram.
 Depends on (closed epics): #1, #2, #4, #5, #3, #12, #11, #6, #9, #10, #7, #8, #24.
@@ -63,7 +63,7 @@ None open: Q1 to Q5 are settled as decisions 22 to 26, and the alignment answers
 
 | # | Topic | Default | Reason, and the alternative | Changes |
 | --- | --- | --- | --- | --- |
-| D1 | Discovery | One `kubernetes_sd` pod job that keeps a pod with the annotation `prometheus.io/scrape: "true"` (the Temporal chart's, port from `prometheus.io/port`) or a container port named `metrics` or `prometheus` (admission, dispatch, workflow, object store, RabbitMQ, and the ports this epic adds); a second RabbitMQ job on `/metrics/detailed?family=queue_coarse_metrics&family=queue_consumer_count`; cAdvisor and kubelet metrics scraped on each node's port 10250 with Prometheus's service account token, not through the API server proxy; interval 30 s (estimate) | The built modules already name their port `metrics` (`deploy/admission/Tiltfile.module:95`, `deploy/dispatchapi/Tiltfile.module:100`, `deploy/workflow/Tiltfile.module:90`, `deploy/objectstore/Tiltfile.module:115`), so no closed module gains an annotation. The alternative, annotations everywhere as the epic says, edits five closed modules. Direct kubelet scrapes keep load off the 1-CPU control plane, which already fails liveness on fresh clusters (https://github.com/AndoNorth/wasm-dag-forge/issues/528) | S.1 |
+| D1 | Discovery | One `kubernetes_sd` pod job that keeps a pod with the annotation `prometheus.io/scrape: "true"` (the Temporal chart's, port from `prometheus.io/port`) or a container port named `metrics` or `prometheus` (admission, dispatch, workflow, object store, RabbitMQ, and the ports this epic adds); a second RabbitMQ job on `/metrics/detailed?family=queue_coarse_metrics&family=queue_consumer_count`; cAdvisor and kubelet metrics scraped on each node's port 10250 with Prometheus's service account token, not through the API server proxy; interval 30 s (estimate) | The built modules already name their port `metrics` (`deploy/admission/Tiltfile.module:95`, `deploy/dispatchapi/Tiltfile.module:100`, `deploy/workflow/Tiltfile.module:90`, `deploy/objectstore/Tiltfile.module:115`), so no closed module gains an annotation. The alternative, annotations everywhere as the epic says, edits five closed modules. Direct kubelet scrapes keep load off the 1-CPU control plane, which already fails liveness on fresh clusters (https://github.com/AndoNorth/weft/issues/528) | S.1 |
 | D2 | Node health base | cAdvisor, kube-state-metrics and `kube_node_status_allocatable`; no node-exporter | The epic notes node-exporter on kind may report host totals, and #2 made allocatable truthful | S.1 |
 | D3 | Third-party series in the catalogue | `metrics.yaml` v3 gains an `external` map: each third-party series a dashboard or rule reads, with its scrape job and the labels the rules group by; it is exempt from the `wft_` naming rule and held to the label denylist; the live scrape test covers it | The catalogue rule ("every metric used in a dashboard or rule must exist in the catalogue") cannot hold Temporal, RabbitMQ, kube-state-metrics, cAdvisor, Tempo or Pyroscope names under the `wft_` rule. The alternative, recording rules that rename each one, doubles the series | 0.1 (issue), C.1 |
 | D4 | Alert names and severity | Every alert takes the `Wft` prefix of the pinned broker rules (so the epic's `DlqGrowing` is `WftDeadLetterQueueNotEmpty`), and a `severity` label of `critical`, `warning` or `info`; `WftPoolSaturated` is always `info`; the max-load severity mode of the epic's risks is left to #16, which runs max load. A threshold that depends on job length is above the 7-day maximum of decision 20, so `WftOldBuildIdLingering` fires only for a pinned build older than 7 days, as a build lives until its jobs finish | One naming rule for the three pinned rules and the rest. A severity mode needs a load signal that only #16 runs | A.1, A.2 |
@@ -221,7 +221,7 @@ Departures from the method, stated so the review approves them knowingly:
 - Lane 0 declares in `packages/obs/pyproject.toml` the full dependency set of the lanes (`temporalio`, `opentelemetry-sdk`, `opentelemetry-exporter-otlp-proto-http`, `pyroscope-io`, `pyyaml`, `wft-events`, `wft-stateops`), as #17's decision 20 did, because lane H owns modules inside a package whose `pyproject.toml` is lane 0's.
 - T.1 edits files of #17's pass 1 under that spec's decision 11, which gives this row to this epic, including the reserve the gate keeps after its job rows (D16); #17 stays open for pass 2, so this is not a `revisit` of a closed epic.
 - The E issues are `revisit` children of five closed epics because their specs hand the emitters to this epic (decisions 10 to 16); R.1 and R.2 are `revisit` children of #2 because the switch changes #2's profiles and scripts (decision 22), while the preset contract itself changes in lane 0 by a contract-change PR (0.3, `docs/delivery/method.md:143-144`), whose `contracts/` part follows `contracts/preset/README.md:71` and whose diagram label is the next departure; S.4 is a `revisit` child of #6 because it changes the Temporal module (decision 26).
-- 0.3 edits the version label of the preset box of `docs/architecture/15-contracts.drawio` (and its svg) beside `contracts/`, although `contracts/preset/README.md:71` says a contract-change PR touches `contracts/` only, because the box shows the version ("#2 owner, v1") and the bump to v2 would otherwise leave the diagram stale; the store v4 PR set the precedent of a version bump and its diagram edit in one PR (https://github.com/AndoNorth/wasm-dag-forge/pull/468, `2aea3a5`).
+- 0.3 edits the version label of the preset box of `docs/architecture/15-contracts.drawio` (and its svg) beside `contracts/`, although `contracts/preset/README.md:71` says a contract-change PR touches `contracts/` only, because the box shows the version ("#2 owner, v1") and the bump to v2 would otherwise leave the diagram stale; the store v4 PR set the precedent of a version bump and its diagram edit in one PR (https://github.com/AndoNorth/weft/pull/468, `2aea3a5`).
 
 ## 4. Issues
 
@@ -231,35 +231,35 @@ The `revisit` issues (R.1, R.2, S.4, E.1 to E.6) are sub-issues of the closed ep
 The epic-wide tracking comment on #13 lists them by lane in start order.
 Done means, for every issue: `just ci` green on the branch, the output of the named tests pasted in the PR, and nothing outside Owns and the shared files changed.
 
-- [#546](https://github.com/AndoNorth/wasm-dag-forge/issues/546) 0.3 Preset contract v2
-- [#547](https://github.com/AndoNorth/wasm-dag-forge/issues/547) 0.1 Instrumentation contract v3 and the catalogue
-- [#548](https://github.com/AndoNorth/wasm-dag-forge/issues/548) 0.2 Package skeleton, query client, fake, runbook and diagram
-- [#549](https://github.com/AndoNorth/wasm-dag-forge/issues/549) R.1 The observability switch (revisit of #2)
-- [#550](https://github.com/AndoNorth/wasm-dag-forge/issues/550) S13 Stack footprint (spike)
-- [#551](https://github.com/AndoNorth/wasm-dag-forge/issues/551) S14 Series and keys on the pinned versions (spike)
-- [#552](https://github.com/AndoNorth/wasm-dag-forge/issues/552) R.2 Obs node figures and host ports (revisit of #2)
-- [#553](https://github.com/AndoNorth/wasm-dag-forge/issues/553) H.1 JSON logs and OTLP push
-- [#554](https://github.com/AndoNorth/wasm-dag-forge/issues/554) H.2 Metrics helpers and the registry bridge
-- [#555](https://github.com/AndoNorth/wasm-dag-forge/issues/555) H.3 Traces, profiles and the setup call
-- [#556](https://github.com/AndoNorth/wasm-dag-forge/issues/556) I.1 State inputs exporter
-- [#557](https://github.com/AndoNorth/wasm-dag-forge/issues/557) E.1 Registry listener (revisit of #4)
-- [#558](https://github.com/AndoNorth/wasm-dag-forge/issues/558) E.2 Admission (revisit of #8)
-- [#559](https://github.com/AndoNorth/wasm-dag-forge/issues/559) E.3 Dispatch (revisit of #24)
-- [#560](https://github.com/AndoNorth/wasm-dag-forge/issues/560) E.4 Workflow (revisit of #6)
-- [#561](https://github.com/AndoNorth/wasm-dag-forge/issues/561) E.5 Placement (revisit of #9)
-- [#562](https://github.com/AndoNorth/wasm-dag-forge/issues/562) E.6 Workers (revisit of #10)
-- [#563](https://github.com/AndoNorth/wasm-dag-forge/issues/563) S.1 Prometheus and kube-state-metrics
-- [#564](https://github.com/AndoNorth/wasm-dag-forge/issues/564) S.2 Loki and the collector
-- [#565](https://github.com/AndoNorth/wasm-dag-forge/issues/565) S.3 Grafana
-- [#566](https://github.com/AndoNorth/wasm-dag-forge/issues/566) S.4 Temporal UI behind the switch (revisit of #6)
-- [#567](https://github.com/AndoNorth/wasm-dag-forge/issues/567) P.1 Tempo
-- [#568](https://github.com/AndoNorth/wasm-dag-forge/issues/568) P.2 Pyroscope
-- [#569](https://github.com/AndoNorth/wasm-dag-forge/issues/569) G.1 Dashboards: fleet, intake and admission, paused jobs, characterization, smoke
-- [#570](https://github.com/AndoNorth/wasm-dag-forge/issues/570) G.2 Dashboards: placement and pools, workers, cluster health, stack health
-- [#571](https://github.com/AndoNorth/wasm-dag-forge/issues/571) A.1 Alert rules: intake, admission, dispatch, workflow, events
-- [#572](https://github.com/AndoNorth/wasm-dag-forge/issues/572) A.2 Alert rules: pools, workers, OOM, artifacts, cluster and the stack
-- [#573](https://github.com/AndoNorth/wasm-dag-forge/issues/573) C.1 Catalogue contract test
-- [#574](https://github.com/AndoNorth/wasm-dag-forge/issues/574) T.1 Telemetry row of `just smoke`
+- [#546](https://github.com/AndoNorth/weft/issues/546) 0.3 Preset contract v2
+- [#547](https://github.com/AndoNorth/weft/issues/547) 0.1 Instrumentation contract v3 and the catalogue
+- [#548](https://github.com/AndoNorth/weft/issues/548) 0.2 Package skeleton, query client, fake, runbook and diagram
+- [#549](https://github.com/AndoNorth/weft/issues/549) R.1 The observability switch (revisit of #2)
+- [#550](https://github.com/AndoNorth/weft/issues/550) S13 Stack footprint (spike)
+- [#551](https://github.com/AndoNorth/weft/issues/551) S14 Series and keys on the pinned versions (spike)
+- [#552](https://github.com/AndoNorth/weft/issues/552) R.2 Obs node figures and host ports (revisit of #2)
+- [#553](https://github.com/AndoNorth/weft/issues/553) H.1 JSON logs and OTLP push
+- [#554](https://github.com/AndoNorth/weft/issues/554) H.2 Metrics helpers and the registry bridge
+- [#555](https://github.com/AndoNorth/weft/issues/555) H.3 Traces, profiles and the setup call
+- [#556](https://github.com/AndoNorth/weft/issues/556) I.1 State inputs exporter
+- [#557](https://github.com/AndoNorth/weft/issues/557) E.1 Registry listener (revisit of #4)
+- [#558](https://github.com/AndoNorth/weft/issues/558) E.2 Admission (revisit of #8)
+- [#559](https://github.com/AndoNorth/weft/issues/559) E.3 Dispatch (revisit of #24)
+- [#560](https://github.com/AndoNorth/weft/issues/560) E.4 Workflow (revisit of #6)
+- [#561](https://github.com/AndoNorth/weft/issues/561) E.5 Placement (revisit of #9)
+- [#562](https://github.com/AndoNorth/weft/issues/562) E.6 Workers (revisit of #10)
+- [#563](https://github.com/AndoNorth/weft/issues/563) S.1 Prometheus and kube-state-metrics
+- [#564](https://github.com/AndoNorth/weft/issues/564) S.2 Loki and the collector
+- [#565](https://github.com/AndoNorth/weft/issues/565) S.3 Grafana
+- [#566](https://github.com/AndoNorth/weft/issues/566) S.4 Temporal UI behind the switch (revisit of #6)
+- [#567](https://github.com/AndoNorth/weft/issues/567) P.1 Tempo
+- [#568](https://github.com/AndoNorth/weft/issues/568) P.2 Pyroscope
+- [#569](https://github.com/AndoNorth/weft/issues/569) G.1 Dashboards: fleet, intake and admission, paused jobs, characterization, smoke
+- [#570](https://github.com/AndoNorth/weft/issues/570) G.2 Dashboards: placement and pools, workers, cluster health, stack health
+- [#571](https://github.com/AndoNorth/weft/issues/571) A.1 Alert rules: intake, admission, dispatch, workflow, events
+- [#572](https://github.com/AndoNorth/weft/issues/572) A.2 Alert rules: pools, workers, OOM, artifacts, cluster and the stack
+- [#573](https://github.com/AndoNorth/weft/issues/573) C.1 Catalogue contract test
+- [#574](https://github.com/AndoNorth/weft/issues/574) T.1 Telemetry row of `just smoke`
 
 ## 5. Order, stubs and spikes
 
@@ -322,7 +322,7 @@ Risks:
 - A switch that disagrees with the cluster: the record of D19, `up.sh`'s refusal and `cluster-verify`'s export of the recorded value guard it, but a hand-run `WFT_OBS=on tilt up` on a switch-off cluster would schedule the stack onto a 640 MiB node; `budget.sh` and the quota refuse the pods, so the failure is loud, not silent.
 - Installing a real `TracerProvider` changes what `current_traceparent()` returns inside a span (a new span id per stage, as the contract intends) where it returned the parent's before; H.3's test pins both behaviours and E.4's replay corpus guards the workflow.
 - `pyroscope-io` is a native wheel; 0.2's wheel test proves it installs for the pinned Python in the service images.
-- Fresh `ci` clusters fail `tilt ci` liveness in about 4 of 20 cycles (https://github.com/AndoNorth/wasm-dag-forge/issues/528), and Prometheus adds watch load on the API server; D1 keeps kubelet scrapes off the API server.
+- Fresh `ci` clusters fail `tilt ci` liveness in about 4 of 20 cycles (https://github.com/AndoNorth/weft/issues/528), and Prometheus adds watch load on the API server; D1 keeps kubelet scrapes off the API server.
 - Temporal server metrics are high in series count; S.1 keeps only the series the catalogue's `external` section names, so head series stay bounded.
 - The OTLP push drops logs and spans when the collector is down, by design (D14, D21); the drop counters show it.
 - The Temporal SDK Prometheus exporter's naming (`counters_total_suffix`, `unit_suffix` off by default) is what makes catalogue names match; a runtime built elsewhere with those on would break the live catalogue test, which is the guard.

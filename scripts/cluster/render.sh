@@ -50,7 +50,7 @@ PATCH_DIR=/etc/wft-patches
 host_mem_kib=${WFT_HOST_MEM_KIB:-$(docker info --format '{{.MemTotal}}' | awk '{ print int($1 / 1024) }')}
 host_cpus=${WFT_HOST_CPUS:-$(docker info --format '{{.NCPU}}')}
 
-out=${WFT_RENDER_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}/wasm-dag-forge/cluster}/$name
+out=${WFT_RENDER_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}/weft/cluster}/$name
 rm -rf "$out"
 mkdir -p "$out"
 

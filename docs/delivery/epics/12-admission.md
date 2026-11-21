@@ -1,7 +1,7 @@
 # Epic #8: Job admission scheduler (layer 1) - breakdown
 
 Status: closed 2026-11-18
-Epic: https://github.com/AndoNorth/wasm-dag-forge/issues/8
+Epic: https://github.com/AndoNorth/weft/issues/8
 Architecture note: docs/architecture/17-admission-cycle.drawio, added with this spec, and docs/architecture/10-intake-and-admission.drawio, which 0.1 (issue) refines
 Verifier: none, per decision 1.
 Depends on (closed epics): Dev environment (#1), Fixed-resource cluster (#2), Job event envelope (#4), DAG configuration schema and validator (#5), Durable state and artifact storage (#3), Artifact passing (#12), Workload toolchain (#11), Workflow engine (#6), Broker (#7), Kubernetes workers (#10), and the closed revisits #366 (the `ci` capacity) and #380 (the simulate slot) of #2 and #374 (the harness queue prefix) of #6
@@ -41,7 +41,7 @@ A change to a recorded decision changes only what its Applied in column names, a
 | 11 | Admission writes `job.admitted` in the transaction of the claim, `job.published` in that transaction when the claim set a missing receipt (D9, W.1), and `job.dead.lettered` for a message refused as `MALFORMED` or `UNSUPPORTED_VERSION` that names a job, all from source `/wft/admission`, and the real stage passes `run_stage_contract("admission", ...)` | `contracts/stages/stages.yaml:27-36`, `contracts/state/README.md:158`, `packages/stages/src/wft_stages/contract.py:85` [read], and the stage contract change of W.1 | C.1, C.2, W.1 |
 | 12 | The Temporal client is set up as the workflow service sets it up, with `event_data_converter` and `tracing_interceptor()`, and the start runs inside `stage_span(tracer, "admission", traceparent)` so the trace context of the row reaches the start headers | `packages/workflow/src/wft_workflow/service/__init__.py:159-163`, `packages/temporal/src/wft_temporal/trace.py:32,39` [read] | C.1 |
 | 13 | Placement is on the proof-of-concept path through #9 after #10, and admission keeps the body's "no coupling in v1" with it | realignment answer D2 | none |
-| 14 | The `ci` capacity revisit of #2 (#366) has landed: the infra node is 6,144 MiB and `scripts/cluster/budget.sh` holds a reserve row `admission` of 50m and 128 MiB requested, 250m and 128 MiB limits, which it drops once a `module.yaml` named `admission` exists, so no lane waits for it | realignment answer D4, the capacity scout of 2026-11-13, landed by `c8fa830` (https://github.com/AndoNorth/wasm-dag-forge/pull/371): `deploy/presets/ci.yaml:15-18`, `scripts/cluster/budget.sh:35-39` [read] | M.2, section 5 |
+| 14 | The `ci` capacity revisit of #2 (#366) has landed: the infra node is 6,144 MiB and `scripts/cluster/budget.sh` holds a reserve row `admission` of 50m and 128 MiB requested, 250m and 128 MiB limits, which it drops once a `module.yaml` named `admission` exists, so no lane waits for it | realignment answer D4, the capacity scout of 2026-11-13, landed by `c8fa830` (https://github.com/AndoNorth/weft/pull/371): `deploy/presets/ci.yaml:15-18`, `scripts/cluster/budget.sh:35-39` [read] | M.2, section 5 |
 | 15 | Dedup happens once, at submit, under the unique constraint of #24, and the workflow id with `REJECT_DUPLICATE` stays a backstop at the start, so `WorkflowAlreadyStartedError` is a harmless repeat | the body's key decisions, `naming.yaml:9` [read] | C.1 |
 | 16 | The epic body is refreshed as this breakdown starts; this spec records what in it is stale (section 1), and the body edit itself is not part of this spec's pull request | realignment answer D10 | none |
 | 17 | The pool workers of #10 poll the contract queues `wft-compile`, `wft-simulate` and `wft-aggregate` on every `ci` cluster, so admission starts a real job with no memo, and a run on `FakePool`s puts its pool queues behind a prefix of its own through the memo `wft_pool_queue_prefix` of the start, which the workflow applies to each placement (#10's D22). Q5 settles how the driver's prefix reaches admission's start. This replaces the draft's `FakePool`s on the contract names, where a real worker would take a driver task and fail it | `11-workers.md:84` (D22) and `:203`, `packages/workflow/src/wft_workflow/taskpath.py:52,222-224`, #10's exit test row 8 (`11-workers.md:527`) [read] | Q5, D15, D19, 0.4, C.1, M.1, M.2, V.1, section 7 |
@@ -599,7 +599,7 @@ Method of the run:
 - The export has no git checkout, so row 7 runs `scripts/tilt/run.sh ci` with `WFT_BUILD_ID=exit-a`, as the section says.
 - Each driver row ran as `timeout -s INT 1200 python -m wft_admission.drive ...`, a 20 minute cap that no row came near.
 - Row 10's forward and DSN are as the section says, with the superuser password from `appdb.credential` passed through `PGPASSWORD`, so it is not in the evidence.
-- The first attempt at row 4 ran with `WFT_SLOT` unset, beside a sibling worktree's `just ci` whose T1 session also used slot 0, and 73 of its 131 tests errored at setup on `Bind for 127.0.0.1:19000 failed: port is already allocated` (filed as [#466](https://github.com/AndoNorth/wasm-dag-forge/issues/466)).
+- The first attempt at row 4 ran with `WFT_SLOT` unset, beside a sibling worktree's `just ci` whose T1 session also used slot 0, and 73 of its 131 tests errored at setup on `Bind for 127.0.0.1:19000 failed: port is already allocated` (filed as [#466](https://github.com/AndoNorth/weft/issues/466)).
   Rows 4 to 6 and 14 were then run with `WFT_SLOT=1`, the pool slot of the worktree the run was launched from.
 - Row 3's two diagrams were rendered to PNG with ImageMagick and read by eye.
 - A memory sampler read `MemAvailable` every 5 s through rows 7 to 12.
@@ -621,7 +621,7 @@ Results:
 | 10 | pass, as corrected | `dead_lettered: MALFORMED 1 UNSUPPORTED_VERSION 1`, `events: 2`, `rows: accepted 2`, and the invariants exit 0 with no `invariant:` line, the two `skipped:` lines and the `runpy` warning |
 | 11 | pass | `finished: 200`, `failed: 0`, `restarts: 2`, `oom_killed: 0` in 168 s, and the deployment's env names are `WFT_BROKER_ADDRESS WFT_METRICS_ADDRESS WFT_READY_FILE WFT_TEMPORAL_ADDRESS WFT_TEMPORAL_NAMESPACE WFT_TENANCY_PROFILE` |
 | 12 | pass | exit 0 for `just doctor`, `just down` and both `just nuke`, and `kind get clusters` prints `No kind clusters found.` |
-| 13 | pass | the `ci` run [44338783713](https://github.com/AndoNorth/wasm-dag-forge/actions/runs/44338783713), success on `9e497bc` on `main`, full path, 2,839 passed in `just test` and 667 passed in `just itest`; no run on `main` holds this record yet, since it is the pull request that adds it |
+| 13 | pass | the `ci` run [44338783713](https://github.com/AndoNorth/weft/actions/runs/44338783713), success on `9e497bc` on `main`, full path, 2,839 passed in `just test` and 667 passed in `just itest`; no run on `main` holds this record yet, since it is the pull request that adds it |
 | 14 | pass | `just ci` exit 0 in the export with `WFT_SLOT=1`, `== ci path: full`, 2,839 passed in `just test` and 667 passed in `just itest` in 34 min 16 s, and `nix flake check` passed, 49 min 19 s in all |
 
 Row 10's wording: as first written, the row expected the invariants to "print nothing".
@@ -637,10 +637,10 @@ Memory figures:
 What was learned:
 
 - Admission held the global cap exactly (`max_live: 20` over 500 jobs), released every job of the control and restart journeys, and lost and duplicated nothing across a graceful and a forced pod deletion.
-- The schema fix [#453](https://github.com/AndoNorth/wasm-dag-forge/pull/453) holds in the image: the unsupported major is dead-lettered as `UNSUPPORTED_VERSION`, not `MALFORMED`.
+- The schema fix [#453](https://github.com/AndoNorth/weft/pull/453) holds in the image: the unsupported major is dead-lettered as `UNSUPPORTED_VERSION`, not `MALFORMED`.
 - `just down` keeps the workflow worker builds of earlier runs and the current build in Temporal, so a T2 run that must test its own build starts from `just nuke`; the harness makes its build current only when no build is current.
 - The snapshot of D11 took 4.0 ms on 100,000 rows in S.2, so no `revisit` of #3 was filed.
-- Two T1 sessions on one host collide on ports when both leave `WFT_SLOT` at 0, even with separate lock files ([#466](https://github.com/AndoNorth/wasm-dag-forge/issues/466)).
+- Two T1 sessions on one host collide on ports when both leave `WFT_SLOT` at 0, even with separate lock files ([#466](https://github.com/AndoNorth/weft/issues/466)).
 
 What the architecture note now shows: `docs/architecture/10-intake-and-admission.drawio` and `17-admission-cycle.drawio`, with their SVGs, are as 0.1 (issue) and the lanes left them, and were re-checked by eye in this run for row 3.
 Diagram 17's claim box does not yet show W.1's receipt write and its `job.published` from `/wft/admission`.
@@ -650,7 +650,7 @@ A8 to A10 stay assumptions about #24, which is not built, and the driver stood i
 
 What moved to which epic, unchanged from section 7:
 
-- the real dispatch API, its submit sequence and its reconciler (#24), with the state library additions of [#459](https://github.com/AndoNorth/wasm-dag-forge/issues/459)
+- the real dispatch API, its submit sequence and its reconciler (#24), with the state library additions of [#459](https://github.com/AndoNorth/weft/issues/459)
 - real pool workers under admitted jobs, which the smoke of #17 reaches
 - a second priority class in the shipped configuration (decision 6)
 - the standard load of 100,000 queued jobs and the real caps (#16)
@@ -660,7 +660,7 @@ What moved to which epic, unchanged from section 7:
 
 Follow-ups found:
 
-- [#466](https://github.com/AndoNorth/wasm-dag-forge/issues/466): T1 sessions with `WFT_SLOT` unset collide on host ports despite separate lock files.
+- [#466](https://github.com/AndoNorth/weft/issues/466): T1 sessions with `WFT_SLOT` unset collide on host ports despite separate lock files.
 - Diagram 17's claim box omits the receipt write of W.1, not filed.
 - The `runpy` warning of `python -m wft_stateops.invariants` goes away if `wft_stateops/__init__.py` stops importing `invariants`, not filed, as it changes no result.
 

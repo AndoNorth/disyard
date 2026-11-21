@@ -10,7 +10,7 @@ cd "$(dirname "${BASH_SOURCE[0]}")/.."
 source scripts/verify/cluster/lib/tools.sh
 
 preset=${WFT_PRESET:-ci}
-state=${WFT_STATE_DIR:-${XDG_STATE_HOME:-$HOME/.local/state}/wasm-dag-forge}
+state=${WFT_STATE_DIR:-${XDG_STATE_HOME:-$HOME/.local/state}/weft}
 context=kind-wft
 
 refuse() { echo "refused: $*" >&2; exit 4; }

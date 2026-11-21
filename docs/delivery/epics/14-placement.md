@@ -1,7 +1,7 @@
 # Epic #9: Task placement scheduler (layer 2) - breakdown
 
 Status: closed 2026-11-19
-Epic: https://github.com/AndoNorth/wasm-dag-forge/issues/9
+Epic: https://github.com/AndoNorth/weft/issues/9
 Architecture note: docs/architecture/11-placement-and-workers.drawio, which 0.2 (issue) refines, and docs/architecture/02-two-layers-of-scheduling.drawio, unchanged
 Verifier: none, per decision 1.
 Depends on (closed epics): Dev environment (#1), Fixed-resource cluster (#2), Job event envelope (#4), DAG configuration schema and validator (#5), Durable state and artifact storage (#3), Artifact passing (#12), Workload toolchain (#11), Workflow engine (#6), Broker (#7), Kubernetes workers (#10), and the closed revisits #380 (the simulate slot) of #2 and #374 (the harness queue prefix) of #6
@@ -443,7 +443,7 @@ Method of the run:
 - A stopped `wft` cluster of preset `ci`, left by D.1's T2 rows, and its `wft-registry` were removed with `just nuke` under the lock before row 0's repeat, so row 7 started from no cluster and the harness made `exit-a` current itself.
 - The export has no git checkout, so row 7 runs `scripts/tilt/run.sh ci` with `WFT_BUILD_ID=exit-a`, as the section says.
 - Each harness row ran as `timeout -s INT 1800 python -m wft_workflow.harness ...`, a 30 minute cap that no row came near.
-- Rows 4 and 17 ran with `WFT_SLOT=2`, the pool slot of the worktree the run was launched from, so their T1 session could not share ports with a sibling's ([#466](https://github.com/AndoNorth/wasm-dag-forge/issues/466)).
+- Rows 4 and 17 ran with `WFT_SLOT=2`, the pool slot of the worktree the run was launched from, so their T1 session could not share ports with a sibling's ([#466](https://github.com/AndoNorth/weft/issues/466)).
 - Row 6's diagram was rendered to PNG with ImageMagick and read by eye.
 - A memory sampler read `MemAvailable` every 5 s through rows 7 to 16.
 
@@ -469,7 +469,7 @@ Results:
 | 15 | pass | `oom_kill 0` (and `oom 0`, `max 0`) in each of the three `memory.events`, a restart count of `0` for each pod, and `anon 43028480` |
 | 16 | pass | exit 0 for `just doctor`, `just down` and both `just nuke`, the second deleting no node, then `No kind clusters found.` with only `open-webui` running |
 | 17 | pass | `just ci` exit 0 in the export with `WFT_SLOT=2`, `== ci path: full`, 3,194 passed in `just test` in 15 min 54 s and 766 passed in `just itest` in 37 min 44 s, and `nix flake check` passed, 54 min 7 s in all |
-| 18 | pass | the `ci` run [44463425981](https://github.com/AndoNorth/wasm-dag-forge/actions/runs/44463425981), success on `45e7318` on `main`, full path, 3,194 passed in `just test` and 766 in `just itest`, and the `state-modules` run [44463425903](https://github.com/AndoNorth/wasm-dag-forge/actions/runs/44463425903), success on `45e7318`; no run on `main` holds this record yet, since it is the pull request that adds it |
+| 18 | pass | the `ci` run [44463425981](https://github.com/AndoNorth/weft/actions/runs/44463425981), success on `45e7318` on `main`, full path, 3,194 passed in `just test` and 766 in `just itest`, and the `state-modules` run [44463425903](https://github.com/AndoNorth/weft/actions/runs/44463425903), success on `45e7318`; no run on `main` holds this record yet, since it is the pull request that adds it |
 
 Row 9's wording: as first written, the row ran straight after row 7, but Tilt reports healthy as soon as the last pool worker is Ready, and the snapshot is read every 30 s (D5), so the view can show a pool's worker as not ready for up to one cadence.
 The row now runs at least one cadence after row 7, and the check that matters, `ready_workers=1` from the real API through the same reader, is unchanged.
@@ -511,7 +511,7 @@ What moved to which epic, unchanged from section 7:
 
 Follow-ups found:
 
-- [#512](https://github.com/AndoNorth/wasm-dag-forge/issues/512): the broker's `test_counters` failed once on `main` on an empty DLQ pull after the last retry, in the `ci` run of S.1's merge, outside this epic.
+- [#512](https://github.com/AndoNorth/weft/issues/512): the broker's `test_counters` failed once on `main` on an empty DLQ pull after the last retry, in the `ci` run of S.1's merge, outside this epic.
 - D14 is decided as approximate order at the default of 4 partitions, not filed.
 
 Closure addenda, one dated line each, added after close when a `revisit` child issue is filed against this epic:

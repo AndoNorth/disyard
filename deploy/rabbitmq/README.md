@@ -32,7 +32,7 @@ A StatefulSet does not replace a pod that never became ready, so after fixing a 
 ## Credentials
 
 The broker users are `dispatch`, `admission` and `operator`, with the permissions of the broker contract, and no `guest` user is created.
-Their passwords and the Erlang cookie are generated on first use into the credentials directory `rabbitmq/` under the state directory of the cluster scripts (`$WFT_STATE_DIR`, by default `~/.local/state/wasm-dag-forge`).
+Their passwords and the Erlang cookie are generated on first use into the credentials directory `rabbitmq/` under the state directory of the cluster scripts (`$WFT_STATE_DIR`, by default `~/.local/state/weft`).
 It holds one file per user, `dispatch.password`, `admission.password` and `operator.password`, and `erlang.cookie`, each one line with no newline and readable by its owner only.
 This is the directory that the regression suite and the dead-letter tool read with `--credentials-dir`.
 

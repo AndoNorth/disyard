@@ -1,7 +1,7 @@
 # Spike: cold start of the workload component in the `ci` simulate slot (S6)
 
 Run on 2026-11-08.
-Owner: the [workload toolchain epic](https://github.com/AndoNorth/wasm-dag-forge/issues/11), lane S, filed as [spike issue 266](https://github.com/AndoNorth/wasm-dag-forge/issues/266).
+Owner: the [workload toolchain epic](https://github.com/AndoNorth/weft/issues/11), lane S, filed as [spike issue 266](https://github.com/AndoNorth/weft/issues/266).
 Method: [docs/delivery/method.md](../../method.md).
 The epic breakdown spec is not merged yet, and this spike gates its `wasmtime` behaviour pin tests.
 Throwaway code: [code/](code/), run as `nix develop -c docs/delivery/spikes/S6/code/run.sh`.

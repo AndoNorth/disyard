@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/AndoNorth/wasm-dag-forge/contracts/module/module.schema.json",
+  "$id": "https://github.com/AndoNorth/weft/contracts/module/module.schema.json",
   "title": "deploy/<component>/module.yaml",
   "type": "object",
   "required": ["name", "group", "namespace", "artifact", "resources", "readiness", "profiles"],

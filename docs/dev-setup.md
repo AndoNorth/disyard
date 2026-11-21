@@ -224,7 +224,7 @@ Each skipped job still reports as skipped, so a check made required later never 
 
 The image builds, `deploy/workers/image.sh` and `deploy/workflow/image.sh`, read the wheels that `uv.lock` pins and the release assets of `nix/wasm-tools.nix` from the build download cache before the network, locally as in CI.
 A second build on the same host downloads nothing, and every cached file is checked against its pinned hash before use.
-The cache is `~/.cache/wasm-dag-forge/build` (under `XDG_CACHE_HOME` when set, or `WFT_BUILD_CACHE`), removing it is always safe, and `actions/cache` carries it between runs of the `test` jobs and `state-modules`.
+The cache is `~/.cache/weft/build` (under `XDG_CACHE_HOME` when set, or `WFT_BUILD_CACHE`), removing it is always safe, and `actions/cache` carries it between runs of the `test` jobs and `state-modules`.
 `actions/cache` also carries `~/.cache/uv`, keyed by `uv.lock` alone, so a `test` job neither downloads the wheels nor builds `python-qpid-proton` from its sdist again.
 
 CI can be switched off in two ways:

@@ -1,7 +1,7 @@
 # Spike: heavy compile in the `ci` compile slot (S1b)
 
 Run on 2026-11-09.
-Owner: the [workload toolchain epic](https://github.com/AndoNorth/wasm-dag-forge/issues/11), lane S, filed as [spike issue 274](https://github.com/AndoNorth/wasm-dag-forge/issues/274).
+Owner: the [workload toolchain epic](https://github.com/AndoNorth/weft/issues/11), lane S, filed as [spike issue 274](https://github.com/AndoNorth/weft/issues/274).
 Method: [docs/delivery/method.md](../../method.md).
 Spec: the S1b block of [docs/delivery/epics/07-workload-toolchain.md](../../epics/07-workload-toolchain.md), and this spike gates C.2.
 Throwaway code: [code/](code/), run as `nix develop -c docs/delivery/spikes/S1b/code/run.sh`.
@@ -22,7 +22,7 @@ Recorded for D9: `unshare --user --net` fails with `Operation not permitted` in 
 The fail consequences, in the order of the issue:
 
 1. Part (1) passed, so no compile slot resize goes to the cluster epic.
-2. Part (2) failed, so C.2 keeps only the bundle that exceeds a short `--timeout`, and the compile OOM at the slot is left to the failure scenarios epic ([#15](https://github.com/AndoNorth/wasm-dag-forge/issues/15)) on the cluster.
+2. Part (2) failed, so C.2 keeps only the bundle that exceeds a short `--timeout`, and the compile OOM at the slot is left to the failure scenarios epic ([#15](https://github.com/AndoNorth/weft/issues/15)) on the cluster.
 3. Part (3) passed, so D9 does not fall back on account of the network check, though the `unshare` probe above means D9 (a) never takes effect in a default-profile container, as "What the numbers change" states.
 
 ## Question

@@ -70,7 +70,7 @@ jobs:
       - name: Restore the build download cache
         uses: actions/cache@v6
         with:
-          path: ~/.cache/wasm-dag-forge/build
+          path: ~/.cache/weft/build
           key: build-downloads-${{ hashFiles('uv.lock', 'nix/wasm-tools.nix', 'deploy/versions.yaml') }}
           restore-keys: build-downloads-
       # uv keeps the downloaded wheels and the python-qpid-proton build from its sdist here.

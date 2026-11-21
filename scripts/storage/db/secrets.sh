@@ -6,7 +6,7 @@
 # Usage: secrets.sh [render|password]. Exit 0 ok, 2 usage.
 set -euo pipefail
 
-state=${WFT_STATE_DIR:-${XDG_STATE_HOME:-$HOME/.local/state}/wasm-dag-forge}
+state=${WFT_STATE_DIR:-${XDG_STATE_HOME:-$HOME/.local/state}/weft}
 file=$state/appdb.credential
 mode=${1:-render}
 

@@ -30,10 +30,10 @@ def test_state_dir_is_wft_state_dir_first(monkeypatch, tmp_path):
 def test_state_dir_falls_back_to_xdg_then_home(monkeypatch, tmp_path):
     monkeypatch.delenv("WFT_STATE_DIR", raising=False)
     monkeypatch.setenv("XDG_STATE_HOME", str(tmp_path / "xdg"))
-    assert state_dir() == tmp_path / "xdg/wasm-dag-forge"
+    assert state_dir() == tmp_path / "xdg/weft"
     monkeypatch.delenv("XDG_STATE_HOME")
     monkeypatch.setenv("HOME", str(tmp_path / "home"))
-    assert state_dir() == tmp_path / "home/.local/state/wasm-dag-forge"
+    assert state_dir() == tmp_path / "home/.local/state/weft"
 
 
 def test_credentials_are_read_from_the_state_dir(monkeypatch, tmp_path):

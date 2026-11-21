@@ -1,7 +1,7 @@
 # Epic #4: Job event envelope (CloudEvents) and state propagation - breakdown
 
 Status: draft
-Epic: https://github.com/AndoNorth/wasm-dag-forge/issues/4
+Epic: https://github.com/AndoNorth/weft/issues/4
 Architecture note: docs/architecture/13-state-envelope-artifacts.drawio
 Depends on (closed epics): Dev environment (#1, closed)
 
@@ -158,12 +158,12 @@ Departures from the method, stated so that the captain approves them knowingly:
 
 | Lane | Workers | Owns (exclusive) | Issues | Needs |
 | --- | --- | --- | --- | --- |
-| 0 Contracts and skeleton | 1 | `contracts/events/{README.md,VERSION,check.sh}`, `contracts/events/profile/**`, `contracts/events/schemas/job.accepted/**`, `contracts/events/vectors/accepted/**`, `contracts/events/vectors/keys.json`, `contracts/status/**`, `contracts/artifact/**` (`reference.schema.json` is issue 0.1's and the rest is issue 0.2's), `contracts/instrumentation/**`, and until lanes E and K take over `packages/events/**`, `packages/keys/**` and `packages/itest/**` | [#87](https://github.com/AndoNorth/wasm-dag-forge/issues/87), [#88](https://github.com/AndoNorth/wasm-dag-forge/issues/88), [#89](https://github.com/AndoNorth/wasm-dag-forge/issues/89), [#90](https://github.com/AndoNorth/wasm-dag-forge/issues/90) | nothing (barrier) |
-| E Events | 1 | `packages/events/**`, `contracts/events/schemas/**` for every type except `job.accepted`, `contracts/events/vectors/types/**` | [#93](https://github.com/AndoNorth/wasm-dag-forge/issues/93), [#94](https://github.com/AndoNorth/wasm-dag-forge/issues/94), [#95](https://github.com/AndoNorth/wasm-dag-forge/issues/95) | lane 0, and K.1 for E.2 |
-| K Keys | 1 | `packages/keys/**`, and after lane 0 `packages/itest/**` (the lightest lane takes over the container helper) | [#91](https://github.com/AndoNorth/wasm-dag-forge/issues/91), [#92](https://github.com/AndoNorth/wasm-dag-forge/issues/92) | lane 0 |
-| C Compatibility | 1 | `packages/compat/**`, `contracts/events/vectors/golden/**`, `contracts/events/vectors/poison/**` | [#96](https://github.com/AndoNorth/wasm-dag-forge/issues/96), [#97](https://github.com/AndoNorth/wasm-dag-forge/issues/97), [#98](https://github.com/AndoNorth/wasm-dag-forge/issues/98) | E.2, and E.3 for C.2 |
-| T Temporal | 1 | `packages/temporal/**` | [#99](https://github.com/AndoNorth/wasm-dag-forge/issues/99), [#100](https://github.com/AndoNorth/wasm-dag-forge/issues/100), [#101](https://github.com/AndoNorth/wasm-dag-forge/issues/101) | E.3 and K.1 for T.1, and T.1 for T.2 and T.3 |
-| S Stages | 1 | `packages/stages/**`, `contracts/stages/**` | [#102](https://github.com/AndoNorth/wasm-dag-forge/issues/102), [#103](https://github.com/AndoNorth/wasm-dag-forge/issues/103) | E.3 for S.1, and S.1 and K.1 for S.2 |
+| 0 Contracts and skeleton | 1 | `contracts/events/{README.md,VERSION,check.sh}`, `contracts/events/profile/**`, `contracts/events/schemas/job.accepted/**`, `contracts/events/vectors/accepted/**`, `contracts/events/vectors/keys.json`, `contracts/status/**`, `contracts/artifact/**` (`reference.schema.json` is issue 0.1's and the rest is issue 0.2's), `contracts/instrumentation/**`, and until lanes E and K take over `packages/events/**`, `packages/keys/**` and `packages/itest/**` | [#87](https://github.com/AndoNorth/weft/issues/87), [#88](https://github.com/AndoNorth/weft/issues/88), [#89](https://github.com/AndoNorth/weft/issues/89), [#90](https://github.com/AndoNorth/weft/issues/90) | nothing (barrier) |
+| E Events | 1 | `packages/events/**`, `contracts/events/schemas/**` for every type except `job.accepted`, `contracts/events/vectors/types/**` | [#93](https://github.com/AndoNorth/weft/issues/93), [#94](https://github.com/AndoNorth/weft/issues/94), [#95](https://github.com/AndoNorth/weft/issues/95) | lane 0, and K.1 for E.2 |
+| K Keys | 1 | `packages/keys/**`, and after lane 0 `packages/itest/**` (the lightest lane takes over the container helper) | [#91](https://github.com/AndoNorth/weft/issues/91), [#92](https://github.com/AndoNorth/weft/issues/92) | lane 0 |
+| C Compatibility | 1 | `packages/compat/**`, `contracts/events/vectors/golden/**`, `contracts/events/vectors/poison/**` | [#96](https://github.com/AndoNorth/weft/issues/96), [#97](https://github.com/AndoNorth/weft/issues/97), [#98](https://github.com/AndoNorth/weft/issues/98) | E.2, and E.3 for C.2 |
+| T Temporal | 1 | `packages/temporal/**` | [#99](https://github.com/AndoNorth/weft/issues/99), [#100](https://github.com/AndoNorth/weft/issues/100), [#101](https://github.com/AndoNorth/weft/issues/101) | E.3 and K.1 for T.1, and T.1 for T.2 and T.3 |
+| S Stages | 1 | `packages/stages/**`, `contracts/stages/**` | [#102](https://github.com/AndoNorth/weft/issues/102), [#103](https://github.com/AndoNorth/weft/issues/103) | E.3 for S.1, and S.1 and K.1 for S.2 |
 
 Shared-file rules:
 
@@ -213,23 +213,23 @@ Proposal numbering from the epic is in brackets.
 | pulled forward by the method: contracts 2 and 3 and the instrumentation contract | 0.2, 0.3 |
 | not in the epic's list: the T1 container helper that the integration tests share | 0.4 |
 
-- [#87](https://github.com/AndoNorth/wasm-dag-forge/issues/87) **0.1 Events profile, accepted event and key vectors** [1, 3] Lane 0, tier T0. Needs: nothing.
-- [#88](https://github.com/AndoNorth/wasm-dag-forge/issues/88) **0.2 Status and artifact reference contracts** [pulled forward] Lane 0, T0. Needs: 0.1. Question 2 and question 5 of section 0.2 apply.
-- [#89](https://github.com/AndoNorth/wasm-dag-forge/issues/89) **0.3 Instrumentation contract** [pulled forward] Lane 0, T0. Needs: 0.1. Question 4 of section 0.2 applies.
-- [#90](https://github.com/AndoNorth/wasm-dag-forge/issues/90) **0.4 Container helper for T1 tests** Lane 0, T1. Needs: nothing.
-- [#93](https://github.com/AndoNorth/wasm-dag-forge/issues/93) **E.1 Serializer and size budget** [4] Lane E, T0. Needs: lane 0.
-- [#94](https://github.com/AndoNorth/wasm-dag-forge/issues/94) **E.2 Event type catalogue v1 and the store mapping** [2] Lane E, T0 and T1. Needs: E.1, K.1. Questions 1, 2 and 3 of section 0.2 apply.
-- [#95](https://github.com/AndoNorth/wasm-dag-forge/issues/95) **E.3 Task request, result ready and the worker-side check** [11] Lane E, T0. Needs: E.2.
-- [#91](https://github.com/AndoNorth/wasm-dag-forge/issues/91) **K.1 Identity keys** [3] Lane K, T0. Needs: lane 0.
-- [#92](https://github.com/AndoNorth/wasm-dag-forge/issues/92) **K.2 Compile cache key** [3] Lane K, T0. Needs: lane 0.
-- [#96](https://github.com/AndoNorth/wasm-dag-forge/issues/96) **C.1 Compatibility rules and the N-1 reader** [5] Lane C, T0. Needs: E.2.
-- [#97](https://github.com/AndoNorth/wasm-dag-forge/issues/97) **C.2 Golden events and poison vectors** [5, 10] Lane C, T0. Needs: E.2, E.3.
-- [#98](https://github.com/AndoNorth/wasm-dag-forge/issues/98) **C.3 Dead letter replay upgrader** [9] Lane C, T0. Needs: C.1.
-- [#99](https://github.com/AndoNorth/wasm-dag-forge/issues/99) **T.1 CloudEvent through Temporal** [risk of the epic] Lane T, T1. Needs: E.3, K.1.
-- [#100](https://github.com/AndoNorth/wasm-dag-forge/issues/100) **T.2 Trace context** [7] Lane T, T0 and T1. Needs: T.1.
-- [#101](https://github.com/AndoNorth/wasm-dag-forge/issues/101) **T.3 Replay corpus** [6] Lane T, T1 to record and T0 to replay. Needs: T.1.
-- [#102](https://github.com/AndoNorth/wasm-dag-forge/issues/102) **S.1 Stage contract** [8] Lane S, T0. Needs: E.3. Question 1 of section 0.2 applies.
-- [#103](https://github.com/AndoNorth/wasm-dag-forge/issues/103) **S.2 Fake-stage contract tests** [8] Lane S, T0. Needs: S.1, E.3, K.1.
+- [#87](https://github.com/AndoNorth/weft/issues/87) **0.1 Events profile, accepted event and key vectors** [1, 3] Lane 0, tier T0. Needs: nothing.
+- [#88](https://github.com/AndoNorth/weft/issues/88) **0.2 Status and artifact reference contracts** [pulled forward] Lane 0, T0. Needs: 0.1. Question 2 and question 5 of section 0.2 apply.
+- [#89](https://github.com/AndoNorth/weft/issues/89) **0.3 Instrumentation contract** [pulled forward] Lane 0, T0. Needs: 0.1. Question 4 of section 0.2 applies.
+- [#90](https://github.com/AndoNorth/weft/issues/90) **0.4 Container helper for T1 tests** Lane 0, T1. Needs: nothing.
+- [#93](https://github.com/AndoNorth/weft/issues/93) **E.1 Serializer and size budget** [4] Lane E, T0. Needs: lane 0.
+- [#94](https://github.com/AndoNorth/weft/issues/94) **E.2 Event type catalogue v1 and the store mapping** [2] Lane E, T0 and T1. Needs: E.1, K.1. Questions 1, 2 and 3 of section 0.2 apply.
+- [#95](https://github.com/AndoNorth/weft/issues/95) **E.3 Task request, result ready and the worker-side check** [11] Lane E, T0. Needs: E.2.
+- [#91](https://github.com/AndoNorth/weft/issues/91) **K.1 Identity keys** [3] Lane K, T0. Needs: lane 0.
+- [#92](https://github.com/AndoNorth/weft/issues/92) **K.2 Compile cache key** [3] Lane K, T0. Needs: lane 0.
+- [#96](https://github.com/AndoNorth/weft/issues/96) **C.1 Compatibility rules and the N-1 reader** [5] Lane C, T0. Needs: E.2.
+- [#97](https://github.com/AndoNorth/weft/issues/97) **C.2 Golden events and poison vectors** [5, 10] Lane C, T0. Needs: E.2, E.3.
+- [#98](https://github.com/AndoNorth/weft/issues/98) **C.3 Dead letter replay upgrader** [9] Lane C, T0. Needs: C.1.
+- [#99](https://github.com/AndoNorth/weft/issues/99) **T.1 CloudEvent through Temporal** [risk of the epic] Lane T, T1. Needs: E.3, K.1.
+- [#100](https://github.com/AndoNorth/weft/issues/100) **T.2 Trace context** [7] Lane T, T0 and T1. Needs: T.1.
+- [#101](https://github.com/AndoNorth/weft/issues/101) **T.3 Replay corpus** [6] Lane T, T1 to record and T0 to replay. Needs: T.1.
+- [#102](https://github.com/AndoNorth/weft/issues/102) **S.1 Stage contract** [8] Lane S, T0. Needs: E.3. Question 1 of section 0.2 applies.
+- [#103](https://github.com/AndoNorth/weft/issues/103) **S.2 Fake-stage contract tests** [8] Lane S, T0. Needs: S.1, E.3, K.1.
 
 ## 5. Order, stubs and spikes
 
@@ -311,7 +311,7 @@ The row commands ran as written, from the export root, with the departures liste
 | 9 | pass | 19 passed and 3 deselected, no `SKIPPED` line, the corpus replay and the negative control among them |
 | 10 | pass | 11 passed in 14 s (7 in `packages/itest`, 1 in `packages/events`, 3 in `packages/temporal`), no `SKIPPED` line, and `docker ps -a --filter label=wft.dev/verify-run` lists no container |
 | 11 | pass | `just ci` exit 0, with 529 tests in `just test`, 11 integration tests in `just itest` and `nix flake check` passing, after the departure below |
-| 12 | pass | `ci` run [41205020258](https://github.com/AndoNorth/wasm-dag-forge/actions/runs/41205020258) on `main` at `92c76e3`, completed with success |
+| 12 | pass | `ci` run [41205020258](https://github.com/AndoNorth/weft/actions/runs/41205020258) on `main` at `92c76e3`, completed with success |
 
 Departures from the method:
 
@@ -359,7 +359,7 @@ Follow-ups recorded by the lanes and by this run, none of which blocks closure:
 
 Closure addenda, one dated line each, are added after close when a `revisit` child issue is filed against this epic (see [docs/delivery/method.md](../method.md#revisiting-a-closed-epic)).
 
-- 2026-11-01: [#168](https://github.com/AndoNorth/wasm-dag-forge/issues/168) adds the `tmpfs`, `mounts` and `Container.exec` options to the container helper, all off by default.
-- 2026-11-04: [#222](https://github.com/AndoNorth/wasm-dag-forge/issues/222) lets a `wft_itest` session declare two containers with names, taking both host lock files together, and adds the markers `pair` and `isolated`.
-- 2026-11-04: [#215](https://github.com/AndoNorth/wasm-dag-forge/issues/215) derives the kinds, the buckets and the bucket pattern of the reference models from `contracts/artifact/layout.yaml` through `wft_events.layout()`, and generates `contracts/artifact/reference.schema.json` from them with `python -m wft_events.schemagen`.
+- 2026-11-01: [#168](https://github.com/AndoNorth/weft/issues/168) adds the `tmpfs`, `mounts` and `Container.exec` options to the container helper, all off by default.
+- 2026-11-04: [#222](https://github.com/AndoNorth/weft/issues/222) lets a `wft_itest` session declare two containers with names, taking both host lock files together, and adds the markers `pair` and `isolated`.
+- 2026-11-04: [#215](https://github.com/AndoNorth/weft/issues/215) derives the kinds, the buckets and the bucket pattern of the reference models from `contracts/artifact/layout.yaml` through `wft_events.layout()`, and generates `contracts/artifact/reference.schema.json` from them with `python -m wft_events.schemagen`.
   The narrowings stay, each held to the layout by a test, and no schema under `contracts/events/` changed.
