@@ -2,18 +2,18 @@
 names, configured from the environment. Exit 2 when a variable is missing."""
 
 import asyncio
-import logging
 import os
 import sys
 from pathlib import Path
 
 from wft_artifactreaper import schedule
+from wft_obs.setup import setup
 
 from . import READY_ENV, Config, MissingEnv, real_control, serve
 
 
 def main() -> int:
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
+    setup("workflow")
     try:
         config = Config.from_env(os.environ)
     except MissingEnv as error:

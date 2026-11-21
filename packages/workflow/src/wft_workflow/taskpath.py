@@ -331,6 +331,9 @@ async def cache_hit(job, task) -> bool:
     # A compile that hits again, after a rebuild or a patched resume, writes a skip of its own.
     hits = job.skips[task.id]
     job.skips[task.id] += 1
+    workflow.logger.info(
+        "task skipped: %s", data["reason"], extra={"job_id": job.job_id, "task_id": task.id}
+    )
     await job.emit(job.task_event("task.skipped", task.id, data, sequence=hits))
     return True
 

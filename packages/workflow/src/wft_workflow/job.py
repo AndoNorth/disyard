@@ -138,6 +138,15 @@ class JobWorkflow:
         self.reschedules = meter.create_counter(
             "wft_workflow_reschedules_total", "Schedule-to-start timeouts followed by a new place."
         )
+        self.job_seconds = meter.create_histogram_float(
+            "wft_workflow_job_seconds",
+            "Duration of a job from its start to its terminal status, by job class and terminal"
+            " status.",
+            "s",
+        )
+        self.jobs = meter.create_counter(
+            "wft_workflow_jobs_total", "Jobs ended, by job class and terminal status."
+        )
 
     @workflow.run
     async def run(self, accepted: Event, params: JobParams) -> str:
@@ -194,6 +203,7 @@ class JobWorkflow:
             self.interrupt()
             await workflow.wait_condition(lambda: all(t.done() for t in self.running.values()))
             self.job_status = ended.status
+            self.record_end(ended.status)
             self.pause_reason = None
             if self.plan is not None:
                 self.states = outcome(self.plan, self.states, stop="terminate").states
@@ -369,9 +379,27 @@ class JobWorkflow:
         elif result.status == "partial":
             data = {"skipped_tasks": list(result.skipped_tasks)}
         await self.emit(self.job_event(f"job.{result.status}", data), move=result.status)
+        self.record_end(result.status)
         self.pause_reason = result.pause_reason
         if self.plan is not None:
             self.states = result.states
+
+    def record_end(self, status: str) -> None:
+        """Counts a job that reached a terminal status, times it from the start of its workflow
+        and logs its end once; a pause is not an end."""
+        if status not in status_vocabulary().terminal:
+            return
+        labels = {"job_class": self.identity.jobclass, "outcome": status}
+        self.job_seconds.record(
+            (workflow.now() - workflow.info().start_time).total_seconds(), labels
+        )
+        self.jobs.add(1, labels)
+        workflow.logger.info(
+            "job ended: job_class=%s outcome=%s",
+            labels["job_class"],
+            status,
+            extra={"job_id": self.job_id},
+        )
 
     def job_event(self, name: str, data: dict) -> Event:
         # A resume starts the job's events over under its own sequence.

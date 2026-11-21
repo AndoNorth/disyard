@@ -11,8 +11,11 @@ dependencies = [
     "pyyaml",
     "temporalio",
     "wft-events",
-    "wft-stateops",
 ]
+
+# The state inputs exporter reads the job tables, so only the process that runs it installs this.
+[project.optional-dependencies]
+stateops = ["wft-stateops"]
 
 [tool.uv.sources]
 wft-events = { workspace = true }

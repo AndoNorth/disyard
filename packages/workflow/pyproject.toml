@@ -20,6 +20,7 @@ dependencies = [
     "wft-jobpatch",
     "wft-jobstate",
     "wft-keys",
+    "wft-obs",
     "wft-plan",
     "wft-runtime",
     "wft-stages",
@@ -44,6 +45,7 @@ wft-jobdoc = { workspace = true }
 wft-jobpatch = { workspace = true }
 wft-jobstate = { workspace = true }
 wft-keys = { workspace = true }
+wft-obs = { workspace = true }
 wft-plan = { workspace = true }
 wft-runtime = { workspace = true }
 wft-stages = { workspace = true }
