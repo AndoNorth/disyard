@@ -1,9 +1,10 @@
 """In-process instruments of the event contract, as contracts/instrumentation pins them.
 
-An exporter reads `registry`, and nothing here depends on one.
+An exporter reads `registry`, or mirrors it by adding a listener, and nothing here depends on one.
 """
 
 from collections import Counter
+from collections.abc import Callable
 from dataclasses import dataclass, field
 
 import yaml
@@ -31,8 +32,13 @@ class Histogram:
                 self.counts[i] += 1
 
 
+Listener = Callable[[str, float, dict[str, str]], None]
+
+
 class Registry:
     def __init__(self):
+        # Each hears the name, value and labels of every call, after the registry records it.
+        self.listeners: list[Listener] = []
         self.counters: Counter[tuple[str, tuple[tuple[str, str], ...]]] = Counter()
         self.histograms = {
             name: Histogram(list(spec["buckets"]))
@@ -44,12 +50,16 @@ class Registry:
         if set(labels) != set(_PINNED[name]["labels"]):
             raise ValueError(f"{name} takes the labels {sorted(_PINNED[name]['labels'])}")
         self.counters[(name, tuple(sorted(labels.items())))] += 1
+        for listener in self.listeners:
+            listener(name, 1, labels)
 
     def count(self, name: str, **labels: str) -> int:
         return self.counters[(name, tuple(sorted(labels.items())))]
 
     def observe(self, name: str, value: float) -> None:
         self.histograms[name].observe(value)
+        for listener in self.listeners:
+            listener(name, value, {})
 
 
 registry = Registry()
