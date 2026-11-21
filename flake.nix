@@ -105,6 +105,8 @@
             actionlint
             kubeconform
             nixfmt
+            # promtool, for checking and testing the Prometheus rule files.
+            prometheus.cli
             prek
             # python-qpid-proton publishes no Linux wheel, so uv builds it from its sdist. Its build asks
             # pkg-config for OpenSSL, so both come from the shell rather than from a host whose headers
