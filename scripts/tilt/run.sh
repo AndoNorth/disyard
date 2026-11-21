@@ -1,8 +1,11 @@
 #!/usr/bin/env bash
 # Starts Tilt for a preset: `tilt ci` for the unattended presets (ci, soak), `tilt up` for dev.
+# The observability switch is the value recorded for the cluster, exported as WFT_OBS over the caller's own.
 # Usage: run.sh <ci|dev|soak> [tilt args...]. Exit codes: tilt's own, 2 usage.
 set -euo pipefail
 cd "$(dirname "$0")/../.."
+WFT_OBS=$(scripts/cluster/obs.sh)
+export WFT_OBS
 
 preset=${1:-}
 [ $# -gt 0 ] && shift

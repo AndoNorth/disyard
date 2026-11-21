@@ -66,6 +66,28 @@ Paths under `/mnt/c` use 9p, where file watching is unreliable and Postgres and 
 `docker-engine` and `docker-version` check the daemon, and `cgroup-v2` checks the unified hierarchy kind requires.
 The setup steps are in [docs/dev-setup.md](dev-setup.md).
 
+## Observability switch
+
+The observability stack runs only on a `ci` or `soak` cluster brought up with the switch on, and `off` is the default.
+
+```sh
+WFT_OBS=on nix develop -c just up
+```
+
+With the switch on, each `obs` node takes the preset's `obs_stack` size instead of its own, so the host needs `obs_memory_mib` instead of `memory_mib` (13,696 MiB for `ci`, 15,872 MiB for `soak`).
+`memory-vs-preset` reads `obs_memory_mib` when `WFT_OBS=on`, and warns when the host holds `memory_mib` but not `obs_memory_mib`, because the same host still runs the cluster with the switch off.
+`dev` has no `obs_stack`, so `WFT_OBS=on` with `dev` is a usage error (exit 2).
+
+The node size is fixed when kind creates the node, so the switch is chosen at `just up` and recorded as `cluster.obs` beside `cluster.owner` in the state directory (`$XDG_STATE_HOME/weft`, default `~/.local/state/weft`).
+A later `just up` with the other value is refused (exit 4) until `just nuke`, which removes the record.
+A missing record reads as `off`, so a cluster brought up before the switch existed is a switch-off cluster.
+
+`scripts/cluster/obs.sh` prints the recorded value.
+`scripts/tilt/run.sh` and `just cluster-verify` export it as `WFT_OBS` over the caller's own, so Tilt enables the `opt_in` groups of `deploy/tilt/profiles.yaml` and the checks expect the obs node that exists.
+`scripts/cluster/render.sh`, `namespaces.sh` and `budget.sh` run before or without a cluster, so they read `WFT_OBS` from the environment.
+A module adds `obs_env()` from `deploy/tilt/obs.star` to its container env, which names the collector and Pyroscope only with the switch on.
+GitHub CI never deploys the stack: `just up` refuses `WFT_OBS=on` when `GITHUB_ACTIONS` is `true` (exit 2), and no workflow sets it.
+
 ## Host access map
 
 `deploy/host/ports.yaml` is the one table of endpoints a host process can reach without Tilt running.

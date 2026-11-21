@@ -8,6 +8,7 @@
 #   apply  create or update the namespaces, LimitRanges and quotas (default)
 #   render print the quotas without touching the cluster
 #   check  print each quota next to the live pool allocatable, then admit a pod without resources and reject one above the quota
+# WFT_OBS=on sizes the obs node, and so the wft-obs quota, at the preset's obs_stack.
 # Usage: namespaces.sh [apply|render|check] <preset>. Exit 0 ok, 1 a check failed, 2 usage.
 set -euo pipefail
 root=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
@@ -19,7 +20,7 @@ mode=apply
 [ $# -eq 2 ] && { mode=$1; shift; }
 [ $# -eq 1 ] && [ -f "deploy/presets/$1.yaml" ] && [[ $mode =~ ^(apply|render|check)$ ]] ||
     { echo "usage: namespaces.sh [apply|render|check] <preset>" >&2; exit 2; }
-preset=deploy/presets/$1.yaml
+sized=$(scripts/cluster/obs.sh preset "$1") || exit $?
 context=${WFT_CONTEXT:-kind-wft}
 k() { kubectl --context "$context" "$@"; }
 
@@ -31,7 +32,7 @@ headroom_percent=5
 
 # Allocatable of the nodes of one pool from the preset, as "<milli> <MiB>".
 pool_alloc() {
-    yq ".nodes[] | select(.role == \"$1\") | .count + \" \" + .cpus + \" \" + .memory_mib" "$preset" |
+    yq ".nodes[] | select(.role == \"$1\") | .count + \" \" + .cpus + \" \" + .memory_mib" - <<<"$sized" |
         awk -v r="$cpu_reserved_milli" '{ print $1 * ($2 * 1000 - r), $1 * ($3 - (256 + int(($3 + 15) / 16))) }'
 }
 # Sum of pool_alloc over the pools of a namespace, then the headroom added and rounded up.

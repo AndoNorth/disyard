@@ -1,9 +1,12 @@
 #!/usr/bin/env bash
 # Brings up the kind cluster wft and its local registry for WFT_PRESET (default ci) through ctlptl.
+# WFT_OBS=on turns the observability switch on: the obs node takes the preset's obs_stack size, and the value is
+# recorded beside the owner, because the node size is fixed when the cluster is created.
 # Applies the namespaces and quotas of the preset once every node is Ready.
 # A second run with nothing changed leaves every container as it was.
-# Exit 0 every node Ready, 1 the cluster did not come up, 2 usage, 4 refused: the preset needs more memory than the
-# host has, or the cluster wft is one this script did not start (or started for another preset).
+# Exit 0 every node Ready, 1 the cluster did not come up, 2 usage (WFT_OBS=on on a preset without obs_stack or under
+# GitHub Actions), 4 refused: the preset needs more memory than the host has, or the cluster wft is one this script did
+# not start (or started for another preset, or with the other switch value).
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 # shellcheck source=/dev/null
@@ -13,7 +16,13 @@ preset=${WFT_PRESET:-ci}
 state=${WFT_STATE_DIR:-${XDG_STATE_HOME:-$HOME/.local/state}/weft}
 context=kind-wft
 
+obs=${WFT_OBS:-off}
+
 refuse() { echo "refused: $*" >&2; exit 4; }
+
+# GitHub CI never deploys the observability stack.
+[ "$obs" = on ] && [ "${GITHUB_ACTIONS:-}" = true ] && { echo "usage: WFT_OBS=on is refused under GitHub Actions" >&2; exit 2; }
+scripts/cluster/obs.sh preset "$preset" >/dev/null || exit $?
 
 # Every recipe that touches the cluster holds one lock, unless a caller already holds it for a longer sequence.
 if [ -z "${WFT_CLUSTER_LOCK_HELD:-}" ]; then
@@ -21,11 +30,16 @@ if [ -z "${WFT_CLUSTER_LOCK_HELD:-}" ]; then
     flock -w 900 9 || { echo "could not take /tmp/wft-cluster.lock" >&2; exit 1; }
 fi
 
+if [ -f "$state/cluster.owner" ] && kind get clusters 2>/dev/null | grep -qx wft; then
+    recorded=$(scripts/cluster/obs.sh)
+    [ "$recorded" = "$obs" ] || refuse "cluster wft was started with WFT_OBS=$recorded, not $obs, run with WFT_OBS=$recorded or delete it with: just nuke"
+fi
+
 out=$(scripts/cluster/render.sh "$preset") || exit $?
 
-need=$(yq '.memory_mib' "deploy/presets/$preset.yaml")
+need=$(yq "$([ "$obs" = on ] && echo .obs_memory_mib || echo .memory_mib)" "deploy/presets/$preset.yaml")
 have=$(($(sed -n 's/^MemTotal: *\([0-9]*\) kB.*/\1/p' /proc/meminfo) / 1024))
-[ "$have" -ge "$need" ] || refuse "preset $preset needs $need MiB and the host has $have MiB"
+[ "$have" -ge "$need" ] || refuse "preset $preset with WFT_OBS=$obs needs $need MiB and the host has $have MiB"
 
 # The owner file is written before the cluster exists, so a run that dies half way still owns what it created.
 if kind get clusters 2>/dev/null | grep -qx wft; then
@@ -35,6 +49,7 @@ if kind get clusters 2>/dev/null | grep -qx wft; then
 else
     mkdir -p "$state"
     echo "$preset" >"$state/cluster.owner"
+    echo "$obs" >"$state/cluster.obs"
 fi
 
 # A node container that exited is started again, because the API server keeps reporting its node Ready for a while.
@@ -73,4 +88,4 @@ scripts/cluster/allocatable.sh "$out/limits.yaml" || {
     exit 1
 }
 scripts/cluster/namespaces.sh apply "$preset"
-echo "cluster wft ready: preset $preset, $got nodes"
+echo "cluster wft ready: preset $preset, WFT_OBS=$obs, $got nodes"

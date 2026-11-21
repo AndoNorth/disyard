@@ -7,6 +7,7 @@
 # A node line counts requests against the node allocatable, because the scheduler places pods on requests, and a quota
 # line counts what each line of namespaces.sh render limits. The worker pools are left to slots.sh, whose pod slots
 # own their room.
+# WFT_OBS=on adds the profile's opt_in groups and sizes the obs node at the preset's obs_stack.
 # WFT_MODULES_DIR names the directory searched for module.yaml, one or two levels down as the Tiltfile searches.
 # Usage: budget.sh <preset>. Exit 0 everything fits, 1 a node or a quota line is over, 2 usage.
 set -euo pipefail
@@ -16,11 +17,11 @@ cd "$root"
 source scripts/verify/cluster/lib/tools.sh
 
 [ $# -eq 1 ] && [ -f "deploy/presets/$1.yaml" ] || { echo "usage: budget.sh <preset>" >&2; exit 2; }
-preset=deploy/presets/$1.yaml
+sized=$(scripts/cluster/obs.sh preset "$1") || exit $?
 modules_dir=${WFT_MODULES_DIR:-deploy}
 profiles=deploy/tilt/profiles.yaml
 [ "$(yq ".profiles | has(\"$1\")" "$profiles")" = true ] || { echo "usage: budget.sh <preset>: no profile $1 in $profiles" >&2; exit 2; }
-groups=" $(yq ".profiles.$1.groups | join(\" \")" "$profiles") "
+groups=" $(scripts/cluster/obs.sh groups "$1") "
 module_profile=$(yq ".profiles.$1.modules // \"$1\"" "$profiles")
 
 # The infra node also runs the control pods, as namespaces.sh maps them.
@@ -89,7 +90,7 @@ report() { # <label> <used> <limit> <unit>
     fi
 }
 for node in $(printf '%s\n' "${node_of[@]}" | sort -u); do
-    read -r count cpus mem < <(yq ".nodes[] | select(.role == \"$node\") | .count + \" \" + .cpus + \" \" + .memory_mib" "$preset")
+    read -r count cpus mem < <(yq ".nodes[] | select(.role == \"$node\") | .count + \" \" + .cpus + \" \" + .memory_mib" - <<<"$sized")
     report "node $node requests cpu:" $((${node_cpu[$node]:-0} + count * DAEMON_CPU_MILLI)) \
         $((count * ($(milli "$cpus") - cpu_reserved_milli))) m
     report "node $node requests memory:" $((${node_mem[$node]:-0} + count * DAEMON_MEM_MIB)) \

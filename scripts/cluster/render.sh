@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # Renders the ctlptl cluster and registry files and one kubelet patch per node from a preset, without starting anything.
 # Usage: render.sh <preset>. Writes <dir>/<preset>/{cluster.yaml,registry.yaml,limits.yaml,patches/<node>/*.yaml} and
-# prints the directory. WFT_HOST_MEM_KIB and WFT_HOST_CPUS override the host size read from the docker daemon. The kind cluster is always named wft, so every preset renders the same context and container names.
+# prints the directory. WFT_OBS=on sizes the obs node at the preset's obs_stack. WFT_HOST_MEM_KIB and WFT_HOST_CPUS override the host size read from the docker daemon. The kind cluster is always named wft, so every preset renders the same context and container names.
 # The directory is WFT_RENDER_DIR, or a cache directory outside the tree, because the output holds ctlptl, kubeadm and
 # kubelet documents that the repo's manifest lint has no schema for.
-# Exit 0 rendered, 1 the preset or a table is invalid, 2 usage.
+# Exit 0 rendered, 1 the preset or a table is invalid, 2 usage, including WFT_OBS=on on a preset without obs_stack.
 set -euo pipefail
 root=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
 cd "$root"
@@ -17,6 +17,7 @@ preset=deploy/presets/$name.yaml
 [ -f "$preset" ] || { echo "usage: render.sh <preset>: no $preset" >&2; exit 2; }
 
 contracts/preset/check.sh "$preset" >&2 || exit 1
+sized=$(scripts/cluster/obs.sh preset "$name") || exit $?
 contracts/topology/check.sh contracts/topology/topology.yaml >&2 || exit 1
 
 scripts/cluster/slots.sh "$name" >&2 || exit 1
@@ -176,7 +177,7 @@ NODE
                 etcd_patch | indent
             fi
         done
-    done < <(yq '.nodes | sort_by(.role == "control-plane" | not) | .[] | .role + " " + .count + " " + .memory_mib + " " + .cpus' "$preset")
+    done < <(yq '.nodes | sort_by(.role == "control-plane" | not) | .[] | .role + " " + .count + " " + .memory_mib + " " + .cpus' - <<<"$sized")
 } >"$out/cluster.yaml"
 
 # The registry listens on loopback only. ctlptl wires it into the kind nodes as localhost:<port>.

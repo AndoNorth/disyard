@@ -6,6 +6,9 @@
 # LimitRanges; each module's own readiness; live requests per node within the budget; no Pending pod, quota refusal,
 # OOM kill or memory pressure in the infra and control namespaces; and every host port bound to loopback only.
 # The worker namespace is left out of the pressure check, because pool OOM kills are workload behaviour.
+# The observability switch is the value recorded for the cluster, exported as WFT_OBS over the caller's own, so the
+# budget, render and quota checks see the obs node that exists. WFT_MODULES_DIR names the directory searched for
+# module.yaml (default deploy).
 # WFT_PRESET selects the preset (default ci). Every check prints "ok <check> <detail>" or "FAIL <check> <detail>",
 # then a count line follows.
 # Exit 0 every check ok, 1 a check failed, 2 usage, 4 refused: no cluster wft, or one started for another preset.
@@ -31,12 +34,15 @@ fi
 kind get clusters 2>/dev/null | grep -qx wft || refuse "no kind cluster named wft, start one with: just up"
 started=$(cat "$state/cluster.owner" 2>/dev/null || true)
 [ "$started" = "$preset" ] || refuse "cluster wft was started for preset ${started:-unknown}, not $preset"
+WFT_OBS=$(scripts/cluster/obs.sh)
+export WFT_OBS
 
 topology=contracts/topology/topology.yaml
 pool_label=$(yq '.pool_label' "$topology")
 taint_effect=$(yq '.taint_effect' "$topology")
 profiles=deploy/tilt/profiles.yaml
-groups=" $(yq ".profiles.$preset.groups | join(\" \")" "$profiles") "
+groups=" $(scripts/cluster/obs.sh groups "$preset") "
+modules_dir=${WFT_MODULES_DIR:-deploy}
 module_profile=$(yq ".profiles.$preset.modules // \"$preset\"" "$profiles")
 work=$(mktemp -d)
 trap 'rm -rf "$work"' EXIT
@@ -153,7 +159,7 @@ resource_ready() { # <namespace> <kind/name> <condition>
 
 check_ready() {
     local m name ns n=0 bad="" command
-    for m in $(find deploy -mindepth 2 -maxdepth 3 -name module.yaml | sort); do
+    for m in $(find "$modules_dir" -mindepth 2 -maxdepth 3 -name module.yaml | sort); do
         [[ $groups == *" $(yq '.group' "$m") "* ]] && [ "$(yq ".profiles | contains([\"$module_profile\"])" "$m")" = true ] || continue
         name=$(yq '.name' "$m") ns=$(yq '.namespace' "$m") n=$((n + 1))
         if [ "$(yq '.readiness | has("command")' "$m")" = true ]; then
@@ -163,7 +169,7 @@ check_ready() {
             resource_ready "$ns" "$(yq '.readiness.resource' "$m")" "$(yq '.readiness.condition' "$m")" || bad+=" $name"
         fi
     done
-    if [ -z "$bad" ]; then ok ready "$n modules of profile $preset ready"; else fail ready "not ready:$bad"; fi
+    if [ -z "$bad" ]; then ok ready "$n modules of profile $preset with WFT_OBS=$WFT_OBS ready"; else fail ready "not ready:$bad"; fi
 }
 
 # shellcheck disable=SC2016 # $n is a yq variable
