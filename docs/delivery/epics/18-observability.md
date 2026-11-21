@@ -96,7 +96,7 @@ After lane 0 merges, `contracts/instrumentation/README.md`, `metrics.yaml` and `
 | Item | Proposal |
 | --- | --- |
 | Contract | `contracts/instrumentation/` version 4, owner #13, with the README's owner line changed, the Log fields section rewritten to D15 with its mapping from the context attribute names, the `external` section of D3 in the schema, `attempt`, `attempt_id` and `traceparent` added to the label denylist, the loader and new vectors, and the platform catalogue below. The `docs/contracts.md` row and `docs/architecture/15-contracts.drawio` change in the same PR. Consumers: every emitter, #14, #15, #16, #17 |
-| Preset contract | `contracts/preset/` version 2 (0.3 (issue), a contract-change PR in lane 0): the optional `obs_stack` and `obs_memory_mib` of D19 in the schema, held to the reservation rule and to the node sum by the loader, with vectors `valid/obs-stack.yaml`, `invalid/node-memory-below-reservation/obs-stack-small.yaml` and an invalid vector whose `obs_memory_mib` is not the switch-on sum. Consumers: #2 through R.1 and R.2, every epic through `just up`, `just doctor`, #16, #17 |
+| Preset contract | `contracts/preset/` version 3 (0.3 (issue), a contract-change PR in lane 0): the optional `obs_stack` and `obs_memory_mib` of D19 in the schema, held to the reservation rule and to the node sum by the loader, with vectors `valid/obs-stack.yaml`, `invalid/node-memory-below-reservation/obs-stack-small.yaml` and an invalid vector whose `obs_memory_mib` is not the switch-on sum. Consumers: #2 through R.1 and R.2, every epic through `just up`, `just doctor`, #16, #17 |
 | Catalogue, built names | every name of admission D14, dispatch D15 and the four emitted workflow names, with their bounded labels as the code declares them |
 | Catalogue, new names (proposals, final names pinned by 0.1) | placement: `wft_placement_place_seconds`, `wft_placement_decisions_total{pool,verdict}`, `wft_placement_escalations_total{pool}`, `wft_placement_snapshot_age_seconds`; workers: `wft_worker_tasks_total{pool,exit_class}`, `wft_worker_task_seconds{pool,exit_class}`, `wft_worker_heartbeat_lag_seconds{pool}`, `wft_worker_aggregate_inputs_total`, `wft_worker_aggregate_rows_total`; workflow: `wft_workflow_job_seconds{job_class,outcome}`, `wft_workflow_jobs_total{job_class,outcome}`; smoke gate (D25): `wft_smoke_row_verdict{row,verdict}`, `wft_smoke_row_seconds{row}`; admission: `wft_admission_cap_jobs{scope}`; state inputs: `wft_state_<input name>` with the input's unit, for the `sql`, `sql_labelled` and `invariants` inputs only (D12); `wft_obs`: `wft_obs_log_dropped_total{component}`, `wft_obs_span_dropped_total{component}` |
 | Catalogue, external | the Temporal SDK slot, poll and schedule-to-start series, the Temporal server backlog, cache and heartbeat timeout series, RabbitMQ detailed queue series, kube-state-metrics pod, deployment, node and last-terminated series, cAdvisor container memory and CPU series, kubelet volume stats, SeaweedFS bucket and disk series, and the self-metrics of Prometheus, Loki, Tempo, Pyroscope, Grafana and the collector, each named exactly after S14 |
@@ -112,7 +112,7 @@ Goal (from the epic): observability for the job system itself, metrics, logs, tr
 Fleet health, queue depths and alerts live in Grafana.
 The epic owns the contract that makes every component emit consistently, the stack that stores it, and the dashboards and alerts as code.
 
-This pass delivers, under section 0: the observability switch on `ci` and `soak`; the instrumentation contract v4 with the renamed log fields and the catalogue, and the preset contract v2; `wft_obs`; the stack behind the switch (Prometheus, kube-state-metrics, Loki, one collector, Tempo, Pyroscope, Grafana, and a state inputs exporter); the Temporal UI behind the same switch; JSON logs, metrics, trace export and profiles in every Python service; the alert set with `promtool` tests; the dashboards, the smoke results dashboard included; the catalogue contract test; and the telemetry row of `just smoke` with its results push.
+This pass delivers, under section 0: the observability switch on `ci` and `soak`; the instrumentation contract v4 with the renamed log fields and the catalogue, and the preset contract v3; `wft_obs`; the stack behind the switch (Prometheus, kube-state-metrics, Loki, one collector, Tempo, Pyroscope, Grafana, and a state inputs exporter); the Temporal UI behind the same switch; JSON logs, metrics, trace export and profiles in every Python service; the alert set with `promtool` tests; the dashboards, the smoke results dashboard included; the catalogue contract test; and the telemetry row of `just smoke` with its results push.
 
 Where the epic body is overtaken:
 
@@ -157,9 +157,9 @@ Deferred, and to which epic:
 | From | What | Pinned at | Stub used until it exists |
 | --- | --- | --- | --- |
 | #2 | Module contract, group `obs`, `wft-obs` quota and LimitRange, pool label and taint | module v1, topology v1 | none, merged |
-| #2, contract change | 0.3: preset contract v2 with `obs_stack` and `obs_memory_mib` | preset v1 | none: 0.3 merges first in lane 0 |
-| #2, `revisit` | R.1: the switch of D19 (`opt_in` profiles, the record, every reader) | preset v2, `deploy/tilt/profiles.yaml` | none: R.1 merges before S13 |
-| #2, `revisit` | R.2: the `obs_stack` figures from S13 and the Grafana and Temporal UI host port rows | preset v2 (numbers only), `deploy/host/ports.yaml` | none: R.2 merges before S.1's T2 line |
+| #2, contract change | 0.3: preset contract v3 with `obs_stack` and `obs_memory_mib` | preset v2 | none: 0.3 merges first in lane 0 |
+| #2, `revisit` | R.1: the switch of D19 (`opt_in` profiles, the record, every reader) | preset v3, `deploy/tilt/profiles.yaml` | none: R.1 merges before S13 |
+| #2, `revisit` | R.2: the `obs_stack` figures from S13 and the Grafana and Temporal UI host port rows | preset v3 (numbers only), `deploy/host/ports.yaml` | none: R.2 merges before S.1's T2 line |
 | #4 | Instrumentation contract (taken over), `wft_events.metrics`, `wft_temporal.trace` | instrumentation v3 | none, merged |
 | #4, `revisit` | E.1: a listener hook on `wft_events.metrics.registry` | child issue of #4 | none: E.1 merges before H.2 |
 | #7 | Port 15692, the detailed families, the client counters, the three alert rules | broker v1, instrumentation v3 | none, merged |
@@ -177,7 +177,7 @@ Deferred, and to which epic:
 
 | To | What | Where it lives (path) | Shape | Version |
 | --- | --- | --- | --- | --- |
-| every epic, the captain | The observability switch | `WFT_OBS` at `just up`, the record `cluster.obs` in the state directory, `scripts/cluster/obs.sh`, `obs_stack` and `obs_memory_mib` in `deploy/presets/{ci,soak}.yaml`, `opt_in` in `deploy/tilt/profiles.yaml`, `deploy/tilt/obs.star` | D19, D20; `up.sh` exit 2 for `on` under `GITHUB_ACTIONS` or on `dev`, exit 4 for a cluster recorded with the other value | preset v2 |
+| every epic, the captain | The observability switch | `WFT_OBS` at `just up`, the record `cluster.obs` in the state directory, `scripts/cluster/obs.sh`, `obs_stack` and `obs_memory_mib` in `deploy/presets/{ci,soak}.yaml`, `opt_in` in `deploy/tilt/profiles.yaml`, `deploy/tilt/obs.star` | D19, D20; `up.sh` exit 2 for `on` under `GITHUB_ACTIONS` or on `dev`, exit 4 for a cluster recorded with the other value | preset v3 |
 | every emitter, #14, #15, #16, #17 | Instrumentation contract and catalogue | `contracts/instrumentation/` | 0.4 | instrumentation v4 |
 | every Python service, #16, #17 | `wft_obs` | `packages/obs/` | `setup(component)`, `logs.bind(**fields)` (D15 names plus a `traceparent` argument), `metrics.runtime(address, buckets)`, `metrics.export_registry(meter)`, `query.prom`, `query.targets`, `query.loki`, `query.trace`, `query.profiled`, `targets.JOBS`, `testing.FakeObs`, `python -m wft_obs.inputs` | obs v1 |
 | every epic, the captain | Obs modules | `deploy/obs/{prometheus,kube-state-metrics,loki,collector,tempo,pyroscope,grafana,state-inputs}/` | module v1, group `obs`, `profiles: [ci]`, enabled only with the switch on | module v1 |
@@ -221,7 +221,7 @@ Departures from the method, stated so the review approves them knowingly:
 - Lane 0 declares in `packages/obs/pyproject.toml` the full dependency set of the lanes (`temporalio`, `opentelemetry-sdk`, `opentelemetry-exporter-otlp-proto-http`, `pyroscope-io`, `pyyaml`, `wft-events`, `wft-stateops`), as #17's decision 20 did, because lane H owns modules inside a package whose `pyproject.toml` is lane 0's.
 - T.1 edits files of #17's pass 1 under that spec's decision 11, which gives this row to this epic, including the reserve the gate keeps after its job rows (D16); #17 stays open for pass 2, so this is not a `revisit` of a closed epic.
 - The E issues are `revisit` children of five closed epics because their specs hand the emitters to this epic (decisions 10 to 16); R.1 and R.2 are `revisit` children of #2 because the switch changes #2's profiles and scripts (decision 22), while the preset contract itself changes in lane 0 by a contract-change PR (0.3, `docs/delivery/method.md:143-144`), whose `contracts/` part follows `contracts/preset/README.md:71` and whose diagram label is the next departure; S.4 is a `revisit` child of #6 because it changes the Temporal module (decision 26).
-- 0.3 edits the version label of the preset box of `docs/architecture/15-contracts.drawio` (and its svg) beside `contracts/`, although `contracts/preset/README.md:71` says a contract-change PR touches `contracts/` only, because the box shows the version ("#2 owner, v1") and the bump to v2 would otherwise leave the diagram stale; the store v4 PR set the precedent of a version bump and its diagram edit in one PR (https://github.com/AndoNorth/weft/pull/468, `2aea3a5`).
+- 0.3 edits the version label of the preset box of `docs/architecture/15-contracts.drawio` (and its svg) beside `contracts/`, although `contracts/preset/README.md:71` says a contract-change PR touches `contracts/` only, because the box shows the version ("#2 owner, v2") and the bump to v3 would otherwise leave the diagram stale; the store v4 PR set the precedent of a version bump and its diagram edit in one PR (https://github.com/AndoNorth/weft/pull/468, `2aea3a5`).
 
 ## 4. Issues
 
@@ -231,7 +231,7 @@ The `revisit` issues (R.1, R.2, S.4, E.1 to E.6) are sub-issues of the closed ep
 The epic-wide tracking comment on #13 lists them by lane in start order.
 Done means, for every issue: `just ci` green on the branch, the output of the named tests pasted in the PR, and nothing outside Owns and the shared files changed.
 
-- [#546](https://github.com/AndoNorth/weft/issues/546) 0.3 Preset contract v2
+- [#546](https://github.com/AndoNorth/weft/issues/546) 0.3 Preset contract v3
 - [#547](https://github.com/AndoNorth/weft/issues/547) 0.1 Instrumentation contract v4 and the catalogue
 - [#548](https://github.com/AndoNorth/weft/issues/548) 0.2 Package skeleton, query client, fake, runbook and diagram
 - [#549](https://github.com/AndoNorth/weft/issues/549) R.1 The observability switch (revisit of #2)
