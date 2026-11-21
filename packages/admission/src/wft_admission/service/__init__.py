@@ -29,6 +29,8 @@ from temporalio.client import Client
 from temporalio.runtime import PrometheusConfig, Runtime, TelemetryConfig
 from wft_broker.client import Credentials, Delivery, connect
 from wft_broker.models import BrokerUnavailable, TenancyProfile
+from wft_obs import logs
+from wft_obs.metrics import export_registry
 from wft_temporal import event_data_converter, tracing_interceptor
 from wft_workflow.contract import naming
 from wft_workflow.models import QUEUE
@@ -251,10 +253,13 @@ class Jobs:
 
 
 def _timed(start: Start, metrics: Metrics) -> Start:
-    """`start`, observing each started job's wait from its submission."""
+    """`start`, observing each started job's wait from its submission, with the job and its trace
+    bound to every log line of the start."""
 
     async def timed(row, accepted):
-        outcome = await start(row, accepted)
+        with logs.bind(job_id=row.job_id, traceparent=row.traceparent):
+            log.info("claimed job %s, starting its workflow", row.job_id)
+            outcome = await start(row, accepted)
         if outcome == "started":
             waited = (datetime.now(UTC) - row.created_at).total_seconds()
             metrics.observe("wft_admission_wait_seconds", waited, priority_class=row.priority_class)
@@ -306,6 +311,7 @@ async def serve(
         def connect_db() -> psycopg.Connection:
             return psycopg.connect(config.dsn, autocommit=True)
 
+        export_registry(runtime.metric_meter)
         metrics = Metrics(runtime.metric_meter, profile.priority_classes, caps)
         intake = Intake(
             profile,

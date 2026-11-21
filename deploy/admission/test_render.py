@@ -25,6 +25,7 @@ INPUTS = [
     "contracts/topology/topology.yaml",
     "contracts/temporal/naming.yaml",
     "contracts/tenancy/tenancy.yaml",
+    "deploy/tilt/obs.star",
 ]
 DEPENDS = ["appdb-migrate", "temporal-bootstrap", "rabbitmq"]
 SECRETS = ["admission-logins", "admission-broker"]
