@@ -1,11 +1,15 @@
 """Every provisioned dashboard is valid JSON, reads only the stack's datasources, and no panel query
-groups, matches or labels a series by a label on the instrumentation denylist."""
+groups, matches or labels a series by a label on the instrumentation denylist.
+
+The characterization dashboard shows every catalogued histogram on its pinned buckets, and the smoke
+dashboard reads the pushed results of the smoke gate and its `smoke` annotations."""
 
 import json
 import re
 from pathlib import Path
 
 import pytest
+import yaml
 
 ROOT = Path(__file__).resolve().parents[4]
 DASHBOARDS = sorted((ROOT / "deploy/obs/grafana/dashboards").glob("*.json"))
@@ -102,3 +106,41 @@ def test_no_denied_label(path):
             query = target.get("expr", "") or target.get("query", "")
             denied = labels(query, target.get("legendFormat", "")) & DENYLIST
             assert not denied, f"{panel['title']}: {sorted(denied)}"
+
+
+CATALOGUE = yaml.safe_load((ROOT / "contracts/instrumentation/metrics.yaml").read_text())["metrics"]
+
+
+def exprs(name: str) -> list[str]:
+    dashboard = load(ROOT / f"deploy/obs/grafana/dashboards/{name}.json")
+    return [
+        target["expr"]
+        for panel in panels(dashboard["panels"])
+        for target in panel.get("targets", [])
+        if target.get("expr")
+    ]
+
+
+def test_the_g1_dashboards_are_provisioned():
+    names = {path.stem for path in DASHBOARDS}
+    assert {"fleet", "intake-admission", "paused-jobs", "characterization", "smoke"} <= names
+
+
+def test_characterization_shows_every_histogram_on_its_buckets():
+    text = exprs("characterization")
+    for name, metric in CATALOGUE.items():
+        if metric["type"] != "histogram":
+            continue
+        by_le = [e for e in text if f"{name}_bucket" in e and "by (le)" in e]
+        assert any("histogram_quantile" in e for e in by_le), f"{name} has no quantile panel"
+        assert any("histogram_quantile" not in e for e in by_le), f"{name} has no bucket panel"
+
+
+def test_smoke_reads_the_pushed_results_and_annotations():
+    text = exprs("smoke")
+    assert any("wft_smoke_row_seconds" in e for e in text)
+    assert any('wft_smoke_row_verdict{row="run"}' in e for e in text)
+    assert any('wft_smoke_row_verdict{verdict="FAIL"' in e for e in text)
+    smoke = load(ROOT / "deploy/obs/grafana/dashboards/smoke.json")
+    tags = [a["target"]["tags"] for a in smoke["annotations"]["list"] if "target" in a]
+    assert ["smoke"] in tags
