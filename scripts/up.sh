@@ -35,6 +35,9 @@ if [ -f "$state/cluster.owner" ] && kind get clusters 2>/dev/null | grep -qx wft
     [ "$recorded" = "$obs" ] || refuse "cluster wft was started with WFT_OBS=$recorded, not $obs, run with WFT_OBS=$recorded or delete it with: just nuke"
 fi
 
+# A new cluster binds the registry and the host ports, and a running one holds them itself.
+kind get clusters 2>/dev/null | grep -qx wft || scripts/check-dev-ports.sh || exit 1
+
 out=$(scripts/cluster/render.sh "$preset") || exit $?
 
 need=$(yq "$([ "$obs" = on ] && echo .obs_memory_mib || echo .memory_mib)" "deploy/presets/$preset.yaml")

@@ -60,7 +60,8 @@ No logic lives in the justfile, and each real recipe calls `scripts/<name>.sh`.
 | `verify-lint` | real | - | checks each `verify-<domain>` skill has a `SKILL.md` named after its directory, passes when none exist |
 | `pre-push` | real | - | the fast gate that the pre-push hook runs, see [Git hooks](#git-hooks) |
 | `hooks-status` | real | - | prints whether the git hooks are installed for this checkout |
-| `up` | real | - | brings up the kind cluster `wft` and its local registry for `WFT_PRESET` (default `ci`) |
+| `ports` | real | - | reports each host port a run binds that something already holds, with the holder's pid, start time and command, and exits 1, see [Port check](#port-check) |
+| `up` | real | - | brings up the kind cluster `wft` and its local registry for `WFT_PRESET` (default `ci`), after the port check when the cluster does not exist yet |
 | `down` | real | - | stops the node containers and keeps the cluster, the registry and the host data directory |
 | `nuke` | real | - | destroys the cluster, its registry and the host data directory of the preset that started it |
 | `cluster-verify` | real | - | read-only checks that the cluster `wft` matches `WFT_PRESET` (default `ci`): preset, pod slots, module budget, nodes, node limits, quotas, module readiness, live requests, pressure and loopback ports, one `ok` or `FAIL` line each |
@@ -77,6 +78,14 @@ scripts/smoke.sh
 not implemented: owned by #17
 error: recipe `smoke` failed on line 2 with exit code 3
 ```
+
+### Port check
+
+`nix develop -c just ports` lists every host port that something already listens on, and `just up` runs it before it creates a cluster.
+The ports are the rows of `scripts/dev-ports.map` plus those of `deploy/host/ports.yaml`, and `WFT_SLOT` shifts the rows that carry a stride.
+A port published by one of the `wft-*` containers is labelled a leftover, and nothing is stopped or removed.
+`lsof` and `ss` are host tools: without both the check exits 0 and prints an install hint.
+The T1 helper of `wft_itest` takes a free port when a port of its slot is held, so a squatter does not fail an integration test.
 
 ### Observability switch
 
