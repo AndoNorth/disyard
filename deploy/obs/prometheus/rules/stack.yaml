@@ -1,0 +1,13 @@
+groups:
+  - name: wft-stack
+    rules:
+      - alert: WftObsDataLoss
+        expr: |
+          sum by (component) (increase(wft_obs_log_dropped_total[15m])) > 0
+          or
+          sum by (component) (increase(wft_obs_span_dropped_total[15m])) > 0
+        labels:
+          severity: warning
+        annotations:
+          summary: Component {{ $labels.component }} dropped log records or spans from a full export queue.
+          description: The collector or a backend behind it is not keeping up, and the missing telemetry is gone.

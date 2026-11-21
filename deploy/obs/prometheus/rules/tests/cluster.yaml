@@ -1,0 +1,102 @@
+rule_files:
+  - ../cluster.yaml
+evaluation_interval: 1m
+tests:
+  - interval: 1m
+    name: container oom fires on an oom kill and on memory stall and stays silent otherwise
+    input_series:
+      - series: >-
+          kube_pod_container_status_last_terminated_exitcode{namespace="wft-obs",pod="s14-oom",container="oom",uid="a"}
+        values: '137x20'
+      - series: >-
+          kube_pod_container_status_last_terminated_reason{namespace="wft-obs",pod="s14-oom",container="oom",uid="a",reason="OOMKilled"}
+        values: '1x20'
+      - series: >-
+          kube_pod_container_status_last_terminated_exitcode{namespace="wft",pod="crashy",container="app",uid="b"}
+        values: '1x20'
+      - series: >-
+          kube_pod_container_status_last_terminated_reason{namespace="wft",pod="crashy",container="app",uid="b",reason="Error"}
+        values: '1x20'
+      - series: 'container_pressure_memory_stalled_seconds_total{namespace="wft-obs",pod="s14-limit",container="limit"}'
+        values: '0+30x20'
+      - series: 'container_pressure_memory_stalled_seconds_total{namespace="wft",pod="calm",container="app"}'
+        values: '0+0.01x20'
+      - series: 'container_pressure_memory_stalled_seconds_total{namespace="wft",pod="calm",container=""}'
+        values: '0+30x20'
+    alert_rule_test:
+      - eval_time: 4m
+        alertname: WftContainerOOM
+        exp_alerts: []
+      - eval_time: 10m
+        alertname: WftContainerOOM
+        exp_alerts:
+          - exp_labels: {severity: critical, namespace: wft-obs, pod: s14-limit, container: limit}
+            exp_annotations:
+              summary: Container limit of pod s14-limit was OOM killed or is stalled on memory.
+              description: >-
+                The last exit was 137 with reason OOMKilled, or the container waits on memory over 5
+                percent of the time, which is a container at its limit or a node short of memory.
+          - exp_labels: {severity: critical, namespace: wft-obs, pod: s14-oom, container: oom}
+            exp_annotations:
+              summary: Container oom of pod s14-oom was OOM killed or is stalled on memory.
+              description: >-
+                The last exit was 137 with reason OOMKilled, or the container waits on memory over 5
+                percent of the time, which is a container at its limit or a node short of memory.
+  - interval: 1m
+    name: pod restart fires for a crash restart and stays silent for oom restarts and other namespaces
+    input_series:
+      - series: 'kube_pod_container_status_restarts_total{namespace="wft",pod="crashy",container="app",uid="b"}'
+        values: '0 0 1 1 1 1 1'
+      - series: >-
+          kube_pod_container_status_last_terminated_reason{namespace="wft",pod="crashy",container="app",uid="b",reason="Error"}
+        values: '1x6'
+      - series: 'kube_pod_container_status_restarts_total{namespace="wft-obs",pod="s14-oom",container="oom",uid="a"}'
+        values: '0 0 1 1 1 1 1'
+      - series: >-
+          kube_pod_container_status_last_terminated_reason{namespace="wft-obs",pod="s14-oom",container="oom",uid="a",reason="OOMKilled"}
+        values: '1x6'
+      - series: >-
+          kube_pod_container_status_restarts_total{namespace="kube-system",pod="kindnet",container="cni",uid="c"}
+        values: '0 0 1 1 1 1 1'
+    alert_rule_test:
+      - eval_time: 4m
+        alertname: WftPodRestartUnexpected
+        exp_alerts:
+          - exp_labels: {severity: warning, namespace: wft, pod: crashy, container: app}
+            exp_annotations:
+              summary: Container app of pod crashy restarted.
+              description: The restart was not an OOM kill, which WftContainerOOM reports.
+      - eval_time: 30m
+        alertname: WftPodRestartUnexpected
+        exp_alerts: []
+  - interval: 1m
+    name: target down fires after 5 minutes and stays silent for a target that is up
+    input_series:
+      - series: 'up{job="kubernetes-pods",instance="10.0.0.1:9464"}'
+        values: '0x10'
+      - series: 'up{job="kubelet",instance="node-1:10250"}'
+        values: '1x10'
+    alert_rule_test:
+      - eval_time: 4m
+        alertname: WftTargetDown
+        exp_alerts: []
+      - eval_time: 7m
+        alertname: WftTargetDown
+        exp_alerts:
+          - exp_labels: {severity: critical, job: kubernetes-pods, instance: "10.0.0.1:9464"}
+            exp_annotations:
+              summary: Prometheus cannot scrape kubernetes-pods target 10.0.0.1:9464.
+              description: Series and alerts that depend on the target are blind.
+  - interval: 1m
+    name: watchdog always fires
+    input_series:
+      - series: 'up{job="kubelet"}'
+        values: '1x10'
+    alert_rule_test:
+      - eval_time: 5m
+        alertname: WftWatchdog
+        exp_alerts:
+          - exp_labels: {severity: info}
+            exp_annotations:
+              summary: The alerting pipeline is alive.
+              description: This alert always fires, and its absence means rules are not evaluated.
