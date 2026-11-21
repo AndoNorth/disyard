@@ -19,20 +19,6 @@ ALLOWED = set(logs.CORE) | set(logs.FIELDS)
 
 
 @pytest.fixture
-def root():
-    """Restores the root logger the test's `install` replaced, closing what it installed."""
-    logger = logging.getLogger()
-    saved, level = list(logger.handlers), logger.level
-    yield logger
-    for handler in list(logger.handlers):
-        logger.removeHandler(handler)
-        handler.close()
-    for handler in saved:
-        logger.addHandler(handler)
-    logger.setLevel(level)
-
-
-@pytest.fixture
 def lines(root, monkeypatch):
     """Installs the stdout handler alone into a buffer and returns a reader of its JSON lines."""
     monkeypatch.delenv(logs.ENDPOINT, raising=False)
