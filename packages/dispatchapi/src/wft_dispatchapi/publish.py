@@ -19,6 +19,7 @@ from wft_broker.models import BrokerUnavailable, Outcome, PublishTimeout, Topolo
 from wft_events import Event, build_event, to_bytes
 from wft_eventstore import insert_events
 from wft_jobstate import mark_published
+from wft_obs import logs
 
 from .submit import SOURCE
 
@@ -102,7 +103,10 @@ class Publisher:
             elif outcome is Outcome.REJECTED and full is not None:
                 full.add(key)
             elif outcome is Outcome.UNROUTABLE:
-                log.error("job %s: no intake queue %s", event.jobid, key)
+                with logs.bind(
+                    tenant=event.tenant, job_id=event.jobid, traceparent=event.traceparent
+                ):
+                    log.error("no intake queue %s", key)
         return not self.stopped
 
     def _receipt(self, conn: psycopg.Connection, event: Event) -> None:

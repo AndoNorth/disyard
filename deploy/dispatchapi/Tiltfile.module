@@ -66,6 +66,9 @@ env = {
     "WFT_TENANCY_PROFILE": tenancy["tilt_profiles"][tilt_profile],
     "WFT_METRICS_ADDRESS": "0.0.0.0:9090",
 }
+# Loaded only with the switch on, so a switch-off module never resolves the helper.
+if os.getenv("WFT_OBS") == "on":
+    env.update(load_dynamic("../tilt/obs.star")["obs_env"]())
 
 k8s_yaml(encode_yaml({
     "apiVersion": "apps/v1",
