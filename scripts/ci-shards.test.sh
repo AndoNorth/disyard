@@ -12,15 +12,16 @@ ok() { echo "ok   $*"; pass=$((pass + 1)); }
 fail() { echo "FAIL $*"; exit 1; }
 
 # How many shards select a path: the ones that name it, plus the last one unless it ignores it.
+# grep reads the whole list: grep -q exits at the first match, and pipefail turns the writer's SIGPIPE into a miss.
 selected_by() {
     local path=$1 n=0 name last
     read -ra names <<<"$("$shards" | tr -d '[]"' | tr , ' ')"
     last=${names[-1]}
     for name in "${names[@]}"; do
         if [ "$name" = "$last" ]; then
-            "$shards" "$name" | grep -qxF -- "--ignore=$path" || n=$((n + 1))
+            "$shards" "$name" | grep -xF -- "--ignore=$path" >/dev/null || n=$((n + 1))
         else
-            "$shards" "$name" | grep -qxF -- "$path" && n=$((n + 1))
+            "$shards" "$name" | grep -xF -- "$path" >/dev/null && n=$((n + 1))
         fi
     done
     echo "$n"
@@ -41,7 +42,7 @@ ok "the shard list tests every package, deploy/ and scripts/ exactly once"
 export CI_SHARDS=$'a: broker\nb: workflow scripts/\nrest:'
 covers_tree
 [ "$(selected_by packages/admission)" -eq 1 ] || fail "admission, named by no shard, is not run"
-"$shards" rest | grep -qxF -- --ignore=packages/admission && fail "rest ignores admission, which no shard names"
+"$shards" rest | grep -xF -- --ignore=packages/admission >/dev/null && fail "rest ignores admission, which no shard names"
 ok "a package no shard names runs in the last shard"
 
 [ "$("$shards")" = '["a","b","rest"]' ] || fail "names: got $("$shards")"
