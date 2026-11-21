@@ -4,6 +4,8 @@
 # The queue is unversioned and no build id reaches the pod, so a pod serves the workflows of every build.
 # Relative paths resolve against the calling module's directory.
 
+load("../tilt/obs.star", "obs_env")
+
 # The scratch volume and what lives on it: task scratch, the wasmtime module cache, HOME, the caches and the ready file.
 SCRATCH = "/var/wft"
 SCRATCH_ENV = {
@@ -25,6 +27,13 @@ TEMPORAL = ("wft-infra", {"app.kubernetes.io/name": "temporal", "app.kubernetes.
 STORE = ("wft-infra", {"app": "objectstore"}, 8333)
 MIRROR_POD = ("wft-infra", {"app": "mirror"}, 8080)
 
+# The SDK metrics port, named `metrics` so the stack's pod scrape finds it, and the stack pods a pool reaches with the
+# observability switch on: Prometheus scrapes the port, and the pod pushes to the collector and Pyroscope.
+METRICS_PORT = 9464
+PROMETHEUS = ("wft-obs", {"app.kubernetes.io/name": "prometheus"}, METRICS_PORT)
+COLLECTOR = ("wft-obs", {"app.kubernetes.io/name": "collector"}, 4318)
+PYROSCOPE = ("wft-obs", {"app.kubernetes.io/name": "pyroscope"}, 4040)
+
 def _svc(service, port):
     return "%s.wft-infra.svc.cluster.local:%d" % (service, port)
 
@@ -36,6 +45,16 @@ def _egress(peer, protocols = ["TCP"]):
             "podSelector": {"matchLabels": labels},
         }],
         "ports": [{"protocol": p, "port": port} for p in protocols],
+    }
+
+def _ingress(peer):
+    namespace, labels, port = peer
+    return {
+        "from": [{
+            "namespaceSelector": {"matchLabels": {"kubernetes.io/metadata.name": namespace}},
+            "podSelector": {"matchLabels": labels},
+        }],
+        "ports": [{"protocol": "TCP", "port": port}],
     }
 
 def pool_worker(pool):
@@ -72,8 +91,19 @@ def pool_worker(pool):
         "WFT_STORE_CREDENTIALS": CREDENTIALS,
         "WFT_SCRATCH": SCRATCH,
         "WFT_READY_FILE": READY,
+        "WFT_METRICS_ADDRESS": "0.0.0.0:%d" % METRICS_PORT,
     }
     env.update(SCRATCH_ENV)
+    obs = obs_env()
+    env.update(obs)
+    policy = {
+        "podSelector": {"matchLabels": labels},
+        "policyTypes": ["Ingress", "Egress"],
+        "egress": egress,
+    }
+    if obs:
+        egress.extend([_egress(COLLECTOR), _egress(PYROSCOPE)])
+        policy["ingress"] = [_ingress(PROMETHEUS)]
     if pool == "compile":
         egress.append(_egress(MIRROR_POD))
         env["WFT_MIRROR"] = MIRROR
@@ -82,12 +112,8 @@ def pool_worker(pool):
         "apiVersion": "networking.k8s.io/v1",
         "kind": "NetworkPolicy",
         "metadata": {"name": name, "namespace": namespace},
-        "spec": {
-            "podSelector": {"matchLabels": labels},
-            # No ingress rule, so nothing reaches the pod.
-            "policyTypes": ["Ingress", "Egress"],
-            "egress": egress,
-        },
+        # Without the switch there is no ingress rule, so nothing reaches the pod.
+        "spec": policy,
     }))
 
     scratch = {"name": "scratch", "mountPath": SCRATCH}
@@ -137,6 +163,7 @@ def pool_worker(pool):
                     "containers": [{
                         "name": name,
                         "image": image,
+                        "ports": [{"name": "metrics", "containerPort": METRICS_PORT}],
                         "env": [{"name": k, "value": v} for k, v in sorted(env.items())] + [{
                             "name": "WFT_SLOT_MEMORY_MIB",
                             "valueFrom": {"resourceFieldRef": {"resource": "limits.memory", "divisor": "1Mi"}},

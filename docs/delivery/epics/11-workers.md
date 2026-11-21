@@ -581,4 +581,4 @@ Follow-ups found, none filed by this run:
 
 Closure addenda, one dated line each, added after close when a `revisit` child issue is filed against this epic:
 
-- none yet
+- 2026-11-21: [#562](https://github.com/AndoNorth/weft/issues/562) adds the worker metrics on port 9464, `wft_obs.setup` with one JSON outcome line per task, the pool NetworkPolicy rules for the observability stack and the probe targets `collector` and `pyroscope`, as the observability epic's E.6.
