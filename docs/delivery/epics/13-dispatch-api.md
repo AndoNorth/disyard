@@ -877,3 +877,4 @@ Follow-ups found:
 Closure addenda, one dated line each, added after close when a `revisit` child issue is filed against this epic:
 
 - 2026-11-19: [#542](https://github.com/AndoNorth/weft/issues/542) makes the dispatch smoke driver call `make_deployed_current` of `wft_workflow.harness.cluster` and import its job shape and API calls from `wft_acceptance.clients.api`, with its scenarios unchanged.
+- 2026-11-21: [#559](https://github.com/AndoNorth/weft/issues/559) calls `wft_obs.setup("dispatch")` and exports the event registry, logs a JSON `accepted` line and starts a `dispatch.accept` span for each accepted job on the job's `traceparent`, and binds `job_id` and the trace ids on the publisher's unroutable line, leaving the `dispatch.submit` span and its links as they were.

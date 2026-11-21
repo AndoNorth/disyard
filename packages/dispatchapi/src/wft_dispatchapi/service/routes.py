@@ -24,7 +24,9 @@ from opentelemetry.trace import SpanKind
 from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
 from pydantic import BaseModel, ValidationError
 from wft_artifactclient.errors import ArtifactError
+from wft_obs import logs
 from wft_temporal import new_traceparent, trace_id_of
+from wft_temporal.trace import stage_span
 
 from .. import control, reads
 from ..contract import reasons, routes
@@ -202,11 +204,19 @@ class _Draining(Reader):
 
 
 class _Answers:
-    """The writer of a submit answer, which counts each entry's outcome and links the call's span
-    to the jobs of its first chunk."""
+    """The writer of a submit answer, which counts each entry's outcome, links the call's span to
+    the jobs of its first chunk, and logs and spans each accepted job in the trace of the job."""
 
-    def __init__(self, writer: Writer, service: "Service", span, dispatch: psycopg.Connection):
+    def __init__(
+        self,
+        writer: Writer,
+        service: "Service",
+        span,
+        dispatch: psycopg.Connection,
+        tenant: str,
+    ):
         self._writer, self._service, self._span, self._dispatch = writer, service, span, dispatch
+        self._tenant = tenant
         self._linked = False
 
     def write(self, *lines) -> None:
@@ -214,23 +224,47 @@ class _Answers:
         answers = [line for line in lines if isinstance(line, EntryAnswer)]
         for answer in answers:
             self._service.metrics.answered(answer)
-        if answers and not self._linked:
-            self._linked = True
-            self._link([a.job_id for a in answers if a.outcome != "rejected"])
+        if answers:
+            self._observe(answers)
 
     def end(self) -> None:
         self._writer.end()
 
-    def _link(self, job_ids: list[str]) -> None:
-        # A span that records nothing needs no link, so the rows are read only for a tracer.
-        if not job_ids or not self._span.is_recording():
+    def _observe(self, answers: list[EntryAnswer]) -> None:
+        first, self._linked = not self._linked, True
+        # A span that records nothing needs no link, so the first chunk's duplicates are read only
+        # for a tracer.
+        linking = first and self._span.is_recording()
+        accepted = [a.job_id for a in answers if a.outcome == "accepted"]
+        wanted = [a.job_id for a in answers if a.outcome != "rejected"] if linking else accepted
+        if not wanted:
             return
-        rows = self._dispatch.execute(
-            "SELECT traceparent FROM accepted_job WHERE job_id = ANY(%s::uuid[])", (job_ids,)
-        ).fetchall()
-        for (traceparent,) in rows:
-            context = _PROPAGATOR.extract({"traceparent": traceparent})
-            self._span.add_link(trace.get_current_span(context).get_span_context())
+        try:
+            rows = self._dispatch.execute(
+                "SELECT job_id::text, traceparent FROM accepted_job WHERE job_id = ANY(%s::uuid[])",
+                (wanted,),
+            ).fetchall()
+        except psycopg.Error as error:
+            # The answer is written and its rows are durable, so only the telemetry is lost.
+            log.warning("the traceparents of a chunk were not read: %s", error)
+            return
+        traceparents = dict(rows)
+        if linking:
+            for traceparent in traceparents.values():
+                context = _PROPAGATOR.extract({"traceparent": traceparent})
+                self._span.add_link(trace.get_current_span(context).get_span_context())
+        for job_id in accepted:
+            if (traceparent := traceparents.get(job_id)) is not None:
+                self._accepted(job_id, traceparent)
+
+    def _accepted(self, job_id: str, traceparent: str) -> None:
+        with (
+            logs.bind(tenant=self._tenant, job_id=job_id, traceparent=traceparent),
+            stage_span(tracer, "dispatch.accept", traceparent) as span,
+        ):
+            span.set_attribute("tenant", self._tenant)
+            span.set_attribute("jobid", job_id)
+            log.info("accepted")
 
 
 def submit(service: "Service", request: Handler, params: dict, query: str) -> None:
@@ -250,7 +284,7 @@ def submit(service: "Service", request: Handler, params: dict, query: str) -> No
             reader,
             dispatch,
             artifacts,
-            lambda: _Answers(request.ndjson(), service, span, dispatch),
+            lambda: _Answers(request.ndjson(), service, span, dispatch, tenant),
             request.trace_id,
         )
         service.metrics.submitted(time.monotonic() - began)

@@ -34,6 +34,8 @@ from wft_broker.tenancy import load
 from wft_events.models import ContentReference
 from wft_jobdoc.profile import LimitsFile, LimitsProfile, PoolTable, Slot
 from wft_jobstate.models import CONTRACT as JOBSTATE_CONTRACT
+from wft_obs.metrics import export_registry
+from wft_obs.setup import setup
 from wft_storecheck.s3 import load_credentials
 from wft_workflow.contract import pools
 
@@ -317,7 +319,7 @@ def run(service: Service) -> None:
 
 def main(environ: Mapping[str, str] = os.environ) -> int:
     """Exit 2 when the configuration is refused, and 1 when the tenancy profile is."""
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
+    setup("dispatch")
     try:
         config = Config.from_env(environ)
     except ConfigError as error:
@@ -328,5 +330,7 @@ def main(environ: Mapping[str, str] = os.environ) -> int:
     except KeyError as error:
         print(f"wft_dispatchapi.service: {error.args[0]}", file=sys.stderr)
         return 1
-    run(build(config, tenancy))
+    service = build(config, tenancy)
+    export_registry(service.runtime.metric_meter)
+    run(service)
     return 0
