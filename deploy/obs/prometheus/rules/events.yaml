@@ -1,0 +1,10 @@
+groups:
+  - name: wft-events
+    rules:
+      - alert: WftEventRejected
+        expr: sum by (reason) (increase(wft_event_rejected_total[10m])) > 0
+        labels:
+          severity: warning
+        annotations:
+          summary: The event serializer refused events with reason {{ $labels.reason }}.
+          description: A producer emits events that fail the contract.

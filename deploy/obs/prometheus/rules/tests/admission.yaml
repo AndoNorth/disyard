@@ -1,0 +1,173 @@
+rule_files:
+  - ../admission.yaml
+evaluation_interval: 1m
+tests:
+  - interval: 1m
+    name: dead lettered fires on a rising counter and stays silent when flat
+    input_series:
+      - series: 'wft_admission_dead_lettered_total{reason="MALFORMED"}'
+        values: '0 0 1 1 1'
+      - series: 'wft_admission_dead_lettered_total{reason="ADMISSION_FAILED"}'
+        values: '4x4'
+    alert_rule_test:
+      - eval_time: 3m
+        alertname: WftAdmissionDeadLettered
+        exp_alerts:
+          - exp_labels: {severity: critical, reason: MALFORMED}
+            exp_annotations:
+              summary: Admission dead-lettered intake messages with reason MALFORMED.
+              description: Each dead letter needs a recovery decision.
+  - interval: 1m
+    name: breaker open fires after 5 minutes and stays silent when closed
+    input_series:
+      - series: 'wft_admission_breaker_open{dependency="temporal"}'
+        values: '1x10'
+      - series: 'wft_admission_breaker_open{dependency="database"}'
+        values: '0x10'
+      - series: 'wft_admission_breaker_open{dependency="broker"}'
+        values: '1 1 1 0 1 1 1 1 1 1'
+    alert_rule_test:
+      - eval_time: 7m
+        alertname: WftAdmissionBreakerOpen
+        exp_alerts:
+          - exp_labels: {severity: critical, dependency: temporal}
+            exp_annotations:
+              summary: The admission breaker for temporal has been open for 5 minutes.
+              description: Admission starts no job while a dependency breaker is open.
+  - interval: 1m
+    name: global cap fires after 30 minutes at the cap
+    input_series:
+      - series: 'wft_admission_live_jobs{job_class="short"}'
+        values: '6x40'
+      - series: 'wft_admission_live_jobs{job_class="long"}'
+        values: '4x40'
+      - series: 'wft_admission_cap_jobs{scope="global"}'
+        values: '10x40'
+    alert_rule_test:
+      - eval_time: 29m
+        alertname: WftAdmissionGlobalCapReached
+        exp_alerts: []
+      - eval_time: 32m
+        alertname: WftAdmissionGlobalCapReached
+        exp_alerts:
+          - exp_labels: {severity: warning}
+            exp_annotations:
+              summary: Live jobs have been at the global cap for 30 minutes.
+              description: Admission releases no new job until a live job ends.
+  - interval: 1m
+    name: global cap stays silent below the cap
+    input_series:
+      - series: 'wft_admission_live_jobs{job_class="short"}'
+        values: '6x40'
+      - series: 'wft_admission_live_jobs{job_class="long"}'
+        values: '3x40'
+      - series: 'wft_admission_cap_jobs{scope="global"}'
+        values: '10x40'
+    alert_rule_test:
+      - eval_time: 35m
+        alertname: WftAdmissionGlobalCapReached
+        exp_alerts: []
+  - interval: 1m
+    name: open cap fires after 30 minutes at the cap
+    input_series:
+      - series: 'wft_admission_open_jobs'
+        values: '20x40'
+      - series: 'wft_admission_cap_jobs{scope="open"}'
+        values: '20x40'
+      - series: 'wft_admission_cap_jobs{scope="global"}'
+        values: '50x40'
+    alert_rule_test:
+      - eval_time: 32m
+        alertname: WftAdmissionOpenCapReached
+        exp_alerts:
+          - exp_labels: {severity: warning}
+            exp_annotations:
+              summary: Open jobs have been at the open cap for 30 minutes.
+              description: Admission releases no new job until an open job ends.
+  - interval: 1m
+    name: open cap stays silent below the cap
+    input_series:
+      - series: 'wft_admission_open_jobs'
+        values: '19x40'
+      - series: 'wft_admission_cap_jobs{scope="open"}'
+        values: '20x40'
+    alert_rule_test:
+      - eval_time: 35m
+        alertname: WftAdmissionOpenCapReached
+        exp_alerts: []
+  - interval: 1m
+    name: stale admitted fires on a skip and stays silent for other reasons
+    input_series:
+      - series: 'wft_admission_skipped_total{reason="stale-admitted"}'
+        values: '0 0 1 1 1'
+      - series: 'wft_admission_skipped_total{reason="started"}'
+        values: '0+5x4'
+    alert_rule_test:
+      - eval_time: 3m
+        alertname: WftAdmissionStaleAdmitted
+        exp_alerts:
+          - exp_labels: {severity: warning}
+            exp_annotations:
+              summary: Admission skipped an intake message for a job the row shows admitted long ago.
+              description: A job row stayed admitted with no workflow to show for it.
+  - interval: 1m
+    name: stale admitted stays silent with no stale skip
+    input_series:
+      - series: 'wft_admission_skipped_total{reason="stale-admitted"}'
+        values: '2x10'
+      - series: 'wft_admission_skipped_total{reason="started"}'
+        values: '0+5x10'
+    alert_rule_test:
+      - eval_time: 9m
+        alertname: WftAdmissionStaleAdmitted
+        exp_alerts: []
+  - interval: 1m
+    name: paused fires after an hour and stays silent for a short pause
+    input_series:
+      - series: 'wft_admission_paused_jobs{job_class="long"}'
+        values: '2x80'
+    alert_rule_test:
+      - eval_time: 59m
+        alertname: WftJobPausedNeedsAttention
+        exp_alerts: []
+      - eval_time: 62m
+        alertname: WftJobPausedNeedsAttention
+        exp_alerts:
+          - exp_labels: {severity: warning}
+            exp_annotations:
+              summary: 2 job(s) have been paused for over an hour.
+              description: A paused job keeps its workflow build busy until it is resumed or ended.
+  - interval: 1m
+    name: paused stays silent when the pause ends within the hour
+    input_series:
+      - series: 'wft_admission_paused_jobs{job_class="long"}'
+        values: '2x30 0x50'
+    alert_rule_test:
+      - eval_time: 70m
+        alertname: WftJobPausedNeedsAttention
+        exp_alerts: []
+  - interval: 1m
+    name: resume waiting fires after 30 minutes
+    input_series:
+      - series: 'wft_admission_resumes_waiting{priority_class="standard"}'
+        values: '3x40'
+    alert_rule_test:
+      - eval_time: 29m
+        alertname: WftResumeWaiting
+        exp_alerts: []
+      - eval_time: 32m
+        alertname: WftResumeWaiting
+        exp_alerts:
+          - exp_labels: {severity: warning}
+            exp_annotations:
+              summary: 3 resume(s) have waited 30 minutes for a free slot.
+              description: The caps leave no room for a paused job to continue.
+  - interval: 1m
+    name: resume waiting stays silent when nothing waits
+    input_series:
+      - series: 'wft_admission_resumes_waiting{priority_class="standard"}'
+        values: '0x40'
+    alert_rule_test:
+      - eval_time: 35m
+        alertname: WftResumeWaiting
+        exp_alerts: []
