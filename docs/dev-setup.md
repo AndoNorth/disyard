@@ -147,7 +147,7 @@ nix develop -c just scan [deps | images | secrets]
 ```
 
 `just scan` with no target runs all three, and `.github/workflows/scan.yml` runs each as a job on pushes to `main`, on pull requests and every Monday.
-`deps` has Trivy scan `uv.lock`, `images` builds every image of `deploy/*/image.sh` (one per worker pool) and has Trivy scan it, and `secrets` has gitleaks scan the whole git history.
+`deps` has Trivy scan every package locked in `uv.lock`, `images` builds every image of `deploy/*/image.sh` (one per worker pool) and has Trivy scan it, and `secrets` has gitleaks scan the whole git history.
 A finding of high or critical severity fails the scan, and lower severities are not reported.
 The images build on Docker, so `images` needs it running.
 Trivy and gitleaks come from `flake.lock` like the other shell tools, and the Trivy database is fetched on every run.

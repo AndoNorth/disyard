@@ -135,9 +135,9 @@ vulnerabilities:
     expired_at: 2027-01-15
   - id: GHSA-hq85-5cpj-mr62
     statement: >-
-      Bundled CA store of the uv wheel in the compile image. uv is pinned to the dev shell's version in uv.lock, so a
-      fix needs a nixpkgs update that carries uv 0.13.4. The compile image runs uv with no network. Bump the dev
-      shell and uv.lock together, then drop the entry.
+      Bundled CA store of uv, which uv.lock locks and the compile image ships. uv is pinned to the dev shell's
+      version, so a fix needs a nixpkgs update that carries uv 0.13.4. The compile image runs uv with no network.
+      Bump the dev shell and uv.lock together, then drop the entry.
     expired_at: 2027-01-15
   - id: GHSA-4w2j-m93h-cj5j
     statement: >-
