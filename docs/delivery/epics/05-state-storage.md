@@ -1,7 +1,7 @@
 # Epic #3: Durable state and artifact storage - breakdown
 
 Status: closed 2026-11-03
-Epic: https://github.com/AndoNorth/wasm-dag-forge/issues/3
+Epic: https://github.com/AndoNorth/weft/issues/3
 Architecture note: docs/architecture/13-state-envelope-artifacts.drawio
 Depends on (closed epics): Dev environment (#1), Fixed-resource cluster (#2), Job event envelope (#4), DAG configuration schema and validator (#5)
 
@@ -77,7 +77,7 @@ After lane 0 merges, `contracts/state/README.md` and the contract files are the 
 | Retention windows | `contracts/state/retention.yaml` holds the numbers that question 1 selects, in two blocks. `windows` (the floor applies) holds the drop of events after 14 days, the results safety net of 28 days and the checkpoints safety net of 14 days. `housekeeping` (no floor) holds the compression of events after 2 days and the abort of incomplete multipart uploads after 1 day. Sources and components have no age rule. The loader rejects an entry of `windows` below twice `MAX_JOB_DURATION_DAYS`, rejects any entry for `accepted_job` or for the content-addressed buckets (`retention-on-job-rows`, `age-rule-on-content-addressed`), and the artifact epic (#12) sets its own windows below these. | open question |
 | Migrations | Plain SQL in the package that owns the table, found through the entry point group `wft.migrations`, so no central list is edited. Files are `<NNNN>_<name>.sql` (applied once, checksum recorded, a changed applied file is refused) and `R__<name>.sql` (repeatable, applied after every numbered file when its checksum changes). Number ranges are disjoint by construction: lane J `0100` to `0199`, lane E `0200` to `0299`, lane A `0300` to `0399`. The group roles of lane Q are one repeatable file, `R__roles.sql`. A statement that drops, renames or tightens (`DROP`, `RENAME`, `SET NOT NULL` without a default, a type change) is refused unless the file is named `*.contract.sql` and the run passes `--allow-contract`, so a release N+1 migration is always expand-only and release N keeps working. The lint scans numbered files only. Repeatable files are re-applied after a contract change and so must replace what they own: they may `DROP ... IF EXISTS` a constraint, trigger, function or policy that they create and then create it again (a constraint is re-added `NOT VALID` and then validated), and the lint refuses in them `DROP TABLE`, `DROP COLUMN`, `RENAME` and a type change. | 2 |
 | Pre-deploy migration | The migration runs from the host as the `local_resource` of the helper module `deploy/appdb/migrate/` (module `appdb-migrate`, `depends_on: [infra/appdb]`), which waits for the app database and reaches it through a `kubectl port-forward` bound to 127.0.0.1, because no service image exists yet. The Tiltfile enables only resources named after a module (`config.set_enabled_resources` over the module names), so every helper step is a module of its own and never a second resource of another module. The first service epic that builds an image may move it to a Kubernetes Job without changing the runner. | 2 |
-| Credentials | Generated on first use into the state directory of the cluster scripts (`~/.local/state/wasm-dag-forge`), delivered as Kubernetes Secrets, and never committed. The store contract loader rejects a file that holds a key named like a secret (`secret-in-contract`), and a test greps the tracked files of the new directories. | none |
+| Credentials | Generated on first use into the state directory of the cluster scripts (`~/.local/state/weft`), delivered as Kubernetes Secrets, and never committed. The store contract loader rejects a file that holds a key named like a secret (`secret-in-contract`), and a test greps the tracked files of the new directories. | none |
 | Object store roles | Nine identities in `contracts/store/roles.yaml` (`indexer` and `export` are decision 19): `admin` (bucket and lifecycle provisioning only, used by the bootstrap and by no pod), `submit` (writes `wft-sources`), `indexer` (writes `wft-sources` only, for the aggregate index objects that the epic body lists there), `compile` (reads `wft-sources`, writes `wft-components`), `simulate` (reads `wft-components`, writes `wft-results` and `wft-checkpoints`, reads `wft-checkpoints`), `aggregate` (reads `wft-results`, writes `wft-results`), `workflow` (reads `wft-sources`, `wft-components` and `wft-results`), `export` (reads `wft-results`, for the evidence export that the epic body lists as a reader) and `reaper` (lists and deletes in all four buckets, for the artifact epic). The role split stays at bucket level, and prefix-level restriction is not tested. | open question |
 | Lifecycle numbers | The detection interval of the lifecycle job is 60 minutes, so a rule runs up to an hour late and a dead worker is a capacity alert and not a silent failure. Abort of incomplete multipart uploads after 1 day on every bucket, the hard expiries of `retention.yaml` on results and checkpoints, and no age rule on sources and components. | none |
 | Volume sizing | `volumeSizeLimitMB = floor(0.8 x PVC MiB / (7 x 4))` with `-volume.max=0`, because the first write to a bucket grows up to 7 volumes and there are four buckets. The first write to each bucket is a check of the contract script. | none |
@@ -201,17 +201,17 @@ Departures from the method, stated so that the captain approves them knowingly:
 
 | Lane | Workers | Owns (exclusive) | Issues | Needs |
 | --- | --- | --- | --- | --- |
-| M Measure | 1 | `docs/delivery/spikes/S8/code/**`, `docs/delivery/spikes/S8/state-footprint.md`, the S8 row of `docs/delivery/spikes/README.md` | [#166](https://github.com/AndoNorth/wasm-dag-forge/issues/166) | nothing (first) |
-| R Revisit | 1 | R.1: `deploy/presets/{ci,dev,soak}.yaml`, `scripts/up.sh`, `docs/cluster-host.md`, one closure addendum line of `docs/delivery/epics/02-cluster.md`. R.2: `packages/itest/**`, one closure addendum line of `docs/delivery/epics/03-envelope.md` | [#167](https://github.com/AndoNorth/wasm-dag-forge/issues/167), [#168](https://github.com/AndoNorth/wasm-dag-forge/issues/168) | M.1 for R.1, nothing for R.2 |
-| 0 Contracts and skeleton | 1 | `contracts/state/{README.md,VERSION,check.sh,retention.yaml,retention.schema.json}`, `contracts/state/schemas/**`, `contracts/state/vectors/retention/**`, `contracts/store/**`, the three new keys of `deploy/versions.yaml`, `packages/migrate/**`, the root `pyproject.toml` edit and `uv.lock`, and until lanes J, E, A, C and Q take over `packages/jobstate/**`, `packages/eventstore/**`, `packages/artifactindex/**`, `packages/storecheck/**` and `packages/stateops/**` | [#169](https://github.com/AndoNorth/wasm-dag-forge/issues/169), [#170](https://github.com/AndoNorth/wasm-dag-forge/issues/170), [#171](https://github.com/AndoNorth/wasm-dag-forge/issues/171) | M.1 for 0.3 (barrier, merged alone) |
-| J Jobs | 1 | `packages/jobstate/**`, `contracts/state/vectors/jobs/**` | [#172](https://github.com/AndoNorth/wasm-dag-forge/issues/172), [#173](https://github.com/AndoNorth/wasm-dag-forge/issues/173) | lane 0 |
-| E Events | 1 | `packages/eventstore/**`, `contracts/state/vectors/events/**` | [#174](https://github.com/AndoNorth/wasm-dag-forge/issues/174), [#175](https://github.com/AndoNorth/wasm-dag-forge/issues/175), [#176](https://github.com/AndoNorth/wasm-dag-forge/issues/176) | lane 0 |
-| A Artifact index | 1 | `packages/artifactindex/**`, `contracts/state/vectors/artifacts/**` | [#177](https://github.com/AndoNorth/wasm-dag-forge/issues/177) | lane 0 |
-| D Databases | 1 | `deploy/appdb/**`, `deploy/temporaldb/**`, `scripts/storage/db/**` | [#178](https://github.com/AndoNorth/wasm-dag-forge/issues/178), [#179](https://github.com/AndoNorth/wasm-dag-forge/issues/179) | lane 0 and R.1, and J.1 for D.1 |
-| O Object store | 1 | `deploy/objectstore/**`, `scripts/storage/store/**` | [#180](https://github.com/AndoNorth/wasm-dag-forge/issues/180) | lane 0, R.1 and C.1 |
-| C Store contract tests | 1 | `packages/storecheck/**` | [#181](https://github.com/AndoNorth/wasm-dag-forge/issues/181), [#182](https://github.com/AndoNorth/wasm-dag-forge/issues/182) | lane 0 and R.2 for C.1, C.1 and O.1 for C.2 |
-| Q Cross-table | 1 | `packages/stateops/**`, `contracts/state/{inputs.yaml,inputs.schema.json}`, `contracts/state/invariants/**`, `contracts/state/vectors/{inputs,invariants}/**` | [#183](https://github.com/AndoNorth/wasm-dag-forge/issues/183), [#184](https://github.com/AndoNorth/wasm-dag-forge/issues/184), [#185](https://github.com/AndoNorth/wasm-dag-forge/issues/185), [#186](https://github.com/AndoNorth/wasm-dag-forge/issues/186) | lane 0, and the issues named in the departures above |
-| X CI | 1 | `.github/workflows/state-modules.yml` | [#187](https://github.com/AndoNorth/wasm-dag-forge/issues/187) | D.1, D.2, O.1 and C.1 |
+| M Measure | 1 | `docs/delivery/spikes/S8/code/**`, `docs/delivery/spikes/S8/state-footprint.md`, the S8 row of `docs/delivery/spikes/README.md` | [#166](https://github.com/AndoNorth/weft/issues/166) | nothing (first) |
+| R Revisit | 1 | R.1: `deploy/presets/{ci,dev,soak}.yaml`, `scripts/up.sh`, `docs/cluster-host.md`, one closure addendum line of `docs/delivery/epics/02-cluster.md`. R.2: `packages/itest/**`, one closure addendum line of `docs/delivery/epics/03-envelope.md` | [#167](https://github.com/AndoNorth/weft/issues/167), [#168](https://github.com/AndoNorth/weft/issues/168) | M.1 for R.1, nothing for R.2 |
+| 0 Contracts and skeleton | 1 | `contracts/state/{README.md,VERSION,check.sh,retention.yaml,retention.schema.json}`, `contracts/state/schemas/**`, `contracts/state/vectors/retention/**`, `contracts/store/**`, the three new keys of `deploy/versions.yaml`, `packages/migrate/**`, the root `pyproject.toml` edit and `uv.lock`, and until lanes J, E, A, C and Q take over `packages/jobstate/**`, `packages/eventstore/**`, `packages/artifactindex/**`, `packages/storecheck/**` and `packages/stateops/**` | [#169](https://github.com/AndoNorth/weft/issues/169), [#170](https://github.com/AndoNorth/weft/issues/170), [#171](https://github.com/AndoNorth/weft/issues/171) | M.1 for 0.3 (barrier, merged alone) |
+| J Jobs | 1 | `packages/jobstate/**`, `contracts/state/vectors/jobs/**` | [#172](https://github.com/AndoNorth/weft/issues/172), [#173](https://github.com/AndoNorth/weft/issues/173) | lane 0 |
+| E Events | 1 | `packages/eventstore/**`, `contracts/state/vectors/events/**` | [#174](https://github.com/AndoNorth/weft/issues/174), [#175](https://github.com/AndoNorth/weft/issues/175), [#176](https://github.com/AndoNorth/weft/issues/176) | lane 0 |
+| A Artifact index | 1 | `packages/artifactindex/**`, `contracts/state/vectors/artifacts/**` | [#177](https://github.com/AndoNorth/weft/issues/177) | lane 0 |
+| D Databases | 1 | `deploy/appdb/**`, `deploy/temporaldb/**`, `scripts/storage/db/**` | [#178](https://github.com/AndoNorth/weft/issues/178), [#179](https://github.com/AndoNorth/weft/issues/179) | lane 0 and R.1, and J.1 for D.1 |
+| O Object store | 1 | `deploy/objectstore/**`, `scripts/storage/store/**` | [#180](https://github.com/AndoNorth/weft/issues/180) | lane 0, R.1 and C.1 |
+| C Store contract tests | 1 | `packages/storecheck/**` | [#181](https://github.com/AndoNorth/weft/issues/181), [#182](https://github.com/AndoNorth/weft/issues/182) | lane 0 and R.2 for C.1, C.1 and O.1 for C.2 |
+| Q Cross-table | 1 | `packages/stateops/**`, `contracts/state/{inputs.yaml,inputs.schema.json}`, `contracts/state/invariants/**`, `contracts/state/vectors/{inputs,invariants}/**` | [#183](https://github.com/AndoNorth/weft/issues/183), [#184](https://github.com/AndoNorth/weft/issues/184), [#185](https://github.com/AndoNorth/weft/issues/185), [#186](https://github.com/AndoNorth/weft/issues/186) | lane 0, and the issues named in the departures above |
+| X CI | 1 | `.github/workflows/state-modules.yml` | [#187](https://github.com/AndoNorth/weft/issues/187) | D.1, D.2, O.1 and C.1 |
 
 Shared-file rules:
 
@@ -289,28 +289,28 @@ The template's Consumes / produces section of each filed issue is its row below,
 
 ### Filed issues
 
-- [#166](https://github.com/AndoNorth/wasm-dag-forge/issues/166) **M.1 Footprint of the real state components (spike S8)** Lane M, tier T1. Needs: nothing. Blocks: R.1, 0.3, D.1, D.2 and O.1.
-- [#167](https://github.com/AndoNorth/wasm-dag-forge/issues/167) **R.1 Resize the infra node and apply the namespaces in `just up` (revisit of the cluster epic)** Lane R, tier T0 and T2. Needs: M.1. Blocks: D.1, D.2, O.1. A `revisit` child of #2. Decisions 9 and 10 of section 0.1 apply.
-- [#168](https://github.com/AndoNorth/wasm-dag-forge/issues/168) **R.2 Container helper options (revisit of the envelope epic)** Lane R, tier T1. Needs: nothing. Blocks: C.1. A `revisit` child of #4.
-- [#169](https://github.com/AndoNorth/wasm-dag-forge/issues/169) **0.1 State contract, row models and retention** Lane 0, tier T0. Needs: nothing. Decisions 6, 7, 8 and 11 of section 0.1 apply, and question 1 of section 0.2.
-- [#170](https://github.com/AndoNorth/wasm-dag-forge/issues/170) **0.2 Store contract and object store image pins** Lane 0, tier T0. Needs: 0.1. Decisions 7 and 15 and questions 1 and 4 apply.
-- [#171](https://github.com/AndoNorth/wasm-dag-forge/issues/171) **0.3 Migration runner, app database fixture and TimescaleDB pin** Lane 0, tier T1. Needs: 0.1 and M.1. Question 2 applies (default (a)).
-- [#172](https://github.com/AndoNorth/wasm-dag-forge/issues/172) **J.1 Accepted-jobs table** Lane J, tier T1. Needs: lane 0. Decisions 5 and 8 apply.
-- [#173](https://github.com/AndoNorth/wasm-dag-forge/issues/173) **J.2 Guarded status transition library** Lane J, tier T1. Needs: J.1.
-- [#174](https://github.com/AndoNorth/wasm-dag-forge/issues/174) **E.1 Event hypertable and policies** Lane E, tier T1. Needs: lane 0. Decision 6 and question 1 apply.
-- [#175](https://github.com/AndoNorth/wasm-dag-forge/issues/175) **E.2 Idempotent batch insert** Lane E, tier T1. Needs: E.1.
-- [#176](https://github.com/AndoNorth/wasm-dag-forge/issues/176) **E.3 Compressed chunks and retention behaviour** Lane E, tier T1. Needs: E.2.
-- [#177](https://github.com/AndoNorth/wasm-dag-forge/issues/177) **A.1 Artifact index table with compile cache entries** Lane A, tier T1. Needs: lane 0. Decision 6 applies.
-- [#178](https://github.com/AndoNorth/wasm-dag-forge/issues/178) **D.1 App Postgres with TimescaleDB module** Lane D, tier T2. Needs: lane 0, R.1 and J.1 (its acceptance reads the `job_status` table that J.1 creates). Decision 4 and the TimescaleDB row of section 0.3 apply.
-- [#179](https://github.com/AndoNorth/wasm-dag-forge/issues/179) **D.2 Temporal's Postgres module** Lane D, tier T2. Needs: lane 0 and R.1.
-- [#180](https://github.com/AndoNorth/wasm-dag-forge/issues/180) **O.1 Object storage module** Lane O, tier T2. Needs: lane 0, R.1 and C.1. Decision 15 and questions 1 and 4 apply.
-- [#181](https://github.com/AndoNorth/wasm-dag-forge/issues/181) **C.1 S3 contract script: base and access** Lane C, tier T1. Needs: lane 0 and R.2. Question 4 applies.
-- [#182](https://github.com/AndoNorth/wasm-dag-forge/issues/182) **C.2 S3 contract script: lifecycle, `Days`, full disk and recovery** Lane C, tier T1 and T2. Needs: C.1 and O.1.
-- [#183](https://github.com/AndoNorth/wasm-dag-forge/issues/183) **Q.1 Invariant and drift queries, and the composition test** Lane Q, tier T1. Needs: J.2, E.2 and A.1.
-- [#184](https://github.com/AndoNorth/wasm-dag-forge/issues/184) **Q.2 Batch bench for 100,000 jobs** Lane Q, tiers T1 and T2. Needs: Q.1 and D.1.
-- [#185](https://github.com/AndoNorth/wasm-dag-forge/issues/185) **Q.3 Metric and alert inputs** Lane Q, tiers T1 and T2. Needs: J.1, E.1, A.1, Q.1, O.1 and C.2.
-- [#186](https://github.com/AndoNorth/wasm-dag-forge/issues/186) **Q.4 Group roles and grants** Lane Q, tier T1. Needs: J.1, E.1 and A.1. Question 3 applies (default (a)).
-- [#187](https://github.com/AndoNorth/wasm-dag-forge/issues/187) **X.1 State modules workflow** Lane X, tier T2. Needs: D.1, D.2, O.1 and C.1. Question 5 applies (default (c)).
+- [#166](https://github.com/AndoNorth/weft/issues/166) **M.1 Footprint of the real state components (spike S8)** Lane M, tier T1. Needs: nothing. Blocks: R.1, 0.3, D.1, D.2 and O.1.
+- [#167](https://github.com/AndoNorth/weft/issues/167) **R.1 Resize the infra node and apply the namespaces in `just up` (revisit of the cluster epic)** Lane R, tier T0 and T2. Needs: M.1. Blocks: D.1, D.2, O.1. A `revisit` child of #2. Decisions 9 and 10 of section 0.1 apply.
+- [#168](https://github.com/AndoNorth/weft/issues/168) **R.2 Container helper options (revisit of the envelope epic)** Lane R, tier T1. Needs: nothing. Blocks: C.1. A `revisit` child of #4.
+- [#169](https://github.com/AndoNorth/weft/issues/169) **0.1 State contract, row models and retention** Lane 0, tier T0. Needs: nothing. Decisions 6, 7, 8 and 11 of section 0.1 apply, and question 1 of section 0.2.
+- [#170](https://github.com/AndoNorth/weft/issues/170) **0.2 Store contract and object store image pins** Lane 0, tier T0. Needs: 0.1. Decisions 7 and 15 and questions 1 and 4 apply.
+- [#171](https://github.com/AndoNorth/weft/issues/171) **0.3 Migration runner, app database fixture and TimescaleDB pin** Lane 0, tier T1. Needs: 0.1 and M.1. Question 2 applies (default (a)).
+- [#172](https://github.com/AndoNorth/weft/issues/172) **J.1 Accepted-jobs table** Lane J, tier T1. Needs: lane 0. Decisions 5 and 8 apply.
+- [#173](https://github.com/AndoNorth/weft/issues/173) **J.2 Guarded status transition library** Lane J, tier T1. Needs: J.1.
+- [#174](https://github.com/AndoNorth/weft/issues/174) **E.1 Event hypertable and policies** Lane E, tier T1. Needs: lane 0. Decision 6 and question 1 apply.
+- [#175](https://github.com/AndoNorth/weft/issues/175) **E.2 Idempotent batch insert** Lane E, tier T1. Needs: E.1.
+- [#176](https://github.com/AndoNorth/weft/issues/176) **E.3 Compressed chunks and retention behaviour** Lane E, tier T1. Needs: E.2.
+- [#177](https://github.com/AndoNorth/weft/issues/177) **A.1 Artifact index table with compile cache entries** Lane A, tier T1. Needs: lane 0. Decision 6 applies.
+- [#178](https://github.com/AndoNorth/weft/issues/178) **D.1 App Postgres with TimescaleDB module** Lane D, tier T2. Needs: lane 0, R.1 and J.1 (its acceptance reads the `job_status` table that J.1 creates). Decision 4 and the TimescaleDB row of section 0.3 apply.
+- [#179](https://github.com/AndoNorth/weft/issues/179) **D.2 Temporal's Postgres module** Lane D, tier T2. Needs: lane 0 and R.1.
+- [#180](https://github.com/AndoNorth/weft/issues/180) **O.1 Object storage module** Lane O, tier T2. Needs: lane 0, R.1 and C.1. Decision 15 and questions 1 and 4 apply.
+- [#181](https://github.com/AndoNorth/weft/issues/181) **C.1 S3 contract script: base and access** Lane C, tier T1. Needs: lane 0 and R.2. Question 4 applies.
+- [#182](https://github.com/AndoNorth/weft/issues/182) **C.2 S3 contract script: lifecycle, `Days`, full disk and recovery** Lane C, tier T1 and T2. Needs: C.1 and O.1.
+- [#183](https://github.com/AndoNorth/weft/issues/183) **Q.1 Invariant and drift queries, and the composition test** Lane Q, tier T1. Needs: J.2, E.2 and A.1.
+- [#184](https://github.com/AndoNorth/weft/issues/184) **Q.2 Batch bench for 100,000 jobs** Lane Q, tiers T1 and T2. Needs: Q.1 and D.1.
+- [#185](https://github.com/AndoNorth/weft/issues/185) **Q.3 Metric and alert inputs** Lane Q, tiers T1 and T2. Needs: J.1, E.1, A.1, Q.1, O.1 and C.2.
+- [#186](https://github.com/AndoNorth/weft/issues/186) **Q.4 Group roles and grants** Lane Q, tier T1. Needs: J.1, E.1 and A.1. Question 3 applies (default (a)).
+- [#187](https://github.com/AndoNorth/weft/issues/187) **X.1 State modules workflow** Lane X, tier T2. Needs: D.1, D.2, O.1 and C.1. Question 5 applies (default (c)).
 
 ## 5. Order, stubs and spikes
 
@@ -442,7 +442,7 @@ Failures and departures:
 
 - Row 6, `test_it_passes_from_an_export_outside_any_repo`, ran `git archive` in a tree that is not a repository, so it failed in the very export that the exit test prescribes.
   The PR changes the test to copy the scanned trees, which keeps it independent of git, and the test passes in the export.
-- Row 6, `test_interrupting_a_child_test_leaves_no_container` timed out after 60 s waiting for its child in the full run, ran in 3.5 s alone, and is filed as [#218](https://github.com/AndoNorth/wasm-dag-forge/issues/218).
+- Row 6, `test_interrupting_a_child_test_leaves_no_container` timed out after 60 s waiting for its child in the full run, ran in 3.5 s alone, and is filed as [#218](https://github.com/AndoNorth/weft/issues/218).
   The cause was not host load.
   A run launched in the background (a trailing `&` of a non-interactive shell) leaves SIGINT ignored, Python keeps an ignored SIGINT, and the child test inherited it, so the `SIGINT` case never interrupted the child, which slept for 600 s while the parent gave up after 60 s.
   The same test run in the foreground passed, and run in the background on an idle host it failed every time and with the fix passed.
@@ -454,7 +454,7 @@ Failures and departures:
   The `known-gap` branch stays for a store whose roles do hold `Write`, and the row text should say so.
   The access mode ran with `--product seaweedfs`.
 - Row 18 ran with the on-demand trigger of the lifecycle job (a POST to the admin server of the store), which ended the poll in 50 s instead of the default of up to 75 minutes.
-- Row 22 stops at `scripts/check-links.sh`, which lists Markdown with `git ls-files`, so `just ci` cannot pass from an export, and it is filed as [#217](https://github.com/AndoNorth/wasm-dag-forge/issues/217).
+- Row 22 stops at `scripts/check-links.sh`, which lists Markdown with `git ls-files`, so `just ci` cannot pass from an export, and it is filed as [#217](https://github.com/AndoNorth/weft/issues/217).
   The lint steps before it passed.
   `scripts/check-links.sh` now lists Markdown on disk when it runs outside a repository, as `scripts/lint.sh` does, and `just ci` passes from the export.
 - The first pass over rows 13 to 20 ran against a 24 hour old `wft` cluster that an earlier session had left up, whose app database already held the 2,000 bench jobs, so row 10 printed `rows_inserted: 0`.
@@ -477,9 +477,9 @@ Measured figures:
 
 Workflow runs on `main`:
 
-- `ci`: https://github.com/AndoNorth/wasm-dag-forge/actions/runs/41637427818 is green at `f56dddb`, the commit before the last lane merge.
-  The run at `a72d86d` ([41637454168](https://github.com/AndoNorth/wasm-dag-forge/actions/runs/41637454168)) failed on the test above and was not re-run, so the caveat of row 23 is that no `ci` run is green at the last lane merge.
-- `state-modules`: https://github.com/AndoNorth/wasm-dag-forge/actions/runs/41637454223 is green at `a72d86d`.
+- `ci`: https://github.com/AndoNorth/weft/actions/runs/41637427818 is green at `f56dddb`, the commit before the last lane merge.
+  The run at `a72d86d` ([41637454168](https://github.com/AndoNorth/weft/actions/runs/41637454168)) failed on the test above and was not re-run, so the caveat of row 23 is that no `ci` run is green at the last lane merge.
+- `state-modules`: https://github.com/AndoNorth/weft/actions/runs/41637454223 is green at `a72d86d`.
 
 Architecture note: `docs/architecture/13-state-envelope-artifacts.drawio` now shows the app database with its guarded status and `published_at`, TimescaleDB in the same database with compression and expiry by policy, SeaweedFS with one role per service, and the infra node and quota, and `scripts/export-diagrams.sh --check` is clean.
 
@@ -487,7 +487,7 @@ Inputs for the next epics:
 
 - Contract versions at close: `contracts/state` 1, `contracts/store` 2, `contracts/artifact` 2, `contracts/events` 3, `contracts/job` 2 and `contracts/status` 1.
 - The service epics that need a login role receive the `NOLOGIN` group roles of `R__roles.sql`, and the credentials of the database and the store live in the state directory of the cluster scripts (`scripts/storage/db/secrets.sh`, `scripts/storage/store/identities.sh path`).
-- The dispatch API epic ([#24](https://github.com/AndoNorth/wasm-dag-forge/issues/24)) and the load epic take the batch rates above as the library baseline, 979 rows and 1,980 events per second on this host, and measure the real event rows per job and the insert rate themselves.
+- The dispatch API epic ([#24](https://github.com/AndoNorth/weft/issues/24)) and the load epic take the batch rates above as the library baseline, 979 rows and 1,980 events per second on this host, and measure the real event rows per job and the insert rate themselves.
 - The lifecycle check of the load epic can use the on-demand trigger of the lifecycle job and does not need the 60 minute detection interval.
 
 Not proven by this epic (the list of section 6 stands, and nothing seen in the run contradicted it): the `Days` lifecycle rule on objects a day old and the abort of incomplete multipart uploads, disk behaviour on a real volume claim and a restart while full, an outage of the database or the store, growth over a multi-day soak, the grants as used by real services, prefix-level restriction of a role, the drift comparison with Temporal visibility, fsync on another host, replication and backup, and a job duration above 7 days.
@@ -496,17 +496,17 @@ Follow-ups that this spec already knew:
 
 - scaling the maximum job duration beyond 7 days changes `max_job_duration_days`, the compat window and every window of `retention.yaml`, and the retention loader fails first on a window below twice the maximum, which is the intended tripwire
 - the upper-bound check of the declared job class, which the shipped validator lacks (it has only `unknown-class`), a follow-up outside this epic, and decision 8 of the validator epic is recorded as superseded by a closure addendum line in `docs/delivery/epics/04-validator.md`
-- the reconciliation of the accepted event's `jobclass` with the validator's `classes`, filed as [#216](https://github.com/AndoNorth/wasm-dag-forge/issues/216)
-- the ten-kind rule of the library and of `wft_events.models`, filed as [#215](https://github.com/AndoNorth/wasm-dag-forge/issues/215)
+- the reconciliation of the accepted event's `jobclass` with the validator's `classes`, filed as [#216](https://github.com/AndoNorth/weft/issues/216)
+- the ten-kind rule of the library and of `wft_events.models`, filed as [#215](https://github.com/AndoNorth/weft/issues/215)
 - the follow-up edit of `docs/delivery/method.md` that three specs now name
 - the `Days` check half that the load epic runs, and the on-demand trigger of the lifecycle job
 - the login roles and credentials of the service epics, which receive the grants tested here
 
-New from this run, both fixed by the rerun PR: [#217](https://github.com/AndoNorth/wasm-dag-forge/issues/217) (`just ci` from an export) and [#218](https://github.com/AndoNorth/wasm-dag-forge/issues/218) (the interrupt test timeout).
+New from this run, both fixed by the rerun PR: [#217](https://github.com/AndoNorth/weft/issues/217) (`just ci` from an export) and [#218](https://github.com/AndoNorth/weft/issues/218) (the interrupt test timeout).
 
 Closure addenda, one dated line each, are added after close when a `revisit` child issue is filed against this epic (see [docs/delivery/method.md](../method.md#revisiting-a-closed-epic)).
 
-- 2026-11-04: [#223](https://github.com/AndoNorth/wasm-dag-forge/issues/223) takes the state contract to version 2: the use link table, the cache entry build-info and purge columns, the retired cache key rule and the revive and purge functions of the index, as a `revisit` child of this epic.
-- 2026-11-04: [#222](https://github.com/AndoNorth/wasm-dag-forge/issues/222) raises the store contract to version 3 (`aggregate` reads `wft-sources`, `compile` writes `wft-results`) and turns the `running` and `store` fixtures of `packages/storecheck` into the plugin `wft_storecheck.fixtures` with a `store_session` fixture.
-- 2026-11-05: [#224](https://github.com/AndoNorth/wasm-dag-forge/issues/224) adds the reaper progress tables, the grants of the artifact and reaper roles for the use table and the cache entry changes, the retention invariant `deleted-artifact-of-live-job`, the metric inputs of the artifact epic and the labelled form of the sql input source, as a `revisit` child of this epic.
-- 2026-11-18: [#459](https://github.com/AndoNorth/wasm-dag-forge/issues/459) takes the state contract to version 4: `lock_job`, `set_pending_patch` and the receipt time that `mark_published` returns to the call that set it, as a `revisit` child of this epic.
+- 2026-11-04: [#223](https://github.com/AndoNorth/weft/issues/223) takes the state contract to version 2: the use link table, the cache entry build-info and purge columns, the retired cache key rule and the revive and purge functions of the index, as a `revisit` child of this epic.
+- 2026-11-04: [#222](https://github.com/AndoNorth/weft/issues/222) raises the store contract to version 3 (`aggregate` reads `wft-sources`, `compile` writes `wft-results`) and turns the `running` and `store` fixtures of `packages/storecheck` into the plugin `wft_storecheck.fixtures` with a `store_session` fixture.
+- 2026-11-05: [#224](https://github.com/AndoNorth/weft/issues/224) adds the reaper progress tables, the grants of the artifact and reaper roles for the use table and the cache entry changes, the retention invariant `deleted-artifact-of-live-job`, the metric inputs of the artifact epic and the labelled form of the sql input source, as a `revisit` child of this epic.
+- 2026-11-18: [#459](https://github.com/AndoNorth/weft/issues/459) takes the state contract to version 4: `lock_job`, `set_pending_patch` and the receipt time that `mark_published` returns to the call that set it, as a `revisit` child of this epic.

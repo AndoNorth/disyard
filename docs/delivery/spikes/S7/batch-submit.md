@@ -1,7 +1,7 @@
 # Spike: one call of 100,000 jobs at T1 (S7)
 
 Run on 2026-11-18.
-Owner: the [dispatch and control API epic](https://github.com/AndoNorth/wasm-dag-forge/issues/24), lane S, filed as [spike issue 458](https://github.com/AndoNorth/wasm-dag-forge/issues/458).
+Owner: the [dispatch and control API epic](https://github.com/AndoNorth/weft/issues/24), lane S, filed as [spike issue 458](https://github.com/AndoNorth/weft/issues/458).
 Spec: [S7 in docs/delivery/epics/13-dispatch-api.md](../../epics/13-dispatch-api.md#s7-one-call-of-100000-jobs-at-t1), whose numbers feed D10 and #16 and gate nothing.
 Method: [docs/delivery/method.md](../../method.md).
 Throwaway code: [code/](code/), run as `nix develop -c docs/delivery/spikes/S7/code/run.sh --jobs 100000 --chunks 500,1000,2000 --repeat 2 --resend --objects-run 1000`.

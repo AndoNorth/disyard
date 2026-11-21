@@ -1,7 +1,7 @@
 # Spike: cluster footprint on a 7.8 GiB host (S2)
 
 Run on 2026-10-29.
-Owner: the [fixed-resource cluster epic](https://github.com/AndoNorth/wasm-dag-forge/issues/2), lane F.
+Owner: the [fixed-resource cluster epic](https://github.com/AndoNorth/weft/issues/2), lane F.
 Breakdown and method: [docs/delivery/epics/02-cluster.md](../../epics/02-cluster.md), section 5.
 Throwaway code: [code/](code/).
 

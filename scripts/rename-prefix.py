@@ -1,16 +1,17 @@
 #!/usr/bin/env python3
-"""Rename the old project prefix wdf to wft, or check that none is left.
+"""Rename the old prefix wdf to wft and the old repository name wasm-dag-forge to weft,
+or check that none is left.
 
 usage: rename-prefix.py apply [ROOT]
        rename-prefix.py check PATH...
 apply rewrites every tracked text file under ROOT (default: the current directory),
-moves every tracked path whose name carries the prefix,
-and rewrites the prefix inside the payloads of the recorded replay histories.
+moves every tracked path whose name carries an old name,
+and rewrites the old names inside the payloads of the recorded replay histories.
 A second apply changes nothing.
-check prints every hit in the given paths, in any letter case, outside the allowlist,
+check prints every hit of an old name in the given paths, in any letter case, outside the allowlist,
 and exits 1 if there is one.
 The allowlist, rename-prefix.allow next to this script,
-holds `path-regex line-regex` pairs that keep the old name.
+holds `path-regex line-regex` pairs that keep an old name.
 """
 
 import base64
@@ -20,12 +21,12 @@ import subprocess
 import sys
 from pathlib import Path
 
-CASES = {"wdf": "wft", "WDF": "WFT", "Wdf": "Wft"}
-# Left: not a letter or digit, so an underscore counts as a boundary.
-# Right: lower case must not run on into a word.
-TOKEN = re.compile(r"(?<![A-Za-z0-9])(wdf|WDF|Wdf)(?![a-z0-9])")
+CASES = {"wdf": "wft", "WDF": "WFT", "Wdf": "Wft", "wasm-dag-forge": "weft"}
+# Prefix left: not a letter or digit, so an underscore counts as a boundary.
+# Prefix right: lower case must not run on into a word.
+TOKEN = re.compile(r"(?<![A-Za-z0-9])(wdf|WDF|Wdf)(?![a-z0-9])|wasm-dag-forge")
 # The check is stricter than the rewrite, so a hit the rewrite leaves still fails the gate.
-ANY_CASE = re.compile("wdf", re.IGNORECASE)
+ANY_CASE = re.compile("wdf|wasm-dag-forge", re.IGNORECASE)
 # Inline base64 payloads (fonts in exported SVGs) hold the prefix by chance and stay byte-identical.
 BASE64 = re.compile(r"base64,[A-Za-z0-9+/=]+")
 BINARY_SUFFIXES = {".gif", ".png", ".whl"}
@@ -50,10 +51,10 @@ def allowed(rules, path, line):
 def rewrite(text):
     parts, last = [], 0
     for m in BASE64.finditer(text):
-        parts.append(TOKEN.sub(lambda t: CASES[t.group(1)], text[last : m.start()]))
+        parts.append(TOKEN.sub(lambda t: CASES[t.group(0)], text[last : m.start()]))
         parts.append(m.group(0))
         last = m.end()
-    parts.append(TOKEN.sub(lambda t: CASES[t.group(1)], text[last:]))
+    parts.append(TOKEN.sub(lambda t: CASES[t.group(0)], text[last:]))
     return "".join(parts)
 
 
@@ -151,7 +152,10 @@ def check(paths):
                 print(f"{rel}:{lineno}: {line.strip()[:160]}")
                 bad += 1
     if bad:
-        print(f"error: {bad} hits of the old prefix wdf, rename them to wft or allowlist them")
+        print(
+            f"error: {bad} hits of an old name, rename wdf to wft and wasm-dag-forge to weft,"
+            " or allowlist them"
+        )
     return 1 if bad else 0
 
 

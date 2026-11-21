@@ -16,7 +16,7 @@ def section(title: str) -> str:
 
 def test_the_version_file_and_the_readme_agree():
     version = (ARTIFACT / "VERSION").read_text().strip()
-    assert version == "4"
+    assert version == "5"
     assert f"Version: {version}\n" in README
 
 

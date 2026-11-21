@@ -1,7 +1,7 @@
 # Epic #17 pass 1: Smoke gate - breakdown
 
 Status: approved
-Epic: https://github.com/AndoNorth/wasm-dag-forge/issues/17
+Epic: https://github.com/AndoNorth/weft/issues/17
 Architecture note: none new, and `docs/architecture/01-system-context.drawio` is unchanged, because the gate adds a host-side test entry point and package but no deployed component, data path or contract; the ladder document of pass 2 is where the test levels are described
 Depends on (closed epics): #1, #2, #4, #5, #3, #12, #11, #6, #9, #10, #7, #8, #24
 
@@ -17,7 +17,7 @@ Figures marked "estimate" are proposals replaced by the first measured run.
 | # | Decision | Source |
 | --- | --- | --- |
 | 1 | Smoke is a gate, not a behaviour test, uses a level 0 workload, budget under 5 min, enforced by a timer in the recipe | epic #17 ladder row 3 and key decisions |
-| 2 | The gate builds on `wft_clusterkit` and adds no parallel helper set | captain, via the brief; https://github.com/AndoNorth/wasm-dag-forge/pull/524 (merged) states the purpose "so the smoke gate can build on one kit instead of writing a fourth copy" |
+| 2 | The gate builds on `wft_clusterkit` and adds no parallel helper set | captain, via the brief; https://github.com/AndoNorth/weft/pull/524 (merged) states the purpose "so the smoke gate can build on one kit instead of writing a fourth copy" |
 | 3 | `scripts/smoke.sh` and `just smoke` are this epic's stubs; the stub prints `not implemented: owned by #17` and exits 3 | `scripts/smoke.sh:1-5`, `just/acceptance.just:1-2`, `01-dev-environment.md:68,113` |
 | 4 | `just cluster-verify` is #2's infrastructure half of smoke and is meant to be called by it | epic #17 ladder row 3, `scripts/cluster-verify.sh:2-3` |
 | 5 | The dispatch API is the public surface; the dispatch smoke driver and the admission drive are prior art to consolidate | captain, via the brief |
@@ -212,12 +212,12 @@ Departures from the method, stated so that the captain approves them knowingly:
 Each issue below was filed on 2026-11-20 from the [lane issue template](../../../.github/ISSUE_TEMPLATE/lane-issue.md), and its body holds the block that stood here: scope, owns, consumes and produces, acceptance criteria, verifier, and needs and blocks as links.
 0.1, C.1, G.1 and G.2 are sub-issues of #17; R.1 is a `revisit` child of #6 and R.2 a `revisit` child of #24.
 
-- [#539](https://github.com/AndoNorth/wasm-dag-forge/issues/539) 0.1 Package skeleton, wrapper and forward deadline
-- [#540](https://github.com/AndoNorth/wasm-dag-forge/issues/540) C.1 Clients
-- [#541](https://github.com/AndoNorth/wasm-dag-forge/issues/541) R.1 Make the deployed build current (revisit of #6)
-- [#542](https://github.com/AndoNorth/wasm-dag-forge/issues/542) R.2 Driver onto the shared helper and client (revisit of #24)
-- [#543](https://github.com/AndoNorth/wasm-dag-forge/issues/543) G.1 Boundary rows
-- [#544](https://github.com/AndoNorth/wasm-dag-forge/issues/544) G.2 Job rows
+- [#539](https://github.com/AndoNorth/weft/issues/539) 0.1 Package skeleton, wrapper and forward deadline
+- [#540](https://github.com/AndoNorth/weft/issues/540) C.1 Clients
+- [#541](https://github.com/AndoNorth/weft/issues/541) R.1 Make the deployed build current (revisit of #6)
+- [#542](https://github.com/AndoNorth/weft/issues/542) R.2 Driver onto the shared helper and client (revisit of #24)
+- [#543](https://github.com/AndoNorth/weft/issues/543) G.1 Boundary rows
+- [#544](https://github.com/AndoNorth/weft/issues/544) G.2 Job rows
 
 ## 5. Order, stubs and spikes
 
@@ -253,7 +253,7 @@ Each row's output is pasted in the PR that records the run and summarised in Clo
 - Host constraints: the cluster is single-owner, so the T2 rows of G.1 and G.2 and the exit test queue for the lock, and `ci` needs 12,032 MiB of the 20 GiB host beside other containers (`deploy/presets/ci.yaml:8`).
 - CI cost, estimates: no new workflow, and the new T0 tests run in seconds.
 - Estimates, not measurements, in worker-days: 0.1 (1), C.1 (1), R.1 (0.5), R.2 (0.5), G.1 (1.5), G.2 (1.5), exit test (1), about 7 worker-days and 7 days elapsed with one worker.
-  The main sources of slip are fresh-cluster failures of `tilt ci` (https://github.com/AndoNorth/wasm-dag-forge/issues/528) and cluster lock contention.
+  The main sources of slip are fresh-cluster failures of `tilt ci` (https://github.com/AndoNorth/weft/issues/528) and cluster lock contention.
 
 Risks:
 
@@ -263,8 +263,8 @@ Risks:
 - Row 4 passes on whichever build is current as long as it is still deployed.
   After a redeploy beside a current build, both builds are deployed and the old one stays current, so the job runs on the old build; the row line names the current and the deployed builds from the helper's result (decision 19), so a reader sees which build ran, and making the new build current is the rollout's job (`deploy/workflow/README.md:26-28`), not the gate's.
   The gate is not purely read-only: the helper writes only when no build is current and exactly one is deployed, refuses a current build that is no longer deployed, and never overwrites a build made current during its poller wait.
-- Open intake issues may make the job late, not wrong: https://github.com/AndoNorth/wasm-dag-forge/issues/520 (reconciler left rows unpublished for about 195 s) would push row 7 past the budget if the single job's publish takes the reconciler path.
-- Fresh `ci` clusters fail `tilt ci` with `cluster did not pass liveness check` in about 4 of 20 cycles (https://github.com/AndoNorth/wasm-dag-forge/issues/528), so exit rows 2 and 4 can fail before the gate runs.
+- Open intake issues may make the job late, not wrong: https://github.com/AndoNorth/weft/issues/520 (reconciler left rows unpublished for about 195 s) would push row 7 past the budget if the single job's publish takes the reconciler path.
+- Fresh `ci` clusters fail `tilt ci` with `cluster did not pass liveness check` in about 4 of 20 cycles (https://github.com/AndoNorth/weft/issues/528), so exit rows 2 and 4 can fail before the gate runs.
 - `scripts/tilt/run.sh` takes no lock, so a deploy can overlap a gate run; the gate cannot fix that, #2 can.
 - No runner has deployed the services, so the gate's fit on a CI runner is unknown until pass 2 (decision 13).
 
@@ -295,7 +295,7 @@ Departures and failures on the way, none in the gate:
 - Row 1 failed on the first attempt with one integration test out of 775, `packages/dispatchapi/tests/control/test_retrier.py::test_request_during_outage_delivered_after`, which saw a signal twice.
   It reproduced 1 time in 10 under CPU load and 0 times in 10 on an idle host: the test's 1 s call timeout lets a signal the restarted server already applied be retried, so delivery is at least once as designed while the test asserts exactly once.
   The captain chose to rerun row 1, which passed.
-- Row 4 cycle 1 failed on the second attempt at the deploy, with `cluster not ready` and `cluster connection failed`, the failure of https://github.com/AndoNorth/wasm-dag-forge/issues/528.
+- Row 4 cycle 1 failed on the second attempt at the deploy, with `cluster not ready` and `cluster connection failed`, the failure of https://github.com/AndoNorth/weft/issues/528.
   etcd requests took up to 18.9 s, kube-controller-manager and kube-scheduler lost leader election three times, and host I/O pressure was 79 % (60 s average) while four images were pulled at once, with CPU pressure near 1 %.
   The captain chose to rerun row 4, whose two cycles then passed.
 - Finished with `just nuke` (row 6); `MemAvailable` afterwards was 17,618,624 kB.

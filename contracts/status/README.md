@@ -1,7 +1,7 @@
 # Status contract
 
 Owner epic: #4 (job event envelope and state propagation).
-Version: 2
+Version: 3
 Consumers: storage (#3), workflow (#6), admission (#8) and dispatch (#24).
 
 The job status is a stored value on the job row, and every status is set by one job lifecycle event type.

@@ -1,7 +1,7 @@
 # Epic #6: Workflow engine (Temporal) - breakdown
 
 Status: closed 2026-11-13
-Epic: https://github.com/AndoNorth/wasm-dag-forge/issues/6
+Epic: https://github.com/AndoNorth/weft/issues/6
 Architecture note: docs/architecture/12-dag-and-workflow.drawio
 Verifier: none, per decision 1.
 Depends on (closed epics): Dev environment (#1), Fixed-resource cluster (#2), Job event envelope (#4), DAG configuration schema and validator (#5), Durable state and artifact storage (#3), Artifact passing (#12), Workload toolchain (#11)
@@ -467,26 +467,26 @@ An issue that names a T2 command runs it under the cluster lock and pastes its o
 
 ### Filed issues
 
-- [#313](https://github.com/AndoNorth/wasm-dag-forge/issues/313) **0.1 Activity and Temporal contracts** Lane 0, tier T0. Needs: nothing. Blocks: every other issue but the spikes.
-- [#314](https://github.com/AndoNorth/wasm-dag-forge/issues/314) **0.2 Package skeleton, stubs and fakes** Lane 0, tier T0, and T1 for the fake pool worker. Needs: 0.1 (issue). Blocks: every code issue.
-- [#315](https://github.com/AndoNorth/wasm-dag-forge/issues/315) **S9 Versioning on SDK 1.35.0 and the pinned-bug override** Lane S, spike, timebox 1.5 days, tier T1, throwaway code in `docs/delivery/spikes/S9/code/`. Needs: nothing. Blocks: V.2.
-- [#316](https://github.com/AndoNorth/wasm-dag-forge/issues/316) **S10 The official Temporal chart on the `ci` preset** Lane S, spike, timebox 2 days, tier T2 under the cluster lock, throwaway values in `docs/delivery/spikes/S10/code/`. Needs: the D22 revisit (#333). Blocks: M.1.
-- [#317](https://github.com/AndoNorth/wasm-dag-forge/issues/317) **M.1 Temporal module** Lane M, tier T2. Needs: lane 0, S10, the D22 revisit (#333). Blocks: M.2.
-- [#318](https://github.com/AndoNorth/wasm-dag-forge/issues/318) **M.2 Bootstrap** Lane M, tier T2. Needs: M.1. Blocks: D.2.
-- [#319](https://github.com/AndoNorth/wasm-dag-forge/issues/319) **P.1 Ready set and job result model** Lane P, tier T0. Needs: lane 0. Blocks: W.1.
-- [#320](https://github.com/AndoNorth/wasm-dag-forge/issues/320) **P.2 Failure decisions and budgets** Lane P, tier T0. Needs: lane 0, and P.1 for its worker. Blocks: W.2.
-- [#321](https://github.com/AndoNorth/wasm-dag-forge/issues/321) **A.1 Plan load and the emit point** Lane A, tier T1 (Postgres and SeaweedFS through `wft_itest`, marked `pair`, as plain functions without Temporal). Needs: lane 0. Blocks: A.2.
-- [#322](https://github.com/AndoNorth/wasm-dag-forge/issues/322) **A.2 Commit, compile cache and aggregate index activities** Lane A, tier T1, marked `pair`. Needs: A.1. Blocks: D.1, V.3.
-- [#323](https://github.com/AndoNorth/wasm-dag-forge/issues/323) **W.1 Job workflow v1 and the task path** Lane W, tier T1 (dev server through `wft_itest`, with `FakeControl` and `FakePool`). Needs: lane 0, P.1. Blocks: W.2, D.1, V.2.
-- [#324](https://github.com/AndoNorth/wasm-dag-forge/issues/324) **W.2 Retry loop, schedule-to-start, lost completion and the history budget** Lane W, tier T1. Needs: W.1, P.2. Blocks: W.3, V.3.
-- [#325](https://github.com/AndoNorth/wasm-dag-forge/issues/325) **W.3 Aggregate semantics** Lane W, tier T1. Needs: W.2. Blocks: W.4.
-- [#326](https://github.com/AndoNorth/wasm-dag-forge/issues/326) **W.4 Cancellation and control signals** Lane W, tier T1. Needs: W.3. Blocks: W.5.
-- [#327](https://github.com/AndoNorth/wasm-dag-forge/issues/327) **W.5 Pause and resume** Lane W, tier T1, and T2 in the exit test. Needs: W.4, and A.1 for the T2 rows. Blocks: V.1.
-- [#328](https://github.com/AndoNorth/wasm-dag-forge/issues/328) **D.1 Workflow worker service** Lane D, tier T1. Needs: W.1, A.2. Blocks: D.2, V.2.
-- [#329](https://github.com/AndoNorth/wasm-dag-forge/issues/329) **D.2 Image and deployment** Lane D, tier T2. Needs: D.1, M.2. Blocks: V.2, V.3.
-- [#330](https://github.com/AndoNorth/wasm-dag-forge/issues/330) **V.1 Determinism gate** Lane V, tier T1. Needs: W.5. Blocks: the exit test.
-- [#331](https://github.com/AndoNorth/wasm-dag-forge/issues/331) **V.2 Worker versioning and rollout** Lane V, tier T1, and T2 in the exit test. Needs: S9, W.1, D.1, and D.2 for the T2 rows. Blocks: the exit test.
-- [#332](https://github.com/AndoNorth/wasm-dag-forge/issues/332) **V.3 Durability harness** Lane V, tier T1, and T2 in the exit test. Needs: W.2, A.2, D.2. Blocks: the exit test.
+- [#313](https://github.com/AndoNorth/weft/issues/313) **0.1 Activity and Temporal contracts** Lane 0, tier T0. Needs: nothing. Blocks: every other issue but the spikes.
+- [#314](https://github.com/AndoNorth/weft/issues/314) **0.2 Package skeleton, stubs and fakes** Lane 0, tier T0, and T1 for the fake pool worker. Needs: 0.1 (issue). Blocks: every code issue.
+- [#315](https://github.com/AndoNorth/weft/issues/315) **S9 Versioning on SDK 1.35.0 and the pinned-bug override** Lane S, spike, timebox 1.5 days, tier T1, throwaway code in `docs/delivery/spikes/S9/code/`. Needs: nothing. Blocks: V.2.
+- [#316](https://github.com/AndoNorth/weft/issues/316) **S10 The official Temporal chart on the `ci` preset** Lane S, spike, timebox 2 days, tier T2 under the cluster lock, throwaway values in `docs/delivery/spikes/S10/code/`. Needs: the D22 revisit (#333). Blocks: M.1.
+- [#317](https://github.com/AndoNorth/weft/issues/317) **M.1 Temporal module** Lane M, tier T2. Needs: lane 0, S10, the D22 revisit (#333). Blocks: M.2.
+- [#318](https://github.com/AndoNorth/weft/issues/318) **M.2 Bootstrap** Lane M, tier T2. Needs: M.1. Blocks: D.2.
+- [#319](https://github.com/AndoNorth/weft/issues/319) **P.1 Ready set and job result model** Lane P, tier T0. Needs: lane 0. Blocks: W.1.
+- [#320](https://github.com/AndoNorth/weft/issues/320) **P.2 Failure decisions and budgets** Lane P, tier T0. Needs: lane 0, and P.1 for its worker. Blocks: W.2.
+- [#321](https://github.com/AndoNorth/weft/issues/321) **A.1 Plan load and the emit point** Lane A, tier T1 (Postgres and SeaweedFS through `wft_itest`, marked `pair`, as plain functions without Temporal). Needs: lane 0. Blocks: A.2.
+- [#322](https://github.com/AndoNorth/weft/issues/322) **A.2 Commit, compile cache and aggregate index activities** Lane A, tier T1, marked `pair`. Needs: A.1. Blocks: D.1, V.3.
+- [#323](https://github.com/AndoNorth/weft/issues/323) **W.1 Job workflow v1 and the task path** Lane W, tier T1 (dev server through `wft_itest`, with `FakeControl` and `FakePool`). Needs: lane 0, P.1. Blocks: W.2, D.1, V.2.
+- [#324](https://github.com/AndoNorth/weft/issues/324) **W.2 Retry loop, schedule-to-start, lost completion and the history budget** Lane W, tier T1. Needs: W.1, P.2. Blocks: W.3, V.3.
+- [#325](https://github.com/AndoNorth/weft/issues/325) **W.3 Aggregate semantics** Lane W, tier T1. Needs: W.2. Blocks: W.4.
+- [#326](https://github.com/AndoNorth/weft/issues/326) **W.4 Cancellation and control signals** Lane W, tier T1. Needs: W.3. Blocks: W.5.
+- [#327](https://github.com/AndoNorth/weft/issues/327) **W.5 Pause and resume** Lane W, tier T1, and T2 in the exit test. Needs: W.4, and A.1 for the T2 rows. Blocks: V.1.
+- [#328](https://github.com/AndoNorth/weft/issues/328) **D.1 Workflow worker service** Lane D, tier T1. Needs: W.1, A.2. Blocks: D.2, V.2.
+- [#329](https://github.com/AndoNorth/weft/issues/329) **D.2 Image and deployment** Lane D, tier T2. Needs: D.1, M.2. Blocks: V.2, V.3.
+- [#330](https://github.com/AndoNorth/weft/issues/330) **V.1 Determinism gate** Lane V, tier T1. Needs: W.5. Blocks: the exit test.
+- [#331](https://github.com/AndoNorth/weft/issues/331) **V.2 Worker versioning and rollout** Lane V, tier T1, and T2 in the exit test. Needs: S9, W.1, D.1, and D.2 for the T2 rows. Blocks: the exit test.
+- [#332](https://github.com/AndoNorth/weft/issues/332) **V.3 Durability harness** Lane V, tier T1, and T2 in the exit test. Needs: W.2, A.2, D.2. Blocks: the exit test.
 
 ## 5. Order, stubs and spikes
 
@@ -607,7 +607,7 @@ Results:
 | 16 | pass | `old_build: exit-a`, `new_build: exit-b`, `open_job_build: exit-a`, `new_job_build: exit-b`, `drained: exit-a`, then the `workflow-worker-exit-a` Deployment deleted |
 | 17 | pass | exit 0 for `just doctor`, `just down` and both `just nuke`, and no kind cluster left |
 | 18 | pass | `just ci` exit 0 in the export, full path, 2,521 passed in `just test` and 510 passed in `just itest` |
-| 19 | pass | the `ci` run [43427341573](https://github.com/AndoNorth/wasm-dag-forge/actions/runs/43427341573) and the `state-modules` run [43427341418](https://github.com/AndoNorth/wasm-dag-forge/actions/runs/43427341418), success on `d44d62d` on `main` |
+| 19 | pass | the `ci` run [43427341573](https://github.com/AndoNorth/weft/actions/runs/43427341573) and the `state-modules` run [43427341418](https://github.com/AndoNorth/weft/actions/runs/43427341418), success on `d44d62d` on `main` |
 
 An earlier run on `65740cb` stopped at row 12, after rows 0 to 11 passed.
 `H smoke --jobs 2000` ended after 62 minutes on `RPCError: Timeout expired` from the status query, with 1,392 jobs completed, 608 running and none failed.
@@ -638,6 +638,6 @@ Follow-ups found, none filed by this run:
 
 Closure addenda, one dated line each, added after close when a `revisit` child issue is filed against this epic:
 
-- 2026-11-15: [#374](https://github.com/AndoNorth/wasm-dag-forge/issues/374) adds `--pools real` and `--queue-prefix` to the harness and the memo key `wft_pool_queue_prefix`, which `wft_workflow.taskpath` applies to each placement, and records that the workers spec (`11-workers.md`, decision 7) drops the worker's re-check of the cache key at task start that the breakdown inputs table above keeps, because the pool workers hold no database access and the workflow's own lookup and `cache_record` already cover it.
-- 2026-11-18: [#492](https://github.com/AndoNorth/wasm-dag-forge/issues/492) makes the `place` local activity a plain function that the worker runs on its activity executor, adds `ServicePlacer` and `PlaceCall` to `wft_workflow.placement` for the placement service of #9 and the optional `WFT_PLACEMENT_URL` to the service, with `StaticPlacer` when it is unset, and builds every workflow worker, the service's, the harness T1 tier's and the test rigs', through `wft_workflow.worker.workflow_worker`, which owns the executor; the activity name and payloads are unchanged, so existing histories replay as before.
-- 2026-11-19: [#541](https://github.com/AndoNorth/wasm-dag-forge/issues/541) moves the harness's `_first_current` into `make_deployed_current` in `wft_workflow.harness.cluster`, which the harness, the dispatch smoke driver and the smoke gate call, which also refuses a current build that is no longer deployed, and adds `only_if_none` to `versioning.set_current`.
+- 2026-11-15: [#374](https://github.com/AndoNorth/weft/issues/374) adds `--pools real` and `--queue-prefix` to the harness and the memo key `wft_pool_queue_prefix`, which `wft_workflow.taskpath` applies to each placement, and records that the workers spec (`11-workers.md`, decision 7) drops the worker's re-check of the cache key at task start that the breakdown inputs table above keeps, because the pool workers hold no database access and the workflow's own lookup and `cache_record` already cover it.
+- 2026-11-18: [#492](https://github.com/AndoNorth/weft/issues/492) makes the `place` local activity a plain function that the worker runs on its activity executor, adds `ServicePlacer` and `PlaceCall` to `wft_workflow.placement` for the placement service of #9 and the optional `WFT_PLACEMENT_URL` to the service, with `StaticPlacer` when it is unset, and builds every workflow worker, the service's, the harness T1 tier's and the test rigs', through `wft_workflow.worker.workflow_worker`, which owns the executor; the activity name and payloads are unchanged, so existing histories replay as before.
+- 2026-11-19: [#541](https://github.com/AndoNorth/weft/issues/541) moves the harness's `_first_current` into `make_deployed_current` in `wft_workflow.harness.cluster`, which the harness, the dispatch smoke driver and the smoke gate call, which also refuses a current build that is no longer deployed, and adds `only_if_none` to `versioning.set_current`.

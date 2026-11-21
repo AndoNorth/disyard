@@ -55,7 +55,7 @@ In a markdown note in this repo, use a relative path:
 In a GitHub issue, use the full raw link to the file on `main` (the repo is public):
 
 ```md
-![Task path](https://raw.githubusercontent.com/AndoNorth/wasm-dag-forge/main/docs/architecture/06-task-path-option-a.drawio.svg)
+![Task path](https://raw.githubusercontent.com/AndoNorth/weft/main/docs/architecture/06-task-path-option-a.drawio.svg)
 ```
 
 ## Animations

@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/AndoNorth/wasm-dag-forge/contracts/topology/topology.schema.json",
+  "$id": "https://github.com/AndoNorth/weft/contracts/topology/topology.schema.json",
   "title": "contracts/topology/topology.yaml",
   "type": "object",
   "required": ["pool_label", "taint_effect", "pools", "namespaces"],

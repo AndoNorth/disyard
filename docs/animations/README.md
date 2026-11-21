@@ -5,13 +5,13 @@ The rendered GIFs in `media/` are embedded in the top-level README and docs.
 
 | Project | Source | Output |
 |---------|--------|--------|
-| `forge-job` | `src/scenes/forge-job.tsx` | `media/job-walkthrough.gif`, embedded in the README |
-| `forge-batch` | `src/scenes/forge-batch.tsx` | not rendered, a sketch for a later README section |
+| `weft-job` | `src/scenes/weft-job.tsx` | `media/job-walkthrough.gif`, embedded in the README |
+| `weft-batch` | `src/scenes/weft-batch.tsx` | not rendered, a sketch for a later README section |
 
 Solid boxes are built, and a dashed box is a part that is not built yet.
-`forge-job` has no dashed box, so it has no legend.
+`weft-job` has no dashed box, so it has no legend.
 
-`forge-batch` shows 3 workflows, each run as a batch of 100,000 jobs with random seeds, followed by one aggregate-only job.
+`weft-batch` shows 3 workflows, each run as a batch of 100,000 jobs with random seeds, followed by one aggregate-only job.
 Its results index is dashed, because the load CLI that builds an aggregate-only job's index from a batch is not built yet.
 The scene draws one aggregate-only job over all three batches, while the load CLI design builds one per batch, so treat the scene as a sketch and do not render it until that is settled.
 
@@ -33,11 +33,11 @@ An agent without a screen clicks **Render** with Playwright, through `playwright
 Start the dev server in the background, then, from a directory outside the repository, because `playwright-axi` writes its snapshots to `.playwright-cli/` in the current directory:
 
 ```sh
-npx -y playwright-axi@latest open http://localhost:9100/src/forge-job --query render
+npx -y playwright-axi@latest open http://localhost:9100/src/weft-job --query render
 ```
 
 The filtered snapshot shows the button and its ref, such as `button "Render" [ref=e105]`.
-Click that ref, then wait until no new frame lands in `output/<project>/` for 10 seconds, which takes about 25 seconds and 768 frames for `forge-job`:
+Click that ref, then wait until no new frame lands in `output/<project>/` for 10 seconds, which takes about 25 seconds and 768 frames for `weft-job`:
 
 ```sh
 npx -y playwright-axi@latest click e105
@@ -52,7 +52,7 @@ Its bridge can fail with `BRIDGE_NOT_READY`, as it did on every try when this wa
 Encode the frames:
 
 ```sh
-nix shell nixpkgs#ffmpeg -c ffmpeg -y -framerate 15 -i output/forge-job/%06d.png \
+nix shell nixpkgs#ffmpeg -c ffmpeg -y -framerate 15 -i output/weft-job/%06d.png \
   -vf "split[a][b];[a]palettegen=max_colors=64:stats_mode=diff[p];[b][p]paletteuse=dither=none:diff_mode=rectangle" \
   -loop 0 media/job-walkthrough.gif
 ```
@@ -76,9 +76,9 @@ If a re-render gives a GIF identical to the committed one, commit nothing.
 
 ## Add an animation
 
-1. Build the scene from the boxes and colours of `src/scenes/forge-kit.tsx`, and pass `designed: true` to draw a part that is not built yet as a dashed box.
+1. Build the scene from the boxes and colours of `src/scenes/weft-kit.tsx`, and pass `designed: true` to draw a part that is not built yet as a dashed box.
 2. Add the scene as `src/scenes/<project>.tsx`.
-3. Add its project file `src/<project>.ts`, copied from `src/forge-job.ts`, and its meta `src/<project>.meta`, copied from `src/forge-job.meta` so it renders at the same rate and scale.
+3. Add its project file `src/<project>.ts`, copied from `src/weft-job.ts`, and its meta `src/<project>.meta`, copied from `src/weft-job.meta` so it renders at the same rate and scale.
 4. Add `./src/<project>.ts` to the `project` list in `vite.config.ts`, and a row to the table above.
 5. Render it as above, into `media/<name>.gif`.
 

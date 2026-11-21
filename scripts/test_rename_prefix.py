@@ -20,6 +20,13 @@ def test_rewrite_maps_each_case_at_a_word_boundary():
     )
 
 
+def test_rewrite_maps_the_repository_name():
+    text = "https://github.com/AndoNorth/wasm-dag-forge/issues/1 ~/.cache/wasm-dag-forge/build"
+    assert rename_prefix.rewrite(text) == (
+        "https://github.com/AndoNorth/weft/issues/1 ~/.cache/weft/build"
+    )
+
+
 def test_rewrite_leaves_words_and_base64_alone():
     text = 'wdfm awdf <img src="data:font/woff2;base64,AAwdf+wdf/=="> wdf'
     assert (
@@ -67,3 +74,10 @@ def test_check_refuses_any_case_outside_the_allowlist(tmp_path):
     refused = run("check", "ok.md", "bad.md", cwd=tmp_path)
     assert refused.returncode == 1
     assert "bad.md:2: lock key 0x7764666D spells wdfm" in refused.stdout
+
+
+def test_check_refuses_the_old_repository_name(tmp_path):
+    (tmp_path / "bad.md").write_text("see github.com/AndoNorth/Wasm-Dag-Forge\n")
+    refused = run("check", "bad.md", cwd=tmp_path)
+    assert refused.returncode == 1
+    assert "bad.md:1: see github.com/AndoNorth/Wasm-Dag-Forge" in refused.stdout

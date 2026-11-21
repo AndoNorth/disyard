@@ -1,7 +1,7 @@
 # Spike: pinned versioning on SDK 1.35.0 and the pinned-bug override (S9)
 
 Run on 2026-11-10.
-Owner: the [workflow engine epic](https://github.com/AndoNorth/wasm-dag-forge/issues/6), lane S, filed as [spike issue 315](https://github.com/AndoNorth/wasm-dag-forge/issues/315).
+Owner: the [workflow engine epic](https://github.com/AndoNorth/weft/issues/6), lane S, filed as [spike issue 315](https://github.com/AndoNorth/weft/issues/315).
 Spec: the S9 block of [the workflow engine breakdown](../../epics/08-workflow-engine.md#s9-versioning-on-sdk-1350-and-the-pinned-bug-override), and decision D6 there.
 Method: [docs/delivery/method.md](../../method.md).
 Throwaway code: [code/](code/), run as `nix develop -c uv run python docs/delivery/spikes/S9/code/spike.py [out-dir]`.

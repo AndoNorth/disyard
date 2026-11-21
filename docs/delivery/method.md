@@ -1,6 +1,6 @@
 # Delivery method
 
-How wasm-dag-forge epics are delivered one at a time.
+How Weft epics are delivered one at a time.
 Every epic goes through four steps: prepare, build, verify, close.
 Prepare produces one file, the epic breakdown spec (`docs/delivery/epics/NN-<slug>.md`).
 The captain reviews that file once, and that review is the alignment step for the domain.
@@ -150,7 +150,7 @@ The later epic's breakdown spec lists the child issue under Consumes.
 
 ## The verifier convention
 
-Retired on 2026-11-15 with the `verify` and `verify-clean` recipes (https://github.com/AndoNorth/wasm-dag-forge/issues/366), because no epic built a verifier.
+Retired on 2026-11-15 with the `verify` and `verify-clean` recipes (https://github.com/AndoNorth/weft/issues/366), because no epic built a verifier.
 Each issue names its tests or commands, and each epic's exit test is a command checklist, run by a worker who did not write the lanes.
 Before reporting done, a worker runs `nix develop -c just pre-pr`, `just doctor` and every test or command the issue names, and reports the commit sha, each result, and what was not run and why.
 `just pre-pr` runs lint and the other checks of `just ci`, the unit tests of the changed packages and of the packages that depend on them, and the integration tests of the changed packages.

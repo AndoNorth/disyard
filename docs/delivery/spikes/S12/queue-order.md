@@ -1,7 +1,7 @@
 # Spike: pool queue order (S12)
 
 Run on 2026-11-18.
-Owner: the [task placement scheduler epic](https://github.com/AndoNorth/wasm-dag-forge/issues/9), lane S, filed as [spike issue 474](https://github.com/AndoNorth/wasm-dag-forge/issues/474).
+Owner: the [task placement scheduler epic](https://github.com/AndoNorth/weft/issues/9), lane S, filed as [spike issue 474](https://github.com/AndoNorth/weft/issues/474).
 Spec: [S12 in docs/delivery/epics/14-placement.md](../../epics/14-placement.md#s12-pool-queue-order), whose result informs D14, #15 and #16 and gates nothing.
 Method: [docs/delivery/method.md](../../method.md).
 Throwaway code: [code/](code/), run as `nix develop -c docs/delivery/spikes/S12/code/run.sh --activities 200 --gaps-ms 20,0 --repeat 3`, then the control with `--partitions 1` added.

@@ -4,7 +4,7 @@
 # with the pool's release binaries from the url of nix/wasm-tools.nix (wasm-tools on compile, wasmtime on simulate),
 # each refused when its SHA-256 differs from the pin's hash. uv reaches the compile image as a wheel of its extra.
 # The release assets and the third-party packages are read from the build cache first, $WFT_BUILD_CACHE, by default
-# $XDG_CACHE_HOME/wasm-dag-forge/build, so a repeated build downloads nothing.
+# $XDG_CACHE_HOME/weft/build, so a repeated build downloads nothing.
 # The default tag carries the short commit, for tracing only.
 # Usage: image.sh POOL [REF]. REF defaults to EXPECTED_REF, which Tilt sets, then to <POOL>-worker:<short commit>.
 # Exit 0 built, 1 a failed fetch, hash check or build, 2 usage.
@@ -26,7 +26,7 @@ context=$(mktemp -d)
 trap 'rm -rf "$context"' EXIT
 mkdir "$context/bin"
 
-cache=${WFT_BUILD_CACHE:-${XDG_CACHE_HOME:-$HOME/.cache}/wasm-dag-forge/build}
+cache=${WFT_BUILD_CACHE:-${XDG_CACHE_HOME:-$HOME/.cache}/weft/build}
 
 # The binary of one release asset of nix/wasm-tools.nix, with a fixed modification time, which names the wasmtime
 # module cache. The asset is cached under its SHA-256, and a cached copy is checked again before it is used.

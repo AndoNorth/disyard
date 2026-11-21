@@ -1,7 +1,7 @@
 # Spike: the S4 checks on Python 3.13, and what S4 never ran (S4b)
 
 Run on 2026-11-16.
-Owner: the [broker epic](https://github.com/AndoNorth/wasm-dag-forge/issues/7), lane S, filed as [spike issue 400](https://github.com/AndoNorth/wasm-dag-forge/issues/400).
+Owner: the [broker epic](https://github.com/AndoNorth/weft/issues/7), lane S, filed as [spike issue 400](https://github.com/AndoNorth/weft/issues/400).
 Spec: [S4b in docs/delivery/epics/10-broker.md](../../epics/10-broker.md#s4b-the-s4-checks-on-python-313-and-what-s4-never-ran), which gates 0.2 and M.1.
 Method: [docs/delivery/method.md](../../method.md).
 Throwaway code: [code/](code/), run as `nix develop -c docs/delivery/spikes/S4b/code/run.sh [out-dir] [--only-checks|--only-measure]`.

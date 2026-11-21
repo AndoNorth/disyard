@@ -9,7 +9,7 @@ resolution-markers = [
 
 [manifest]
 members = [
-    "wasm-dag-forge",
+    "weft",
     "wft-acceptance",
     "wft-admission",
     "wft-aggregate",
@@ -675,7 +675,7 @@ wheels = [
 ]
 
 [[package]]
-name = "wasm-dag-forge"
+name = "weft"
 version = "0.0.0"
 source = { virtual = "." }
 

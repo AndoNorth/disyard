@@ -8,7 +8,7 @@ cd "$(dirname "${BASH_SOURCE[0]}")/.."
 # shellcheck source=/dev/null
 source scripts/verify/cluster/lib/tools.sh
 
-state=${WFT_STATE_DIR:-${XDG_STATE_HOME:-$HOME/.local/state}/wasm-dag-forge}
+state=${WFT_STATE_DIR:-${XDG_STATE_HOME:-$HOME/.local/state}/weft}
 preset=${WFT_PRESET:-$(cat "$state/cluster.owner" 2>/dev/null || echo ci)}
 [ -f "deploy/presets/$preset.yaml" ] || { echo "usage: no preset $preset" >&2; exit 2; }
 

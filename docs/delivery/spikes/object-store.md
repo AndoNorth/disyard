@@ -1,8 +1,8 @@
 # Spike: object store for the durable state domain (S5)
 
 Run on 2026-10-27.
-Owner: the [durable state and artifact storage epic](https://github.com/AndoNorth/wasm-dag-forge/issues/3).
-The characterization epic ([system characterization and soak tests](https://github.com/AndoNorth/wasm-dag-forge/issues/16)) owns the retention check named below.
+Owner: the [durable state and artifact storage epic](https://github.com/AndoNorth/weft/issues/3).
+The characterization epic ([system characterization and soak tests](https://github.com/AndoNorth/weft/issues/16)) owns the retention check named below.
 
 ## Question
 

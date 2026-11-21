@@ -10,7 +10,7 @@ cd "$(dirname "${BASH_SOURCE[0]}")/../../.."
 mode=${1:-render}
 case $mode in render | path) ;; *) echo "usage: identities.sh [render|path]" >&2; exit 2 ;; esac
 
-state=${WFT_STATE_DIR:-${XDG_STATE_HOME:-$HOME/.local/state}/wasm-dag-forge}
+state=${WFT_STATE_DIR:-${XDG_STATE_HOME:-$HOME/.local/state}/weft}
 file=$state/objectstore.credentials.json
 
 if [ ! -s "$file" ]; then

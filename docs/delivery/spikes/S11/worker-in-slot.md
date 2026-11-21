@@ -1,7 +1,7 @@
 # Spike: the worker in the slot (S11)
 
 Run on 2026-11-15.
-Owner: the [Kubernetes workers epic](https://github.com/AndoNorth/wasm-dag-forge/issues/10), lane S, filed as [spike issue 375](https://github.com/AndoNorth/wasm-dag-forge/issues/375).
+Owner: the [Kubernetes workers epic](https://github.com/AndoNorth/weft/issues/10), lane S, filed as [spike issue 375](https://github.com/AndoNorth/weft/issues/375).
 Spec: [S11 in docs/delivery/epics/11-workers.md](../../epics/11-workers.md#s11-the-worker-in-the-slot), which it gates through D.2's simulate pod and `WORKER_RESERVE_MIB` in T.1.
 Method: [docs/delivery/method.md](../../method.md).
 Throwaway code: [code/](code/), run as `nix develop -c docs/delivery/spikes/S11/code/run.sh [out-dir] [--pools ...] [--simulate-mib N]`.
@@ -20,9 +20,9 @@ Every number below is a `figure <name> <value>` line of that run, named `<pool>.
 
 `WORKER_RESERVE_MIB` is **256**: the worker's own peak of 164.6 to 165.7 MiB, reached while it collects a result at the 64 MiB staging cap, plus a quarter, in whole 64 MiB steps.
 The smallest simulate slot in 128 MiB steps that passes is **512 MiB**, which with that reserve and `GUEST_OVERHEAD_MIB` of 128 gives a guest cap of 128 MiB.
-Under Q1 (a) this files the `revisit` child of #2, [issue 380](https://github.com/AndoNorth/wasm-dag-forge/issues/380), which grows the `ci` simulate slot and node and the simulate row of `contracts/temporal/pools.yaml` together, and blocks D.2's simulate pod.
+Under Q1 (a) this files the `revisit` child of #2, [issue 380](https://github.com/AndoNorth/weft/issues/380), which grows the `ci` simulate slot and node and the simulate row of `contracts/temporal/pools.yaml` together, and blocks D.2's simulate pod.
 
-One finding is outside the pass line and outside this epic: the warm-up input of the runtime library does not run on the real workload component, filed as [issue 378](https://github.com/AndoNorth/wasm-dag-forge/issues/378) and described under "Findings".
+One finding is outside the pass line and outside this epic: the warm-up input of the runtime library does not run on the real workload component, filed as [issue 378](https://github.com/AndoNorth/weft/issues/378) and described under "Findings".
 
 ## Question
 
@@ -118,11 +118,11 @@ Staging and upload times are against SeaweedFS on the same host and are lower bo
 
 1. **Simulate needs a 512 MiB slot.**
    A worker of 112 to 166 MiB beside a first-run compile of about 290 MiB does not fit 384 MiB, as Q1 expected, and 512 MiB holds it with 88 MiB to spare at the worst run.
-   [Issue 380](https://github.com/AndoNorth/wasm-dag-forge/issues/380) grows the slot to 512 MiB and the node from 768 to 896 MiB, and the simulate row of `pools.yaml` with them.
+   [Issue 380](https://github.com/AndoNorth/weft/issues/380) grows the slot to 512 MiB and the node from 768 to 896 MiB, and the simulate row of `pools.yaml` with them.
 2. **`WORKER_RESERVE_MIB` is 256, not the 128 that 0.4 estimated.**
    Staging alone gives a peak of 116 MiB and a reserve of 192, but collecting a result at the staging cap through `put_attempt` lifts the peak to 166 MiB, so the guest cap at 512 MiB is 128 MiB.
    T.1 takes 256, and a later move of the upload out of the worker's process, or a smaller part size than the client's 8 MiB, is the place to win it back.
-3. **The runtime's warm-up input does not run on the real workload component** ([issue 378](https://github.com/AndoNorth/wasm-dag-forge/issues/378)).
+3. **The runtime's warm-up input does not run on the real workload component** ([issue 378](https://github.com/AndoNorth/weft/issues/378)).
    `wft_runtime.command.NOOP` carries `args: {}`, and the workload library's `noop` requires `heartbeat_every`, so the guest raises after the compile and `wasmtime` exits 134.
    The compile still fills the module cache, so the next run is warm, but `wft_runtime.run.warm` never records the marker, and a worker that gates on `warmed` repeats the warm-up for every task.
    The numbers above give the warm-up the input `{"args": {"heartbeat_every": 1}, "seed": 0, "workload": "noop"}`, which is what the fix would send; a first run of the same sequence with the runtime's own input ended every warm-up with exit 134 and no OOM kill at 512 MiB.

@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/AndoNorth/wasm-dag-forge/contracts/status/status.schema.json",
+  "$id": "https://github.com/AndoNorth/weft/contracts/status/status.schema.json",
   "title": "contracts/status/status.yaml",
   "type": "object",
   "required": ["statuses", "terminal", "views", "projection", "transitions"],

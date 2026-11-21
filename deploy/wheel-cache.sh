@@ -2,13 +2,13 @@
 # Fills OUT with the distributions that REQUIREMENTS pins by hash, for the interpreter and platform of the image BASE,
 # because pip runs in BASE. They come from the build cache with no network when every one is there, and from the
 # package index otherwise, which then adds them to the cache. The cache is $WFT_BUILD_CACHE/wheels, and
-# WFT_BUILD_CACHE defaults to $XDG_CACHE_HOME/wasm-dag-forge/build.
+# WFT_BUILD_CACHE defaults to $XDG_CACHE_HOME/weft/build.
 # Usage: wheel-cache.sh BASE REQUIREMENTS OUT. Exit 0 filled, 1 a failed download, 2 usage.
 set -euo pipefail
 
 [ $# -eq 3 ] || { echo "usage: wheel-cache.sh BASE REQUIREMENTS OUT" >&2; exit 2; }
 base=$1
-cache=${WFT_BUILD_CACHE:-${XDG_CACHE_HOME:-$HOME/.cache}/wasm-dag-forge/build}/wheels
+cache=${WFT_BUILD_CACHE:-${XDG_CACHE_HOME:-$HOME/.cache}/weft/build}/wheels
 mkdir -p "$cache" "$3"
 requirements=$(realpath "$2") out=$(realpath "$3")
 

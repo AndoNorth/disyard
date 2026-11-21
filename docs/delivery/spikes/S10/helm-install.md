@@ -1,7 +1,7 @@
 # Spike: the official Temporal chart on the `ci` preset (S10)
 
 Run on 2026-11-11.
-Owner: the [workflow engine epic](https://github.com/AndoNorth/wasm-dag-forge/issues/6), lane S, filed as [spike issue 316](https://github.com/AndoNorth/wasm-dag-forge/issues/316).
+Owner: the [workflow engine epic](https://github.com/AndoNorth/weft/issues/6), lane S, filed as [spike issue 316](https://github.com/AndoNorth/weft/issues/316).
 Spec: the S10 issue of [the workflow engine breakdown](../../epics/08-workflow-engine.md#4-issues), and decisions 18 and 20 and default D22 there.
 Method: [docs/delivery/method.md](../../method.md).
 Throwaway code: [code/](code/), run as `nix develop -c docs/delivery/spikes/S10/code/run.sh [out-dir]`, which takes the cluster lock, brings up the `ci` preset, installs the chart, runs the load and destroys the cluster.

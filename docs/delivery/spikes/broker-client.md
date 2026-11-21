@@ -1,7 +1,7 @@
 # Spike: AMQP 1.0 client wrapper over qpid-proton (S4)
 
 Run on 2026-10-27.
-Owner: the [broker epic](https://github.com/AndoNorth/wasm-dag-forge/issues/7).
+Owner: the [broker epic](https://github.com/AndoNorth/weft/issues/7).
 
 ## Question
 

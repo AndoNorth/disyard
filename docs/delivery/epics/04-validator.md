@@ -1,7 +1,7 @@
 # Epic #5: DAG configuration schema and validator - breakdown
 
 Status: draft
-Epic: https://github.com/AndoNorth/wasm-dag-forge/issues/5
+Epic: https://github.com/AndoNorth/weft/issues/5
 Architecture note: docs/architecture/12-dag-and-workflow.drawio
 Depends on (closed epics): Dev environment (#1, closed), Job event envelope (#4, closed)
 
@@ -188,13 +188,13 @@ Departures from the method, stated so that the captain approves them knowingly:
 
 | Lane | Workers | Owns (exclusive) | Issues | Needs |
 | --- | --- | --- | --- | --- |
-| 0 Contracts and skeleton | 1 | `contracts/job/{README.md,VERSION,check.sh,errors.yaml,errors.schema.json,limits.yaml,limits.schema.json,registry.json}`, `contracts/job/schemas/**`, `contracts/job/vectors/invalid/schema/**`, `contracts/job/vectors/slots-fixture/**`, `packages/jobdoc/**`, `contracts/events/{README.md,VERSION,vectors/keys.json}` and `packages/keys/**` for issue 0.4 only, the root `pyproject.toml` edit and `uv.lock`, and until lanes V, P, H, F and L take over `packages/jobdoc/**` (lane P), `packages/jobcheck/**`, `packages/plan/**`, `packages/jobpatch/**`, `packages/jobexamples/**` and `packages/jobtools/**` | [#125](https://github.com/AndoNorth/wasm-dag-forge/issues/125), [#126](https://github.com/AndoNorth/wasm-dag-forge/issues/126), [#127](https://github.com/AndoNorth/wasm-dag-forge/issues/127), [#128](https://github.com/AndoNorth/wasm-dag-forge/issues/128) | R.1 (barrier) |
-| V Validation | 1 | `packages/jobcheck/**`, `contracts/job/vectors/invalid/{graph,reference,bundle,resource,limit}/**`, `contracts/job/vectors/resolver.json` | [#129](https://github.com/AndoNorth/wasm-dag-forge/issues/129), [#130](https://github.com/AndoNorth/wasm-dag-forge/issues/130), [#131](https://github.com/AndoNorth/wasm-dag-forge/issues/131), [#132](https://github.com/AndoNorth/wasm-dag-forge/issues/132) | lane 0, V.1, P.1 and P.2 for V.3, and V.1 to V.3 for V.4 |
-| P Plan | 1 | `packages/plan/**`, `packages/jobdoc/**` after lane 0, `contracts/job/vectors/job-params/invalid/**` | [#133](https://github.com/AndoNorth/wasm-dag-forge/issues/133), [#134](https://github.com/AndoNorth/wasm-dag-forge/issues/134), [#135](https://github.com/AndoNorth/wasm-dag-forge/issues/135), [#136](https://github.com/AndoNorth/wasm-dag-forge/issues/136) | lane 0, P.1 for P.2 and P.3, and P.1 and F.2 for P.4 |
-| H Patch | 1 | `packages/jobpatch/**`, `contracts/job/vectors/patch/**` | [#137](https://github.com/AndoNorth/wasm-dag-forge/issues/137) | P.1 and P.3 |
-| F Fixtures | 1 | `packages/jobexamples/**`, `contracts/job/vectors/valid/**`, `contracts/job/vectors/job-params/valid/**`, `contracts/job/vectors/plans/**` | [#138](https://github.com/AndoNorth/wasm-dag-forge/issues/138), [#139](https://github.com/AndoNorth/wasm-dag-forge/issues/139) | V.4, P.1 and P.3 for F.1, and F.1, P.3 and H.1 for F.2 |
-| R Revisit | 1 | `deploy/presets/slots/{ci,dev,soak}.yaml`, `scripts/cluster/test_slots.py`, `docs/delivery/epics/02-cluster.md` (one closure addendum line only) | [#124](https://github.com/AndoNorth/wasm-dag-forge/issues/124) | nothing (merges before lane 0) |
-| L Tools | 1 | `packages/jobtools/**` | [#140](https://github.com/AndoNorth/wasm-dag-forge/issues/140), [#141](https://github.com/AndoNorth/wasm-dag-forge/issues/141) | V.4, P.1, P.2, P.3 and H.1 for L.1, and L.1 for L.2 |
+| 0 Contracts and skeleton | 1 | `contracts/job/{README.md,VERSION,check.sh,errors.yaml,errors.schema.json,limits.yaml,limits.schema.json,registry.json}`, `contracts/job/schemas/**`, `contracts/job/vectors/invalid/schema/**`, `contracts/job/vectors/slots-fixture/**`, `packages/jobdoc/**`, `contracts/events/{README.md,VERSION,vectors/keys.json}` and `packages/keys/**` for issue 0.4 only, the root `pyproject.toml` edit and `uv.lock`, and until lanes V, P, H, F and L take over `packages/jobdoc/**` (lane P), `packages/jobcheck/**`, `packages/plan/**`, `packages/jobpatch/**`, `packages/jobexamples/**` and `packages/jobtools/**` | [#125](https://github.com/AndoNorth/weft/issues/125), [#126](https://github.com/AndoNorth/weft/issues/126), [#127](https://github.com/AndoNorth/weft/issues/127), [#128](https://github.com/AndoNorth/weft/issues/128) | R.1 (barrier) |
+| V Validation | 1 | `packages/jobcheck/**`, `contracts/job/vectors/invalid/{graph,reference,bundle,resource,limit}/**`, `contracts/job/vectors/resolver.json` | [#129](https://github.com/AndoNorth/weft/issues/129), [#130](https://github.com/AndoNorth/weft/issues/130), [#131](https://github.com/AndoNorth/weft/issues/131), [#132](https://github.com/AndoNorth/weft/issues/132) | lane 0, V.1, P.1 and P.2 for V.3, and V.1 to V.3 for V.4 |
+| P Plan | 1 | `packages/plan/**`, `packages/jobdoc/**` after lane 0, `contracts/job/vectors/job-params/invalid/**` | [#133](https://github.com/AndoNorth/weft/issues/133), [#134](https://github.com/AndoNorth/weft/issues/134), [#135](https://github.com/AndoNorth/weft/issues/135), [#136](https://github.com/AndoNorth/weft/issues/136) | lane 0, P.1 for P.2 and P.3, and P.1 and F.2 for P.4 |
+| H Patch | 1 | `packages/jobpatch/**`, `contracts/job/vectors/patch/**` | [#137](https://github.com/AndoNorth/weft/issues/137) | P.1 and P.3 |
+| F Fixtures | 1 | `packages/jobexamples/**`, `contracts/job/vectors/valid/**`, `contracts/job/vectors/job-params/valid/**`, `contracts/job/vectors/plans/**` | [#138](https://github.com/AndoNorth/weft/issues/138), [#139](https://github.com/AndoNorth/weft/issues/139) | V.4, P.1 and P.3 for F.1, and F.1, P.3 and H.1 for F.2 |
+| R Revisit | 1 | `deploy/presets/slots/{ci,dev,soak}.yaml`, `scripts/cluster/test_slots.py`, `docs/delivery/epics/02-cluster.md` (one closure addendum line only) | [#124](https://github.com/AndoNorth/weft/issues/124) | nothing (merges before lane 0) |
+| L Tools | 1 | `packages/jobtools/**` | [#140](https://github.com/AndoNorth/weft/issues/140), [#141](https://github.com/AndoNorth/weft/issues/141) | V.4, P.1, P.2, P.3 and H.1 for L.1, and L.1 for L.2 |
 
 Shared-file rules:
 
@@ -239,24 +239,24 @@ Commands are written without the `nix develop -c uv run --frozen` prefix that ev
 | 11 Batch validation performance | L.2 |
 | not in the epic's list: per-job binding with placeholders, the validator entry point, the package skeletons, the cache key entry input, the simulate slot entry | P.3 (with 0.1 and V.2 for the placeholder checks), V.4, 0.3, 0.4, R.1 |
 
-- [#125](https://github.com/AndoNorth/wasm-dag-forge/issues/125) **0.1 Document models, strict loader and error table** [1] Lane 0, tier T0. Needs: R.1.
-- [#126](https://github.com/AndoNorth/wasm-dag-forge/issues/126) **0.2 Registries and the limits profile** [4] Lane 0, tier T0. Needs: 0.1. Decisions 8 and 9 of section 0.1 apply, and R.1 has merged, so the live slots files hold all three pools.
-- [#127](https://github.com/AndoNorth/wasm-dag-forge/issues/127) **0.3 Plan model, package skeletons and stubs** Lane 0, tier T0. Needs: 0.2.
-- [#128](https://github.com/AndoNorth/wasm-dag-forge/issues/128) **0.4 Compile cache key entry input (contract change)** Lane 0, tier T0. Needs: R.1. Decision 10 of section 0.1 applies. This issue merges with lane 0, so no consumer ever sees the four-input key.
-- [#124](https://github.com/AndoNorth/wasm-dag-forge/issues/124) **R.1 Simulate entry in the slots files (revisit of the cluster epic)** [4] Lane R, tier T0. Needs: nothing. A `revisit` child of #2. It merges before lane 0 starts. Decision 9 of section 0.1 applies.
-- [#129](https://github.com/AndoNorth/wasm-dag-forge/issues/129) **V.1 Graph validation** [2] Lane V, tier T0. Needs: lane 0.
-- [#130](https://github.com/AndoNorth/wasm-dag-forge/issues/130) **V.2 Artifact reference and bundle validation** [3] Lane V, tier T0. Needs: lane 0.
-- [#131](https://github.com/AndoNorth/wasm-dag-forge/issues/131) **V.3 Limits and resource sanity** [4] Lane V, tier T0. Needs: lane 0, V.1, P.1 and P.2.
-- [#132](https://github.com/AndoNorth/wasm-dag-forge/issues/132) **V.4 The validate entry point** Lane V, tier T0. Needs: V.1, V.2 and V.3.
-- [#133](https://github.com/AndoNorth/wasm-dag-forge/issues/133) **P.1 Plan compiler, canonical form and manifest** [5, 6] Lane P, tier T0. Needs: lane 0.
-- [#134](https://github.com/AndoNorth/wasm-dag-forge/issues/134) **P.2 Plan stats and the class hint** [5] Lane P, tier T0. Needs: P.1. Decision 8 of section 0.1 applies.
-- [#135](https://github.com/AndoNorth/wasm-dag-forge/issues/135) **P.3 Per-job values and binding** Lane P, tier T0. Needs: P.1. Decision 7 of section 0.1 applies.
-- [#136](https://github.com/AndoNorth/wasm-dag-forge/issues/136) **P.4 Versioning policy and compatibility tests** [10] Lane P, tier T0. Needs: P.1 and F.2.
-- [#137](https://github.com/AndoNorth/wasm-dag-forge/issues/137) **H.1 Patch compatibility check** [7] Lane H, tier T0. Needs: P.1 and P.3.
-- [#138](https://github.com/AndoNorth/wasm-dag-forge/issues/138) **F.1 Example library and generator** [9] Lane F, tier T0. Needs: V.4, P.1 and P.3.
-- [#139](https://github.com/AndoNorth/wasm-dag-forge/issues/139) **F.2 Golden plans and the fixture gate** [9] Lane F, tier T0. Needs: F.1, P.3 and H.1.
-- [#140](https://github.com/AndoNorth/wasm-dag-forge/issues/140) **L.1 Validate and plan CLI** [8] Lane L, tier T0. Needs: V.4, P.1, P.2, P.3 and H.1.
-- [#141](https://github.com/AndoNorth/wasm-dag-forge/issues/141) **L.2 Batch validation performance** [11] Lane L, tier T0. Needs: P.3 and L.1.
+- [#125](https://github.com/AndoNorth/weft/issues/125) **0.1 Document models, strict loader and error table** [1] Lane 0, tier T0. Needs: R.1.
+- [#126](https://github.com/AndoNorth/weft/issues/126) **0.2 Registries and the limits profile** [4] Lane 0, tier T0. Needs: 0.1. Decisions 8 and 9 of section 0.1 apply, and R.1 has merged, so the live slots files hold all three pools.
+- [#127](https://github.com/AndoNorth/weft/issues/127) **0.3 Plan model, package skeletons and stubs** Lane 0, tier T0. Needs: 0.2.
+- [#128](https://github.com/AndoNorth/weft/issues/128) **0.4 Compile cache key entry input (contract change)** Lane 0, tier T0. Needs: R.1. Decision 10 of section 0.1 applies. This issue merges with lane 0, so no consumer ever sees the four-input key.
+- [#124](https://github.com/AndoNorth/weft/issues/124) **R.1 Simulate entry in the slots files (revisit of the cluster epic)** [4] Lane R, tier T0. Needs: nothing. A `revisit` child of #2. It merges before lane 0 starts. Decision 9 of section 0.1 applies.
+- [#129](https://github.com/AndoNorth/weft/issues/129) **V.1 Graph validation** [2] Lane V, tier T0. Needs: lane 0.
+- [#130](https://github.com/AndoNorth/weft/issues/130) **V.2 Artifact reference and bundle validation** [3] Lane V, tier T0. Needs: lane 0.
+- [#131](https://github.com/AndoNorth/weft/issues/131) **V.3 Limits and resource sanity** [4] Lane V, tier T0. Needs: lane 0, V.1, P.1 and P.2.
+- [#132](https://github.com/AndoNorth/weft/issues/132) **V.4 The validate entry point** Lane V, tier T0. Needs: V.1, V.2 and V.3.
+- [#133](https://github.com/AndoNorth/weft/issues/133) **P.1 Plan compiler, canonical form and manifest** [5, 6] Lane P, tier T0. Needs: lane 0.
+- [#134](https://github.com/AndoNorth/weft/issues/134) **P.2 Plan stats and the class hint** [5] Lane P, tier T0. Needs: P.1. Decision 8 of section 0.1 applies.
+- [#135](https://github.com/AndoNorth/weft/issues/135) **P.3 Per-job values and binding** Lane P, tier T0. Needs: P.1. Decision 7 of section 0.1 applies.
+- [#136](https://github.com/AndoNorth/weft/issues/136) **P.4 Versioning policy and compatibility tests** [10] Lane P, tier T0. Needs: P.1 and F.2.
+- [#137](https://github.com/AndoNorth/weft/issues/137) **H.1 Patch compatibility check** [7] Lane H, tier T0. Needs: P.1 and P.3.
+- [#138](https://github.com/AndoNorth/weft/issues/138) **F.1 Example library and generator** [9] Lane F, tier T0. Needs: V.4, P.1 and P.3.
+- [#139](https://github.com/AndoNorth/weft/issues/139) **F.2 Golden plans and the fixture gate** [9] Lane F, tier T0. Needs: F.1, P.3 and H.1.
+- [#140](https://github.com/AndoNorth/weft/issues/140) **L.1 Validate and plan CLI** [8] Lane L, tier T0. Needs: V.4, P.1, P.2, P.3 and H.1.
+- [#141](https://github.com/AndoNorth/weft/issues/141) **L.2 Batch validation performance** [11] Lane L, tier T0. Needs: P.3 and L.1.
 
 ## 5. Order, stubs and spikes
 
@@ -378,7 +378,7 @@ Results:
 | 12 | pass | 1 passed, none skipped |
 | 13 | pass | `template_validations: 1`, `tasks: 8`, `jobs: 100000`, `seconds: 23.49`, exit 0 |
 | 14 | pass | exit 0 in 5 min 28 s: lint, 1,336 unit tests passed, 11 integration tests passed, `nix flake check` passed, and no container labelled `wft.dev/verify-run` remained |
-| 15 | pass | https://github.com/AndoNorth/wasm-dag-forge/actions/runs/41302655498, workflow `ci` on `main` at `c9e8f96`, conclusion success, so no `workflow_dispatch` was needed |
+| 15 | pass | https://github.com/AndoNorth/weft/actions/runs/41302655498, workflow `ci` on `main` at `c9e8f96`, conclusion success, so no `workflow_dispatch` was needed |
 | 16 | pass | `250m/384Mi` and `fits` for `ci`, `dev` and `soak` |
 
 Departures from the method:

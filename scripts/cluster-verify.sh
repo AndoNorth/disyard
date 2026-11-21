@@ -18,7 +18,7 @@ source scripts/verify/cluster/lib/tools.sh
 preset=${WFT_PRESET:-ci}
 file=deploy/presets/$preset.yaml
 [ -f "$file" ] || { echo "usage: no preset $file" >&2; exit 2; }
-state=${WFT_STATE_DIR:-${XDG_STATE_HOME:-$HOME/.local/state}/wasm-dag-forge}
+state=${WFT_STATE_DIR:-${XDG_STATE_HOME:-$HOME/.local/state}/weft}
 context=kind-wft
 k() { kubectl --context "$context" "$@"; }
 refuse() { echo "refused: $*" >&2; exit 4; }

@@ -9,7 +9,7 @@ import {
   sequence,
   waitFor,
 } from '@motion-canvas/core';
-import {C, box, fmt} from './forge-kit';
+import {C, box, fmt} from './weft-kit';
 
 const SEEDS = 100000;
 const rows = [

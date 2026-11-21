@@ -1,6 +1,6 @@
 import {Circle, Rect, Txt, makeScene2D} from '@motion-canvas/2d';
 import {all, createRef, waitFor} from '@motion-canvas/core';
-import {C, box} from './forge-kit';
+import {C, box} from './weft-kit';
 
 export default makeScene2D(function* (view) {
   view.fill(C.bg);
@@ -38,7 +38,7 @@ export default makeScene2D(function* (view) {
     <>
       <Txt
         ref={heading}
-        text="wasm-dag-forge: one job, end to end"
+        text="Weft: one job, end to end"
         fill={C.text}
         fontSize={44}
         fontWeight={700}

@@ -10,7 +10,7 @@ unset UV_PYTHON
 # find on its own. Expose only libstdc++, libgcc_s and libz from the host through a
 # private directory: putting a whole host lib dir on the path would also
 # shadow Nix's libc. WFT_LD_EXTRA=<dir>[:<dir>...] appends further directories.
-_wft_ld="${XDG_CACHE_HOME:-$HOME/.cache}/wasm-dag-forge/ld"
+_wft_ld="${XDG_CACHE_HOME:-$HOME/.cache}/weft/ld"
 for _d in /usr/lib/x86_64-linux-gnu /usr/lib64 /usr/lib /lib/x86_64-linux-gnu; do
   if [ -e "$_d/libstdc++.so.6" ]; then
     mkdir -p "$_wft_ld"
