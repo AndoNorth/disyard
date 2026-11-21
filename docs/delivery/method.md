@@ -21,6 +21,7 @@ When a domain closes, the note and the epic are refined with what was learned.
 | How to deliver it in parallel | `docs/delivery/epics/NN-<slug>.md` | repo file, reviewed as a PR |
 | Why the system has this shape | `docs/architecture/` (draw.io files, one note per area as each domain executes) | repo files |
 | Pinned contracts | `contracts/<name>/` | schema files, tables, test vectors, a loader test, `README.md` |
+| How a release is cut | [`docs/delivery/release-process.md`](release-process.md) | repo file |
 | Spike results | `docs/delivery/spikes/S<n>/<slug>.md`, throwaway code in `docs/delivery/spikes/S<n>/code/` | repo files |
 | Work units | GitHub issues labelled `lane:<x>` and `epic:<n>`, sub-issues of the epic | issue from the lane issue template |
 
