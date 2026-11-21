@@ -270,7 +270,35 @@ Risks:
 
 ## 9. Closure (filled at close)
 
-Not run yet.
+Run on 2026-11-20 and 2026-11-21 by a worker who did not write the lanes, on a clean `git archive` export of `main` at `1c74d1e` under `/tmp`.
+Host: WSL2 with 20,002 MiB `MemTotal` and 8 CPUs, no other cluster, and one other container (`open-webui`) that was running before and after and was not touched.
+Every row held `flock /tmp/wdf-cluster.lock` for its whole sequence, and every `scripts/tilt/run.sh ci` set `WDF_BUILD_ID=exit-a`.
+Real command output is in the pull request that records the run.
+
+| Row | Result | Evidence |
+| --- | --- | --- |
+| 1 | pass | `just ci` exit 0 on the full path in 3,866 s: 3,305 unit tests and 775 integration tests passed, then `nix flake check` |
+| 2 | pass | `just nuke` 13 s, `just up` 150 s, Tilt `SUCCESS. All workloads are healthy.` in 697 s |
+| 3 | pass | ten consecutive exit 0 with every row `ok`; the first run's row 4 reads `build exit-a current (made current), deployed exit-a` |
+| 4 | pass | both cycles exit 0, row 4 reads `build exit-a current (made current)` and row 7 reads `succeeded, build ran (attempt 1)` |
+| 5 | pass | exit 2, `usage: smoke needs preset ci, the only preset that deploys the pool workers, not dev` |
+| 6 | pass | exit 4, `refused: no kind cluster named wdf, start one with: just up` |
+
+Elapsed figures are the seconds on each run's `smoke ci:` summary line; the `just smoke` wall clock, which adds `uv` start-up, is in brackets.
+
+- Row 3, in order: 96 (100), 24 (37), 24 (33), 24 (28), 24 (28), 23 (27), 24 (27), 24 (28), 23 (27), 24 (28).
+  The first, 96 s on a deploy finished a minute earlier, is the measured local run of decision 13.
+- Row 4: cycle 1 69 (79), cycle 2 69 (80), each on a deploy that had just finished.
+
+Departures and failures on the way, none in the gate:
+
+- Row 1 failed on the first attempt with one integration test out of 775, `packages/dispatchapi/tests/control/test_retrier.py::test_request_during_outage_delivered_after`, which saw a signal twice.
+  It reproduced 1 time in 10 under CPU load and 0 times in 10 on an idle host: the test's 1 s call timeout lets a signal the restarted server already applied be retried, so delivery is at least once as designed while the test asserts exactly once.
+  The captain chose to rerun row 1, which passed.
+- Row 4 cycle 1 failed on the second attempt at the deploy, with `cluster not ready` and `cluster connection failed`, the failure of https://github.com/AndoNorth/wasm-dag-forge/issues/528.
+  etcd requests took up to 18.9 s, kube-controller-manager and kube-scheduler lost leader election three times, and host I/O pressure was 79 % (60 s average) while four images were pulled at once, with CPU pressure near 1 %.
+  The captain chose to rerun row 4, whose two cycles then passed.
+- Finished with `just nuke` (row 6); `MemAvailable` afterwards was 17,618,624 kB.
 
 Closure addenda, one dated line each, added after close when a `revisit` child issue is filed against this epic:
 
