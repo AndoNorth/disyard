@@ -89,6 +89,18 @@ def datasources() -> dict:
                 "type": "tempo",
                 "access": "proxy",
                 "url": "http://tempo.wft-obs:3200",
+                "correlations": [
+                    {
+                        "label": "Workflow",
+                        "description": "The workflow page of the job in the Temporal UI",
+                        "type": "external",
+                        "config": {
+                            # The span tag already holds the workflow id, prefix included.
+                            "field": "temporalWorkflowID",
+                            "target": {"url": temporal_workflow_url("${temporalWorkflowID}")},
+                        },
+                    }
+                ],
             },
             {
                 "name": "Pyroscope",
