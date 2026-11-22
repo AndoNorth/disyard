@@ -39,9 +39,13 @@ def scrape(url: str) -> str:
 
 
 def series(text: str, name: str) -> dict[str, float]:
-    """The samples of `name` keyed by their label block, empty for an unlabelled one."""
+    """The samples of `name` keyed by their labels without the runtime's `service_name`, empty
+    for an unlabelled one."""
     found = re.findall(rf"^{name}(\{{[^}}]*\}})? (\S+)$", text, re.MULTILINE)
-    return {labels: float(value) for labels, value in found}
+    return {
+        re.sub(r'[{,]?service_name="[^"]*",?', "", labels).strip("{},"): float(value)
+        for labels, value in found
+    }
 
 
 @pytest.fixture(scope="module")
