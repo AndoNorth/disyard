@@ -289,6 +289,9 @@ Every row except two ran in run 3 at these figures: Prometheus ran at 512 MiB in
 - The shipped Pyroscope module ran at the settled 256 MiB and 100m on a switch-on `ci` cluster, with the six services and the workers pushing profiles, and no restart.
   Five minutes after the pod started, its working set was 71 MiB (28 percent of 256 MiB) and its volume held 71 MB; this is not a load run.
   With the obs node's requests at 1,888 MiB of its 3,584 MiB allocatable (Tempo and the state inputs exporter not yet deployed), the headroom of the node is 1,696 MiB at rest.
+- The Temporal UI runs on the infra node at 50m and 64 MiB, requests equal to limits, on a switch-on `ci` cluster, and is not part of the obs node.
+  Its working set was 8.7 MiB idle and 18.1 MiB (28 percent of 64 MiB) after its workflow page was opened in a browser, its CPU peaked at 4.4m, and it had no restart; this is not a load run.
+  The infra node's requests sum to 5,194 MiB and 2,780m of its 5,504 MiB and 2,900m allocatable in the worst case of `budget.sh ci` (310 MiB and 120m free), and the live requests were 4,810 MiB, a headroom of 694 MiB at rest.
 - Run 3 is the one clean 2-batch run, one run of 73 minutes, so the retention figures are extrapolations and soak length belongs to #16.
 - Obs peaks are lifetime peaks of containers that were not restarted between runs, so run 3's Tempo `memory.peak` of 869 MiB comes from run 2, and its working set over its own window is 750 MiB.
 - `memory.peak` includes page cache, so the pod percentages are upper bounds.
