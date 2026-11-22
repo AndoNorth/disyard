@@ -21,6 +21,7 @@ import wft_acceptance
 import wft_broker
 import wft_clusterkit
 import wft_kernel
+import wft_obs
 import wft_workflow
 import wft_workloads
 from wft_acceptance.report import count_line, ok
@@ -73,6 +74,7 @@ def test_wheel_declares_the_dependency_set():
         "wft-broker",
         "wft-clusterkit",
         "wft-kernel",
+        "wft-obs",
         "wft-workflow",
         "wft-workloads",
     ]

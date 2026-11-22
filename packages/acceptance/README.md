@@ -9,7 +9,7 @@ The dev group of the workspace installs it.
 
 ## Dependencies
 
-`pyproject.toml` declares every dependency the clients and the gate import: `temporalio`, `wft-broker`, `wft-clusterkit`, `wft-kernel`, `wft-workflow` and `wft-workloads`.
+`pyproject.toml` declares every dependency the clients and the gate import: `temporalio`, `wft-broker`, `wft-clusterkit`, `wft-kernel`, `wft-obs`, `wft-workflow` and `wft-workloads`.
 `tests/test_wheel.py` builds the wheel, installs it with only those dependencies into a clean virtual environment and imports every module of the package, so a module that imports an undeclared dependency fails there.
 
 ## State
