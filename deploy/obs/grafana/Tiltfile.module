@@ -1,0 +1,27 @@
+# Grafana of the observability stack: one pod on the obs pool with the four datasources, the dashboards of dashboards/,
+# anonymous Editor access and its database on a local volume, served on the host through a NodePort.
+# config.py renders every object of the module and secrets.sh the admin credential, and the datasources, the
+# dashboards and the image pin are watched, so a change rolls the pod or reloads the dashboards.
+module = read_yaml("module.yaml")
+name = module["name"]
+namespace = module["namespace"]
+
+for path in ["config.py", "dashboards", "../../versions.yaml", "../../host/ports.yaml", "../../../contracts/topology"]:
+    watch_file(path)
+k8s_yaml(local([os.path.abspath("secrets.sh"), "render"], quiet = True))
+k8s_yaml(encode_yaml_stream(decode_json(str(local(
+    ["uv", "run", "--frozen", "--quiet", "python", os.path.abspath("config.py"), "render"],
+    quiet = True,
+)))))
+
+k8s_resource(
+    name,
+    objects = [
+        name + "-admin:secret:" + namespace,
+        name + "-provisioning:configmap:" + namespace,
+        name + "-dashboards:configmap:" + namespace,
+        name + "-data:persistentvolumeclaim:" + namespace,
+    ],
+    labels = [module["group"]],
+    resource_deps = [d.split("/")[1] for d in module.get("depends_on", [])],
+)
