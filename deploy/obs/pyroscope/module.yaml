@@ -1,0 +1,18 @@
+name: pyroscope
+group: obs
+namespace: wft-obs
+artifact:
+  kind: image
+  pin: grafana/pyroscope
+resources:
+  pyroscope:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 100m
+      memory: 256Mi
+readiness:
+  resource: deployment/pyroscope
+  condition: Available
+profiles: [ci]

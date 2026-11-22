@@ -22,7 +22,7 @@ The module is group `obs`, profile `ci`, and runs only on a cluster brought up w
 | `tempo` | `tempo.wft-obs:3200` | |
 | `pyroscope` | `pyroscope.wft-obs:4040` | |
 
-Tempo and Pyroscope are provisioned before their modules exist, and Grafana does not check a datasource at provisioning, so a query on either answers an error until its backend runs.
+Tempo is provisioned before its module exists, and Grafana does not check a datasource at provisioning, so a query on Tempo answers an error until its backend runs.
 
 The Loki datasource has two derived fields, each read from the structured metadata of a log line by label name:
 
