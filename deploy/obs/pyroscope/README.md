@@ -22,7 +22,14 @@ Pyroscope's port is named `metrics`, so the pod scrape finds Pyroscope's own ser
 
 Pyroscope runs monolithic (`-target=all`) on filesystem storage under `/data`, and keeps 72 hours (`-retention-period=72h`), the retention of decision 20.
 The volume is 2 GiB of local-path storage that ends with `just nuke`.
-Pyroscope has no size key, so only the volume alarm brakes a profile flood.
+Pyroscope has no size key, and nothing honest reports its stored bytes, so no `WftObsVolumeFilling` input exists for it and its brake is the volume size with margin.
+Measured growth is about 8 MB an hour, so 72 hours hold about 0.6 GB against a 1 GB cap and a 2 GiB volume.
+The inputs that were considered and rejected:
+
+- Pyroscope 2.4.4, the newest release, has no series for stored bytes. Its only byte series are histograms of bytes moved (`objstore_bucket_operation_transferred_bytes`, `pyroscope_segment_writer_client_sent_bytes`), which count writes and not what compaction and retention leave on disk.
+- The kubelet volume stats of a local-path claim are absent for the default claim type, and for a `local` claim they report the host filesystem (about 1 TB capacity), not the claim, so they say nothing about the 2 GiB volume.
+- `pyroscopedb.min_free_disk_gb` guards free space on that same host filesystem, so it is not a size cap either.
+
 The strategy is `Recreate`: the volume takes one writer, and a second Pyroscope beside the first would not fit the node.
 The root filesystem is read-only, so the data path, the storage directory and `/tmp` are the only places the pod writes.
 
