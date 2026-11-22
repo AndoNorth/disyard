@@ -1,0 +1,18 @@
+name: grafana
+group: obs
+namespace: wft-obs
+artifact:
+  kind: image
+  pin: grafana/grafana
+resources:
+  grafana:
+    requests:
+      cpu: 100m
+      memory: 512Mi
+    limits:
+      cpu: 100m
+      memory: 512Mi
+readiness:
+  resource: deployment/grafana
+  condition: Available
+profiles: [ci]

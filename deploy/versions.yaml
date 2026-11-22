@@ -79,3 +79,7 @@ images:
     version: 3.7.10
     # yamllint disable-line rule:line-length
     digest: sha256:b43c257ccfc925d4a50b8717cac61a3b51df8c48d01847936057e5c4075a24a7
+  grafana/grafana:
+    version: 13.3.1
+    # yamllint disable-line rule:line-length
+    digest: sha256:0615ec4fbd4072004b7d86b46ded63013a74b7d6eb1119273dd89e8fa25c13cf
