@@ -31,7 +31,9 @@ Every module is group `obs`, in namespace `wft-obs`, on the obs node.
 
 ## Following one job
 
-1. In Grafana, open Explore on the Loki datasource and query by job id, such as `{service_name=~".+"} | job_id="<job id>"`.
+1. In Grafana, open Explore on the Loki datasource and query by job id, such as `{service_name="<service>"} | job_id="<job id>"`, with the time range set to the job's run (minutes, not hours).
+   Always name one service and keep the range short, because a selector that matches every stream over a wide range forces Loki to scan all logs and killed it at 256 MiB.
+   Repeat the query for each service that handled the job.
    Each line's `trace_id` links to its trace in Tempo, and its `job_id` links to the job's workflow page in the Temporal UI.
 2. The Temporal UI shows the job's timeline at `http://127.0.0.1:18233/namespaces/wft/workflows/job-<job id>`.
 3. Without the UI, the timeline comes from the CLI through a forward of the Temporal frontend:
