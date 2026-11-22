@@ -144,3 +144,29 @@ def test_smoke_reads_the_pushed_results_and_annotations():
     smoke = load(ROOT / "deploy/obs/grafana/dashboards/smoke.json")
     tags = [a["target"]["tags"] for a in smoke["annotations"]["list"] if "target" in a]
     assert ["smoke"] in tags
+
+
+def test_stack_health_covers_every_obs_module():
+    modules = [
+        yaml.safe_load(p.read_text()) for p in sorted((ROOT / "deploy/obs").glob("*/module.yaml"))
+    ]
+    namespaces = {module["namespace"] for module in modules}
+    assert len(namespaces) == 1, namespaces
+    text = exprs("stack-health")
+    assert all(
+        f'namespace="{ns}"' in e
+        for ns in namespaces
+        for e in text
+        if "kube_" in e or "kubelet_" in e
+    )
+    # Volume use and memory read the namespace, so a module added to it is covered without an edit.
+    assert any("kubelet_volume_stats_used_bytes" in e for e in text)
+    assert any("kube_deployment_status_replicas_available" in e for e in text)
+    for ingest in (
+        "prometheus_tsdb_head_samples_appended_total",
+        "loki_distributor_bytes_received_total",
+        "tempo_distributor_spans_received_total",
+        "pyroscope_distributor_received_compressed_bytes_sum",
+        "otelcol_receiver_accepted_spans_total",
+    ):
+        assert any(ingest in e for e in text), ingest
