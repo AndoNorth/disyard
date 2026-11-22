@@ -157,6 +157,12 @@ def test_loki_derives_a_trace_link_to_tempo_and_a_workflow_link_to_the_temporal_
         assert (field["matcherType"], field["matcherRegex"]) == ("label", field["name"])
 
 
+def test_provisioning_file_escapes_the_dollar_names_grafana_expands_from_its_environment():
+    text = objects()[("ConfigMap", "grafana-provisioning")]["data"]["datasources.yaml"]
+    assert "$${__value.raw}" in text
+    assert yaml.safe_load(text.replace("$$", "$")) == grafana.datasources()
+
+
 def test_the_workflow_page_prefix_is_the_workflow_id_of_a_job():
     from wft_keys import workflow_id
 

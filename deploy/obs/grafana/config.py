@@ -101,6 +101,11 @@ def datasources() -> dict:
     }
 
 
+def datasources_file() -> str:
+    """The provisioning file, in which Grafana expands a dollar name from its environment."""
+    return yaml.dump(datasources(), sort_keys=False).replace("$", "$$")
+
+
 def dashboard_provider() -> dict:
     return {
         "apiVersion": 1,
@@ -154,7 +159,7 @@ def render() -> list[dict]:
     topology = yaml.safe_load((ROOT / "contracts/topology/topology.yaml").read_text())
     node_port = _ports()[NAME]["node_port"]
     provisioning = {
-        "datasources.yaml": yaml.dump(datasources(), sort_keys=False),
+        "datasources.yaml": datasources_file(),
         "dashboards.yaml": yaml.dump(dashboard_provider(), sort_keys=False),
     }
     meta = {"name": NAME, "namespace": namespace}
@@ -290,7 +295,7 @@ def main(argv: list[str]) -> int:
     if argv == ["render"]:
         print(json.dumps(render()))
     elif argv == ["datasources"]:
-        print(yaml.dump(datasources(), sort_keys=False), end="")
+        print(datasources_file(), end="")
     else:
         print("usage: config.py render | datasources", file=sys.stderr)
         return 2
