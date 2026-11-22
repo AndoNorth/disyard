@@ -38,4 +38,10 @@ expect full .github/pull_request_template.md
 expect full pyproject.toml
 expect full uv.lock
 expect full
+# A writer that is still producing after the first full verdict must not die of SIGPIPE under pipefail.
+writer() { printf 'deploy/a\n'; seq 1 200000; }
+got=$(writer | "$classify") || { echo "FAIL early verdict broke the pipe, exit $?"; exit 1; }
+[ "$got" = full ] || { echo "FAIL early verdict: want full, got $got"; exit 1; }
+echo "ok   full [early verdict drains a long writer]"; pass=$((pass + 1))
+
 echo "$pass cases passed"
