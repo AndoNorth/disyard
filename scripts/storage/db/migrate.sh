@@ -5,6 +5,8 @@
 # forward did not come up, 2 usage.
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/../../.."
+# shellcheck source=/dev/null
+source scripts/cluster/forward.sh
 
 command=${1:-apply}
 [ $# -gt 0 ] && shift
@@ -17,16 +19,15 @@ k() { kubectl --context "$context" -n "$namespace" "$@"; }
 k wait --for=condition=Ready pod/appdb-0 --timeout=300s >/dev/null
 
 log=$(mktemp)
-k port-forward --address 127.0.0.1 pod/appdb-0 :5432 >"$log" 2>&1 &
-forward=$!
-trap 'kill "$forward" 2>/dev/null || true; rm -f "$log"' EXIT
+forward_start "$log" pod/appdb-0 :5432
+trap 'forward_stop "$log"' EXIT
 
 # The forward picks a free local port and prints it once it listens.
 port=
 for _ in $(seq 60); do
     port=$(sed -n 's/^Forwarding from 127\.0\.0\.1:\([0-9]*\) .*/\1/p' "$log" | head -n 1)
     [ -n "$port" ] && break
-    kill -0 "$forward" 2>/dev/null || { cat "$log" >&2; exit 1; }
+    forward_alive || { cat "$log" >&2; exit 1; }
     sleep 0.5
 done
 [ -n "$port" ] || { echo "port-forward to appdb-0 did not come up" >&2; exit 1; }
