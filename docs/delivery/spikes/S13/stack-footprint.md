@@ -280,6 +280,9 @@ Every row except two ran in run 3 at these figures: Prometheus ran at 512 MiB in
 - The settled Prometheus figure of 640 MiB is not proven by a clean 2-batch run.
   The shipped Prometheus module ran it at rest for 19 minutes on a switch-on `ci` cluster with 29 targets up and 47,519 head series, at a working set of 122 MiB (19 percent of 640 MiB) and no restart; this is not a load run.
   Run 3 passed at 512 MiB, and run 5 (disturbed) saw 640 MiB at 68 percent of its working set.
+- The shipped Grafana module ran at the settled 512 MiB and 100m on a switch-on `ci` cluster with the preinstalled apps switched off, and no restart.
+  Two minutes after a pod replacement, with the nine dashboards provisioned and Explore opened on Loki, its cgroup read 373 MiB current and 376 MiB peak (73 percent of 512 MiB, of which 244 MiB anonymous and 118 MiB page cache); this is not a load run.
+  With the obs node's requests at 1,682 MiB of its 3,584 MiB allocatable, the headroom of the node is 1,902 MiB at rest.
 - Run 3 is the one clean 2-batch run, one run of 73 minutes, so the retention figures are extrapolations and soak length belongs to #16.
 - Obs peaks are lifetime peaks of containers that were not restarted between runs, so run 3's Tempo `memory.peak` of 869 MiB comes from run 2, and its working set over its own window is 750 MiB.
 - `memory.peak` includes page cache, so the pod percentages are upper bounds.
