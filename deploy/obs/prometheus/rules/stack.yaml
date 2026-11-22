@@ -11,3 +11,33 @@ groups:
         annotations:
           summary: Component {{ $labels.component }} dropped log records or spans from a full export queue.
           description: The collector or a backend behind it is not keeping up, and the missing telemetry is gone.
+      # Pyroscope and the kubelet volume stats of a local-path claim report no stored bytes, so each
+      # backend reads its own gauge against the size cap of its storage decision.
+      - alert: WftObsVolumeFilling
+        expr: |
+          label_replace(
+            sum(
+              prometheus_tsdb_storage_blocks_bytes
+              + prometheus_tsdb_wal_storage_size_bytes
+              + prometheus_tsdb_head_chunks_storage_size_bytes
+            ) > 4.5e9,
+            "backend", "prometheus", "", ""
+          )
+          or
+          label_replace(
+            sum(tempodb_backend_bytes_total{status="live"}) > 2e9,
+            "backend", "tempo", "", ""
+          )
+          or
+          label_replace(
+            sum(increase(loki_ingester_chunk_size_bytes_sum[10d])) > 8e9,
+            "backend", "loki", "", ""
+          )
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: The {{ $labels.backend }} volume holds more than its size cap.
+          description: >-
+            Prometheus and Tempo read their stored bytes, and Loki the chunk bytes written in its 10 days
+            of retention. Loki and Tempo have no size key, so this alert is their only brake on a flood.
