@@ -1,0 +1,89 @@
+# State inputs exporter of the observability stack: one Deployment on the obs pool that reads the state inputs of the app
+# database as the wft_reader group and serves them as wft_state_* gauges on the metrics port, which Prometheus scrapes.
+# The host-side resource state-inputs-logins creates the login in the app database before the pod starts, as admission
+# does for its own, and the Secret state-inputs-logins carries its DSN.
+load("../../tilt/obs.star", "obs_env")
+
+module = read_yaml("module.yaml")
+name = module["name"]
+namespace = module["namespace"]
+res = module["resources"]
+topology = read_yaml("../../../contracts/topology/topology.yaml")
+pool = {"key": topology["pool_label"], "value": "obs"}
+
+image = "wft-" + name
+custom_build(
+    image,
+    os.path.abspath("image.sh"),
+    deps = ["../../../packages", "../../../uv.lock", "Dockerfile", "image.sh", "../../versions.yaml"],
+)
+
+watch_file("logins.py")
+k8s_yaml(encode_yaml_stream(decode_json(str(local(
+    ["uv", "run", "--frozen", "--quiet", "python", os.path.abspath("logins.py"), "render"],
+    quiet = True,
+)))))
+
+local_resource(
+    name + "-logins",
+    cmd = [os.path.abspath("logins.sh"), "apply"],
+    resource_deps = ["appdb-migrate"],
+    labels = [module["group"]],
+)
+
+ready = "/tmp/wft-ready"
+labels = {"app.kubernetes.io/name": name}
+env = {
+    "WFT_METRICS_ADDRESS": "0.0.0.0:9464",
+    "WFT_READY_FILE": ready,
+}
+env.update(obs_env())
+
+k8s_yaml(encode_yaml({
+    "apiVersion": "apps/v1",
+    "kind": "Deployment",
+    "metadata": {"name": name, "namespace": namespace, "labels": labels},
+    "spec": {
+        "replicas": 1,
+        "strategy": {"type": "Recreate"},
+        "selector": {"matchLabels": labels},
+        "template": {
+            "metadata": {"labels": labels},
+            "spec": {
+                "nodeSelector": {pool["key"]: pool["value"]},
+                "tolerations": [{
+                    "key": pool["key"],
+                    "operator": "Equal",
+                    "value": pool["value"],
+                    "effect": topology["taint_effect"],
+                }],
+                "automountServiceAccountToken": False,
+                "securityContext": {"runAsNonRoot": True, "seccompProfile": {"type": "RuntimeDefault"}},
+                "containers": [{
+                    "name": name,
+                    "image": image,
+                    "env": [{"name": k, "value": v} for k, v in sorted(env.items())],
+                    "envFrom": [{"secretRef": {"name": name + "-logins"}}],
+                    "ports": [{"name": "metrics", "containerPort": 9464}],
+                    # The exporter writes the file once a pass has reached the database.
+                    "readinessProbe": {"exec": {"command": ["test", "-e", ready]}, "periodSeconds": 5},
+                    "resources": res[name],
+                    "securityContext": {
+                        "allowPrivilegeEscalation": False,
+                        "readOnlyRootFilesystem": True,
+                        "capabilities": {"drop": ["ALL"]},
+                    },
+                    "volumeMounts": [{"name": "tmp", "mountPath": "/tmp"}],
+                }],
+                "volumes": [{"name": "tmp", "emptyDir": {"sizeLimit": "16Mi"}}],
+            },
+        },
+    },
+}))
+
+k8s_resource(
+    name,
+    objects = ["%s-logins:secret:%s" % (name, namespace)],
+    labels = [module["group"]],
+    resource_deps = [d.split("/")[1] for d in module.get("depends_on", [])] + [name + "-logins"],
+)

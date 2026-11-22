@@ -1,0 +1,27 @@
+name: state-inputs
+group: obs
+namespace: wft-obs
+artifact:
+  kind: image
+  pin: python
+resources:
+  state-inputs:
+    requests:
+      cpu: 20m
+      memory: 96Mi
+    limits:
+      cpu: 20m
+      memory: 96Mi
+  state-inputs-logins:
+    requests:
+      cpu: 1m
+      memory: 1Mi
+    limits:
+      cpu: 1m
+      memory: 1Mi
+readiness:
+  resource: deployment/state-inputs
+  condition: Available
+profiles: [ci]
+depends_on:
+  - infra/appdb-migrate
