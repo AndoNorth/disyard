@@ -75,3 +75,7 @@ images:
     version: v2.20.0
     # yamllint disable-line rule:line-length
     digest: sha256:42cfe3723a5f058171c627537fb57a3ea0f26e4380fa18555a95cb1a1b4cfc5b
+  grafana/loki:
+    version: 3.7.10
+    # yamllint disable-line rule:line-length
+    digest: sha256:b43c257ccfc925d4a50b8717cac61a3b51df8c48d01847936057e5c4075a24a7
