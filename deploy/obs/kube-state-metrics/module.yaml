@@ -1,0 +1,18 @@
+name: kube-state-metrics
+group: obs
+namespace: wft-obs
+artifact:
+  kind: image
+  pin: kube-state-metrics/kube-state-metrics
+resources:
+  kube-state-metrics:
+    requests:
+      cpu: 20m
+      memory: 64Mi
+    limits:
+      cpu: 20m
+      memory: 64Mi
+readiness:
+  resource: deployment/kube-state-metrics
+  condition: Available
+profiles: [ci]

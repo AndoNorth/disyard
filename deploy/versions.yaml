@@ -67,3 +67,11 @@ images:
     version: 0.165.0
     # yamllint disable-line rule:line-length
     digest: sha256:e40d61f10c9a617cca1ffd1be4d7e2b3a4b0f0001798ff07e58cabe82e618cea
+  prom/prometheus:
+    version: v3.16.0
+    # yamllint disable-line rule:line-length
+    digest: sha256:e04987641b57704f408e31f6373ba4138ecf27cb4a165d24aabb6c38fddd0f06
+  kube-state-metrics/kube-state-metrics:
+    version: v2.20.0
+    # yamllint disable-line rule:line-length
+    digest: sha256:42cfe3723a5f058171c627537fb57a3ea0f26e4380fa18555a95cb1a1b4cfc5b

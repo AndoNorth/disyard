@@ -1,0 +1,27 @@
+# Prometheus of the observability stack: one pod on the obs pool that discovers its targets through the Kubernetes API,
+# holds the alert rules of rules/ and receives the smoke results by OTLP. config.py renders every object of the module,
+# and the rule files and the configuration are watched, so a change rolls the pod.
+module = read_yaml("module.yaml")
+name = module["name"]
+namespace = module["namespace"]
+
+for path in ["config.py", "rules", "../../versions.yaml", "../../../contracts/topology"]:
+    watch_file(path)
+k8s_yaml(encode_yaml_stream(decode_json(str(local(
+    ["uv", "run", "--frozen", "--quiet", "python", os.path.abspath("config.py"), "render"],
+    quiet = True,
+)))))
+
+k8s_resource(
+    name,
+    objects = [
+        name + ":serviceaccount:" + namespace,
+        "wft-" + name + ":clusterrole",
+        "wft-" + name + ":clusterrolebinding",
+        name + "-config:configmap:" + namespace,
+        name + "-rules:configmap:" + namespace,
+        name + "-data:persistentvolumeclaim:" + namespace,
+    ],
+    labels = [module["group"]],
+    resource_deps = [d.split("/")[1] for d in module.get("depends_on", [])],
+)

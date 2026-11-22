@@ -1,0 +1,18 @@
+name: prometheus
+group: obs
+namespace: wft-obs
+artifact:
+  kind: image
+  pin: prom/prometheus
+resources:
+  prometheus:
+    requests:
+      cpu: 100m
+      memory: 640Mi
+    limits:
+      cpu: 100m
+      memory: 640Mi
+readiness:
+  resource: deployment/prometheus
+  condition: Available
+profiles: [ci]
