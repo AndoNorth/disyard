@@ -31,8 +31,9 @@ The Loki datasource has two derived fields, each read from the structured metada
 | `trace_id` | the trace of that id in the Tempo datasource |
 | `job_id` | the job's workflow page in the Temporal UI, `http://127.0.0.1:18233/namespaces/wft/workflows/job-<job id>` |
 
-Grafana's Tempo datasource has no setting for a link from a span attribute to an external URL: the bundled plugin builds only its own links to logs, metrics and profiles, so there is no link from `temporalWorkflowID` to the Temporal UI.
-A job's workflow page is one click from its log lines instead.
+The Tempo datasource has no `jsonData` setting for a link from a span attribute to an external URL, so the link is a provisioned correlation of type `external` on the `temporalWorkflowID` field.
+A correlation binds to a field of a result table and not to a span tag, so the link shows where a TraceQL query returns the attribute as a column, such as `{ resource.service.name = "admission" } | select(span.temporalWorkflowID)` with the table format set to Spans: each value opens the job's workflow page in the Temporal UI.
+It does not show among a span's attributes in the trace view, which renders no link from a correlation, and a span without the attribute gets a link to the workflow list.
 
 ## Access
 

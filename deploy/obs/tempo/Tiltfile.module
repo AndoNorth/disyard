@@ -1,0 +1,23 @@
+# Tempo of the observability stack: one monolithic pod on the obs pool that keeps traces on a local volume
+# for the retention of decision 20, takes spans from the collector by OTLP HTTP, and serves the trace API that wft_obs.query reads.
+# config.py renders every object of the module, and the configuration is watched, so a change rolls the pod.
+module = read_yaml("module.yaml")
+name = module["name"]
+namespace = module["namespace"]
+
+for path in ["config.py", "../../versions.yaml", "../../../contracts/topology"]:
+    watch_file(path)
+k8s_yaml(encode_yaml_stream(decode_json(str(local(
+    ["uv", "run", "--frozen", "--quiet", "python", os.path.abspath("config.py"), "render"],
+    quiet = True,
+)))))
+
+k8s_resource(
+    name,
+    objects = [
+        name + "-config:configmap:" + namespace,
+        name + "-data:persistentvolumeclaim:" + namespace,
+    ],
+    labels = [module["group"]],
+    resource_deps = [d.split("/")[1] for d in module.get("depends_on", [])],
+)

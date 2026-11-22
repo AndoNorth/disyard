@@ -283,6 +283,9 @@ Every row except two ran in run 3 at these figures: Prometheus ran at 512 MiB in
 - The shipped Grafana module ran at the settled 512 MiB and 100m on a switch-on `ci` cluster with the preinstalled apps switched off, and no restart.
   Two minutes after a pod replacement, with the nine dashboards provisioned and Explore opened on Loki, its cgroup read 373 MiB current and 376 MiB peak (73 percent of 512 MiB, of which 244 MiB anonymous and 118 MiB page cache); this is not a load run.
   With the obs node's requests at 1,682 MiB of its 3,584 MiB allocatable, the headroom of the node is 1,902 MiB at rest.
+- The shipped Tempo module (3.1.1, at the settled 1,024 MiB and 200m, 72 h retention, 4 GiB volume) ran on a switch-on `ci` cluster for 20 minutes through one `just smoke` job (47 spans in the job's trace) and a pushed probe span, with no restart.
+  Its working set read 149 MiB (15 percent of 1,024 MiB), 0.8 percent of CPU periods were throttled, and 247 spans had been received; this is not a load run, and S13's 750 MiB (73 percent) under 2,000 jobs stands.
+  With the modules of Tempo and Pyroscope both in, the obs node's requests are 2,962 MiB of its 3,584 MiB allocatable, and the headroom of the node is 622 MiB at the budget (the state inputs exporter is not yet deployed).
 - The shipped Pyroscope module ran at the settled 256 MiB and 100m on a switch-on `ci` cluster, with the six services and the workers pushing profiles, and no restart.
   Five minutes after the pod started, its working set was 71 MiB (28 percent of 256 MiB) and its volume held 71 MB; this is not a load run.
   With the obs node's requests at 1,888 MiB of its 3,584 MiB allocatable (Tempo and the state inputs exporter not yet deployed), the headroom of the node is 1,696 MiB at rest.

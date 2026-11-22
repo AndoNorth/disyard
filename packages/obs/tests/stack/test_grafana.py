@@ -157,6 +157,16 @@ def test_loki_derives_a_trace_link_to_tempo_and_a_workflow_link_to_the_temporal_
         assert (field["matcherType"], field["matcherRegex"]) == ("label", field["name"])
 
 
+def test_tempo_links_the_workflow_id_tag_of_a_span_to_the_temporal_ui():
+    [correlation] = datasources()["tempo"]["correlations"]
+    assert correlation["type"] == "external"
+    assert correlation["config"]["field"] == "temporalWorkflowID"
+    # The span tag already holds the workflow id, prefix included.
+    assert correlation["config"]["target"]["url"] == (
+        "http://127.0.0.1:18233/namespaces/wft/workflows/${temporalWorkflowID}"
+    )
+
+
 def test_provisioning_file_escapes_the_dollar_names_grafana_expands_from_its_environment():
     text = objects()[("ConfigMap", "grafana-provisioning")]["data"]["datasources.yaml"]
     assert "$${__value.raw}" in text
