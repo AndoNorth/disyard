@@ -29,6 +29,7 @@ The inputs that were considered and rejected:
 - Pyroscope 2.4.4, the newest release, has no series for stored bytes. Its only byte series are histograms of bytes moved (`objstore_bucket_operation_transferred_bytes`, `pyroscope_segment_writer_client_sent_bytes`), which count writes and not what compaction and retention leave on disk.
 - The kubelet volume stats of a local-path claim are absent for the default claim type, and for a `local` claim they report the host filesystem (about 1 TB capacity), not the claim, so they say nothing about the 2 GiB volume.
 - `pyroscopedb.min_free_disk_gb` guards free space on that same host filesystem, so it is not a size cap either.
+
 The strategy is `Recreate`: the volume takes one writer, and a second Pyroscope beside the first would not fit the node.
 The root filesystem is read-only, so the data path, the storage directory and `/tmp` are the only places the pod writes.
 
