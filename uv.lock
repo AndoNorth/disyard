@@ -949,6 +949,7 @@ dependencies = [
     { name = "wft-broker" },
     { name = "wft-clusterkit" },
     { name = "wft-kernel" },
+    { name = "wft-obs" },
     { name = "wft-workflow" },
     { name = "wft-workloads" },
 ]
@@ -959,6 +960,7 @@ requires-dist = [
     { name = "wft-broker", editable = "packages/broker" },
     { name = "wft-clusterkit", editable = "packages/clusterkit" },
     { name = "wft-kernel", editable = "packages/kernel" },
+    { name = "wft-obs", editable = "packages/obs" },
     { name = "wft-workflow", editable = "packages/workflow" },
     { name = "wft-workloads", editable = "packages/workloads" },
 ]

@@ -20,15 +20,16 @@ def cancels(healthy) -> list[tuple]:
 def test_job_rows_all_ok(healthy, canned, capsys):
     code, lines, err = run(capsys)
     batch = healthy.job.calls[1][1]
-    assert lines[5:10] == [
+    assert lines[5:11] == [
         f"ok job-submit accepted {canned.JOB_ID}",
         "ok job-run succeeded, build ran (attempt 1)",
         f"ok job-result echo result matches, digest: {canned.DIGEST}",
         "ok job-aggregate summary present and matching",
         "ok dead-letters 0, no rise",
+        "ok telemetry: observability off, not checked",
     ]
     assert batch.startswith("smoke-") and len(batch) == len("smoke-") + 12
-    assert lines[10].startswith("smoke ci: 10 ok, 0 failed, 0 skipped, ")
+    assert lines[11].startswith("smoke ci: 11 ok, 0 failed, 0 skipped, ")
     assert cancels(healthy) == []
     assert code == 0
 
@@ -45,14 +46,15 @@ def test_job_run_without_a_running_sample_of_the_build(healthy, canned, capsys):
     healthy.job.statuses[:] = [building, canned.SUCCEEDED]
     code, lines, err = run(capsys)
     assert lines[6] == "FAIL job-run ended succeeded, but no running sample showed build done"
-    assert lines[7:10] == [
+    assert lines[7:11] == [
         "skip job-result after job-run failed",
         "skip job-aggregate after job-run failed",
         "ok dead-letters 0, no rise",
+        "ok telemetry: observability off, not checked",
     ]
     assert cancels(healthy) == [("cancel", healthy.job.calls[1][1])]
     assert "cleanup: cancelled batch smoke-" in err
-    assert lines[10].startswith("smoke ci: 7 ok, 1 failed, 2 skipped, ")
+    assert lines[11].startswith("smoke ci: 8 ok, 1 failed, 2 skipped, ")
     assert code == 1
 
 

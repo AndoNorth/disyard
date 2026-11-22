@@ -3,6 +3,7 @@ canned HTTP server on the forward's local port, the two API listeners as in-test
 API, store, broker and Temporal clients as stand-ins, so no cluster is touched. `healthy` makes
 every one answer as a healthy ci cluster does."""
 
+import contextlib
 import hashlib
 import io
 import json
@@ -10,6 +11,7 @@ import os
 import shutil
 import sys
 import threading
+import time
 from collections.abc import Callable, Iterator
 from dataclasses import dataclass, field
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -204,10 +206,11 @@ class Client:
 
 
 @pytest.fixture
-def healthy(verify, forwards, listener, monkeypatch) -> Healthy:
+def healthy(verify, forwards, listener, monkeypatch, tmp_path) -> Healthy:
     """Every layer answers as a healthy ci cluster does, the broker with no dead letter, Temporal
     with build exit-a current and deployed, and the job admitted, running with its compile done,
-    then succeeded with results that hold the known answer."""
+    then succeeded with results that hold the known answer. The cluster has no observability
+    record, so the switch reads off, and the state directory is the test's own."""
     from wft_acceptance import smoke
     from wft_acceptance.clients import broker, store
 
@@ -267,7 +270,95 @@ def healthy(verify, forwards, listener, monkeypatch) -> Healthy:
     monkeypatch.setattr(smoke.temporal, "connect", connect)
     monkeypatch.setattr(smoke, "make_deployed_current", current)
     monkeypatch.delenv("WFT_PRESET", raising=False)
+    monkeypatch.setenv("WFT_STATE_DIR", str(tmp_path / "state"))
     return Healthy(log, job)
+
+
+@pytest.fixture
+def record(healthy, tmp_path) -> Callable[[str], None]:
+    """Writes the observability record `up.sh` leaves in the state directory."""
+
+    def write(value: str) -> None:
+        state = tmp_path / "state"
+        state.mkdir(exist_ok=True)
+        (state / "cluster.obs").write_text(f"{value}\n")
+
+    return write
+
+
+TRACE_ID = "4bf92f3577b34da6a3ce929d0e0e4736"
+
+
+def obs_trace(*services: str) -> dict:
+    """An OTLP JSON trace with one span of each service."""
+    return {
+        "batches": [
+            {
+                "resource": {
+                    "attributes": [{"key": "service.name", "value": {"stringValue": service}}]
+                },
+                "scopeSpans": [{"spans": [{"name": f"{service}.span"}]}],
+            }
+            for service in services
+        ]
+    }
+
+
+def seed_obs(fake, compiled: bool = True) -> None:
+    """Makes the fake stack show everything the job's telemetry row asks for."""
+    from wft_acceptance.smoke import telemetry
+    from wft_obs.targets import JOBS
+
+    now = time.time()
+    fake.vectors["up"] = [
+        {"metric": {"__name__": "up", "job": job}, "value": [now, "1"]} for job in sorted(JOBS)
+    ]
+    components = [*telemetry.LOGGED, *(["compile-worker"] if compiled else [])]
+    for component in components:
+        asked = (
+            telemetry.accepted_query(JOB_ID)
+            if component == "dispatch"
+            else telemetry.log_query(component, JOB_ID)
+        )
+        labels = {"service_name": component, "job_id": JOB_ID}
+        if component == "dispatch":
+            labels["trace_id"] = TRACE_ID
+        fake.streams[asked] = [{"stream": labels, "values": [[str(int(now * 1e9)), "a line"]]}]
+    fake.traces[TRACE_ID] = obs_trace(*telemetry.TRACED)
+    fake.services = [
+        f"wft.{c}" for c in (*telemetry.PROFILED, *(["compile-worker"] if compiled else []))
+    ]
+
+
+@pytest.fixture
+def fake_obs(healthy, record, monkeypatch, tmp_path):
+    """A started FakeObs that shows a healthy stack, standing behind every forward to `wft-obs`
+    and at Grafana's address, the record at `on`, and the telemetry row's deadline and poll
+    shortened."""
+    from wft_acceptance import smoke
+    from wft_acceptance.smoke import results, telemetry
+    from wft_obs.testing import FakeObs
+
+    original = smoke.forwarded
+
+    @contextlib.contextmanager
+    def forwarded(namespace, resource, port, timeout_s=None):
+        if namespace != telemetry.NAMESPACE:
+            with original(namespace, resource, port, timeout_s) as address:
+                yield address
+        else:
+            yield fake.url.removeprefix("http://")
+
+    record("on")
+    with FakeObs() as fake:
+        seed_obs(fake)
+        monkeypatch.setattr(smoke, "forwarded", forwarded)
+        monkeypatch.setattr(results, "GRAFANA", fake.url)
+        monkeypatch.setattr(telemetry, "DEADLINE_S", 1.0)
+        monkeypatch.setattr(telemetry, "EVERY_S", 0.1)
+        (tmp_path / "state").mkdir(exist_ok=True)
+        (tmp_path / "state" / "grafana.credential").write_text("secret\n")
+        yield fake
 
 
 @pytest.fixture
