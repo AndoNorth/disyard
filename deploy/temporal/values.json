@@ -49,6 +49,6 @@
     }
   },
   "admintools": {"enabled": false},
-  "web": {"enabled": false},
+  "web": {"enabled": false, "service": {"type": "NodePort"}, "deploymentStrategy": {"type": "Recreate"}},
   "schema": {"useHelmHooks": false, "ttlSecondsAfterFinished": null}
 }

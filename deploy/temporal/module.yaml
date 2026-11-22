@@ -33,6 +33,13 @@ resources:
     limits:
       cpu: 150m
       memory: 128Mi
+  temporal-web:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 50m
+      memory: 64Mi
   temporal-schema:
     requests:
       cpu: 50m
