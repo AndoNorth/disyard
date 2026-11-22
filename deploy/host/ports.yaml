@@ -8,3 +8,9 @@ ports:
   - name: dispatch-api
     host_port: 18081
     node_port: 30081
+  - name: grafana
+    host_port: 13000
+    node_port: 30300
+  - name: temporal-ui
+    host_port: 18233
+    node_port: 30233

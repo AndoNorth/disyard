@@ -142,7 +142,8 @@ def test_resources_of_the_module(rendered):
 def test_two_node_ports_of_the_host_map(rendered):
     _, objects, _ = rendered
     host = yaml.safe_load((ROOT / "deploy/host/ports.yaml").read_text())["ports"]
-    node_ports = {row["name"]: row["node_port"] for row in host}
+    listeners = {"control-api", "dispatch-api"}
+    node_ports = {row["name"]: row["node_port"] for row in host if row["name"] in listeners}
     assert node_ports == {"control-api": 30080, "dispatch-api": 30081}
     ports = {p["name"]: p["containerPort"] for p in container_of(objects)["ports"]}
     for listener, node_port in node_ports.items():

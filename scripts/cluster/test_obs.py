@@ -11,7 +11,7 @@ from pathlib import Path
 import pytest
 
 ROOT = Path(__file__).resolve().parents[2]
-OFF_MIB, ON_MIB = 640, 2304
+OFF_MIB, ON_MIB = 640, 4096
 
 
 def run(args, tmp_path, **env):
@@ -126,14 +126,14 @@ def doctor_memory(tmp_path, mib, **env):
     return next(line for line in out.stdout.splitlines() if " memory-vs-preset: " in line)
 
 
-@pytest.mark.parametrize("mib", [12032, 13000, 13695])
+@pytest.mark.parametrize("mib", [12032, 13000, 15487])
 def test_doctor_passes_off_and_warns_on_between_the_two_sums(mib, tmp_path):
     assert doctor_memory(tmp_path, mib).startswith("ok memory-vs-preset:")
     assert doctor_memory(tmp_path, mib, WFT_OBS="on").startswith("warn memory-vs-preset:")
 
 
 def test_doctor_reads_obs_memory_mib_with_the_switch_on(tmp_path):
-    assert doctor_memory(tmp_path, 13696, WFT_OBS="on").startswith("ok memory-vs-preset:")
+    assert doctor_memory(tmp_path, 15488, WFT_OBS="on").startswith("ok memory-vs-preset:")
     assert doctor_memory(tmp_path, 12031, WFT_OBS="on").startswith("fail memory-vs-preset:")
     assert doctor_memory(tmp_path, 16000, WFT_OBS="on", WFT_PRESET="dev").startswith(
         "fail memory-vs-preset:"
