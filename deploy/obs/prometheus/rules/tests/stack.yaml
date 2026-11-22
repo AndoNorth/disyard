@@ -28,3 +28,82 @@ tests:
       - eval_time: 30m
         alertname: WftObsDataLoss
         exp_alerts: []
+  - interval: 1m
+    name: obs volume filling fires for prometheus and tempo above their caps
+    input_series:
+      - series: 'prometheus_tsdb_storage_blocks_bytes'
+        values: '4e9x30'
+      - series: 'prometheus_tsdb_wal_storage_size_bytes'
+        values: '4e8x30'
+      - series: 'prometheus_tsdb_head_chunks_storage_size_bytes'
+        values: '2e8x30'
+      - series: 'tempodb_backend_bytes_total{status="live",tenant="single-tenant"}'
+        values: '2.5e9x30'
+    alert_rule_test:
+      - eval_time: 20m
+        alertname: WftObsVolumeFilling
+        exp_alerts:
+          - exp_labels: {severity: warning, backend: prometheus}
+            exp_annotations:
+              summary: The prometheus volume holds more than its size cap.
+              description: >-
+                Prometheus and Tempo read their stored bytes, and Loki the chunk bytes written in its 10 days
+                of retention. Loki and Tempo have no size key, so this alert is their only brake on a flood.
+          - exp_labels: {severity: warning, backend: tempo}
+            exp_annotations:
+              summary: The tempo volume holds more than its size cap.
+              description: >-
+                Prometheus and Tempo read their stored bytes, and Loki the chunk bytes written in its 10 days
+                of retention. Loki and Tempo have no size key, so this alert is their only brake on a flood.
+  - interval: 1h
+    name: obs volume filling fires for loki above 8 GB written in its retention
+    input_series:
+      - series: 'loki_ingester_chunk_size_bytes_sum'
+        values: '0+4e7x300'
+    alert_rule_test:
+      - eval_time: 260h
+        alertname: WftObsVolumeFilling
+        exp_alerts:
+          - exp_labels: {severity: warning, backend: loki}
+            exp_annotations:
+              summary: The loki volume holds more than its size cap.
+              description: >-
+                Prometheus and Tempo read their stored bytes, and Loki the chunk bytes written in its 10 days
+                of retention. Loki and Tempo have no size key, so this alert is their only brake on a flood.
+  - interval: 1m
+    name: obs volume filling stays silent below the caps and for tempo series that are not live bytes
+    input_series:
+      - series: 'prometheus_tsdb_storage_blocks_bytes'
+        values: '3e9x30'
+      - series: 'prometheus_tsdb_wal_storage_size_bytes'
+        values: '4e8x30'
+      - series: 'prometheus_tsdb_head_chunks_storage_size_bytes'
+        values: '2e8x30'
+      - series: 'tempodb_backend_bytes_total{status="live",tenant="single-tenant"}'
+        values: '1.7e9x30'
+      - series: 'tempodb_backend_bytes_total{status="compacted",tenant="single-tenant"}'
+        values: '5e9x30'
+      - series: 'loki_ingester_chunk_size_bytes_sum'
+        values: '0+1e3x30'
+    alert_rule_test:
+      - eval_time: 25m
+        alertname: WftObsVolumeFilling
+        exp_alerts: []
+  - interval: 1m
+    name: obs volume filling stays silent for a spike shorter than 15 minutes
+    input_series:
+      - series: 'tempodb_backend_bytes_total{status="live",tenant="single-tenant"}'
+        values: '1e9x5 2.5e9x5 1e9x20'
+    alert_rule_test:
+      - eval_time: 25m
+        alertname: WftObsVolumeFilling
+        exp_alerts: []
+  - interval: 1h
+    name: obs volume filling stays silent for loki at its measured growth
+    input_series:
+      - series: 'loki_ingester_chunk_size_bytes_sum'
+        values: '0+5e6x300'
+    alert_rule_test:
+      - eval_time: 260h
+        alertname: WftObsVolumeFilling
+        exp_alerts: []
