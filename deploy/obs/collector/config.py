@@ -1,4 +1,4 @@
-"""The manifests of the collector module: one OpenTelemetry Collector for the logs, events and traces of the stack.
+"""The manifests of the collector module: one OpenTelemetry Collector for logs, events and traces.
 
 The Python services push logs and spans to it by OTLP, and it watches the Kubernetes events of
 every namespace itself. Logs go to Loki's OTLP endpoint with no processing that adds labels, so
@@ -27,7 +27,7 @@ METRICS_PORT = 8888
 HEALTH_PORT = 13133
 LOKI_ENDPOINT = "http://loki.wft-obs:3100/otlp"
 TEMPO_ENDPOINT = "http://tempo.wft-obs:4318"
-# The service name the events carry, so a query by `service_name` finds them beside the services' logs.
+# The service name of the events, so a query by `service_name` finds them beside the services.
 EVENTS_SERVICE = "kubernetes-events"
 # The uid of the user the image runs as.
 COLLECTOR_USER = 10001
@@ -47,7 +47,9 @@ def collector_config() -> dict:
                     "http": {"endpoint": f"0.0.0.0:{OTLP_HTTP_PORT}"},
                 }
             },
-            "k8s_objects": {"objects": [{"name": "events", "mode": "watch", "group": "events.k8s.io"}]},
+            "k8s_objects": {
+                "objects": [{"name": "events", "mode": "watch", "group": "events.k8s.io"}]
+            },
         },
         "processors": {
             "memory_limiter": {
@@ -75,7 +77,13 @@ def collector_config() -> dict:
             "telemetry": {
                 "metrics": {
                     "readers": [
-                        {"pull": {"exporter": {"prometheus": {"host": "0.0.0.0", "port": METRICS_PORT}}}}
+                        {
+                            "pull": {
+                                "exporter": {
+                                    "prometheus": {"host": "0.0.0.0", "port": METRICS_PORT}
+                                }
+                            }
+                        }
                     ]
                 }
             },
@@ -158,7 +166,7 @@ def render() -> list[dict]:
             "metadata": meta,
             "spec": {
                 "replicas": 1,
-                # Every obs Deployment is Recreate, so a rollout never needs a surge pod on the node.
+                # Every obs Deployment is Recreate, so a rollout needs no surge pod on the node.
                 "strategy": {"type": "Recreate"},
                 "selector": {"matchLabels": {"app": NAME}},
                 "template": {
@@ -191,7 +199,7 @@ def render() -> list[dict]:
                                 "ports": [
                                     {"name": "otlp-http", "containerPort": OTLP_HTTP_PORT},
                                     {"name": "otlp-grpc", "containerPort": OTLP_GRPC_PORT},
-                                    # Named `metrics` so the pod scrape finds the collector's own series.
+                                    # Named `metrics` so the pod scrape finds the collector itself.
                                     {"name": "metrics", "containerPort": METRICS_PORT},
                                     {"name": "health", "containerPort": HEALTH_PORT},
                                 ],

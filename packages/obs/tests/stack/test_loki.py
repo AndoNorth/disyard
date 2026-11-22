@@ -131,7 +131,9 @@ def test_collector_drops_traces_while_tempo_is_absent_instead_of_queueing_them()
 def test_collector_adds_no_label_beyond_the_service_name_of_the_events():
     config = collector.collector_config()
     processors = {
-        name for pipeline in config["service"]["pipelines"].values() for name in pipeline["processors"]
+        name
+        for pipeline in config["service"]["pipelines"].values()
+        for name in pipeline["processors"]
     }
     assert processors == {"memory_limiter", "batch", "resource/events"}
     [attribute] = config["processors"]["resource/events"]["attributes"]
@@ -141,9 +143,11 @@ def test_collector_adds_no_label_beyond_the_service_name_of_the_events():
 
 
 def test_collector_memory_limiter_sits_under_the_container_limit():
-    limit_mib = int(yaml.safe_load((OBS / "collector/module.yaml").read_text())["resources"][
-        "collector"
-    ]["limits"]["memory"].removesuffix("Mi"))
+    limit_mib = int(
+        yaml.safe_load((OBS / "collector/module.yaml").read_text())["resources"]["collector"][
+            "limits"
+        ]["memory"].removesuffix("Mi")
+    )
     limiter = collector.collector_config()["processors"]["memory_limiter"]
     assert limiter["limit_mib"] + limiter["spike_limit_mib"] < limit_mib
 

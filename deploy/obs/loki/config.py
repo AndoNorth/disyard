@@ -60,7 +60,7 @@ def loki_config() -> dict:
         },
         "limits_config": {
             "retention_period": RETENTION,
-            # Structured metadata is how job_id and the other correlation fields stay out of the index.
+            # Correlation fields such as job_id stay structured metadata, out of the index.
             "allow_structured_metadata": True,
             "volume_enabled": True,
         },
