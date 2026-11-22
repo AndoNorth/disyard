@@ -1,6 +1,8 @@
 # Temporal module: the official chart, vendored here and pinned by digest, rendered with values.json and an overlay
 # of the pins, the pool placement and the resources of module.yaml. One Tilt resource per service, and the module's
 # own resource is the frontend, which waits for the schema job and the other services, so it is ready only when all are.
+# The web UI is rendered only with the observability switch on, as one more Deployment on the infra node whose
+# NodePort is the temporal-ui row of the host access map, and the module's resource waits for it as for a service.
 module = read_yaml("module.yaml")
 versions = read_yaml("../versions.yaml")
 pin = versions["charts"][module["artifact"]["pin"]]
@@ -40,6 +42,17 @@ server.update(placement)
 admintools = {"image": image("temporalio/admin-tools")}
 admintools.update(placement)
 overlay = {"server": server, "admintools": admintools, "schema": {"resources": res[name + "-schema"]}}
+ui = os.getenv("WFT_OBS") == "on"
+if ui:
+    nodeport = [p for p in read_yaml("../host/ports.yaml")["ports"] if p["name"] == "temporal-ui"][0]["node_port"]
+    web = {
+        "enabled": True,
+        "image": image("temporalio/ui"),
+        "resources": res[name + "-web"],
+        "service": {"nodePort": nodeport},
+    }
+    web.update(placement)
+    overlay["web"] = web
 
 manifests = local(
     ["helm", "template", name, chart, "--namespace", namespace, "--skip-tests", "-f", os.path.abspath("values.json"), "-f", "-"],
@@ -60,9 +73,11 @@ k8s_resource(
 )
 for s in services[1:]:
     k8s_resource(name + "-" + s, labels = group, resource_deps = [name + "-schema"])
+if ui:
+    k8s_resource(name + "-web", labels = group, resource_deps = [name + "-schema"])
 k8s_resource(
     name + "-frontend",
     new_name = name,
     labels = group,
-    resource_deps = [name + "-" + s for s in services[1:]],
+    resource_deps = [name + "-" + s for s in services[1:] + (["web"] if ui else [])],
 )
