@@ -48,14 +48,14 @@ def address(request):
     return real
 
 
-def test_prom_answers_an_instant_vector(address):
+def test_prometheus_answers_an_instant_vector(address):
     assert [item["value"][1] for item in query.prom(address("prometheus"), "vector(1)")] == ["1"]
     for item in query.prom(address("prometheus"), "up"):
         assert "job" in item["metric"]
         assert item["value"][1] in {"0", "1"}
 
 
-def test_targets_carry_a_job_and_a_health(address):
+def test_prometheus_targets_carry_a_job_and_a_health(address):
     for target in query.targets(address("prometheus")):
         assert "job" in target["labels"]
         assert target["health"] in HEALTH
@@ -70,12 +70,12 @@ def test_loki_answers_streams_of_timestamped_lines(address):
             assert isinstance(value[1], str)
 
 
-def test_trace_of_an_unknown_id_is_not_found(address):
+def test_tempo_trace_of_an_unknown_id_is_not_found(address):
     with pytest.raises(QueryError, match="HTTP 404"):
         query.trace(address("tempo"), "0" * 31 + "1")
 
 
-def test_profiled_answers_service_names(address):
+def test_pyroscope_profiled_answers_service_names(address):
     now = time.time()
     names = query.profiled(address("pyroscope"), now - 300, now)
     assert all(isinstance(name, str) for name in names)
