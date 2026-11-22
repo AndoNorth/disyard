@@ -138,7 +138,7 @@ spec:
   strategy: {type: Recreate}
   selector: {matchLabels: {app: prometheus}}
   template:
-    metadata: {labels: {app: prometheus}}
+    metadata: {labels: {app: prometheus, app.kubernetes.io/name: prometheus}}
     spec:
       serviceAccountName: prometheus
       nodeSelector: {wft.dev/pool: obs}
@@ -155,7 +155,7 @@ spec:
             - --web.enable-otlp-receiver
             - --web.listen-address=:9090
           ports: [{name: http, containerPort: 9090}]
-          resources: {requests: {cpu: 200m, memory: 384Mi}, limits: {cpu: 200m, memory: 384Mi}}
+          resources: {requests: {cpu: 100m, memory: 640Mi}, limits: {cpu: 100m, memory: 640Mi}}
           volumeMounts: [{name: config, mountPath: /etc/prometheus}, {name: data, mountPath: /prometheus}]
       volumes:
         - {name: config, configMap: {name: prometheus}}
@@ -298,7 +298,7 @@ spec:
           image: grafana/tempo:2.10.10
           args: [-config.file=/etc/tempo/tempo.yaml]
           ports: [{name: http, containerPort: 3200}, {name: otlp-grpc, containerPort: 4317}]
-          resources: {requests: {cpu: 100m, memory: 256Mi}, limits: {cpu: 100m, memory: 256Mi}}
+          resources: {requests: {cpu: 200m, memory: 1024Mi}, limits: {cpu: 200m, memory: 1024Mi}}
           volumeMounts: [{name: config, mountPath: /etc/tempo}, {name: data, mountPath: /var/tempo}]
       volumes:
         - {name: config, configMap: {name: tempo}}
@@ -322,7 +322,7 @@ spec:
   strategy: {type: Recreate}
   selector: {matchLabels: {app: pyroscope}}
   template:
-    metadata: {labels: {app: pyroscope}}
+    metadata: {labels: {app: pyroscope, app.kubernetes.io/name: pyroscope}}
     spec:
       nodeSelector: {wft.dev/pool: obs}
       tolerations: [{key: wft.dev/pool, operator: Equal, value: obs, effect: NoSchedule}]
@@ -380,7 +380,7 @@ spec:
   strategy: {type: Recreate}
   selector: {matchLabels: {app: collector}}
   template:
-    metadata: {labels: {app: collector}}
+    metadata: {labels: {app: collector, app.kubernetes.io/name: collector}}
     spec:
       serviceAccountName: collector
       nodeSelector: {wft.dev/pool: obs}
@@ -390,7 +390,7 @@ spec:
           image: otel/opentelemetry-collector-contrib:0.165.0
           args: [--config=/etc/otelcol/collector.yaml]
           ports: [{name: otlp-http, containerPort: 4318}, {name: otlp-grpc, containerPort: 4317}, {name: metrics, containerPort: 8888}]
-          resources: {requests: {cpu: 50m, memory: 128Mi}, limits: {cpu: 50m, memory: 128Mi}}
+          resources: {requests: {cpu: 50m, memory: 160Mi}, limits: {cpu: 50m, memory: 160Mi}}
           volumeMounts: [{name: config, mountPath: /etc/otelcol}]
       volumes:
         - {name: config, configMap: {name: collector}}
