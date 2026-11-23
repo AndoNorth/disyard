@@ -10,7 +10,7 @@ Diagram: [temporal-module.drawio.svg](temporal-module.drawio.svg), the render in
 | File | Holds |
 | --- | --- |
 | `temporal-<version>.tgz` | the chart, vendored so a render needs no network, and checked against the digest of `charts.temporal` in `deploy/versions.yaml` at every load |
-| `values.json` | the chart values: the two stores, 512 shards, one replica per service, the dynamic config, and no web UI, admin tools pod or namespace job |
+| `values.json` | the chart values: the two stores, 512 shards, one replica per service, the dynamic config, the web UI off, and no admin tools pod or namespace job |
 | `module.yaml` | the module manifest, whose `resources` are the limits of each service and of the schema job |
 | `Tiltfile.module` | renders the chart with `values.json` and an overlay of the image pins, the infra pool placement, the limits of `module.yaml` and the checksum of the dynamic config |
 | `test_render.py` | the render tests, offline through `tilt alpha tiltfile-result` |
@@ -25,6 +25,10 @@ Tilt cannot put four Deployments into one resource, so each service has its own,
 | `temporal-schema` | the schema Job and the two ConfigMaps | `temporaldb` |
 | `temporal-history`, `temporal-matching`, `temporal-worker` | one Deployment each | `temporal-schema` |
 | `temporal` | the frontend Deployment | the three above |
+
+With the observability switch on (`WFT_OBS=on`), `Tiltfile.module` turns the web UI on as the resource `temporal-web`, a NodePort Service reached at `http://127.0.0.1:18233` (the `temporal-ui` row of `deploy/host/ports.yaml`).
+The UI image is pinned in `deploy/versions.yaml` as `temporalio/ui`.
+Version 2.56.1 shipped a `<meta>` Content-Security-Policy (`script-src 'strict-dynamic'`) that Chromium 158 blocks, which left the page blank, and 2.56.4 renders.
 
 Profiles enable `temporal` by name, and Tilt enables the resources it depends on, so `temporal` is ready only when the schema is in place and every service is ready.
 
