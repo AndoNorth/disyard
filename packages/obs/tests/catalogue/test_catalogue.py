@@ -4,6 +4,7 @@
 The live check needs `WFT_OBS_PROMETHEUS_URL`, and names each absent entry in its failure."""
 
 import os
+import time
 from pathlib import Path
 
 import pytest
@@ -13,6 +14,7 @@ ROOT = Path(__file__).resolve().parents[4]
 DASHBOARDS = sorted((ROOT / "deploy/obs/grafana/dashboards").glob("*.json"))
 RULES = sorted((ROOT / "deploy/obs/prometheus/rules").glob("*.yaml"))
 CATALOGUE = catalogue.load(ROOT)
+SCRAPE_WAIT_S = 60
 
 
 @pytest.mark.parametrize(
@@ -101,5 +103,8 @@ def test_absent_lists_the_entries_with_no_sample(fake):
 def test_every_catalogue_entry_is_in_prometheus():
     if not (url := os.environ.get("WFT_OBS_PROMETHEUS_URL")):
         pytest.skip("WFT_OBS_PROMETHEUS_URL is not set")
-    missing = catalogue.absent(url, CATALOGUE)
+    # A series written just before the check appears after the next scrape.
+    deadline = time.monotonic() + SCRAPE_WAIT_S
+    while (missing := catalogue.absent(url, CATALOGUE)) and time.monotonic() < deadline:
+        time.sleep(5)
     assert not missing, f"{len(missing)} catalogue entries absent from Prometheus: {missing}"
