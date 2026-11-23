@@ -265,6 +265,7 @@ def main(environ: Mapping[str, str] = os.environ, account: Path = ACCOUNT) -> in
 
     snapshotter = kube.Snapshotter(reader, config.snapshot_every_s, build=build)
     runtime = obs_metrics.runtime(config.metrics_address, BUCKETS)
+    obs_metrics.export_registry(runtime.metric_meter, "placement")
     service = Service(config.listen, snapshotter, Metrics(runtime.metric_meter))
     snapshotter.start()
 

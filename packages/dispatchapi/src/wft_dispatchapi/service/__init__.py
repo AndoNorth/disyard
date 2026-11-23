@@ -331,6 +331,6 @@ def main(environ: Mapping[str, str] = os.environ) -> int:
         print(f"wft_dispatchapi.service: {error.args[0]}", file=sys.stderr)
         return 1
     service = build(config, tenancy)
-    export_registry(service.runtime.metric_meter)
+    export_registry(service.runtime.metric_meter, "dispatch")
     run(service)
     return 0

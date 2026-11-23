@@ -19,11 +19,19 @@ def runtime(address: str, buckets: Mapping[str, Sequence[float]]) -> Runtime:
     return Runtime(telemetry=TelemetryConfig(metrics=metrics))
 
 
-def export_registry(meter: MetricMeter) -> None:
-    """Mirrors every later call of the event registry onto `meter`; call it once per process, at
-    startup, since a call made before it is not replayed."""
+# A counter with no increment is not exported, so these start at 0 for the component and the
+# series exists before the first drop.
+DROP_COUNTERS = ("wft_obs_log_dropped_total", "wft_obs_span_dropped_total")
+
+
+def export_registry(meter: MetricMeter, component: str) -> None:
+    """Mirrors every later call of the event registry onto `meter`, and starts the drop counters
+    of `component` at 0; call it once per process, at startup, since a call made before it is not
+    replayed."""
     histograms = {name: meter.create_histogram_float(name) for name in registry.histograms}
-    counters = {}
+    counters = {name: meter.create_counter(name) for name in DROP_COUNTERS}
+    for counter in counters.values():
+        counter.add(0, {"component": component})
 
     def mirror(name: str, value: float, labels: dict[str, str]) -> None:
         if name in histograms:

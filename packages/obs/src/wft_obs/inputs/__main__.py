@@ -42,6 +42,7 @@ def main() -> int:
         print(f"wft_obs.inputs: {DSN_ENV} is not set", file=sys.stderr)
         return 2
     runtime = metrics.runtime(os.environ.get(ADDRESS_ENV, DEFAULT_ADDRESS), {})
+    metrics.export_registry(runtime.metric_meter, "state-inputs")
     stop = threading.Event()
     for number in (signal.SIGTERM, signal.SIGINT):
         signal.signal(number, lambda *_: stop.set())
