@@ -10,6 +10,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 import pytest
 from opentelemetry.proto.collector.logs.v1.logs_service_pb2 import ExportLogsServiceRequest
+from wft_events.metrics import registry
 from wft_obs import logs
 
 TRACE_ID = "4bf92f3577b34da6a3ce929d0e0e4736"
@@ -129,6 +130,7 @@ def test_a_refusing_endpoint_never_blocks_and_counts_the_drops(monkeypatch, root
     logs.install("dispatch", stream=out)
     assert otlp_handler(root) is not None
     before = logs.dropped()
+    counted = registry.count("wft_obs_log_dropped_total", component="dispatch")
     log = logging.getLogger("wft.test")
     started = time.monotonic()
     for i in range(10_000):
@@ -138,6 +140,8 @@ def test_a_refusing_endpoint_never_blocks_and_counts_the_drops(monkeypatch, root
     written = [json.loads(line)["msg"] for line in out.getvalue().splitlines()]
     assert sum(msg.startswith("line ") for msg in written) == 10_000
     assert logs.dropped() - before >= 10_000 - logs.QUEUE_SIZE - logs.BATCH_SIZE
+    exported = registry.count("wft_obs_log_dropped_total", component="dispatch") - counted
+    assert exported == logs.dropped() - before
 
 
 class Receiver(ThreadingHTTPServer):
