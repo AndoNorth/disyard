@@ -10,6 +10,7 @@ import pytest
 from opentelemetry import trace
 from opentelemetry.proto.collector.trace.v1.trace_service_pb2 import ExportTraceServiceRequest
 from opentelemetry.sdk.trace import TracerProvider
+from wft_events.metrics import registry
 from wft_obs import logs, traces
 from wft_obs.setup import setup
 from wft_temporal.trace import current_traceparent, stage_span
@@ -88,6 +89,7 @@ def test_a_refusing_endpoint_never_blocks_and_counts_the_drops(fresh, monkeypatc
     setup("dispatch")
     tracer = trace.get_tracer("wft")
     before = traces.dropped()
+    counted = registry.count("wft_obs_span_dropped_total", component="dispatch")
     started = time.monotonic()
     for _ in range(10_000):
         with stage_span(tracer, "stage", TRACEPARENT):
@@ -95,6 +97,8 @@ def test_a_refusing_endpoint_never_blocks_and_counts_the_drops(fresh, monkeypatc
     elapsed = time.monotonic() - started
     assert elapsed < 2, f"10,000 spans took {elapsed:.2f}s"
     assert traces.dropped() - before >= 10_000 - traces.QUEUE_SIZE - traces.BATCH_SIZE
+    exported = registry.count("wft_obs_span_dropped_total", component="dispatch") - counted
+    assert exported == traces.dropped() - before
 
 
 def test_setup_is_idempotent_within_a_process(fresh, monkeypatch):

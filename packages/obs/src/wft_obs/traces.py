@@ -18,6 +18,7 @@ from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import ReadableSpan, TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor, SpanExporter
 from opentelemetry.sdk.trace.sampling import ParentBased, TraceIdRatioBased
+from wft_events.metrics import registry
 
 ENDPOINT = "OTEL_EXPORTER_OTLP_ENDPOINT"
 QUEUE_SIZE = 2048
@@ -33,10 +34,11 @@ def dropped() -> int:
     return _dropped
 
 
-def _count_drop() -> None:
+def _count_drop(component: str) -> None:
     global _dropped
     with _dropped_lock:
         _dropped += 1
+    registry.inc("wft_obs_span_dropped_total", component=component)
 
 
 class CountingBatchSpanProcessor(BatchSpanProcessor):
@@ -46,14 +48,15 @@ class CountingBatchSpanProcessor(BatchSpanProcessor):
     refusing collector would flood the service's own log with a line per span.
     """
 
-    def __init__(self, exporter: SpanExporter):
+    def __init__(self, exporter: SpanExporter, component: str):
+        self.component = component
         super().__init__(exporter, max_queue_size=QUEUE_SIZE, max_export_batch_size=BATCH_SIZE)
 
     def on_end(self, span: ReadableSpan) -> None:
         # shortcut: reads the SDK's private queue, pinned by the drop test; replace if the SDK
         # exposes queue fullness.
         if len(self._batch_processor._queue) >= QUEUE_SIZE:
-            _count_drop()
+            _count_drop(self.component)
             return
         super().on_end(span)
 
@@ -70,7 +73,7 @@ def provider(component: str) -> TracerProvider:
         resource=Resource.create({"service.name": component}),
         sampler=ParentBased(TraceIdRatioBased(SAMPLE_RATIO)),
     )
-    made.add_span_processor(CountingBatchSpanProcessor(OTLPSpanExporter()))
+    made.add_span_processor(CountingBatchSpanProcessor(OTLPSpanExporter(), component))
     return made
 
 

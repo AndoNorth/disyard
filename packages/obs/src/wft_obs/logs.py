@@ -29,6 +29,7 @@ from opentelemetry._logs import LogRecord, SeverityNumber
 from opentelemetry.exporter.otlp.proto.http._log_exporter import OTLPLogExporter
 from opentelemetry.sdk._logs import ReadableLogRecord
 from opentelemetry.sdk.resources import Resource
+from wft_events.metrics import registry
 
 CORE = ("ts", "level", "component", "msg")
 FIELDS = (
@@ -69,10 +70,11 @@ def dropped() -> int:
     return _dropped
 
 
-def _count_drop() -> None:
+def _count_drop(component: str) -> None:
     global _dropped
     with _dropped_lock:
         _dropped += 1
+    registry.inc("wft_obs_log_dropped_total", component=component)
 
 
 def ids_of(traceparent: str) -> tuple[str, str] | None:
@@ -145,6 +147,7 @@ class OtlpHandler(logging.Handler):
 
     def __init__(self, component: str, exporter=None):
         super().__init__()
+        self.component = component
         self.resource = Resource.create({"service.name": component})
         self.exporter = exporter or OTLPLogExporter()
         self.queue: deque = deque()
@@ -158,7 +161,7 @@ class OtlpHandler(logging.Handler):
             return
         try:
             if len(self.queue) >= QUEUE_SIZE:
-                _count_drop()
+                _count_drop(self.component)
                 return
             self.queue.append(self._translate(record))
             if len(self.queue) >= BATCH_SIZE:
