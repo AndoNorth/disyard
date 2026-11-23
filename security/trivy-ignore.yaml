@@ -19,6 +19,12 @@ vulnerabilities:
       python:3.13-slim-trixie still lacks it. Bump the base in deploy/versions.yaml when a rebuilt tag
       carries the fix, then drop the entry.
     expired_at: 2027-01-15
+  - id: CVE-2026-107494
+    statement: >-
+      No fixed Debian package exists yet. The package comes from the python base image, and the service
+      does not serve QUIC, which is the only affected code path. Recheck on the next base image bump and drop the
+      entry once Debian ships a fix.
+    expired_at: 2027-02-15
   - id: CVE-2026-109518
     statement: >-
       Debian has published a fix that the pinned python base image does not carry yet, and the newest
