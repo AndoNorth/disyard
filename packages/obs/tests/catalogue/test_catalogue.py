@@ -89,7 +89,7 @@ def test_absent_lists_the_entries_with_no_sample(fake):
             "wft_b_seconds": {"type": "histogram"},
             "wft_c_total": {"type": "counter"},
         },
-        "external": {"ext_d": {"type": "gauge"}},
+        "external": {"ext_d": {"type": "gauge"}, "ext_e": {"type": "gauge", "conditional": True}},
     }
     sample = [{"metric": {}, "value": [0, "1"]}]
     fake.vectors["count(last_over_time(wft_a[10m]))"] = sample

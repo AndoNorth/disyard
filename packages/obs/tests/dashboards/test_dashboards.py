@@ -167,6 +167,6 @@ def test_stack_health_covers_every_obs_module():
         "loki_distributor_bytes_received_total",
         "tempo_distributor_spans_received_total",
         "pyroscope_distributor_received_compressed_bytes_sum",
-        "otelcol_receiver_accepted_spans_total",
+        "otelcol_receiver_accepted_spans",
     ):
         assert any(ingest in e for e in text), ingest

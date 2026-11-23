@@ -112,9 +112,12 @@ def absent(address: str, catalogue: dict, window: str = "10m") -> list[str]:
 
     The pushed `wft_smoke_*` names are in Prometheus after one smoke run, like every scraped name.
 
-    A histogram is checked by its `_bucket` series, which every observation writes."""
+    A histogram is checked by its `_bucket` series, which every observation writes. An entry marked
+    `conditional` is absent from a healthy idle run, so it is not expected."""
     missing = []
     for name, entry in {**catalogue["metrics"], **catalogue.get("external", {})}.items():
+        if entry.get("conditional"):
+            continue
         probe = name + "_bucket" if entry["type"] == "histogram" else name
         if not prom(address, f"count(last_over_time({probe}[{window}]))"):
             missing.append(name)
