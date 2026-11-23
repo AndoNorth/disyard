@@ -171,7 +171,9 @@ def test_the_line_that_names_a_job_in_the_publisher_carries_its_trace(fresh, cap
 def test_main_sets_up_the_component_and_exports_the_registry(monkeypatch):
     calls = []
     monkeypatch.setattr(service_module, "setup", lambda *a, **k: calls.append(("setup", a)))
-    monkeypatch.setattr(service_module, "export_registry", lambda meter: calls.append("export"))
+    monkeypatch.setattr(
+        service_module, "export_registry", lambda meter, component: calls.append("export")
+    )
     monkeypatch.setattr(service_module, "load", lambda profile: object())
     monkeypatch.setattr(service_module, "run", lambda service: calls.append("run"))
     monkeypatch.setattr(

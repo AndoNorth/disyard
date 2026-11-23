@@ -22,6 +22,7 @@ from temporalio.api.workflowservice.v1 import DescribeNamespaceRequest
 from temporalio.client import Client
 from temporalio.worker import Worker
 from wft_artifactclient.client import ArtifactClient
+from wft_obs.metrics import export_registry
 from wft_storecheck.s3 import load_credentials
 from wft_temporal import event_data_converter, tracing_interceptor
 
@@ -54,6 +55,7 @@ async def serve(config: Config, stop: asyncio.Event | None = None) -> None:
         loop.add_signal_handler(signum, stop.set)
     try:
         runtime = runtime_of(os.environ)
+        export_registry(runtime.metric_meter, f"{config.pool}-worker")
         client = await Client.connect(
             config.temporal_address,
             namespace=config.namespace,

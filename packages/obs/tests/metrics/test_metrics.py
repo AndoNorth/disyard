@@ -32,7 +32,7 @@ def served():
     port = _free_port()
     runtime = metrics.runtime(f"127.0.0.1:{port}", OWN)
     before = list(registry.listeners)
-    metrics.export_registry(runtime.metric_meter)
+    metrics.export_registry(runtime.metric_meter, "dispatch")
     yield runtime, f"http://127.0.0.1:{port}/metrics"
     registry.listeners[:] = before
 
@@ -81,3 +81,29 @@ def test_every_registry_histogram_takes_the_catalogues_buckets_and_an_emitter_it
     for name, histogram in registry.histograms.items():
         assert _bounds(text, name) == CATALOGUE["metrics"][name]["buckets"] == histogram.bounds
     assert _bounds(text, "wft_test_wait_seconds") == OWN["wft_test_wait_seconds"]
+
+
+@pytest.mark.parametrize(
+    "component", CATALOGUE["metrics"]["wft_obs_log_dropped_total"]["labels"]["component"]["values"]
+)
+def test_the_drop_counters_are_served_at_zero_for_each_component_before_any_drop(served, component):
+    runtime, url = served
+    before = list(registry.listeners)
+    metrics.export_registry(runtime.metric_meter, component)
+    registry.listeners[:] = before
+
+    text = _scrape(url)
+    for name in metrics.DROP_COUNTERS:
+        assert re.search(rf'^{name}{{[^}}]*component="{component}"[^}}]*}} 0$', text, re.MULTILINE)
+
+
+def test_a_drop_increments_the_served_drop_counter(served):
+    _, url = served
+
+    registry.inc("wft_obs_span_dropped_total", component="dispatch")
+
+    assert re.search(
+        r'^wft_obs_span_dropped_total{[^}]*component="dispatch"[^}]*} 1$',
+        _scrape(url),
+        re.MULTILINE,
+    )

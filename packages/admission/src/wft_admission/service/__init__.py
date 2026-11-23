@@ -311,7 +311,7 @@ async def serve(
         def connect_db() -> psycopg.Connection:
             return psycopg.connect(config.dsn, autocommit=True)
 
-        export_registry(runtime.metric_meter)
+        export_registry(runtime.metric_meter, "admission")
         metrics = Metrics(runtime.metric_meter, profile.priority_classes, caps)
         intake = Intake(
             profile,

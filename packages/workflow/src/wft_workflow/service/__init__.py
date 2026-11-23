@@ -178,13 +178,15 @@ async def serve(
     loop = asyncio.get_running_loop()
     for signum in (signal.SIGTERM, signal.SIGINT):
         loop.add_signal_handler(signum, stop.set)
+    runtime = runtime or prometheus(config.metrics_address)
+    metrics.export_registry(runtime.metric_meter, "workflow")
     try:
         client = await Client.connect(
             config.temporal_address,
             namespace=config.namespace,
             data_converter=event_data_converter,
             interceptors=[tracing_interceptor()],
-            runtime=runtime or prometheus(config.metrics_address),
+            runtime=runtime,
         )
         await client.workflow_service.describe_namespace(
             DescribeNamespaceRequest(namespace=config.namespace)
