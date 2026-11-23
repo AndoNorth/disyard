@@ -11,16 +11,19 @@ metrics:
   wft_event_size_warnings_total:
     type: counter
     help: Events serialised above the warning size.
+    conditional: true
     labels: {}
   wft_event_rejected_total:
     type: counter
     help: Events refused by the serializer, by the kind of failure.
+    conditional: true
     labels:
       reason:
         values: [schema-invalid, unsupported-major, event-too-large]
   wft_event_upgraded_total:
     type: counter
     help: Events read or replayed after an upgrade from the previous major.
+    conditional: true
     labels:
       type:
         values_from: contracts/events/schemas
@@ -41,6 +44,7 @@ metrics:
   wft_broker_dead_letter_total:
     type: counter
     help: Intake deliveries the consumer dead-lettered, by application reason of contracts/broker/reasons.yaml.
+    conditional: true
     labels:
       reason:
         values: [MALFORMED, UNSUPPORTED_VERSION, ADMISSION_FAILED]
@@ -202,16 +206,19 @@ metrics:
   wft_workflow_lost_transitions_total:
     type: counter
     help: Status moves of the job row that lost.
+    conditional: true
     labels: {}
   wft_workflow_retries_total:
     type: counter
     help: Attempts run again after a failure, by budget charged.
+    conditional: true
     labels:
       budget:
         values: [guest, infra, free]
   wft_workflow_reschedules_total:
     type: counter
     help: Schedule-to-start timeouts followed by a new place.
+    conditional: true
     labels: {}
   wft_workflow_job_seconds:
     type: histogram
@@ -450,11 +457,13 @@ external:
   kubelet_volume_stats_capacity_bytes:
     type: gauge
     help: Capacity of a persistent volume claim.
+    conditional: true
     job: kubelet
     labels: [namespace, persistentvolumeclaim]
   kubelet_volume_stats_used_bytes:
     type: gauge
     help: Bytes used on a persistent volume claim.
+    conditional: true
     job: kubelet
     labels: [namespace, persistentvolumeclaim]
   kube_deployment_created:
@@ -490,11 +499,13 @@ external:
   kube_pod_container_status_last_terminated_exitcode:
     type: gauge
     help: Exit code of the last termination of a container.
+    conditional: true
     job: kubernetes-pods
     labels: [namespace, pod, container]
   kube_pod_container_status_last_terminated_reason:
     type: gauge
     help: Reason for the last termination of a container, 1 for the reason it holds.
+    conditional: true
     job: kubernetes-pods
     labels: [namespace, pod, container, reason]
   kube_pod_container_status_restarts_total:
@@ -510,6 +521,7 @@ external:
   activity_task_timeout:
     type: counter
     help: Activity tasks that timed out, by the kind of timeout.
+    conditional: true
     job: kubernetes-pods
     labels: [taskqueue, timeout_type]
   approximate_backlog_age_seconds:
@@ -552,22 +564,22 @@ external:
     help: Bytes of the chunks the Loki ingester has flushed, the sum of its chunk size histogram.
     job: kubernetes-pods
     labels: []
-  otelcol_receiver_accepted_log_records_total:
+  otelcol_receiver_accepted_log_records:
     type: counter
     help: Log records the collector receivers have accepted.
     job: kubernetes-pods
     labels: []
-  otelcol_receiver_accepted_spans_total:
+  otelcol_receiver_accepted_spans:
     type: counter
     help: Spans the collector receivers have accepted.
     job: kubernetes-pods
     labels: []
-  otelcol_receiver_refused_log_records_total:
+  otelcol_receiver_refused_log_records:
     type: counter
     help: Log records the collector receivers have refused.
     job: kubernetes-pods
     labels: []
-  otelcol_receiver_refused_spans_total:
+  otelcol_receiver_refused_spans:
     type: counter
     help: Spans the collector receivers have refused.
     job: kubernetes-pods
@@ -610,5 +622,6 @@ external:
   tempodb_backend_bytes_total:
     type: gauge
     help: Bytes of blocks in the Tempo backend, by status.
+    conditional: true
     job: kubernetes-pods
     labels: [status]
