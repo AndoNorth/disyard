@@ -15,6 +15,8 @@ tests:
         exp_alerts:
           - exp_labels: {severity: critical, reason: MALFORMED}
             exp_annotations:
+              runbook_url: >-
+                https://github.com/AndoNorth/weft/blob/main/docs/runbooks/alerts.md#wftadmissiondeadlettered
               summary: Admission dead-lettered intake messages with reason MALFORMED.
               description: Each dead letter needs a recovery decision.
   - interval: 1m
@@ -32,6 +34,8 @@ tests:
         exp_alerts:
           - exp_labels: {severity: critical, dependency: temporal}
             exp_annotations:
+              runbook_url: >-
+                https://github.com/AndoNorth/weft/blob/main/docs/runbooks/alerts.md#wftadmissionbreakeropen
               summary: The admission breaker for temporal has been open for 5 minutes.
               description: Admission starts no job while a dependency breaker is open.
   - interval: 1m
@@ -52,6 +56,8 @@ tests:
         exp_alerts:
           - exp_labels: {severity: warning}
             exp_annotations:
+              runbook_url: >-
+                https://github.com/AndoNorth/weft/blob/main/docs/runbooks/alerts.md#wftadmissionglobalcapreached
               summary: Live jobs have been at the global cap for 30 minutes.
               description: Admission releases no new job until a live job ends.
   - interval: 1m
@@ -82,6 +88,8 @@ tests:
         exp_alerts:
           - exp_labels: {severity: warning}
             exp_annotations:
+              runbook_url: >-
+                https://github.com/AndoNorth/weft/blob/main/docs/runbooks/alerts.md#wftadmissionopencapreached
               summary: Open jobs have been at the open cap for 30 minutes.
               description: Admission releases no new job until an open job ends.
   - interval: 1m
@@ -108,6 +116,8 @@ tests:
         exp_alerts:
           - exp_labels: {severity: warning}
             exp_annotations:
+              runbook_url: >-
+                https://github.com/AndoNorth/weft/blob/main/docs/runbooks/alerts.md#wftadmissionstaleadmitted
               summary: Admission skipped an intake message for a job the row shows admitted long ago.
               description: A job row stayed admitted with no workflow to show for it.
   - interval: 1m
@@ -135,6 +145,8 @@ tests:
         exp_alerts:
           - exp_labels: {severity: warning}
             exp_annotations:
+              runbook_url: >-
+                https://github.com/AndoNorth/weft/blob/main/docs/runbooks/alerts.md#wftjobpausedneedsattention
               summary: 2 job(s) have been paused for over an hour.
               description: A paused job keeps its workflow build busy until it is resumed or ended.
   - interval: 1m
@@ -160,6 +172,8 @@ tests:
         exp_alerts:
           - exp_labels: {severity: warning}
             exp_annotations:
+              runbook_url: >-
+                https://github.com/AndoNorth/weft/blob/main/docs/runbooks/alerts.md#wftresumewaiting
               summary: 3 resume(s) have waited 30 minutes for a free slot.
               description: The caps leave no room for a paused job to continue.
   - interval: 1m

@@ -11,7 +11,7 @@ Both are group `obs`, profile `ci`, and run only on a cluster brought up with `W
 | `module.yaml` | the module manifest: Prometheus at 100m of CPU and 640 MiB, requests equal to limits |
 | `Tiltfile.module` | loads the objects that `config.py` renders and watches the rule files |
 | `config.py` | renders the scrape configuration and every object of the module, and prints either with `scrape-config` and `render` |
-| `rules/` | the alert rule files and their `promtool` tests, one file per area |
+| `rules/` | the alert rule files and their `promtool` tests, one file per area, each alert with a `runbook_url` to its entry in [alert response](../../../docs/runbooks/alerts.md) |
 
 ## What it scrapes
 

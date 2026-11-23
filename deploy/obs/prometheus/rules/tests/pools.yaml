@@ -20,6 +20,8 @@ tests:
         exp_alerts:
           - exp_labels: {severity: warning, taskqueue: wft_simulate}
             exp_annotations:
+              runbook_url: >-
+                https://github.com/AndoNorth/weft/blob/main/docs/runbooks/alerts.md#wftpoolbacklogagehigh
               summary: The oldest task on Temporal queue wft_simulate has waited 11m 40s.
               description: >-
                 The pool is not keeping up with its queue. The server spells the queue with
@@ -39,6 +41,8 @@ tests:
         exp_alerts:
           - exp_labels: {severity: warning, pool: simulate}
             exp_annotations:
+              runbook_url: >-
+                https://github.com/AndoNorth/weft/blob/main/docs/runbooks/alerts.md#wftunschedulabletasks
               summary: Placement found no slot for tasks of pool simulate.
               description: A task needs more than any slot of its pool offers.
   - interval: 1m
@@ -56,6 +60,8 @@ tests:
         exp_alerts:
           - exp_labels: {severity: critical, taskqueue: wft_simulate}
             exp_annotations:
+              runbook_url: >-
+                https://github.com/AndoNorth/weft/blob/main/docs/runbooks/alerts.md#wftheartbeattimeoutstorm
               summary: >-
                 More than 5 attempts on Temporal queue wft_simulate timed out waiting for a heartbeat
                 in 15 minutes.
@@ -80,6 +86,8 @@ tests:
         exp_alerts:
           - exp_labels: {severity: info, task_queue: wft-simulate}
             exp_annotations:
+              runbook_url: >-
+                https://github.com/AndoNorth/weft/blob/main/docs/runbooks/alerts.md#wftpoolsaturated
               summary: Every activity slot of queue wft-simulate has been busy for 30 minutes.
               description: >-
                 The pool runs at full width, which is expected under load and worth knowing when its

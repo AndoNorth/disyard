@@ -11,6 +11,7 @@ groups:
           description: >-
             The pool is not keeping up with its queue. The server spells the queue with underscores in
             place of dashes.
+          runbook_url: https://github.com/AndoNorth/weft/blob/main/docs/runbooks/alerts.md#wftpoolbacklogagehigh
       - alert: WftUnschedulableTasks
         expr: sum by (pool) (increase(wft_placement_decisions_total{verdict="unschedulable"}[15m])) > 0
         labels:
@@ -18,6 +19,7 @@ groups:
         annotations:
           summary: Placement found no slot for tasks of pool {{ $labels.pool }}.
           description: A task needs more than any slot of its pool offers.
+          runbook_url: https://github.com/AndoNorth/weft/blob/main/docs/runbooks/alerts.md#wftunschedulabletasks
       - alert: WftHeartbeatTimeoutStorm
         expr: sum by (taskqueue) (increase(activity_task_timeout{timeout_type="Heartbeat"}[15m])) > 5
         labels:
@@ -27,6 +29,7 @@ groups:
             More than 5 attempts on Temporal queue {{ $labels.taskqueue }} timed out waiting for a
             heartbeat in 15 minutes.
           description: Workers on the queue are stalled or lost, and the attempts are retried.
+          runbook_url: https://github.com/AndoNorth/weft/blob/main/docs/runbooks/alerts.md#wftheartbeattimeoutstorm
       - alert: WftPoolSaturated
         expr: |
           sum by (task_queue) (temporal_worker_task_slots_used{worker_type="ActivityWorker"})
@@ -42,3 +45,4 @@ groups:
           description: >-
             The pool runs at full width, which is expected under load and worth knowing when its backlog
             grows.
+          runbook_url: https://github.com/AndoNorth/weft/blob/main/docs/runbooks/alerts.md#wftpoolsaturated

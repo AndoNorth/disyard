@@ -9,6 +9,7 @@ groups:
         annotations:
           summary: An accepted job has waited over 10 minutes for its publish to the broker.
           description: The reconciler is not publishing accepted jobs.
+          runbook_url: https://github.com/AndoNorth/weft/blob/main/docs/runbooks/alerts.md#wftreconcilerbacklogold
       - alert: WftControlOutboxOld
         expr: max(wft_control_outbox_oldest_seconds) > 300
         for: 5m
@@ -17,3 +18,4 @@ groups:
         annotations:
           summary: A control request has waited over 5 minutes for delivery to its workflow.
           description: A cancel, terminate, pause or resume is not reaching its job.
+          runbook_url: https://github.com/AndoNorth/weft/blob/main/docs/runbooks/alerts.md#wftcontroloutboxold

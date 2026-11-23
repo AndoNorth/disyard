@@ -17,6 +17,8 @@ tests:
         exp_alerts:
           - exp_labels: {severity: warning, pool: simulate}
             exp_annotations:
+              runbook_url: >-
+                https://github.com/AndoNorth/weft/blob/main/docs/runbooks/alerts.md#wftworkeroom
               summary: Task attempts of pool simulate were killed for memory.
               description: The task needs more memory than its pool slot gives it.
   - interval: 1m
@@ -36,6 +38,8 @@ tests:
         exp_alerts:
           - exp_labels: {severity: warning, exit_class: compile_failed}
             exp_annotations:
+              runbook_url: >-
+                https://github.com/AndoNorth/weft/blob/main/docs/runbooks/alerts.md#wftcompilefailureshigh
               summary: More than 5 compile attempts ended in compile_failed in 15 minutes.
               description: Compiles keep failing the same way, so look at the exit class before the testbench.
   - interval: 1m
@@ -57,5 +61,7 @@ tests:
         exp_alerts:
           - exp_labels: {severity: warning, exit_class: aggregate_parse_failed}
             exp_annotations:
+              runbook_url: >-
+                https://github.com/AndoNorth/weft/blob/main/docs/runbooks/alerts.md#wftaggregatefailureshigh
               summary: More than 5 aggregate attempts ended in aggregate_parse_failed in 15 minutes.
               description: Aggregates keep failing the same way, so look at the exit class before the results.

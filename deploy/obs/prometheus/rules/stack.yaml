@@ -11,6 +11,7 @@ groups:
         annotations:
           summary: Component {{ $labels.component }} dropped log records or spans from a full export queue.
           description: The collector or a backend behind it is not keeping up, and the missing telemetry is gone.
+          runbook_url: https://github.com/AndoNorth/weft/blob/main/docs/runbooks/alerts.md#wftobsdataloss
       # Pyroscope and the kubelet volume stats of a local-path claim report no stored bytes, so each
       # backend reads its own gauge against the size cap of its storage decision.
       - alert: WftObsVolumeFilling
@@ -41,3 +42,4 @@ groups:
           description: >-
             Prometheus and Tempo read their stored bytes, and Loki the chunk bytes written in its 10 days
             of retention. Loki and Tempo have no size key, so this alert is their only brake on a flood.
+          runbook_url: https://github.com/AndoNorth/weft/blob/main/docs/runbooks/alerts.md#wftobsvolumefilling

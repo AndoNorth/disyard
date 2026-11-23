@@ -22,7 +22,7 @@ This animation follows one job from submission to completion.
 
 ## Getting started
 
-See [docs/dev-setup.md](docs/dev-setup.md).
+See [docs/dev-setup.md](docs/dev-setup.md) for the host and the dev shell, and [docs/runbooks](docs/runbooks/README.md) to bring the system up, prove it, triage a failure and tear it down.
 
 ## License
 

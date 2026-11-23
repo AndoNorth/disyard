@@ -65,7 +65,8 @@ No logic lives in the justfile, and each real recipe calls `scripts/<name>.sh`.
 | `down` | real | - | stops the node containers and keeps the cluster, the registry and the host data directory |
 | `nuke` | real | - | destroys the cluster, its registry and the host data directory of the preset that started it |
 | `cluster-verify` | real | - | read-only checks that the cluster `wft` matches `WFT_PRESET` (default `ci`): preset, pod slots, module budget, nodes, node limits, quotas, module readiness, live requests, pressure and loopback ports, one `ok` or `FAIL` line each |
-| `smoke` | stub | acceptance | end-to-end smoke run |
+| `smoke` | real | - | the smoke gate: attaches to the running `ci` cluster, checks every layer and runs one job to its known answer within 300 s, see [the validation matrix](runbooks/validation-matrix.md#the-smoke-rows) |
+| `scan [deps \| images \| secrets]` | real | - | the security scans, see [Security scans](#security-scans) |
 | `e2e` | stub | acceptance | end-to-end run |
 | `load-test` | stub | load | load generation |
 | `characterize` | stub | characterization | characterization run |
@@ -73,10 +74,10 @@ No logic lives in the justfile, and each real recipe calls `scripts/<name>.sh`.
 A stub fails the way a real failure does, so a script cannot mistake it for success:
 
 ```text
-$ nix develop -c just smoke
-scripts/smoke.sh
+$ nix develop -c just e2e
+scripts/e2e.sh
 not implemented: owned by #17
-error: recipe `smoke` failed on line 2 with exit code 3
+error: recipe `e2e` failed on line 2 with exit code 3
 ```
 
 ### Port check
@@ -138,7 +139,7 @@ Outside the flake shell the only result is `fail in-dev-shell`, because host cop
 | `wsl-systemd` | PID 1 is systemd | set `[boot]` `systemd=true` in `/etc/wsl.conf`, then `wsl --shutdown` from Windows |
 | `repo-on-ext4` | the repo is not under `/mnt/<drive>/` and not on a 9p, drvfs, cifs or nfs mount | move the clone under the WSL home directory, a `warn` means a non-ext4 local filesystem |
 | `inotify-instances` | `fs.inotify.max_user_instances` is at least 512 | `sudo sysctl fs.inotify.max_user_instances=512`, persisted in `/etc/sysctl.d/` |
-| `memory-vs-preset` | host memory covers `memory_mib` in `deploy/presets/$WFT_PRESET.yaml` (default preset `ci`), or `obs_memory_mib` with `WFT_OBS=on` | give WSL2 more memory in `.wslconfig`, a `warn` with `no preset file yet` is expected until cluster presets exist, and a `warn` with `WFT_OBS=on` means the host fits the preset only with the [observability switch](cluster-host.md#observability-switch) off |
+| `memory-vs-preset` | host memory covers `memory_mib` in `deploy/presets/$WFT_PRESET.yaml` (default preset `ci`), or `obs_memory_mib` with `WFT_OBS=on` | give WSL2 more memory in `.wslconfig`, and a `warn` with `WFT_OBS=on` means the host fits the preset only with the [observability switch](cluster-host.md#observability-switch) off |
 | `path-provenance` | for every pinned tool (including `yq`, `wasmtime` and `wasm-tools`) the first match on PATH is a `/nix/store` path, not `~/.nix-profile` or `/nix/var/nix/profiles` | the detail prints `which -a` for each offender, so a profile copy ahead of the flake can be removed or PATH reordered |
 
 `scripts/doctor.test.sh` is the fault-injection self-test.
@@ -286,7 +287,7 @@ Lint on the workflow file is part of it, so a line over 120 columns in `ci.yml` 
 | `fail cgroup-v2` or `fail wsl-systemd` | WSL2 configuration, see the table above, then `wsl --shutdown` |
 | `fail repo-on-ext4` | the clone is on a Windows drive, clone again under the WSL home directory |
 | `fail inotify-instances` | raise the sysctl as above |
-| `warn memory-vs-preset: no preset file yet` | expected until cluster presets exist in `deploy/presets/`, no action |
+| `warn memory-vs-preset` with `WFT_OBS=on` | the host fits the preset only with the observability switch off, give WSL2 more memory or leave the switch off |
 | `uv sync` picks a different Python | `UV_PYTHON_PREFERENCE` is not `only-system`, which means the shell was not entered through the flake |
 | `error: experimental feature 'flakes' is disabled` | Nix config lacks flakes, see `nix-flakes` |
 
@@ -295,10 +296,21 @@ Lint on the workflow file is part of it, so a line over 120 columns in `ci.yml` 
 On a clean checkout, with the host prerequisites in place:
 
 - [ ] `nix develop -c just doctor` exits 0, prints no `fail` line, and prints an `ok path-provenance` line saying the tools resolve first to the flake.
-  Only `warn memory-vs-preset: no preset file yet` is acceptable until cluster presets exist.
+  A `warn memory-vs-preset` is acceptable only with `WFT_OBS=on`, see the table above.
 - [ ] `nix develop -c just --list` prints the recipe table above, one name per recipe.
 - [ ] `nix develop -c just ci` exits 0, ending with `all checks passed!` from `nix flake check`.
-  The tests print `notice: no tests collected` until a package adds some.
+  The unit and integration tests run unless only documentation changed.
 - [ ] The reproducibility check prints one `/nix/store/...-nix-shell.drv` path and exits 0.
   The two exports give the same path, otherwise it prints `drvPath differs` and exits 1.
 - [ ] The CI `check` job is green on the pull request.
+
+With a cluster, which needs the [operator runbook](runbooks/operator.md):
+
+- [ ] `nix develop -c just up` ends with `cluster wft ready: preset ci, WFT_OBS=off, 6 nodes`, and `scripts/tilt/run.sh ci` exits 0.
+- [ ] `nix develop -c just cluster-verify` exits 0 with no `FAIL` line.
+- [ ] `nix develop -c just smoke` exits 0 and ends with `smoke ci: 11 ok, 0 failed, 0 skipped, <s> s`.
+- [ ] `nix develop -c just nuke` ends with `cluster wft, registry wft-registry and <data dir> are gone`, and the checks of [confirming nothing is left](runbooks/operator.md#confirm-nothing-is-left-behind) pass.
+
+## Runbooks
+
+[docs/runbooks](runbooks/README.md) links the operator runbook, the validation matrix, triage by symptom and the response to every alert rule.
