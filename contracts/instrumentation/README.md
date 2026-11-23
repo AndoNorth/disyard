@@ -1,7 +1,7 @@
 # Instrumentation contract
 
 Owner epic: #13 (observability), which took the contract over from #4 (job event envelope and state propagation).
-Version: 6
+Version: 7
 Consumers: every component that emits a metric, a log line or a span, and #14, #15, #16 and #17.
 
 This contract pins the rules for metrics, labels, log fields and traces, and the platform catalogue in `metrics.yaml`.
@@ -88,6 +88,10 @@ The broker counters live in the in-process registry of `wft_events.metrics`, whi
 A state input of `contracts/state/inputs.yaml` of kind `sql`, `sql_labelled` or `invariants` is the gauge `wft_state_<input name>`, with `_bytes` or `_seconds` appended when its unit is one of those and its name does not already end in it.
 The inputs of kind `store` are not catalogued, because the store's own metrics carry the same figures.
 A name with no emitter is not catalogued, so `wft_workflow_paused_jobs` and `wft_workflow_replay_failures_total` are not; `wft_admission_paused_jobs` is the one paused gauge.
+
+An entry marked `conditional: true`, under `metrics` or `external`, is legitimately absent from a healthy idle run.
+Its series is not exported until a fault or an unusual event happens, or the platform does not produce it on the local cluster.
+A consumer that expects every catalogued series to have a sample, such as the live catalogue check, skips the conditional entries.
 
 ### Third-party series
 

@@ -1,0 +1,14 @@
+---
+metrics:
+  wft_example_total:
+    type: counter
+    help: Things counted.
+    conditional: true
+    labels: {}
+external:
+  rabbitmq_detailed_queue_messages_ready:
+    type: gauge
+    help: Messages ready for delivery in a queue.
+    job: rabbitmq-detailed
+    conditional: true
+    labels: [vhost, queue]
