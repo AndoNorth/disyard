@@ -32,12 +32,16 @@ tests:
         exp_alerts:
           - exp_labels: {severity: critical, namespace: wft-obs, pod: s14-limit, container: limit}
             exp_annotations:
+              runbook_url: >-
+                https://github.com/AndoNorth/weft/blob/main/docs/runbooks/alerts.md#wftcontaineroom
               summary: Container limit of pod s14-limit was OOM killed or is stalled on memory.
               description: >-
                 The last exit was 137 with reason OOMKilled, or the container waits on memory over 5
                 percent of the time, which is a container at its limit or a node short of memory.
           - exp_labels: {severity: critical, namespace: wft-obs, pod: s14-oom, container: oom}
             exp_annotations:
+              runbook_url: >-
+                https://github.com/AndoNorth/weft/blob/main/docs/runbooks/alerts.md#wftcontaineroom
               summary: Container oom of pod s14-oom was OOM killed or is stalled on memory.
               description: >-
                 The last exit was 137 with reason OOMKilled, or the container waits on memory over 5
@@ -64,6 +68,8 @@ tests:
         exp_alerts:
           - exp_labels: {severity: warning, namespace: wft, pod: crashy, container: app}
             exp_annotations:
+              runbook_url: >-
+                https://github.com/AndoNorth/weft/blob/main/docs/runbooks/alerts.md#wftpodrestartunexpected
               summary: Container app of pod crashy restarted.
               description: The restart was not an OOM kill, which WftContainerOOM reports.
       - eval_time: 30m
@@ -85,6 +91,8 @@ tests:
         exp_alerts:
           - exp_labels: {severity: critical, job: kubernetes-pods, instance: "10.0.0.1:9464"}
             exp_annotations:
+              runbook_url: >-
+                https://github.com/AndoNorth/weft/blob/main/docs/runbooks/alerts.md#wfttargetdown
               summary: Prometheus cannot scrape kubernetes-pods target 10.0.0.1:9464.
               description: Series and alerts that depend on the target are blind.
   - interval: 1m
@@ -98,5 +106,7 @@ tests:
         exp_alerts:
           - exp_labels: {severity: info}
             exp_annotations:
+              runbook_url: >-
+                https://github.com/AndoNorth/weft/blob/main/docs/runbooks/alerts.md#wftwatchdog
               summary: The alerting pipeline is alive.
               description: This alert always fires, and its absence means rules are not evaluated.

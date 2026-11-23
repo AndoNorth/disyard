@@ -9,6 +9,7 @@ groups:
         annotations:
           summary: The intake dead-letter queue holds {{ $value }} message(s).
           description: Every dead letter needs a recovery decision, replay or purge.
+          runbook_url: https://github.com/AndoNorth/weft/blob/main/docs/runbooks/alerts.md#wftdeadletterqueuenotempty
       - alert: WftIntakeQueueStalled
         expr: |
           rabbitmq_detailed_queue_messages_ready{queue=~"intake\\..+", queue!="intake.dlq"} > 0
@@ -20,6 +21,7 @@ groups:
         annotations:
           summary: Intake queue {{ $labels.queue }} has ready messages and no consumer.
           description: Nothing admits the jobs of this queue.
+          runbook_url: https://github.com/AndoNorth/weft/blob/main/docs/runbooks/alerts.md#wftintakequeuestalled
       - alert: WftIntakePublishUnroutable
         expr: sum(increase(wft_broker_publish_total{outcome="unroutable"}[10m])) > 0
         for: 10m
@@ -28,6 +30,7 @@ groups:
         annotations:
           summary: The broker client published messages the exchange could not route.
           description: The topology differs from the tenancy profile of the publisher.
+          runbook_url: https://github.com/AndoNorth/weft/blob/main/docs/runbooks/alerts.md#wftintakepublishunroutable
       - alert: WftIntakeWaitHigh
         expr: |
           histogram_quantile(0.95, sum by (priority_class, le)
@@ -38,3 +41,4 @@ groups:
         annotations:
           summary: Jobs of class {{ $labels.priority_class }} wait over an hour to be admitted (p95).
           description: The wait from acceptance to admission is above the estimate of one hour.
+          runbook_url: https://github.com/AndoNorth/weft/blob/main/docs/runbooks/alerts.md#wftintakewaithigh

@@ -16,6 +16,8 @@ tests:
         exp_alerts:
           - exp_labels: {severity: critical, queue: intake.dlq}
             exp_annotations:
+              runbook_url: >-
+                https://github.com/AndoNorth/weft/blob/main/docs/runbooks/alerts.md#wftdeadletterqueuenotempty
               summary: The intake dead-letter queue holds 1 message(s).
               description: Every dead letter needs a recovery decision, replay or purge.
   - interval: 1m
@@ -40,6 +42,8 @@ tests:
         exp_alerts:
           - exp_labels: {severity: critical, queue: intake.acme.standard}
             exp_annotations:
+              runbook_url: >-
+                https://github.com/AndoNorth/weft/blob/main/docs/runbooks/alerts.md#wftintakequeuestalled
               summary: Intake queue intake.acme.standard has ready messages and no consumer.
               description: Nothing admits the jobs of this queue.
   - interval: 1m
@@ -72,6 +76,8 @@ tests:
         exp_alerts:
           - exp_labels: {severity: critical}
             exp_annotations:
+              runbook_url: >-
+                https://github.com/AndoNorth/weft/blob/main/docs/runbooks/alerts.md#wftintakepublishunroutable
               summary: The broker client published messages the exchange could not route.
               description: The topology differs from the tenancy profile of the publisher.
   - interval: 1m
@@ -102,6 +108,8 @@ tests:
         exp_alerts:
           - exp_labels: {severity: warning, priority_class: standard}
             exp_annotations:
+              runbook_url: >-
+                https://github.com/AndoNorth/weft/blob/main/docs/runbooks/alerts.md#wftintakewaithigh
               summary: Jobs of class standard wait over an hour to be admitted (p95).
               description: The wait from acceptance to admission is above the estimate of one hour.
   - interval: 1m

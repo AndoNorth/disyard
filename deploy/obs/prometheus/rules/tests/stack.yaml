@@ -19,10 +19,14 @@ tests:
         exp_alerts:
           - exp_labels: {severity: warning, component: dispatch}
             exp_annotations:
+              runbook_url: >-
+                https://github.com/AndoNorth/weft/blob/main/docs/runbooks/alerts.md#wftobsdataloss
               summary: Component dispatch dropped log records or spans from a full export queue.
               description: The collector or a backend behind it is not keeping up, and the missing telemetry is gone.
           - exp_labels: {severity: warning, component: workflow}
             exp_annotations:
+              runbook_url: >-
+                https://github.com/AndoNorth/weft/blob/main/docs/runbooks/alerts.md#wftobsdataloss
               summary: Component workflow dropped log records or spans from a full export queue.
               description: The collector or a backend behind it is not keeping up, and the missing telemetry is gone.
       - eval_time: 30m
@@ -45,12 +49,16 @@ tests:
         exp_alerts:
           - exp_labels: {severity: warning, backend: prometheus}
             exp_annotations:
+              runbook_url: >-
+                https://github.com/AndoNorth/weft/blob/main/docs/runbooks/alerts.md#wftobsvolumefilling
               summary: The prometheus volume holds more than its size cap.
               description: >-
                 Prometheus and Tempo read their stored bytes, and Loki the chunk bytes written in its 10 days
                 of retention. Loki and Tempo have no size key, so this alert is their only brake on a flood.
           - exp_labels: {severity: warning, backend: tempo}
             exp_annotations:
+              runbook_url: >-
+                https://github.com/AndoNorth/weft/blob/main/docs/runbooks/alerts.md#wftobsvolumefilling
               summary: The tempo volume holds more than its size cap.
               description: >-
                 Prometheus and Tempo read their stored bytes, and Loki the chunk bytes written in its 10 days
@@ -66,6 +74,8 @@ tests:
         exp_alerts:
           - exp_labels: {severity: warning, backend: loki}
             exp_annotations:
+              runbook_url: >-
+                https://github.com/AndoNorth/weft/blob/main/docs/runbooks/alerts.md#wftobsvolumefilling
               summary: The loki volume holds more than its size cap.
               description: >-
                 Prometheus and Tempo read their stored bytes, and Loki the chunk bytes written in its 10 days

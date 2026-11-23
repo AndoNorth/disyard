@@ -13,6 +13,8 @@ tests:
         exp_alerts:
           - exp_labels: {severity: warning}
             exp_annotations:
+              runbook_url: >-
+                https://github.com/AndoNorth/weft/blob/main/docs/runbooks/alerts.md#wftscheduletostartbreached
               summary: Tasks timed out waiting for a worker slot and were placed again.
               description: A pool queue backs up past the schedule-to-start timeout.
       - eval_time: 30m
@@ -40,6 +42,8 @@ tests:
         exp_alerts:
           - exp_labels: {severity: warning}
             exp_annotations:
+              runbook_url: >-
+                https://github.com/AndoNorth/weft/blob/main/docs/runbooks/alerts.md#wfthistorylengthhigh
               summary: A job workflow woke with a history over 10,000 events.
               description: The history budget ends a job well before Temporal's hard limit of 51,200 events.
   - interval: 1m
@@ -69,6 +73,8 @@ tests:
         exp_alerts:
           - exp_labels: {severity: critical, task_queue: wft-simulate}
             exp_annotations:
+              runbook_url: >-
+                https://github.com/AndoNorth/weft/blob/main/docs/runbooks/alerts.md#wfttemporalworkerunhealthy
               summary: No worker polls Temporal task queue wft-simulate.
               description: The worker exports its metrics but has no poller, and tasks on the queue wait.
   - interval: 1m
@@ -88,6 +94,8 @@ tests:
         exp_alerts:
           - exp_labels: {severity: warning, namespace: wft-control, deployment: workflow-worker-old}
             exp_annotations:
+              runbook_url: >-
+                https://github.com/AndoNorth/weft/blob/main/docs/runbooks/alerts.md#wftoldbuildidlingering
               summary: Workflow build workflow-worker-old still runs after 7 days beside a newer build.
               description: A build lives until its jobs finish, and no job lasts over 7 days, so a job is stuck on it.
   - interval: 1m

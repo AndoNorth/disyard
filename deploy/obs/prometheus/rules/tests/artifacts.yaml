@@ -15,6 +15,8 @@ tests:
         exp_alerts:
           - exp_labels: {severity: warning}
             exp_annotations:
+              runbook_url: >-
+                https://github.com/AndoNorth/weft/blob/main/docs/runbooks/alerts.md#wftcompilecachemissstorm
               summary: Over 90 percent of the compiles of the last hour ran instead of hitting the cache.
               description: The compile cache is not being reused, so a key may vary between identical sources.
   - interval: 1m
@@ -55,6 +57,8 @@ tests:
         exp_alerts:
           - exp_labels: {severity: warning}
             exp_annotations:
+              runbook_url: >-
+                https://github.com/AndoNorth/weft/blob/main/docs/runbooks/alerts.md#wftstorecapacityhigh
               summary: The object store data volume is 75 percent used.
               description: >-
                 The share is the df figure of the data volume, above the 70 percent threshold of the

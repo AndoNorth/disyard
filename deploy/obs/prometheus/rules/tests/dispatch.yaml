@@ -16,6 +16,8 @@ tests:
         exp_alerts:
           - exp_labels: {severity: warning}
             exp_annotations:
+              runbook_url: >-
+                https://github.com/AndoNorth/weft/blob/main/docs/runbooks/alerts.md#wftreconcilerbacklogold
               summary: An accepted job has waited over 10 minutes for its publish to the broker.
               description: The reconciler is not publishing accepted jobs.
   - interval: 1m
@@ -38,6 +40,8 @@ tests:
         exp_alerts:
           - exp_labels: {severity: warning}
             exp_annotations:
+              runbook_url: >-
+                https://github.com/AndoNorth/weft/blob/main/docs/runbooks/alerts.md#wftcontroloutboxold
               summary: A control request has waited over 5 minutes for delivery to its workflow.
               description: A cancel, terminate, pause or resume is not reaching its job.
   - interval: 1m

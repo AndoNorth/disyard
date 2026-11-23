@@ -20,6 +20,7 @@ groups:
           description: >-
             The last exit was 137 with reason OOMKilled, or the container waits on memory over 5 percent
             of the time, which is a container at its limit or a node short of memory.
+          runbook_url: https://github.com/AndoNorth/weft/blob/main/docs/runbooks/alerts.md#wftcontaineroom
       - alert: WftPodRestartUnexpected
         expr: |
           sum by (namespace, pod, container) (
@@ -32,6 +33,7 @@ groups:
         annotations:
           summary: Container {{ $labels.container }} of pod {{ $labels.pod }} restarted.
           description: The restart was not an OOM kill, which WftContainerOOM reports.
+          runbook_url: https://github.com/AndoNorth/weft/blob/main/docs/runbooks/alerts.md#wftpodrestartunexpected
       - alert: WftTargetDown
         expr: up == 0
         for: 5m
@@ -40,6 +42,7 @@ groups:
         annotations:
           summary: Prometheus cannot scrape {{ $labels.job }} target {{ $labels.instance }}.
           description: Series and alerts that depend on the target are blind.
+          runbook_url: https://github.com/AndoNorth/weft/blob/main/docs/runbooks/alerts.md#wfttargetdown
       - alert: WftWatchdog
         expr: vector(1)
         labels:
@@ -47,3 +50,4 @@ groups:
         annotations:
           summary: The alerting pipeline is alive.
           description: This alert always fires, and its absence means rules are not evaluated.
+          runbook_url: https://github.com/AndoNorth/weft/blob/main/docs/runbooks/alerts.md#wftwatchdog

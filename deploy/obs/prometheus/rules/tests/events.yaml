@@ -15,6 +15,8 @@ tests:
         exp_alerts:
           - exp_labels: {severity: warning, reason: schema-invalid}
             exp_annotations:
+              runbook_url: >-
+                https://github.com/AndoNorth/weft/blob/main/docs/runbooks/alerts.md#wfteventrejected
               summary: The event serializer refused events with reason schema-invalid.
               description: A producer emits events that fail the contract.
   - interval: 1m
