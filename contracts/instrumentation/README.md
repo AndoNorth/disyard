@@ -1,7 +1,7 @@
 # Instrumentation contract
 
 Owner epic: #13 (observability), which took the contract over from #4 (job event envelope and state propagation).
-Version: 5
+Version: 6
 Consumers: every component that emits a metric, a log line or a span, and #14, #15, #16 and #17.
 
 This contract pins the rules for metrics, labels, log fields and traces, and the platform catalogue in `metrics.yaml`.
@@ -93,7 +93,7 @@ A name with no emitter is not catalogued, so `wft_workflow_paused_jobs` and `wft
 
 `external` holds each third-party series a dashboard or a rule reads, with its type, help, the scrape job that collects it and the labels the rules group by.
 A third-party series keeps its own name, so the `wft_` naming rule does not apply to it, and its labels are held to the denylist.
-The names of the Temporal, kube-state-metrics, cAdvisor, kubelet, SeaweedFS and observability stack series are added by a contract-change PR once each is confirmed on its pinned version.
+The Temporal, kube-state-metrics, cAdvisor, kubelet, SeaweedFS and observability stack series that the dashboards and rules read are catalogued, grouped by their scrape job; a new one is added by a contract-change PR once it is confirmed on its pinned version.
 
 ## Loader
 

@@ -432,3 +432,183 @@ external:
     help: Consumers of a queue.
     job: rabbitmq-detailed
     labels: [vhost, queue]
+  container_cpu_usage_seconds_total:
+    type: counter
+    help: CPU time a container has used.
+    job: cadvisor
+    labels: [namespace, pod, container, node]
+  container_memory_working_set_bytes:
+    type: gauge
+    help: Working set memory of a container.
+    job: cadvisor
+    labels: [namespace, pod, container, node]
+  container_pressure_memory_stalled_seconds_total:
+    type: counter
+    help: Time the tasks of a container were stalled on memory.
+    job: cadvisor
+    labels: [namespace, pod, container]
+  kubelet_volume_stats_capacity_bytes:
+    type: gauge
+    help: Capacity of a persistent volume claim.
+    job: kubelet
+    labels: [namespace, persistentvolumeclaim]
+  kubelet_volume_stats_used_bytes:
+    type: gauge
+    help: Bytes used on a persistent volume claim.
+    job: kubelet
+    labels: [namespace, persistentvolumeclaim]
+  kube_deployment_created:
+    type: gauge
+    help: Creation time of a deployment, in Unix seconds.
+    job: kubernetes-pods
+    labels: [namespace, deployment]
+  kube_deployment_status_replicas_available:
+    type: gauge
+    help: Replicas of a deployment that are available.
+    job: kubernetes-pods
+    labels: [namespace, deployment]
+  kube_deployment_status_replicas_unavailable:
+    type: gauge
+    help: Replicas of a deployment that are unavailable.
+    job: kubernetes-pods
+    labels: [namespace, deployment]
+  kube_node_status_allocatable:
+    type: gauge
+    help: Resources of a node that pods can use.
+    job: kubernetes-pods
+    labels: [node, resource]
+  kube_node_status_condition:
+    type: gauge
+    help: Condition of a node, 1 for the status it holds.
+    job: kubernetes-pods
+    labels: [node, condition, status]
+  kube_pod_container_resource_limits:
+    type: gauge
+    help: Resource limit of a container.
+    job: kubernetes-pods
+    labels: [namespace, container, resource]
+  kube_pod_container_status_last_terminated_exitcode:
+    type: gauge
+    help: Exit code of the last termination of a container.
+    job: kubernetes-pods
+    labels: [namespace, pod, container]
+  kube_pod_container_status_last_terminated_reason:
+    type: gauge
+    help: Reason for the last termination of a container, 1 for the reason it holds.
+    job: kubernetes-pods
+    labels: [namespace, pod, container, reason]
+  kube_pod_container_status_restarts_total:
+    type: counter
+    help: Restarts of a container.
+    job: kubernetes-pods
+    labels: [namespace, pod, container]
+  kube_pod_status_phase:
+    type: gauge
+    help: Phase of a pod, 1 for the phase it holds.
+    job: kubernetes-pods
+    labels: [namespace, phase]
+  activity_task_timeout:
+    type: counter
+    help: Activity tasks that timed out, by the kind of timeout.
+    job: kubernetes-pods
+    labels: [taskqueue, timeout_type]
+  approximate_backlog_age_seconds:
+    type: gauge
+    help: Age of the oldest task in the backlog of a task queue.
+    job: kubernetes-pods
+    labels: [taskqueue, task_type]
+  temporal_num_pollers:
+    type: gauge
+    help: Pollers a worker has on a task queue.
+    job: kubernetes-pods
+    labels: [task_queue, poller_type]
+  temporal_worker_task_slots_available:
+    type: gauge
+    help: Task slots of a worker that are free.
+    job: kubernetes-pods
+    labels: [task_queue, worker_type]
+  temporal_worker_task_slots_used:
+    type: gauge
+    help: Task slots of a worker that are taken.
+    job: kubernetes-pods
+    labels: [task_queue, worker_type]
+  SeaweedFS_volumeServer_resource:
+    type: gauge
+    help: Disk bytes of the volume server, by the kind of figure.
+    job: kubernetes-pods
+    labels: [name, type]
+  grafana_http_request_duration_seconds_count:
+    type: counter
+    help: HTTP requests Grafana has served, the count of its duration histogram.
+    job: kubernetes-pods
+    labels: [status_code]
+  loki_distributor_bytes_received_total:
+    type: counter
+    help: Log bytes the Loki distributor has received.
+    job: kubernetes-pods
+    labels: []
+  loki_ingester_chunk_size_bytes_sum:
+    type: counter
+    help: Bytes of the chunks the Loki ingester has flushed, the sum of its chunk size histogram.
+    job: kubernetes-pods
+    labels: []
+  otelcol_receiver_accepted_log_records_total:
+    type: counter
+    help: Log records the collector receivers have accepted.
+    job: kubernetes-pods
+    labels: []
+  otelcol_receiver_accepted_spans_total:
+    type: counter
+    help: Spans the collector receivers have accepted.
+    job: kubernetes-pods
+    labels: []
+  otelcol_receiver_refused_log_records_total:
+    type: counter
+    help: Log records the collector receivers have refused.
+    job: kubernetes-pods
+    labels: []
+  otelcol_receiver_refused_spans_total:
+    type: counter
+    help: Spans the collector receivers have refused.
+    job: kubernetes-pods
+    labels: []
+  prometheus_tsdb_head_chunks_storage_size_bytes:
+    type: gauge
+    help: Size of the chunks of the Prometheus head.
+    job: kubernetes-pods
+    labels: []
+  prometheus_tsdb_head_samples_appended_total:
+    type: counter
+    help: Samples Prometheus has appended to its head.
+    job: kubernetes-pods
+    labels: []
+  prometheus_tsdb_head_series:
+    type: gauge
+    help: Series in the Prometheus head.
+    job: kubernetes-pods
+    labels: []
+  prometheus_tsdb_storage_blocks_bytes:
+    type: gauge
+    help: Size of the persisted blocks of Prometheus.
+    job: kubernetes-pods
+    labels: []
+  prometheus_tsdb_wal_storage_size_bytes:
+    type: gauge
+    help: Size of the write-ahead log of Prometheus.
+    job: kubernetes-pods
+    labels: []
+  pyroscope_distributor_received_compressed_bytes_sum:
+    type: counter
+    help: Compressed profile bytes the Pyroscope distributor has received, the sum of its size histogram.
+    job: kubernetes-pods
+    labels: []
+  tempo_distributor_spans_received_total:
+    type: counter
+    help: Spans the Tempo distributor has received.
+    job: kubernetes-pods
+    labels: []
+  tempodb_backend_bytes_total:
+    type: gauge
+    help: Bytes of blocks in the Tempo backend, by status.
+    job: kubernetes-pods
+    labels: [status]
