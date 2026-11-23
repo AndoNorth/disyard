@@ -11,7 +11,7 @@ The pod is Ready only when all three are.
 
 | Container | Runs | Readiness |
 | --- | --- | --- |
-| `store` | `weed server -s3` with `-volume.max=0` and the identities file | `GET /healthz` on the S3 port 8333 |
+| `store` | `weed server -s3` with `-volume.max=0`, the identities file and `-metricsPort=9328`, whose disk series feed `WftStoreCapacityHigh` | `GET /healthz` on the S3 port 8333 |
 | `admin` | `weed admin` on loopback port 12535, with its state on the volume claim | `curl` of its own page, because it listens on loopback only |
 | `worker` | `weed worker -jobType=s3_lifecycle`, which carries out the lifecycle rules | `GET /ready` on its metrics port 9327 |
 
