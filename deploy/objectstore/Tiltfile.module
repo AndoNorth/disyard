@@ -78,10 +78,11 @@ k8s_yaml(encode_yaml({
                         "args": [
                             "server", "-s3", "-s3.config=/etc/seaweedfs/s3.json", "-dir=/data", "-volume.max=0",
                             "-master.volumeSizeLimitMB=%d" % volume_limit_mb,
+                            "-metricsPort=9328",
                         ],
                         # A soft limit below the container limit keeps the Go heap from growing into an OOM kill.
                         "env": [{"name": "GOMEMLIMIT", "value": "320MiB"}],
-                        "ports": [{"name": "s3", "containerPort": 8333}],
+                        "ports": [{"name": "s3", "containerPort": 8333}, {"name": "metrics", "containerPort": 9328}],
                         "readinessProbe": {"httpGet": {"path": "/healthz", "port": "s3"}, "periodSeconds": 5},
                         "resources": sized(split["store"]),
                         "volumeMounts": [
