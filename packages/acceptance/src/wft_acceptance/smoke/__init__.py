@@ -34,6 +34,7 @@ from wft_workloads import bundle
 
 from .. import report
 from ..clients import api, broker, store, temporal
+from . import results, telemetry
 
 CONTEXT = "kind-wft"
 VERIFY = Path("scripts/cluster-verify.sh")
@@ -46,8 +47,9 @@ VERIFY_S = 90.0
 PROBE_S = 15.0
 # How long the shared helper waits for the deployed build's pollers before it makes it current.
 POLLERS_S = 30.0
-# Kept back from the job's wait for the result rows, the dead-letter row and the cancel.
-KEEP_S = 30.0
+# Kept back from the job's wait for the result rows, the dead-letter row and the cancel, by the
+# observability switch: with it on, the telemetry row's 60 s deadline comes out of the job's wait.
+KEEP_S = {"off": 30.0, "on": 90.0}
 # Short enough that a cancel after the budget ran out ends before the timer's kill, 10 s later.
 CANCEL_S = 5.0
 # The first tenant of the ci preset.
@@ -65,6 +67,13 @@ class Gate:
         # The row running now, which the budget names when it runs out.
         self.at = "cluster-verify"
         self.started = time.monotonic()
+        self.wall_started = time.time()
+        # When each row ended, which the results push turns into the seconds of each row.
+        self.row_ends: list[float] = []
+        # The observability switch of the running cluster, and whether the job's compile ran on a
+        # compile worker and not from the cache.
+        self.obs = telemetry.switch()
+        self.compiled = True
         # The batch key and job id once the job was accepted, and its last status once it ended.
         self.batch: str | None = None
         self.job_id: str | None = None
@@ -72,6 +81,7 @@ class Gate:
 
     def add(self, row: report.Row) -> None:
         self.rows.append(row)
+        self.row_ends.append(time.monotonic())
         print(row.line, flush=True)
 
     def probe(self, name: str, check: Callable[[], str]) -> None:
@@ -110,6 +120,7 @@ class Gate:
             self.add(report.skip("dead-letters", f"after {failed} failed"))
         else:
             self.probe("dead-letters", self.no_rise)
+        self.telemetry_row()
 
     def cancel(self) -> None:
         """Cancels the batch when a row failed after the job was submitted; a cancel that fails is
@@ -180,7 +191,7 @@ class Gate:
         """Row 7: the job runs and ends succeeded, and a sample taken while it ran shows its compile
         done. The detail is null once the job ends, so the compile is read from the running
         samples."""
-        timeout_s = BUDGET_S - KEEP_S - (time.monotonic() - self.started)
+        timeout_s = BUDGET_S - KEEP_S[self.obs] - (time.monotonic() - self.started)
         builds: list[dict] = []
         last = {"status": "unread"}
 
@@ -200,7 +211,8 @@ class Gate:
         if not builds:
             raise RuntimeError("ended succeeded, but no running sample showed build done")
         build = builds[-1]
-        how = "hit the cache" if build["state"] == "skipped" else "ran"
+        self.compiled = build["state"] != "skipped"
+        how = "ran" if self.compiled else "hit the cache"
         return f"succeeded, build {how} (attempt {build['task_attempt']})"
 
     def result(self) -> str:
@@ -235,6 +247,28 @@ class Gate:
         fetched(self.ended, "agg")
         return "summary present and matching"
 
+    def telemetry_row(self) -> None:
+        """Row 11: with the switch on, the stack holds the run's telemetry; with it off, nothing is
+        checked. It runs only after rows 1 and 6 were ok."""
+        if self.obs == "off":
+            self.add(report.ok(telemetry.ROW, "observability off, not checked"))
+            return
+        failed = next(
+            (
+                r.name
+                for r in self.rows
+                if r.name in ("cluster-verify", "job-submit") and r.verdict != report.OK
+            ),
+            None,
+        )
+        if failed or self.job_id is None:
+            self.add(report.skip(telemetry.ROW, f"after {failed or 'job-submit'} failed"))
+            return
+        self.probe(
+            telemetry.ROW,
+            lambda: telemetry.check(forwarded, self.job_id, self.compiled, self.wall_started),
+        )
+
     def no_rise(self) -> str:
         """Row 10: the job left no dead letter beyond the count before it."""
         if self.dead_letters is None:
@@ -247,10 +281,13 @@ class Gate:
 
 
 @contextlib.contextmanager
-def forwarded(namespace: str, resource: str, port: int) -> Iterator[str]:
-    """The address of a forward to the resource, opened within the probe deadline, for the block."""
+def forwarded(
+    namespace: str, resource: str, port: int, timeout_s: float | None = None
+) -> Iterator[str]:
+    """The address of a forward to the resource, opened within the deadline (the probe deadline
+    unless given), for the block."""
     forward = Forward(CONTEXT, namespace, resource, port)
-    forward.open(timeout_s=PROBE_S)
+    forward.open(timeout_s=PROBE_S if timeout_s is None else timeout_s)
     try:
         yield f"127.0.0.1:{forward.port}"
     finally:
@@ -326,4 +363,5 @@ def main() -> int:
         return report.exit_code(gate.rows, gate.passed_through)
     gate.cancel()
     print(report.count_line(gate.preset, gate.rows, time.monotonic() - gate.started), flush=True)
+    results.push(gate.obs, forwarded, gate.rows, gate.row_ends, gate.started, gate.batch)
     return report.exit_code(gate.rows)

@@ -9,6 +9,7 @@ dependencies = [
     "wft-broker",
     "wft-clusterkit",
     "wft-kernel",
+    "wft-obs",
     "wft-workflow",
     "wft-workloads",
 ]
@@ -17,6 +18,7 @@ dependencies = [
 wft-broker = { workspace = true }
 wft-clusterkit = { workspace = true }
 wft-kernel = { workspace = true }
+wft-obs = { workspace = true }
 wft-workflow = { workspace = true }
 wft-workloads = { workspace = true }
 
