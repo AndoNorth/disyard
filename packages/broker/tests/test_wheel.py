@@ -20,7 +20,7 @@ assert proton.VERSION == (0, 40, 0)
 assert topology().intake_policy.definition.delayed_retry_type == "failed"
 assert "ADMISSION_FAILED" in {r.code for r in reasons().reasons}
 assert set(tenancy().profiles) == {"ci", "dev", "soak"}
-assert list(load("ci").tenants) == ["acme"]
+assert "acme" in load("ci").tenants
 for name in ("topology.yaml", "reasons.yaml", "tenancy.yaml"):
     assert (CONTRACT / name).read_text(), name
 broker = FakeBroker("ci")

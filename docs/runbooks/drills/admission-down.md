@@ -16,7 +16,7 @@ uv run --frozen python -m dsy_dispatchapi.smoke --scenario submit --jobs 1
 
 | Signal | Where | Seen |
 | --- | --- | --- |
-| Queue | `kubectl --context kind-dsy -n dsy-infra exec rabbitmq-0 -- rabbitmqctl list_queues name messages consumers` | `intake.acme.standard 1 0`, one message and no consumer (the command also prints a `Timeout: 60.0 seconds` line first) |
+| Queue | `kubectl --context kind-dsy -n dsy-infra exec rabbitmq-0 -- rabbitmqctl list_queues name messages consumers` | a row `intake.acme.standard 1 0`, one message and no consumer, and every other tenant queue with no message (the command also prints a `Timeout: 60.0 seconds` line first) |
 | Dashboard | `intake-admission`, panels "Consumers by queue" and "Messages ready by queue" | consumers fall to 0 and the ready count steps to 1 |
 | Job | `curl -s http://127.0.0.1:18080/v1/tenants/acme/jobs/<job id>` | `accepted`, not `admitted` |
 | Alert | [DsyIntakeQueueStalled](../alerts.md#dsyintakequeuestalled) | see below |

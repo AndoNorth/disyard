@@ -38,12 +38,14 @@ def test_topology_matches_tenancy():
         ("dsy.dlx", "fanout", True),
     }
     queues = by_name(defs["queues"])
-    assert set(queues) == {"intake.acme.standard", "intake.dlq"}
+    profile = load("ci")
+    intake = {f"intake.{t}.{c}" for t in profile.tenants for c in profile.priority_classes}
+    assert set(queues) == intake | {"intake.dlq"}
     for queue in queues.values():
         assert queue["durable"] is True
         assert queue["arguments"] == {"x-queue-type": "quorum", "x-quorum-initial-group-size": 1}
     assert {(b["source"], b["destination"], b["routing_key"]) for b in defs["bindings"]} == {
-        ("dsy.intake", "intake.acme.standard", "intake.acme.standard"),
+        *(("dsy.intake", name, name) for name in intake),
         ("dsy.dlx", "intake.dlq", ""),
     }
     policies = by_name(defs["policies"])
