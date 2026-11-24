@@ -167,6 +167,7 @@ It exits 0 when valid, 1 with `reason: <code>: <detail>` on stderr when not, and
 
 `vectors/<file>/{valid,invalid/<reason>}/` hold the vectors, and `packages/runtime/tests/test_loader.py` runs them inside `just ci`.
 `vectors/results/invalid/schema-violation/malformed-block.xml` is the malformed block fixture, a block that is never closed.
+`vectors/results/invalid/schema-violation/missing-column.xml` is the document that the `bad_block` fault mode of `dsy_workloads` writes for seed 7, and `packages/workloads/tests/test_fault.py` holds the two equal.
 
 ## Changing it
 

@@ -1,7 +1,8 @@
-"""Usage: python -m dsy_workloads.bundle --out DIR
+"""Usage: python -m dsy_workloads.bundle --out DIR [--variant NAME]
 
 Writes DIR/bundle.tar with dsy_kernel, dsy_workloads, a pyproject.toml and a uv.lock with no
-dependencies.
+dependencies. A variant adds a VARIANT marker file, so bundles of different variants differ in
+bytes, and in source hash, while holding the same modules.
 """
 
 import argparse
@@ -17,6 +18,7 @@ import dsy_workloads
 STUBBED = ()
 
 NAME = "bundle.tar"
+VARIANT_FILE = "VARIANT"
 PACKAGES = (dsy_kernel, dsy_workloads)
 PYPROJECT = b"""\
 [project]
@@ -38,9 +40,12 @@ source = { virtual = "." }
 """
 
 
-def files() -> dict[str, bytes]:
-    """Every file of the bundle by its path in the archive: the source modules of each package."""
+def files(variant: str | None = None) -> dict[str, bytes]:
+    """Every file of the bundle by its path in the archive: the source modules of each package, and
+    the marker of the variant when there is one."""
     found = {"pyproject.toml": PYPROJECT, "uv.lock": LOCKFILE}
+    if variant is not None:
+        found[VARIANT_FILE] = variant.encode()
     for package in PACKAGES:
         root = Path(package.__file__).parent
         for path in root.rglob("*.py"):
@@ -48,12 +53,17 @@ def files() -> dict[str, bytes]:
     return found
 
 
-def write(out: Path) -> Path:
-    """Writes out/bundle.tar sorted, with zero times and owners, so equal sources give equal
-    bytes."""
+def write(out: Path, variant: str | None = None) -> Path:
+    """Writes out/bundle.tar sorted, with zero times and owners, so equal sources and variants
+    give equal bytes."""
+    return pack(out, files(variant))
+
+
+def pack(out: Path, found: dict[str, bytes]) -> Path:
+    """Writes out/bundle.tar from the files by path, in the form of write."""
     out.mkdir(parents=True, exist_ok=True)
     with tarfile.open(out / NAME, "w", format=tarfile.PAX_FORMAT) as tar:
-        for name, data in sorted(files().items()):
+        for name, data in sorted(found.items()):
             entry = tarfile.TarInfo(name)
             entry.size, entry.mode = len(data), 0o644
             tar.addfile(entry, io.BytesIO(data))
@@ -63,7 +73,9 @@ def write(out: Path) -> Path:
 def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(prog="python -m dsy_workloads.bundle")
     parser.add_argument("--out", type=Path, required=True)
-    write(parser.parse_args(argv).out)
+    parser.add_argument("--variant")
+    args = parser.parse_args(argv)
+    write(args.out, args.variant)
     return 0
 
 

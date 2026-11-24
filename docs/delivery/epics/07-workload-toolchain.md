@@ -416,6 +416,6 @@ Follow-ups found, none filed by this run:
 
 Closure addenda, one dated line each, added after close when a `revisit` child issue is filed against this epic:
 
-- none yet
+- 2026-11-24: [#674](https://github.com/AndoNorth/disyard/issues/674) adds the `bad_block` fault mode to `dsy_workloads.fault`, class `ok`, which writes the `missing-column.xml` vector of the result format for seed 7, and a `variant` argument to `dsy_workloads.bundle` that adds a `VARIANT` marker file so two variants differ in source hash, as a `revisit` child of this epic, part of the acceptance epic's pass 2.
 
 ---

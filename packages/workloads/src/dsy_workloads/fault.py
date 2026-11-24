@@ -64,6 +64,18 @@ def slow_start(seed: int, args: dict, out: Path) -> None:
         writer.write(sink, seed, rows.blocks("noop", seed, {}))
 
 
+def bad_block(seed: int, args: dict, out: Path) -> None:
+    """ok: exits 0 after writing a results.xml whose scalar block has a row without its value
+    column, which the host refuses as schema-violation and the aggregate as a parse failure."""
+    with open(out / RESULTS, "wb") as sink:
+        writer.write(
+            sink,
+            seed,
+            [{"id": "b", "kind": "scalar", "rows": [{"name": "n"}]}],
+            kinds={"scalar": {"name": "str"}},
+        )
+
+
 def fail_late(seed: int, args: dict, out: Path) -> None:
     """guest_failed, deterministic: heartbeats up to args["at_progress"] of its steps, then writes
     error.json and exits nonzero."""
@@ -80,6 +92,7 @@ MODES = {
     "hang": (hang, "timeout"),
     "slow_start": (slow_start, "ok"),
     "fail_late": (fail_late, "guest_failed"),
+    "bad_block": (bad_block, "ok"),
 }
 CLASSES = {mode: cls for mode, (_, cls) in MODES.items()}
 

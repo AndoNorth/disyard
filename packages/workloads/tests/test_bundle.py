@@ -39,3 +39,16 @@ def test_bundle_lockfile_is_current(tmp_path):
         text=True,
     )
     assert done.returncode == 0, done.stderr
+
+
+def test_variants_differ_in_bytes_and_share_modules(tmp_path):
+    plain, a, again = (
+        bundle.write(tmp_path / name, variant)
+        for name, variant in (("p", None), ("a", "a"), ("b", "a"))
+    )
+    other = bundle.write(tmp_path / "c", "b")
+    assert len({p.read_bytes() for p in (plain, a, other)}) == 3
+    assert a.read_bytes() == again.read_bytes()
+    modules = {compile_bundle.info(p).modules for p in (plain, a, other)}
+    assert len(modules) == 1
+    assert compile_bundle.info(plain).source_sha256 != compile_bundle.info(a).source_sha256

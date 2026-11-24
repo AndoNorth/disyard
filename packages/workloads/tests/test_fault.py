@@ -12,6 +12,7 @@ from dsy_runtime.models import CONTRACT
 from dsy_runtime.run import run, warm
 from dsy_workloads import bundle, fault
 
+ROOT = Path(__file__).resolve().parents[3]
 MEMORY_MIB = 384
 TIMEOUT_S = 30
 HANG_TIMEOUT_S = 2
@@ -72,3 +73,10 @@ def test_fault_mode_reports_its_detail(mode, component, tmp_path):
     ran = run_mode(component, tmp_path, mode, ARGS.get(mode, {}))
     assert ran.classified == ("guest_failed", True, f"guest_failed: {detail}")
     assert ran.heartbeats == heartbeats
+
+
+def test_bad_block_writes_the_contract_vector(tmp_path):
+    """The document is the missing-column vector of the contract, which the loader refuses."""
+    vector = ROOT / "contracts/workload/vectors/results/invalid/schema-violation/missing-column.xml"
+    fault.bad_block(7, {}, tmp_path)
+    assert (tmp_path / "results.xml").read_bytes() == vector.read_bytes()

@@ -31,9 +31,13 @@ The clients and the gate are delivered, each under `src/dsy_acceptance/`:
 - `clients.broker`: `dead_letters(address) -> int`.
 - `smoke`: `python -m dsy_acceptance.smoke`, the ordered driver of the gate run by `scripts/smoke.sh`, with `smoke.telemetry` for the observability row and `smoke.results` for the push of the verdicts to the smoke dashboard.
 
+`dsy_acceptance.fixtures` holds the inputs of the e2e suite, with no cluster needed:
+
+- `bundles.variant(name)` and `bundles.missing_entry()`: the workload library bundle of a variant, and a bundle whose entry module `MISSING_ENTRY` has no `Run` class, which the compile task refuses as `compile_failed`.
+- `jobs.two_chains`, `jobs.failing_second_chain` and `jobs.two_seed_summary`: two compile then simulate chains under one `digest_list` aggregate, the same with chain `b` failing its compile, and the summary a host expects over two seeds.
+
 Not written yet, which the e2e suite of the [test ladder](../../docs/acceptance-ladder.md) builds over the same clients:
 
-- The fixtures of the two-chain job, the failing compile and the malformed result block.
 - `scripts/e2e.sh`, which is a stub that exits 3, and the suite under `e2e/`.
 - Every direct read the suite makes is listed in the ladder's [direct reads](../../docs/acceptance-ladder.md#direct-reads).
 
