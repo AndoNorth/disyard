@@ -45,9 +45,4 @@ jobs:
           path: ~/.cache/disyard/build
           key: build-downloads-${{ hashFiles('uv.lock', 'nix/wasm-tools.nix', 'deploy/versions.yaml') }}
           restore-keys: build-downloads-
-      - name: Restore the uv cache
-        uses: actions/cache@v6
-        with:
-          path: ~/.cache/uv
-          key: uv-${{ hashFiles('uv.lock') }}
       - run: nix develop -c just scan images

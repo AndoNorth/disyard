@@ -74,12 +74,13 @@ jobs:
           key: build-downloads-${{ hashFiles('uv.lock', 'nix/wasm-tools.nix', 'deploy/versions.yaml') }}
           restore-keys: build-downloads-
       # uv keeps the downloaded wheels and the python-qpid-proton build from its sdist here.
-      # Without restore keys the cache never grows past one lock file's worth.
+      # The key prefix is this job's own, so no other workflow can save an empty cache under it first.
       - name: Restore the uv cache
         uses: actions/cache@v6
         with:
           path: ~/.cache/uv
-          key: uv-${{ hashFiles('uv.lock') }}
+          key: uv-test-${{ hashFiles('uv.lock') }}
+          restore-keys: uv-test-
       - run: nix develop -c just ci --shard ${{ matrix.shard }}
 
   check:
