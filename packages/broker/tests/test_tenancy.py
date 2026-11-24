@@ -47,7 +47,7 @@ def preset_mismatches(tenancy: Tenancy, root: Path) -> list[str]:
 def test_load_returns_the_typed_ci_profile():
     profile = load("ci")
     assert profile.priority_classes == ["standard"]
-    assert list(profile.tenants) == ["acme"]
+    assert "acme" in profile.tenants
     figures = {
         "reserve_interval": profile.reserve_interval.value,
         "open": profile.caps.open.value,
@@ -56,6 +56,7 @@ def test_load_returns_the_typed_ci_profile():
         "long": profile.caps.job_class["long"].value,
         "acme": profile.tenants["acme"].quota.value,
     }
+    assert {t.quota.value for t in profile.tenants.values()} == {1000}
     assert figures == {
         "reserve_interval": 5,
         "open": 2000,

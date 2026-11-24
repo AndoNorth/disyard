@@ -113,7 +113,9 @@ def test_configmap_holds_no_secret(state):
     assert "password" not in text
     definitions = json.loads(data["topology.json"])
     assert "users" not in definitions
-    assert [q["name"] for q in definitions["queues"]] == ["intake.acme.standard", "intake.dlq"]
+    profile = load("ci")
+    intake = [f"intake.{t}.{c}" for t in profile.tenants for c in profile.priority_classes]
+    assert [q["name"] for q in definitions["queues"]] == [*intake, "intake.dlq"]
 
 
 def test_secret_holds_the_users_and_the_cookie(state):
