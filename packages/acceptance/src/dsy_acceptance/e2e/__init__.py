@@ -25,8 +25,8 @@ __all__ = [
     "wait",
 ]
 
-# The tenant of the jobs. The ci preset has only acme, so the batch key alone separates runs.
-TENANT = "acme"
+# The tenant of the jobs, which the tenancy profile of preset ci holds beside acme.
+TENANT = "e2e"
 BATCH_PREFIX = "e2e"
 # The order of a run. A scenario that changes shared state runs last and restores it in a finally,
 # so a failed run leaves the cluster as the smoke gate expects it.
