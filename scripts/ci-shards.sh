@@ -9,9 +9,11 @@ cd "$(dirname "$0")/.."
 # is a top-level directory. The last shard names nothing and runs every path no other shard names, so a package
 # missing from this list is still tested. Adding a line adds a runner.
 shards=${CI_SHARDS:-"
-workflow: workflow storecheck stateops jobstate jobdoc temporal jobcheck
-admission: admission worker runtime events placement stages migrate kernel keys compat clusterkit jobpatch
-dispatchapi: dispatchapi artifactclient artifactreaper compile aggregate jobtools plan itest acceptance
+workflow: workflow events jobstate jobtools kernel
+admission: admission storecheck plan clusterkit
+dispatchapi: dispatchapi artifactreaper itest
+worker: worker acceptance stateops placement stages jobcheck keys
+artifacts: artifactclient broker aggregate compile jobdoc migrate temporal
 rest:
 "}
 
