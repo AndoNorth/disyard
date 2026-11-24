@@ -9,6 +9,7 @@ Start with [dev setup](../dev-setup.md) when the machine is new, then come here.
 | --- | --- |
 | Bring up, run a job, check health, tear down, and the rules of the one cluster | [Operator runbook](operator.md) |
 | Which check proves what, what it costs and when to run it | [Validation matrix](validation-matrix.md) |
+| The levels of testing, their rules, budgets and gate order | [Test ladder](../acceptance-ladder.md) |
 | A symptom, and the dashboard and query that narrows it down | [Triage by symptom](triage.md) |
 | An alert is firing | [Alert response](alerts.md), one entry per rule |
 | What a failure looks like and how to recover, run on a cluster | [Failure drills](drills/README.md) |
