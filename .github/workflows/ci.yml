@@ -8,6 +8,11 @@ on:
 permissions:
   contents: read
 
+# A newer push to the same pull request supersedes the run in flight. Runs on main are never cancelled.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   # Setting the repository variable CI_ENABLED to false skips every job.
   # A commit message containing [skip ci] also skips runs natively.
@@ -17,6 +22,7 @@ jobs:
   changes:
     if: ${{ vars.CI_ENABLED != 'false' }}
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     outputs:
       mode: ${{ steps.classify.outputs.mode }}
       shards: ${{ steps.classify.outputs.shards }}
@@ -38,6 +44,7 @@ jobs:
   checks:
     needs: changes
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
       - uses: DeterminateSystems/nix-installer-action@v23
@@ -58,6 +65,7 @@ jobs:
     needs: changes
     if: ${{ needs.changes.outputs.mode == 'full' }}
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     strategy:
       # Every shard runs to the end, so one failure does not hide another.
       fail-fast: false
@@ -87,6 +95,7 @@ jobs:
     needs: [changes, checks, test]
     if: ${{ always() && vars.CI_ENABLED != 'false' }}
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - env:
           MODE: ${{ needs.changes.outputs.mode }}
