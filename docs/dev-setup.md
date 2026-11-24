@@ -88,6 +88,14 @@ A port published by one of the `dsy-*` containers is labelled a leftover, and no
 `lsof` and `ss` are host tools: without both the check exits 0 and prints an install hint.
 The T1 helper of `dsy_itest` takes a free port when a port of its slot is held, so a squatter does not fail an integration test.
 
+### T1 lock
+
+`dsy_itest` keeps the host to two T1 containers with two lock files, `/tmp/dsy-t1.0.lock` and `/tmp/dsy-t1.1.lock`, shared by every worktree and agent on the host.
+A session takes the files it declares (two when a collected test carries the marker `pair`) for its whole life, so `just itest`, `just ci`, `just ci --shard`, the integration step of `just pre-pr` and a direct `pytest -m integration` queue behind each other.
+The tools that open a session of their own queue too: the corpus recorders of `packages/workflow` and `packages/temporal`, and the benchmarks of `packages/artifactclient` and `packages/stateops`.
+A wait of 1800 s (`DSY_T1_LOCK_TIMEOUT` sets it) that runs out is a refusal, not a failure: the run prints `refused:` with the holders recorded in the lock files and exits 4, and no test is reported failed.
+A full local `just ci` holds both files for longer than that wait, so a queued second run refuses and is started again when the first has finished.
+
 ### Observability switch
 
 A local or smoke run that wants the observability stack brings the cluster up with `DSY_OBS=on nix develop -c just up` (after `just nuke` when the cluster exists with the switch off), and `scripts/tilt/run.sh ci` and `just cluster-verify` then follow the recorded value; the [Observability switch](cluster-host.md#observability-switch) section has the detail.

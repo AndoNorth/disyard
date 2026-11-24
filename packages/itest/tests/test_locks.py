@@ -1,10 +1,20 @@
 """The lock files, the ports and the image pins, none of which needs Docker."""
 
 import os
+import subprocess
+import sys
+import textwrap
 
 import pytest
 from dsy_itest import session
-from dsy_itest.session import LockTimeout, host_port, image_ref, lock_paths
+from dsy_itest.session import (
+    REFUSED_EXIT,
+    LockTimeout,
+    host_port,
+    image_ref,
+    lock_paths,
+    refusing_on_wait,
+)
 
 
 @pytest.fixture
@@ -90,3 +100,55 @@ def test_two_sessions_that_each_want_two_never_hold_one_file_while_waiting(lock_
     finally:
         for fd in held.values():
             os.close(fd)
+
+
+def test_a_wait_that_runs_out_is_a_refusal_naming_the_holder(lock_dir):
+    held = session._acquire_locks("run-a", 2, timeout=1)
+    try:
+        with pytest.raises(LockTimeout, match=r"^refused: .*run=run-a"):
+            session._acquire_locks("run-b", 1, timeout=0.1, poll=0.02)
+    finally:
+        for fd in held.values():
+            os.close(fd)
+
+
+def test_a_tool_that_waits_out_the_lock_exits_4_with_the_refusal_on_stderr(lock_dir, capsys):
+    held = session._acquire_locks("run-a", 2, timeout=1)
+    try:
+        with pytest.raises(SystemExit) as raised, refusing_on_wait():
+            session._acquire_locks("run-b", 1, timeout=0.1, poll=0.02)
+    finally:
+        for fd in held.values():
+            os.close(fd)
+    assert raised.value.code == REFUSED_EXIT == 4
+    assert capsys.readouterr().err.startswith("refused: ")
+
+
+def test_a_pytest_run_queued_behind_held_locks_exits_4_and_fails_no_test(lock_dir, tmp_path):
+    held = session._acquire_locks("run-a", 2, timeout=1)
+    queued = tmp_path / "test_queued.py"
+    queued.write_text(
+        textwrap.dedent(
+            """
+            def test_uses_t1(t1):
+                raise AssertionError("must not run")
+            """
+        )
+    )
+    env = {**os.environ, "DSY_T1_LOCK_TIMEOUT": "0.2", "DSY_T1_LOCK_DIR": str(lock_dir)}
+    try:
+        run = subprocess.run(
+            [sys.executable, "-m", "pytest", str(queued), "-p", "no:cacheprovider"],
+            capture_output=True,
+            text=True,
+            env=env,
+            cwd=tmp_path,
+            timeout=120,
+        )
+    finally:
+        for fd in held.values():
+            os.close(fd)
+    assert run.returncode == REFUSED_EXIT, run.stdout + run.stderr
+    assert "refused: " in run.stdout + run.stderr
+    assert "must not run" not in run.stdout
+    assert "1 failed" not in run.stdout and "1 error" not in run.stdout
