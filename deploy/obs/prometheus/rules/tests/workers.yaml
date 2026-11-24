@@ -5,63 +5,63 @@ tests:
   - interval: 1m
     name: worker oom fires for an oom exit class and stays silent for other classes
     input_series:
-      - series: 'wft_worker_tasks_total{pool="simulate",exit_class="oom_killed"}'
+      - series: 'dsy_worker_tasks_total{pool="simulate",exit_class="oom_killed"}'
         values: '0 0 1 1 1'
-      - series: 'wft_worker_tasks_total{pool="simulate",exit_class="timeout"}'
+      - series: 'dsy_worker_tasks_total{pool="simulate",exit_class="timeout"}'
         values: '0+3x4'
-      - series: 'wft_worker_tasks_total{pool="aggregate",exit_class="aggregate_oom"}'
+      - series: 'dsy_worker_tasks_total{pool="aggregate",exit_class="aggregate_oom"}'
         values: '2x4'
     alert_rule_test:
       - eval_time: 3m
-        alertname: WftWorkerOOM
+        alertname: DsyWorkerOOM
         exp_alerts:
           - exp_labels: {severity: warning, pool: simulate}
             exp_annotations:
               runbook_url: >-
-                https://github.com/AndoNorth/weft/blob/main/docs/runbooks/alerts.md#wftworkeroom
+                https://github.com/AndoNorth/disyard/blob/main/docs/runbooks/alerts.md#dsyworkeroom
               summary: Task attempts of pool simulate were killed for memory.
               description: The task needs more memory than its pool slot gives it.
   - interval: 1m
     name: compile failures fire above 5 per class and stay silent below it or for ok and oom
     input_series:
-      - series: 'wft_worker_tasks_total{pool="compile",exit_class="compile_failed"}'
+      - series: 'dsy_worker_tasks_total{pool="compile",exit_class="compile_failed"}'
         values: '0+1x20'
-      - series: 'wft_worker_tasks_total{pool="compile",exit_class="compile_timeout"}'
+      - series: 'dsy_worker_tasks_total{pool="compile",exit_class="compile_timeout"}'
         values: '0+0.2x20'
-      - series: 'wft_worker_tasks_total{pool="compile",exit_class="ok"}'
+      - series: 'dsy_worker_tasks_total{pool="compile",exit_class="ok"}'
         values: '0+50x20'
-      - series: 'wft_worker_tasks_total{pool="compile",exit_class="compile_oom"}'
+      - series: 'dsy_worker_tasks_total{pool="compile",exit_class="compile_oom"}'
         values: '0+50x20'
     alert_rule_test:
       - eval_time: 10m
-        alertname: WftCompileFailuresHigh
+        alertname: DsyCompileFailuresHigh
         exp_alerts:
           - exp_labels: {severity: warning, exit_class: compile_failed}
             exp_annotations:
               runbook_url: >-
-                https://github.com/AndoNorth/weft/blob/main/docs/runbooks/alerts.md#wftcompilefailureshigh
+                https://github.com/AndoNorth/disyard/blob/main/docs/runbooks/alerts.md#dsycompilefailureshigh
               summary: More than 5 compile attempts ended in compile_failed in 15 minutes.
               description: Compiles keep failing the same way, so look at the exit class before the testbench.
   - interval: 1m
     name: aggregate failures fire above 5 per class and stay silent below it or for ok and oom
     input_series:
-      - series: 'wft_worker_tasks_total{pool="aggregate",exit_class="aggregate_parse_failed"}'
+      - series: 'dsy_worker_tasks_total{pool="aggregate",exit_class="aggregate_parse_failed"}'
         values: '0+1x20'
-      - series: 'wft_worker_tasks_total{pool="aggregate",exit_class="aggregate_timeout"}'
+      - series: 'dsy_worker_tasks_total{pool="aggregate",exit_class="aggregate_timeout"}'
         values: '0+0.2x20'
-      - series: 'wft_worker_tasks_total{pool="aggregate",exit_class="ok"}'
+      - series: 'dsy_worker_tasks_total{pool="aggregate",exit_class="ok"}'
         values: '0+50x20'
-      - series: 'wft_worker_tasks_total{pool="aggregate",exit_class="aggregate_oom"}'
+      - series: 'dsy_worker_tasks_total{pool="aggregate",exit_class="aggregate_oom"}'
         values: '0+50x20'
-      - series: 'wft_worker_tasks_total{pool="simulate",exit_class="guest_failed"}'
+      - series: 'dsy_worker_tasks_total{pool="simulate",exit_class="guest_failed"}'
         values: '0+50x20'
     alert_rule_test:
       - eval_time: 10m
-        alertname: WftAggregateFailuresHigh
+        alertname: DsyAggregateFailuresHigh
         exp_alerts:
           - exp_labels: {severity: warning, exit_class: aggregate_parse_failed}
             exp_annotations:
               runbook_url: >-
-                https://github.com/AndoNorth/weft/blob/main/docs/runbooks/alerts.md#wftaggregatefailureshigh
+                https://github.com/AndoNorth/disyard/blob/main/docs/runbooks/alerts.md#dsyaggregatefailureshigh
               summary: More than 5 aggregate attempts ended in aggregate_parse_failed in 15 minutes.
               description: Aggregates keep failing the same way, so look at the exit class before the results.

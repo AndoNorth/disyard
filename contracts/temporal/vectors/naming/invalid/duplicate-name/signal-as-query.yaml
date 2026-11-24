@@ -1,22 +1,22 @@
 # Every Temporal name that the workflow, its workers and its callers share. Schema: naming.schema.json.
 # A retry's maximum_attempts of 0 means no limit, as in Temporal's own retry policy.
-namespace: wft
+namespace: dsy
 workflow:
   type: JobWorkflow
-  queue: wft-workflow
-  # The workflow id of a job is wft_keys.workflow_id(job_id).
-  id: wft_keys.workflow_id
+  queue: dsy-workflow
+  # The workflow id of a job is dsy_keys.workflow_id(job_id).
+  id: dsy_keys.workflow_id
   id_reuse_policy: REJECT_DUPLICATE
   versioning_behavior: PINNED
-  deployment: wft-workflow-worker
-  build_id_env: WFT_BUILD_ID
-# One unversioned control queue per build, named with the build id of WFT_BUILD_ID.
-control_queue: wft-control-<build id>
+  deployment: dsy-workflow-worker
+  build_id_env: DSY_BUILD_ID
+# One unversioned control queue per build, named with the build id of DSY_BUILD_ID.
+control_queue: dsy-control-<build id>
 # Unversioned, one per pool of contracts/job/registry.json.
 pools:
-  compile: wft-compile
-  simulate: wft-simulate
-  aggregate: wft-aggregate
+  compile: dsy-compile
+  simulate: dsy-simulate
+  aggregate: dsy-aggregate
 activities:
   pool:
     - name: run_task
@@ -38,16 +38,16 @@ activities:
 signals: [cancel, terminate, pause, resume]
 queries: [status, pause]
 search_attributes:
-  WftTenant: keyword
-  WftPriorityClass: keyword
-  WftJobClass: keyword
-  WftJobId: keyword
-  WftSubmittedAt: datetime
-# As wft_artifactreaper.schedule delivers them.
+  DsyTenant: keyword
+  DsyPriorityClass: keyword
+  DsyJobClass: keyword
+  DsyJobId: keyword
+  DsySubmittedAt: datetime
+# As dsy_artifactreaper.schedule delivers them.
 schedules:
   artifact_reaper:
-    id: wft-artifact-reaper
-    queue: wft-artifact-reaper
+    id: dsy-artifact-reaper
+    queue: dsy-artifact-reaper
     workflow: ReapWorkflow
-    workflow_id: wft-artifact-reaper-pass
+    workflow_id: dsy-artifact-reaper-pass
     activity: reap_pass

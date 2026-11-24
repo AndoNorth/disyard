@@ -6,7 +6,7 @@ Consumers: artifacts (#12), the dispatch and control API (#24), the contract scr
 
 This directory pins who may do what in the object store, which lifecycle rules each bucket carries and what each tested product is known not to do.
 The four bucket names are read from [../artifact/layout.yaml](../artifact/layout.yaml) and never retyped, and the loader fails when a bucket is missing or extra.
-The models live in `packages/storecheck/` (import `wft_storecheck`), and [store.schema.json](store.schema.json) is generated from them by `python -m wft_storecheck.gen`, whose `--check` fails on drift.
+The models live in `packages/storecheck/` (import `dsy_storecheck`), and [store.schema.json](store.schema.json) is generated from them by `python -m dsy_storecheck.gen`, whose `--check` fails on drift.
 The product is SeaweedFS 4.51 pinned by digest in `deploy/versions.yaml`, with RustFS 1.0.4 as the tested second target of the same contract script.
 
 ## Roles
@@ -17,13 +17,13 @@ The actions are `get`, `put`, `list`, `multipart`, `delete`, `bucket` and `lifec
 | Role | Used by | Grants |
 | --- | --- | --- |
 | `admin` | the bootstrap, and no pod | `bucket` and `lifecycle` on every bucket |
-| `submit` | the submit path | reads and writes `wft-sources` |
-| `indexer` | the aggregate index builder | writes `wft-sources` and nothing else |
-| `compile` | the compile stage | reads `wft-sources`, writes `wft-components` and `wft-results` (its log tail) |
-| `simulate` | the simulate stage | reads `wft-components`, writes `wft-results`, reads and writes `wft-checkpoints` |
-| `aggregate` | the aggregate stage | reads `wft-sources` (its index object), reads and writes `wft-results` |
-| `workflow` | the workflow | reads `wft-sources`, `wft-components` and `wft-results` |
-| `export` | the evidence export | reads `wft-results` |
+| `submit` | the submit path | reads and writes `dsy-sources` |
+| `indexer` | the aggregate index builder | writes `dsy-sources` and nothing else |
+| `compile` | the compile stage | reads `dsy-sources`, writes `dsy-components` and `dsy-results` (its log tail) |
+| `simulate` | the simulate stage | reads `dsy-components`, writes `dsy-results`, reads and writes `dsy-checkpoints` |
+| `aggregate` | the aggregate stage | reads `dsy-sources` (its index object), reads and writes `dsy-results` |
+| `workflow` | the workflow | reads `dsy-sources`, `dsy-components` and `dsy-results` |
+| `export` | the evidence export | reads `dsy-results` |
 | `reaper` | the artifact reaper | lists and deletes in all four buckets |
 
 The split stays at bucket level, and prefix-level restriction is not tested.

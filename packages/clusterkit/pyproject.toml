@@ -1,12 +1,12 @@
 [project]
-name = "wft-clusterkit"
+name = "dsy-clusterkit"
 version = "0.0.0"
 license = "Apache-2.0"
 requires-python = ">=3.13,<3.14"
-dependencies = ["wft-storecheck"]
+dependencies = ["dsy-storecheck"]
 
 [tool.uv.sources]
-wft-storecheck = { workspace = true }
+dsy-storecheck = { workspace = true }
 
 [build-system]
 requires = ["hatchling"]

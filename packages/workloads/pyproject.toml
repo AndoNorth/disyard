@@ -1,13 +1,13 @@
 [project]
-name = "wft-workloads"
+name = "dsy-workloads"
 version = "0.0.0"
 license = "Apache-2.0"
 requires-python = ">=3.13"
 # Runs inside a guest too, so the only dependency is the standard library kernel.
-dependencies = ["wft-kernel"]
+dependencies = ["dsy-kernel"]
 
 [tool.uv.sources]
-wft-kernel = { workspace = true }
+dsy-kernel = { workspace = true }
 
 [build-system]
 requires = ["hatchling"]

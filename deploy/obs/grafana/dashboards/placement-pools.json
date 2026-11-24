@@ -3,7 +3,7 @@
   "title": "Placement and pools",
   "description": "Placement decisions per pool, their latency and the snapshot they read, and each pool's workers.",
   "tags": [
-    "wft"
+    "dsy"
   ],
   "editable": false,
   "schemaVersion": 39,
@@ -76,7 +76,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum by (pool, verdict) (rate(wft_placement_decisions_total[$__rate_interval]))",
+          "expr": "sum by (pool, verdict) (rate(dsy_placement_decisions_total[$__rate_interval]))",
           "legendFormat": "{{pool}} {{verdict}}"
         }
       ],
@@ -123,7 +123,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum by (pool) (rate(wft_placement_escalations_total[$__rate_interval]))",
+          "expr": "sum by (pool) (rate(dsy_placement_escalations_total[$__rate_interval]))",
           "legendFormat": "{{pool}}"
         }
       ],
@@ -170,7 +170,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "histogram_quantile(0.5, sum by (le) (rate(wft_placement_place_seconds_bucket[$__rate_interval])))",
+          "expr": "histogram_quantile(0.5, sum by (le) (rate(dsy_placement_place_seconds_bucket[$__rate_interval])))",
           "legendFormat": "p50"
         },
         {
@@ -179,7 +179,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "histogram_quantile(0.95, sum by (le) (rate(wft_placement_place_seconds_bucket[$__rate_interval])))",
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(dsy_placement_place_seconds_bucket[$__rate_interval])))",
           "legendFormat": "p95"
         },
         {
@@ -188,7 +188,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "histogram_quantile(0.99, sum by (le) (rate(wft_placement_place_seconds_bucket[$__rate_interval])))",
+          "expr": "histogram_quantile(0.99, sum by (le) (rate(dsy_placement_place_seconds_bucket[$__rate_interval])))",
           "legendFormat": "p99"
         }
       ],
@@ -235,7 +235,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "max(wft_placement_snapshot_age_seconds)",
+          "expr": "max(dsy_placement_snapshot_age_seconds)",
           "legendFormat": "age"
         }
       ],
@@ -283,7 +283,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum by (pool) (rate(wft_placement_decisions_total{verdict=\"unschedulable\"}[$__rate_interval])) / sum by (pool) (rate(wft_placement_decisions_total[$__rate_interval]))",
+          "expr": "sum by (pool) (rate(dsy_placement_decisions_total{verdict=\"unschedulable\"}[$__rate_interval])) / sum by (pool) (rate(dsy_placement_decisions_total[$__rate_interval]))",
           "legendFormat": "{{pool}}"
         }
       ],
@@ -330,7 +330,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum by (budget) (rate(wft_workflow_retries_total[$__rate_interval]))",
+          "expr": "sum by (budget) (rate(dsy_workflow_retries_total[$__rate_interval]))",
           "legendFormat": "retry {{budget}}"
         },
         {
@@ -339,7 +339,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum(rate(wft_workflow_reschedules_total[$__rate_interval]))",
+          "expr": "sum(rate(dsy_workflow_reschedules_total[$__rate_interval]))",
           "legendFormat": "reschedule"
         }
       ],
@@ -397,7 +397,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum by (deployment) (kube_deployment_status_replicas_available{namespace=\"wft-workers\"})",
+          "expr": "sum by (deployment) (kube_deployment_status_replicas_available{namespace=\"dsy-workers\"})",
           "legendFormat": "{{deployment}}",
           "instant": true,
           "range": false
@@ -446,7 +446,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum by (deployment) (kube_deployment_status_replicas_unavailable{namespace=\"wft-workers\"})",
+          "expr": "sum by (deployment) (kube_deployment_status_replicas_unavailable{namespace=\"dsy-workers\"})",
           "legendFormat": "{{deployment}}"
         }
       ],
@@ -499,7 +499,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum by (pool) (rate(wft_worker_tasks_total[$__rate_interval]))",
+          "expr": "sum by (pool) (rate(dsy_worker_tasks_total[$__rate_interval]))",
           "legendFormat": "{{pool}}"
         }
       ],
@@ -546,7 +546,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum by (container) (container_memory_working_set_bytes{namespace=\"wft-workers\", container=~\".+-worker\"})",
+          "expr": "sum by (container) (container_memory_working_set_bytes{namespace=\"dsy-workers\", container=~\".+-worker\"})",
           "legendFormat": "{{container}}"
         },
         {
@@ -555,7 +555,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum by (container) (kube_pod_container_resource_limits{namespace=\"wft-workers\", resource=\"memory\"})",
+          "expr": "sum by (container) (kube_pod_container_resource_limits{namespace=\"dsy-workers\", resource=\"memory\"})",
           "legendFormat": "{{container}} limit"
         }
       ],

@@ -6,8 +6,8 @@ from datetime import UTC, datetime
 
 import psycopg
 import pytest
-from wft_eventstore import insert_events
-from wft_stateops import bench
+from dsy_eventstore import insert_events
+from dsy_stateops import bench
 
 pytestmark = pytest.mark.integration
 
@@ -23,7 +23,7 @@ def test_bench_inserts_every_row_and_event_once_and_then_nothing(appdb):
         [
             sys.executable,
             "-m",
-            "wft_stateops.bench",
+            "dsy_stateops.bench",
             "--jobs",
             str(JOBS),
             "--dsn",

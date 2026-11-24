@@ -8,7 +8,7 @@
 #   apply  create or update the namespaces, LimitRanges and quotas (default)
 #   render print the quotas without touching the cluster
 #   check  print each quota next to the live pool allocatable, then admit a pod without resources and reject one above the quota
-# WFT_OBS=on sizes the obs node, and so the wft-obs quota, at the preset's obs_stack.
+# DSY_OBS=on sizes the obs node, and so the dsy-obs quota, at the preset's obs_stack.
 # Usage: namespaces.sh [apply|render|check] <preset>. Exit 0 ok, 1 a check failed, 2 usage.
 set -euo pipefail
 root=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
@@ -21,12 +21,12 @@ mode=apply
 [ $# -eq 1 ] && [ -f "deploy/presets/$1.yaml" ] && [[ $mode =~ ^(apply|render|check)$ ]] ||
     { echo "usage: namespaces.sh [apply|render|check] <preset>" >&2; exit 2; }
 sized=$(scripts/cluster/obs.sh preset "$1") || exit $?
-context=${WFT_CONTEXT:-kind-wft}
+context=${DSY_CONTEXT:-kind-dsy}
 k() { kubectl --context "$context" "$@"; }
 
 # The pools whose nodes each namespace runs on. Control pods share the infra pool.
-declare -A pools=([wft-infra]="infra" [wft-control]="infra" [wft-workers]="compile simulate aggregate" [wft-obs]="obs")
-namespaces=(wft-infra wft-control wft-workers wft-obs)
+declare -A pools=([dsy-infra]="infra" [dsy-control]="infra" [dsy-workers]="compile simulate aggregate" [dsy-obs]="obs")
+namespaces=(dsy-infra dsy-control dsy-workers dsy-obs)
 cpu_reserved_milli=100
 headroom_percent=5
 
@@ -107,7 +107,7 @@ check() {
         n=$(k -n "$ns" get resourcequota,limitrange --no-headers | wc -l)
         shown=ok
         [ "$n" -eq 2 ] || { shown="$n objects, want 2"; fail=1; }
-        if [ "$ns" = wft-workers ]; then
+        if [ "$ns" = dsy-workers ]; then
             { [ "$(to_milli "$quota_cpu")" -gt "$live_cpu" ] && [ "$(to_mib "$quota_mem")" -gt "$live_mem" ]; } || { shown="quota not above allocatable"; fail=1; }
         fi
         printf '%-13s %-26s %-26s %s\n' "$ns" "${quota_cpu}/${quota_mem}" "${live_cpu}m/${live_mem}Mi" "$shown"

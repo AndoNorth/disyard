@@ -6,7 +6,7 @@ Consumers: dispatch (#24), admission (#8), workflow (#6), broker (#7), artifacts
 
 This directory pins the shape of the three table families of the platform, the retention windows of the safety net and the loader of those windows.
 The row models live in `packages/jobstate/` (`JobRow`), `packages/eventstore/` (`EventRow`) and `packages/artifactindex/` (`ArtifactRow`), and their exported schemas under [schemas/](schemas/) are generated from them.
-`python -m wft_jobstate.gen --check`, `python -m wft_eventstore.gen --check` and `python -m wft_artifactindex.gen --check` fail when a committed schema or [retention.schema.json](retention.schema.json) differs from its model.
+`python -m dsy_jobstate.gen --check`, `python -m dsy_eventstore.gen --check` and `python -m dsy_artifactindex.gen --check` fail when a committed schema or [retention.schema.json](retention.schema.json) differs from its model.
 The DDL belongs to the lanes that own each table, and a conformance test in each package holds it to the tables below.
 Temporal owns workflow lifecycle, and nothing here decides it.
 
@@ -24,7 +24,7 @@ A column marked generated or set by the database is never written by a caller.
 
 | Column | Type | Rule |
 | --- | --- | --- |
-| `job_id` | `uuid` | Primary key, the value of `wft_keys.job_id(tenant, submission_key)` |
+| `job_id` | `uuid` | Primary key, the value of `dsy_keys.job_id(tenant, submission_key)` |
 | `tenant` | `text` | Not null |
 | `submission_key` | `text` | Not null, at most 256 characters |
 | `batch_id` | `uuid` | Not null |
@@ -67,7 +67,7 @@ The append-only event history, a hypertable on `event_time`.
 | `job_id` | `uuid` | Not null |
 | `task_id` | `text` | Null for an event of the job |
 | `attempt` | `integer` | Null for an event with no attempt, and no default |
-| `body` | `text` | The canonical bytes of `wft_events.to_event_row`, never `jsonb`, which reorders keys |
+| `body` | `text` | The canonical bytes of `dsy_events.to_event_row`, never `jsonb`, which reorders keys |
 
 ## Table `artifact`
 
@@ -118,7 +118,7 @@ A retried submission reuses its job id and so links again, which moves `last_lin
 
 | Column | Type | Rule |
 | --- | --- | --- |
-| `job_id` | `uuid` | Part of the primary key, the value of `wft_keys.job_id(tenant, submission_key)` |
+| `job_id` | `uuid` | Part of the primary key, the value of `dsy_keys.job_id(tenant, submission_key)` |
 | `artifact_row_id` | `bigint` | Part of the primary key, references `artifact (row_id)` with no cascade |
 | `created_at` | `timestamptz` | When the job first linked the blob |
 | `last_linked_at` | `timestamptz` | When the job last linked the blob, never moved back |
@@ -153,12 +153,12 @@ A status value cannot be restricted by a grant, so the trigger and the library k
 
 | Change | Writer | Statement |
 | --- | --- | --- |
-| Insert the row and its accepted event, then set the receipt and record the published event when it set it | the submit sequence of the dispatch API, role `wft_dispatch` | `insert_accepted`, `insert_events`, `mark_published` |
-| Lock the row for a control decision, request cancel, pause, resume or terminate, set or clear the pending patch of a resume, and a row-only move of a job that never started | the control API, role `wft_control` | `lock_job`, `request_action`, `mark_delivered`, `set_pending_patch`, `transition(..., row_only=True)` and their events |
-| Claim a job, and set its receipt when it is still missing as the job's message arrives | admission, role `wft_admission` | `transition(accepted, admitted)`, `mark_published`, and `insert_events` for the admitted event and, when the claim set the receipt, the published event |
-| Project running, paused and the terminal statuses | the workflow, role `wft_workflow` | `transition` and `insert_events` for every event except submit, control and admission events |
-| Index a committed reference and a cache entry, link a job to a blob, retire a cache entry | the artifact client, role `wft_artifacts` | `index_reference`, `record_cache_entry`, `touch_cache_entry`, `link_use`, `invalidate_cache_entry` |
-| Soft delete an expired reference, expire cache entries, purge a tombstoned row, record progress | the reaper, role `wft_reaper` | `mark_deleted`, `tombstone`, `expired_cache_entries`, `purge`, and the writes of `reaper_job` and `reaper_cursor` |
+| Insert the row and its accepted event, then set the receipt and record the published event when it set it | the submit sequence of the dispatch API, role `dsy_dispatch` | `insert_accepted`, `insert_events`, `mark_published` |
+| Lock the row for a control decision, request cancel, pause, resume or terminate, set or clear the pending patch of a resume, and a row-only move of a job that never started | the control API, role `dsy_control` | `lock_job`, `request_action`, `mark_delivered`, `set_pending_patch`, `transition(..., row_only=True)` and their events |
+| Claim a job, and set its receipt when it is still missing as the job's message arrives | admission, role `dsy_admission` | `transition(accepted, admitted)`, `mark_published`, and `insert_events` for the admitted event and, when the claim set the receipt, the published event |
+| Project running, paused and the terminal statuses | the workflow, role `dsy_workflow` | `transition` and `insert_events` for every event except submit, control and admission events |
+| Index a committed reference and a cache entry, link a job to a blob, retire a cache entry | the artifact client, role `dsy_artifacts` | `index_reference`, `record_cache_entry`, `touch_cache_entry`, `link_use`, `invalidate_cache_entry` |
+| Soft delete an expired reference, expire cache entries, purge a tombstoned row, record progress | the reaper, role `dsy_reaper` | `mark_deleted`, `tombstone`, `expired_cache_entries`, `purge`, and the writes of `reaper_job` and `reaper_cursor` |
 
 `mark_published(conn, job_id)` sets the receipt only while it is null, and returns the receipt time when this call set it and `None` when a receipt was already there.
 Only the writer whose call returned a time records `job.published`, with that time, so a job gets one `job.published` whichever writer set its receipt.
@@ -167,11 +167,11 @@ A control decision is taken on the locked row and written in the same transactio
 `set_pending_patch(conn, job_id, control_seq, ref)` writes `pending_patch_ref`, or clears it when `ref` is `None`, only while `requested_action` is `resume` and `control_seq` equals the given sequence.
 It returns nothing when it wrote, and `Lost` with the row's status when the resume of that sequence is no longer outstanding, so a patch never lands under a newer request or after the resume was applied.
 `mark_published` and `set_pending_patch` raise `JobNotFound` when no row has the id, as the other calls of the library do.
-The grants refuse `set_pending_patch` to every role but `wft_control`, the one role that updates `pending_patch_ref`.
+The grants refuse `set_pending_patch` to every role but `dsy_control`, the one role that updates `pending_patch_ref`.
 
 The artifact role holds `select` on `artifact` and `artifact_use`, `insert` on the columns of a reference and of a cache entry including `build_info_uri`, and `insert` on `artifact_use`.
 It updates `last_used_at`, `deleted_at`, `purged_at` and `cache_key` of `artifact`, which are a touch, a revive, a revive of a purged row and the retired key of an invalidation, and `last_linked_at` of `artifact_use`, which a retried link renews.
-The dispatch API writes the index and use rows of its inputs through a second connection that logs in as a member of `wft_artifacts`, because its own role `wft_dispatch` has no grant on `artifact`.
+The dispatch API writes the index and use rows of its inputs through a second connection that logs in as a member of `dsy_artifacts`, because its own role `dsy_dispatch` has no grant on `artifact`.
 
 The reaper role reads `artifact`, `artifact_use`, `job_status` and the columns `job_id`, `tenant`, `batch_id`, `status`, `terminal_at`, `manifest_ref` and `pending_patch_ref` of `accepted_job`.
 It updates `deleted_at`, `purged_at` and `cache_key` of `artifact`, because it expires cache entries and retires their keys, and it selects, inserts and updates the two progress tables.
@@ -184,7 +184,7 @@ No other role writes the progress tables, and no role deletes from any table of 
 The event history can only be cut by time, because a hypertable policy drops whole chunks, and a bucket rule can only expire by age, so neither keeps a failed job longer than a succeeded one.
 That choice stays with the reaper of the artifact epic.
 
-- Every entry of `windows` is at least twice `MAX_JOB_DURATION_DAYS` of `wft_compat.window`, which covers a full length run followed by a pause of the same length.
+- Every entry of `windows` is at least twice `MAX_JOB_DURATION_DAYS` of `dsy_compat.window`, which covers a full length run followed by a pause of the same length.
 - The events are dropped after 14 days, results expire after 28 days and checkpoints after 14 days.
 - Events are compressed after 2 days and incomplete multipart uploads are aborted after 1 day, and neither has a floor.
 - Sources and components have no age rule, because their keys are content-addressed and shared across jobs.
@@ -198,7 +198,7 @@ Vectors are under [vectors/retention/](vectors/retention/), and the file of each
 ## Invariants
 
 Each file under [invariants/](invariants/) is a query that returns the offending rows as a `key` column, so an empty result passes.
-`python -m wft_stateops.invariants --dsn DSN [--open-workflows FILE]` runs them and prints one `invariant: <name>: <key>` line per offending row, where the name is the file name without `.sql`.
+`python -m dsy_stateops.invariants --dsn DSN [--open-workflows FILE]` runs them and prints one `invariant: <name>: <key>` line per offending row, where the name is the file name without `.sql`.
 It exits 0 when nothing is reported, 1 when a row is, 2 on a usage error and 3 when the database is unreachable.
 Nothing in it reads Temporal: the file lists the open workflow ids, one per line.
 Without it the two queries that compare against workflows print `skipped: <name>` and the others still run.
@@ -213,13 +213,13 @@ Without it the two queries that compare against workflows print `skipped: <name>
 | `deleted-artifact-of-live-job` | A soft deleted row that a use row names while its job is not terminal, or while the job has no row and the last link is younger than the unreferenced grace, and a soft deleted attempt-scoped row of a job that is not terminal, unless it is a checkpoint |
 
 A job at `accepted` and a dead lettered job have no workflow, so the workflow queries never report them.
-A query may use the named parameters of `wft_stateops.windows`, which reads the unreferenced grace, the windows per status and the failure codes from the artifact contract and the hard expiries from [retention.yaml](retention.yaml).
+A query may use the named parameters of `dsy_stateops.windows`, which reads the unreferenced grace, the windows per status and the failure codes from the artifact contract and the hard expiries from [retention.yaml](retention.yaml).
 
 ## Inputs
 
 [inputs.yaml](inputs.yaml) lists the inputs that the observability epic turns into metrics and alerts, each with a unit, a source and, where it alerts, a threshold.
-Its schema [inputs.schema.json](inputs.schema.json) is generated from the models by `python -m wft_stateops.gen`, which fails with `--check` on drift.
-`python -m wft_stateops.inputs --dsn DSN [--store-endpoint URL --credentials FILE]` prints `<name> <value>` per input, and `<name>{bucket=<bucket>} <value>` for the bytes of each bucket.
+Its schema [inputs.schema.json](inputs.schema.json) is generated from the models by `python -m dsy_stateops.gen`, which fails with `--check` on drift.
+`python -m dsy_stateops.inputs --dsn DSN [--store-endpoint URL --credentials FILE]` prints `<name> <value>` per input, and `<name>{bucket=<bucket>} <value>` for the bytes of each bucket.
 Without the store flags the store inputs print `skipped: <name>` and the others still run.
 It exits 0 when every input was read, 1 when the store cannot be read, 2 on a usage error and 3 when the database is unreachable.
 
@@ -230,7 +230,7 @@ It exits 0 when every input was read, 1 when the store cannot be read, 2 on a us
 | `event_chunks` | chunks | `show_chunks('event')` |
 | `event_ingest_lag` | seconds | `now()` minus the newest `event_time`, 0 with no events |
 | `drift_rows` | rows | offending rows of the invariant queries that run without open workflows |
-| `store_bytes` | bytes | one value per bucket from `python -m wft_storecheck run --mode capacity` |
+| `store_bytes` | bytes | one value per bucket from `python -m dsy_storecheck run --mode capacity` |
 | `store_capacity_share` | percent | used share of the data volume from `df` in the store pod, alerting above 70 |
 | `artifact_failures` | failures | one value per code of `contracts/artifact/failures.yaml` (zero when none), counted over the `task.attempt.failed` events whose reason starts with the code and a colon, printed as `artifact_failures{code=<code>}` |
 | `checkpoint_age_seconds` | seconds | the largest age of the newest live checkpoint row of a job that is not terminal, 0 with none |
@@ -244,8 +244,8 @@ A source of kind `sql_labelled` names a `label` and returns one row per label, t
 A source of kind `sql` holds no `label`, a source of kind `sql_labelled` needs one, and either breach is `schema-violation`.
 Counts of events cover the retained history, which the event retention drops after 14 days.
 
-`--store-exec` is the prefix that runs inside the store, which defaults to `kubectl --context kind-wft -n wft-infra exec objectstore-0 -c store --`, and the data volume is `/data`.
-`python -m wft_stateops.inputs --check FILE` validates a file and exits 0 valid, 1 with `reason: <code>: <detail>` on stderr, and the reasons are `schema-violation` and `unknown-source`.
+`--store-exec` is the prefix that runs inside the store, which defaults to `kubectl --context kind-dsy -n dsy-infra exec objectstore-0 -c store --`, and the data volume is `/data`.
+`python -m dsy_stateops.inputs --check FILE` validates a file and exits 0 valid, 1 with `reason: <code>: <detail>` on stderr, and the reasons are `schema-violation` and `unknown-source`.
 Vectors are under [vectors/inputs/](vectors/inputs/), and the file of each invalid vector sits in the directory named by its reason.
 
 ## Changing the contract

@@ -5,9 +5,9 @@ module = read_yaml("module.yaml")
 name = module["name"]
 namespace = module["namespace"]
 
-tilt_profile = os.getenv("WFT_TILT_PROFILE", "")
+tilt_profile = os.getenv("DSY_TILT_PROFILE", "")
 if not tilt_profile:
-    fail("WFT_TILT_PROFILE is unset: load this module through the root Tiltfile")
+    fail("DSY_TILT_PROFILE is unset: load this module through the root Tiltfile")
 
 for path in ["config.py", "../versions.yaml", "../../contracts/broker", "../../contracts/tenancy", "../../contracts/topology", "../../packages/broker/src"]:
     watch_file(path)

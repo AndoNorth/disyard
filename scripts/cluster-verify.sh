@@ -1,48 +1,48 @@
 #!/usr/bin/env bash
-# Checks that the cluster wft is the one its preset describes and that every module the preset's profile enables is
+# Checks that the cluster dsy is the one its preset describes and that every module the preset's profile enables is
 # ready, without starting a pod or changing anything, so smoke can call it before it drives a workload.
 # Static checks need no cluster: the preset and topology loaders, the pod slots and the module budget.
 # Live checks: nodes, pool labels and taints; node container limits and allocatable; the namespace quotas and
 # LimitRanges; each module's own readiness; live requests per node within the budget; no Pending pod, quota refusal,
 # OOM kill or memory pressure in the infra and control namespaces; and every host port bound to loopback only.
 # The worker namespace is left out of the pressure check, because pool OOM kills are workload behaviour.
-# The observability switch is the value recorded for the cluster, exported as WFT_OBS over the caller's own, so the
-# budget, render and quota checks see the obs node that exists. WFT_MODULES_DIR names the directory searched for
+# The observability switch is the value recorded for the cluster, exported as DSY_OBS over the caller's own, so the
+# budget, render and quota checks see the obs node that exists. DSY_MODULES_DIR names the directory searched for
 # module.yaml (default deploy).
-# WFT_PRESET selects the preset (default ci). Every check prints "ok <check> <detail>" or "FAIL <check> <detail>",
+# DSY_PRESET selects the preset (default ci). Every check prints "ok <check> <detail>" or "FAIL <check> <detail>",
 # then a count line follows.
-# Exit 0 every check ok, 1 a check failed, 2 usage, 4 refused: no cluster wft, or one started for another preset.
+# Exit 0 every check ok, 1 a check failed, 2 usage, 4 refused: no cluster dsy, or one started for another preset.
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 # shellcheck source=/dev/null
 source scripts/verify/cluster/lib/tools.sh
 
-[ $# -eq 0 ] || { echo "usage: cluster-verify.sh, with the preset in WFT_PRESET" >&2; exit 2; }
-preset=${WFT_PRESET:-ci}
+[ $# -eq 0 ] || { echo "usage: cluster-verify.sh, with the preset in DSY_PRESET" >&2; exit 2; }
+preset=${DSY_PRESET:-ci}
 file=deploy/presets/$preset.yaml
 [ -f "$file" ] || { echo "usage: no preset $file" >&2; exit 2; }
-state=${WFT_STATE_DIR:-${XDG_STATE_HOME:-$HOME/.local/state}/weft}
-context=kind-wft
+state=${DSY_STATE_DIR:-${XDG_STATE_HOME:-$HOME/.local/state}/disyard}
+context=kind-dsy
 k() { kubectl --context "$context" "$@"; }
 refuse() { echo "refused: $*" >&2; exit 4; }
 
-if [ -z "${WFT_CLUSTER_LOCK_HELD:-}" ]; then
-    exec 9>/tmp/wft-cluster.lock
-    flock -w 900 9 || { echo "could not take /tmp/wft-cluster.lock" >&2; exit 1; }
+if [ -z "${DSY_CLUSTER_LOCK_HELD:-}" ]; then
+    exec 9>/tmp/dsy-cluster.lock
+    flock -w 900 9 || { echo "could not take /tmp/dsy-cluster.lock" >&2; exit 1; }
 fi
 
-kind get clusters 2>/dev/null | grep -qx wft || refuse "no kind cluster named wft, start one with: just up"
+kind get clusters 2>/dev/null | grep -qx dsy || refuse "no kind cluster named dsy, start one with: just up"
 started=$(cat "$state/cluster.owner" 2>/dev/null || true)
-[ "$started" = "$preset" ] || refuse "cluster wft was started for preset ${started:-unknown}, not $preset"
-WFT_OBS=$(scripts/cluster/obs.sh)
-export WFT_OBS
+[ "$started" = "$preset" ] || refuse "cluster dsy was started for preset ${started:-unknown}, not $preset"
+DSY_OBS=$(scripts/cluster/obs.sh)
+export DSY_OBS
 
 topology=contracts/topology/topology.yaml
 pool_label=$(yq '.pool_label' "$topology")
 taint_effect=$(yq '.taint_effect' "$topology")
 profiles=deploy/tilt/profiles.yaml
 groups=" $(scripts/cluster/obs.sh groups "$preset") "
-modules_dir=${WFT_MODULES_DIR:-deploy}
+modules_dir=${DSY_MODULES_DIR:-deploy}
 module_profile=$(yq ".profiles.$preset.modules // \"$preset\"" "$profiles")
 work=$(mktemp -d)
 trap 'rm -rf "$work"' EXIT
@@ -114,7 +114,7 @@ check_nodes() {
 
 check_limits() {
     local container cpus mem swap got want bad=""
-    if ! WFT_RENDER_DIR="$work/render" scripts/cluster/render.sh "$preset" >/dev/null 2>"$work/render.err"; then
+    if ! DSY_RENDER_DIR="$work/render" scripts/cluster/render.sh "$preset" >/dev/null 2>"$work/render.err"; then
         fail limits "render: $(tail -n 1 "$work/render.err")"
         return
     fi
@@ -169,7 +169,7 @@ check_ready() {
             resource_ready "$ns" "$(yq '.readiness.resource' "$m")" "$(yq '.readiness.condition' "$m")" || bad+=" $name"
         fi
     done
-    if [ -z "$bad" ]; then ok ready "$n modules of profile $preset with WFT_OBS=$WFT_OBS ready"; else fail ready "not ready:$bad"; fi
+    if [ -z "$bad" ]; then ok ready "$n modules of profile $preset with DSY_OBS=$DSY_OBS ready"; else fail ready "not ready:$bad"; fi
 }
 
 # shellcheck disable=SC2016 # $n is a yq variable
@@ -195,7 +195,7 @@ check_drift() {
 
 check_pressure() {
     local ns found=""
-    for ns in wft-infra wft-control; do
+    for ns in dsy-infra dsy-control; do
         found+=$(k -n "$ns" get pods --field-selector=status.phase=Pending -o jsonpath='{range .items[*]}'"$ns"'/{.metadata.name} Pending: {.status.conditions[?(@.type=="PodScheduled")].message}{"\n"}{end}')
         found+=$(k -n "$ns" get pods -o jsonpath='{range .items[*]}'"$ns"'/{.metadata.name} {.status.containerStatuses[*].lastState.terminated.reason} {.status.containerStatuses[*].state.terminated.reason}{"\n"}{end}' |
             awk '/OOMKilled/ { print $1 " OOMKilled" }')
@@ -205,7 +205,7 @@ check_pressure() {
     found+=$(k get nodes -o jsonpath='{range .items[*]}{.metadata.name} {.status.conditions[?(@.type=="MemoryPressure")].status}{"\n"}{end}' |
         awk '$2 == "True" { print $1 " MemoryPressure" }')
     if [ -z "$found" ]; then
-        ok pressure "no Pending pod, quota refusal or OOM kill in wft-infra and wft-control, no node under memory pressure"
+        ok pressure "no Pending pod, quota refusal or OOM kill in dsy-infra and dsy-control, no node under memory pressure"
     else
         fail pressure "$(sed '/^$/d' <<<"$found" | paste -sd ';' | sed 's/;/; /g')"
     fi

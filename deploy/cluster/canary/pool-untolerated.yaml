@@ -3,11 +3,11 @@ apiVersion: v1
 kind: Pod
 metadata:
   name: canary-pool-untolerated
-  namespace: wft-canary
+  namespace: dsy-canary
 spec:
   restartPolicy: Never
   nodeSelector:
-    wft.dev/pool: obs
+    dsy.dev/pool: obs
   containers:
     - name: idle
       image: localhost:5001/canary:pinned

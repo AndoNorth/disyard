@@ -6,14 +6,14 @@ import subprocess
 import sys
 
 import pytest
-from wft_storecheck.checks import Report, classify, contract_roles
-from wft_storecheck.expiry import run_days_check
-from wft_storecheck.s3 import Creds, dump_credentials, load_credentials
+from dsy_storecheck.checks import Report, classify, contract_roles
+from dsy_storecheck.expiry import run_days_check
+from dsy_storecheck.s3 import Creds, dump_credentials, load_credentials
 
 
 def cli(*args) -> subprocess.CompletedProcess:
     return subprocess.run(
-        [sys.executable, "-m", "wft_storecheck", *args], capture_output=True, text=True
+        [sys.executable, "-m", "dsy_storecheck", *args], capture_output=True, text=True
     )
 
 
@@ -34,7 +34,7 @@ def test_a_missing_option_is_a_usage_error(missing, credentials_file):
     del options[missing]
     result = cli("run", *[part for pair in options.items() for part in pair])
     assert result.returncode == 2
-    assert result.stderr.startswith("usage: wft_storecheck run")
+    assert result.stderr.startswith("usage: dsy_storecheck run")
 
 
 def test_an_unknown_mode_is_a_usage_error(credentials_file):

@@ -2,17 +2,17 @@
 
 import json
 
+from dsy_jobcheck.graph import check_graph
+from dsy_jobdoc import parse_document
 from hypothesis import assume, given, settings
 from hypothesis import strategies as st
-from wft_jobcheck.graph import check_graph
-from wft_jobdoc import parse_document
 
 SOURCE = "a" * 64
 BUILD = {
     "type": "compile",
     "params": {
         "source": {
-            "uri": f"s3://wft-sources/sha256/aa/{SOURCE}",
+            "uri": f"s3://dsy-sources/sha256/aa/{SOURCE}",
             "sha256": SOURCE,
             "size": 1,
             "name": "b.tar.gz",
@@ -36,7 +36,7 @@ def document(deps: dict[int, list[int]]):
     tasks = {"build": BUILD}
     for i, ds in deps.items():
         tasks[f"t{i}"] = {**SIM, "depends_on": [f"t{j}" for j in ds]}
-    raw = {"schema": "urn:wft:schema:job:1.0", "tasks": tasks}
+    raw = {"schema": "urn:dsy:schema:job:1.0", "tasks": tasks}
     return parse_document(json.dumps(raw).encode(), 1 << 20)
 
 

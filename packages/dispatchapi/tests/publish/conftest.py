@@ -1,4 +1,4 @@
-"""The publisher and the reconciler over wft_broker's FakeBroker, behind the submit route of the
+"""The publisher and the reconciler over dsy_broker's FakeBroker, behind the submit route of the
 submit tests."""
 
 import importlib.util
@@ -7,11 +7,11 @@ from pathlib import Path
 
 import psycopg
 import pytest
-from wft_broker.client import Credentials
-from wft_dispatchapi.publish import Publisher
-from wft_dispatchapi.reconciler import Reconciler
-from wft_dispatchapi.resolver import StoreSourceResolver
-from wft_dispatchapi.submit import Submit
+from dsy_broker.client import Credentials
+from dsy_dispatchapi.publish import Publisher
+from dsy_dispatchapi.reconciler import Reconciler
+from dsy_dispatchapi.resolver import StoreSourceResolver
+from dsy_dispatchapi.submit import Submit
 
 # The submit tests' fixtures, imported so that pytest registers them for this directory too.
 _spec = importlib.util.spec_from_file_location(

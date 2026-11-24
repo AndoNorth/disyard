@@ -11,11 +11,11 @@ import urllib.request
 
 import yaml
 from botocore.exceptions import ClientError
-from wft_storecheck.checks import NO_LIFECYCLE
-from wft_storecheck.contract import buckets, windows
-from wft_storecheck.models import CONTRACT, Lifecycle
-from wft_storecheck.provision import ADMIN
-from wft_storecheck.s3 import client, error_code, load_credentials
+from dsy_storecheck.checks import NO_LIFECYCLE
+from dsy_storecheck.contract import buckets, windows
+from dsy_storecheck.models import CONTRACT, Lifecycle
+from dsy_storecheck.provision import ADMIN
+from dsy_storecheck.s3 import client, error_code, load_credentials
 
 JOB_CONFIG = "/api/plugin/job-types/s3_lifecycle/config"
 

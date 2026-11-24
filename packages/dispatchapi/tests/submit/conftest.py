@@ -14,14 +14,14 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 import psycopg
 import pytest
-from wft_artifactclient.client import ArtifactClient, RetryPolicy
-from wft_compile import bundle
-from wft_dispatchapi.limits import Limits
-from wft_dispatchapi.ndjson import Reader, Writer, request_body
-from wft_dispatchapi.objects import Refused
-from wft_dispatchapi.resolver import StoreSourceResolver
-from wft_dispatchapi.submit import Submit
-from wft_jobdoc.profile_files import load_profile
+from dsy_artifactclient.client import ArtifactClient, RetryPolicy
+from dsy_compile import bundle
+from dsy_dispatchapi.limits import Limits
+from dsy_dispatchapi.ndjson import Reader, Writer, request_body
+from dsy_dispatchapi.objects import Refused
+from dsy_dispatchapi.resolver import StoreSourceResolver
+from dsy_dispatchapi.submit import Submit
+from dsy_jobdoc.profile_files import load_profile
 
 NO_WAIT = RetryPolicy(sleep=lambda seconds: None)
 ROUTE = re.compile("^/v1/tenants/([^/]+)/batches$")
@@ -76,7 +76,7 @@ def template(source) -> dict:
     """Three tasks, a compile of the uploaded bundle, a simulate and an aggregate, with a seed and
     one integer parameter per job."""
     return {
-        "schema": "urn:wft:schema:job:1.0",
+        "schema": "urn:dsy:schema:job:1.0",
         "parameters": {"seed": "seed", "n": "integer"},
         "tasks": {
             "build": {"type": "compile", "params": {"source": source, "entry": "job"}},

@@ -4,13 +4,13 @@ import json
 from datetime import UTC, datetime
 
 import pytest
-from wft_events import build_event, to_bytes
-from wft_keys import attempt_identity, cloudevent_id
+from dsy_events import build_event, to_bytes
+from dsy_keys import attempt_identity, cloudevent_id
 
 JOB = "3a9617fa-df7c-5760-a644-42d559e0f433"
 MOMENT = datetime(2026, 10, 30, 12, 0, 0, 123456, tzinfo=UTC)
 CHECKPOINT = {
-    "uri": "s3://wft-checkpoints/acme/b/j/7/sim/r0a1/0/state.bin",
+    "uri": "s3://dsy-checkpoints/acme/b/j/7/sim/r0a1/0/state.bin",
     "sha256": "9" * 64,
     "size": 1,
     "name": "state.bin",
@@ -21,7 +21,7 @@ CHECKPOINT = {
 
 def build(name="task.started", **over):
     facts = dict(
-        source="/wft/workflow",
+        source="/dsy/workflow",
         tenant="acme",
         jobid=JOB,
         priorityclass="standard",

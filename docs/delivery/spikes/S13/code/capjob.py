@@ -16,11 +16,11 @@ import tempfile
 import uuid
 from pathlib import Path
 
-from wft_acceptance.clients import api
-from wft_acceptance.smoke import CONTROL_API, DISPATCH, TENANT, fetched
-from wft_kernel import rows, writer
-from wft_workflow.harness import echo_params
-from wft_workloads import bundle
+from dsy_acceptance.clients import api
+from dsy_acceptance.smoke import CONTROL_API, DISPATCH, TENANT, fetched
+from dsy_kernel import rows, writer
+from dsy_workflow.harness import echo_params
+from dsy_workloads import bundle
 
 CAP = 67108864
 ROW_BYTES = 1024
@@ -77,7 +77,7 @@ def with_fresh_file(data: bytes) -> bytes:
 
 def main(mode: str) -> int:
     client = api.Api(DISPATCH, CONTROL_API, TENANT, 15.0)
-    with tempfile.TemporaryDirectory(prefix="wft-s13-") as work:
+    with tempfile.TemporaryDirectory(prefix="dsy-s13-") as work:
         data = bundle.write(Path(work)).read_bytes()
     if mode == "compile":
         data = with_fresh_file(data)

@@ -8,13 +8,13 @@
 set -uo pipefail
 key=${1:-}
 port=${2:-19021}
-image=${WFT_S14_TEMPO:-grafana/tempo:3.1.1}
+image=${DSY_S14_TEMPO:-grafana/tempo:3.1.1}
 case $key in
     worker) worker_retention=2m scheduler_retention=336h ;;
     scheduler) worker_retention=336h scheduler_retention=2m ;;
     *) echo "usage: tempo-retention.sh <worker|scheduler> [port]" >&2; exit 2 ;;
 esac
-name=wft-s14-tempo-$key
+name=dsy-s14-tempo-$key
 dir=$(mktemp -d)
 trap 'docker rm -f "$name" >/dev/null 2>&1; rm -rf "$dir"' EXIT
 say() { echo "[$(date +%T)] $*"; }

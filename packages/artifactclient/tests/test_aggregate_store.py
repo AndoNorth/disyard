@@ -4,13 +4,13 @@ import hashlib
 from concurrent.futures import ThreadPoolExecutor
 
 import pytest
-from wft_artifactclient.aggregate import open_results, put_index, read_index
-from wft_artifactclient.bench import ListCounter
-from wft_artifactclient.client import ArtifactClient, RetryPolicy
-from wft_artifactclient.errors import ArtifactLost
-from wft_artifactclient.models import IndexEntry
-from wft_events.models import ProducerRef
-from wft_storecheck.s3 import client as s3_client
+from dsy_artifactclient.aggregate import open_results, put_index, read_index
+from dsy_artifactclient.bench import ListCounter
+from dsy_artifactclient.client import ArtifactClient, RetryPolicy
+from dsy_artifactclient.errors import ArtifactLost
+from dsy_artifactclient.models import IndexEntry
+from dsy_events.models import ProducerRef
+from dsy_storecheck.s3 import client as s3_client
 
 pytestmark = pytest.mark.integration
 

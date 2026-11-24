@@ -1,9 +1,9 @@
 """Measures the order in which one single-slot worker starts activities that wait on one fresh
-pool-shaped queue of a Temporal dev server started through wft_itest, and prints one figure line,
+pool-shaped queue of a Temporal dev server started through dsy_itest, and prints one figure line,
 `figure <name> <value>`, per number of docs/delivery/spikes/S12/queue-order.md.
 
 Per run, a measurement workflow on its own queue `s12-<hex>-control` schedules the activities,
-numbered 0 to n-1, on `s12-<hex>-wft-simulate`, with no worker on that queue. Once all are pending,
+numbered 0 to n-1, on `s12-<hex>-dsy-simulate`, with no worker on that queue. Once all are pending,
 one worker with `max_concurrent_activities=1` starts on it and records the start order.
 
     python measure.py [--activities 200] [--gaps-ms 20,0] [--repeat 3] [--partitions N] [--out DIR]
@@ -24,6 +24,7 @@ import time
 from datetime import timedelta
 from pathlib import Path
 
+from dsy_itest import Session
 from temporalio import activity, workflow
 from temporalio.api.taskqueue.v1 import TaskQueue
 from temporalio.api.workflowservice.v1 import (
@@ -32,7 +33,6 @@ from temporalio.api.workflowservice.v1 import (
 )
 from temporalio.client import Client
 from temporalio.worker import UnsandboxedWorkflowRunner, Worker
-from wft_itest import Session
 
 NAMESPACE = "default"
 # The pass line of the spike block: every activity starts within 10 minutes, and none starts after
@@ -107,7 +107,7 @@ def order_figures(order: list[int]) -> tuple[int, int, int]:
 async def measure(address: str, out: Path, name: str, n: int, gap_ms: int) -> bool:
     client = await Client.connect(address, namespace=NAMESPACE)
     tag = secrets.token_hex(4)
-    control, queue = f"s12-{tag}-control", f"s12-{tag}-wft-simulate"
+    control, queue = f"s12-{tag}-control", f"s12-{tag}-dsy-simulate"
     figure(out, f"{name}.queue", queue)
     figure(out, f"{name}.gap_ms", gap_ms)
     async with Worker(

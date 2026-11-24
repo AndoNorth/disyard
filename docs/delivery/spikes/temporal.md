@@ -3,8 +3,8 @@
 Two linked spikes, both run on 2026-10-27.
 The first (S3) tested the workflow engine design at container level against six thresholds.
 The second (S3b) followed up on the one threshold that failed, memory growth, and sized Temporal for 100,000 jobs.
-Owner: the [workflow engine epic](https://github.com/AndoNorth/weft/issues/6).
-The characterization epic ([system characterization and soak tests](https://github.com/AndoNorth/weft/issues/16)) owns the follow-up sizing runs.
+Owner: the [workflow engine epic](https://github.com/AndoNorth/disyard/issues/6).
+The characterization epic ([system characterization and soak tests](https://github.com/AndoNorth/disyard/issues/16)) owns the follow-up sizing runs.
 
 ## Question
 

@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # Host preflight: one line per check "ok|warn|fail <id>: <detail>", exit 1 if any fail.
-# WFT_DOCTOR_ROOT prefixes every host path read (proc, sys, flake store) so the self-test can point at a fixture tree.
+# DSY_DOCTOR_ROOT prefixes every host path read (proc, sys, flake store) so the self-test can point at a fixture tree.
 set -uo pipefail
 
-ROOT="${WFT_DOCTOR_ROOT:-}"
-REPO="${WFT_DOCTOR_REPO:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
-PRESET="${WFT_PRESET:-ci}"
+ROOT="${DSY_DOCTOR_ROOT:-}"
+REPO="${DSY_DOCTOR_REPO:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
+PRESET="${DSY_PRESET:-ci}"
 MIN_INOTIFY=512
 MIN_DOCKER_MAJOR=24
 TOOLS=(kind ctlptl kubectl helm tilt just uv python3 node ruff yamllint shellcheck actionlint kubeconform nixfmt yq wasmtime wasm-tools)
@@ -110,7 +110,7 @@ fi
 # With the observability switch on the preset needs obs_memory_mib; a host that holds only memory_mib is a warning,
 # because the same host still runs the cluster with the switch off.
 preset="$REPO/deploy/presets/$PRESET.yaml"
-obs=${WFT_OBS:-off}
+obs=${DSY_OBS:-off}
 if [ ! -f "$preset" ]; then
   emit warn memory-vs-preset "no preset file yet"
 else
@@ -120,13 +120,13 @@ else
   if [ -z "$need" ] || [ -z "$have" ]; then
     emit warn memory-vs-preset "cannot read memory_mib from $preset or MemTotal"
   elif [ "$obs" = on ] && [ -z "$obs_need" ]; then
-    emit fail memory-vs-preset "WFT_OBS=on, and preset $PRESET has no obs_memory_mib, so it cannot turn the switch on"
+    emit fail memory-vs-preset "DSY_OBS=on, and preset $PRESET has no obs_memory_mib, so it cannot turn the switch on"
   elif [ $((have / 1024)) -lt "$need" ]; then
     emit fail memory-vs-preset "host $((have / 1024)) MiB < preset $PRESET $need MiB"
   elif [ "$obs" = on ] && [ $((have / 1024)) -lt "$obs_need" ]; then
-    emit warn memory-vs-preset "host $((have / 1024)) MiB < preset $PRESET with WFT_OBS=on $obs_need MiB, it fits only with the switch off"
+    emit warn memory-vs-preset "host $((have / 1024)) MiB < preset $PRESET with DSY_OBS=on $obs_need MiB, it fits only with the switch off"
   elif [ "$obs" = on ]; then
-    emit ok memory-vs-preset "host $((have / 1024)) MiB >= preset $PRESET with WFT_OBS=on $obs_need MiB"
+    emit ok memory-vs-preset "host $((have / 1024)) MiB >= preset $PRESET with DSY_OBS=on $obs_need MiB"
   else
     emit ok memory-vs-preset "host $((have / 1024)) MiB >= preset $PRESET $need MiB"
   fi

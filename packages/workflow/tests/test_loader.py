@@ -7,12 +7,12 @@ from pathlib import Path
 
 import pytest
 import yaml
-from wft_workflow.contract import (
+from dsy_workflow.contract import (
     failure_classes,
     uncovered_artifact_codes,
     uncovered_exit_classes,
 )
-from wft_workflow.models import FILES, FailureClasses
+from dsy_workflow.models import FILES, FailureClasses
 
 ROOT = Path(__file__).resolve().parents[3]
 CONTRACTS = {name: ROOT / "contracts" / name for name in ("activity", "temporal")}
@@ -72,7 +72,7 @@ REASONS = {
 
 def check(*args) -> subprocess.CompletedProcess:
     return subprocess.run(
-        [sys.executable, "-m", "wft_workflow.contract", "--check", *map(str, args)],
+        [sys.executable, "-m", "dsy_workflow.contract", "--check", *map(str, args)],
         capture_output=True,
         text=True,
     )
@@ -140,7 +140,7 @@ def test_loader_usage_errors(tmp_path):
     assert check(tmp_path / "missing.json", "--as", "heartbeat").returncode == 2
     assert check(unnamed, "--as", "no-such-schema").returncode == 2
     bare = subprocess.run(
-        [sys.executable, "-m", "wft_workflow.contract", str(PINNED[0])], capture_output=True
+        [sys.executable, "-m", "dsy_workflow.contract", str(PINNED[0])], capture_output=True
     )
     assert bare.returncode == 2
 

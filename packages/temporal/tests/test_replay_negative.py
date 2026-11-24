@@ -5,8 +5,8 @@ import json
 import shutil
 
 import pytest
-from wft_temporal.corpus import CORPUS, CorpusError, replay_corpus
-from wft_temporal.standin import StandInJob
+from dsy_temporal.corpus import CORPUS, CorpusError, replay_corpus
+from dsy_temporal.standin import StandInJob
 
 
 def rename_accepted_field(path):

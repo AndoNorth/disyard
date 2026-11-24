@@ -11,6 +11,18 @@ from datetime import UTC, datetime, timedelta
 
 import psycopg
 import pytest
+from dsy_events import build_event
+from dsy_eventstore import insert_events
+from dsy_jobdoc.plan_models import Plan
+from dsy_jobstate import JobRow, insert_accepted, mark_published, request_action, transition
+from dsy_temporal import event_data_converter, new_traceparent, tracing_interceptor
+from dsy_workflow import versioning
+from dsy_workflow.activities import Emitter
+from dsy_workflow.contract import naming
+from dsy_workflow.placement import StaticPlacer, place_activity
+from dsy_workflow.service import control_queue
+from dsy_workflow.testing import Fail, FakeControl, FakePool, Succeed, connect
+from dsy_workflow.testing.control import Emit, Emitted, LoadedPlan
 from psycopg import sql
 from psycopg.conninfo import make_conninfo
 from temporalio import activity
@@ -19,23 +31,11 @@ from temporalio.api.operatorservice.v1 import AddSearchAttributesRequest
 from temporalio.client import Client
 from temporalio.common import WorkerDeploymentVersion
 from temporalio.worker import Worker, WorkerDeploymentConfig
-from wft_events import build_event
-from wft_eventstore import insert_events
-from wft_jobdoc.plan_models import Plan
-from wft_jobstate import JobRow, insert_accepted, mark_published, request_action, transition
-from wft_temporal import event_data_converter, new_traceparent, tracing_interceptor
-from wft_workflow import versioning
-from wft_workflow.activities import Emitter
-from wft_workflow.contract import naming
-from wft_workflow.placement import StaticPlacer, place_activity
-from wft_workflow.service import control_queue
-from wft_workflow.testing import Fail, FakeControl, FakePool, Succeed, connect
-from wft_workflow.testing.control import Emit, Emitted, LoadedPlan
 
 os.environ.setdefault(naming().workflow.build_id_env, "admission-test")
 BUILD_ID = os.environ[naming().workflow.build_id_env]
 
-from wft_workflow.job import JobWorkflow  # noqa: E402
+from dsy_workflow.job import JobWorkflow  # noqa: E402
 
 SHA = "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08"
 TYPES = {
@@ -58,7 +58,7 @@ MOVES = {
 
 def manifest(sha256: str) -> dict:
     return {
-        "uri": f"s3://wft-sources/sha256/{sha256[:2]}/{sha256}",
+        "uri": f"s3://dsy-sources/sha256/{sha256[:2]}/{sha256}",
         "sha256": sha256,
         "size": 2048,
         "name": "manifest.json",
@@ -106,7 +106,7 @@ def one_task(params: dict) -> LoadedPlan:
 def accepted_event(job_id: str, tenant: str = "acme", job_class: str = "short"):
     return build_event(
         "job.accepted",
-        source="/wft/dispatch",
+        source="/dsy/dispatch",
         tenant=tenant,
         jobid=job_id,
         priorityclass="standard",
@@ -148,13 +148,13 @@ def db(appdb):
 
 @pytest.fixture
 def login(appdb, db):
-    """Connects fresh logins in `wft_admission`, the group of admission's service login."""
+    """Connects fresh logins in `dsy_admission`, the group of admission's service login."""
     users = []
 
     def connected() -> psycopg.Connection:
         user = f"admission_{time.time_ns()}"
         db.execute(
-            sql.SQL("CREATE ROLE {} LOGIN PASSWORD 'standin' IN ROLE wft_admission").format(
+            sql.SQL("CREATE ROLE {} LOGIN PASSWORD 'standin' IN ROLE dsy_admission").format(
                 sql.Identifier(user)
             )
         )
@@ -245,7 +245,7 @@ def status(db):
 @pytest.fixture
 def admitted_events(db):
     return lambda job_id: db.execute(
-        "SELECT count(*) FROM event WHERE job_id = %s AND type = 'dev.wft.job.admitted.v1'",
+        "SELECT count(*) FROM event WHERE job_id = %s AND type = 'dev.dsy.job.admitted.v1'",
         (job_id,),
     ).fetchone()[0]
 

@@ -2,9 +2,9 @@ import json
 from pathlib import Path
 
 import pytest
-from wft_jobcheck import validate
-from wft_jobexamples import generate, load, seed_list
-from wft_plan import bind, check_job_params, compile_plan, plan_hash
+from dsy_jobcheck import validate
+from dsy_jobexamples import generate, load, seed_list
+from dsy_plan import bind, check_job_params, compile_plan, plan_hash
 
 CONTRACT = Path(__file__).resolve().parents[3] / "contracts/job"
 VECTORS = CONTRACT / "vectors"

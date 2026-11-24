@@ -1,14 +1,14 @@
 [project]
-name = "wft-runtime"
+name = "dsy-runtime"
 version = "0.0.0"
 license = "Apache-2.0"
 requires-python = ">=3.13,<3.14"
-dependencies = ["pydantic", "pyyaml", "wft-jobdoc", "wft-kernel", "wft-keys"]
+dependencies = ["pydantic", "pyyaml", "dsy-jobdoc", "dsy-kernel", "dsy-keys"]
 
 [tool.uv.sources]
-wft-jobdoc = { workspace = true }
-wft-kernel = { workspace = true }
-wft-keys = { workspace = true }
+dsy-jobdoc = { workspace = true }
+dsy-kernel = { workspace = true }
+dsy-keys = { workspace = true }
 
 [build-system]
 requires = ["hatchling"]

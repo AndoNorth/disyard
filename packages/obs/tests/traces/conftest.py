@@ -1,7 +1,7 @@
 import logging
 
+import dsy_obs.setup as obs_setup
 import pytest
-import wft_obs.setup as obs_setup
 from opentelemetry import trace
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.util._once import Once

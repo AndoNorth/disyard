@@ -5,9 +5,9 @@ import inspect
 from types import SimpleNamespace
 
 import pytest
+from dsy_broker import client
 from proton import Delivery as Disposition
 from proton import Message
-from wft_broker import client
 
 INTAKE = "intake.acme.standard"
 ARGS = {"dead_letter": ("ADMISSION_FAILED", "no-row: settle test")}

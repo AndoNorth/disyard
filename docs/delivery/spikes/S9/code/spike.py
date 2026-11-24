@@ -1,6 +1,6 @@
 """Versioning spike: pinned workflows, the raw deployment calls, the override and the drained count.
 
-Starts the pinned `temporalio/temporal` dev server in one container through wft_itest, runs
+Starts the pinned `temporalio/temporal` dev server in one container through dsy_itest, runs
 builds A, B and C of `builds.py` as versioned workers of one deployment and an unversioned pool
 worker in this process, and prints one `figure <name> <value>` line for every number and finding
 of docs/delivery/spikes/S9/versioning.md.
@@ -19,6 +19,7 @@ import uuid
 from pathlib import Path
 
 from builds import BUILDS, POOL_QUEUE, served, step
+from dsy_itest import Session
 from google.protobuf.field_mask_pb2 import FieldMask
 from temporalio.api.deployment.v1 import WorkerDeploymentVersion as ProtoVersion
 from temporalio.api.enums.v1 import (
@@ -40,14 +41,13 @@ from temporalio.client import Client, WorkflowHandle
 from temporalio.common import PinnedVersioningOverride, WorkerDeploymentVersion
 from temporalio.service import RPCError
 from temporalio.worker import UnsandboxedWorkflowRunner, Worker, WorkerDeploymentConfig
-from wft_itest import Session
 
-DEPLOYMENT = "wft-workflow-worker"
-QUEUE = "wft-workflow"
+DEPLOYMENT = "dsy-workflow-worker"
+QUEUE = "dsy-workflow"
 NAMESPACE = "default"
 DRAIN_TIMEOUT_S = 20 * 60
 
-out = Path(sys.argv[1] if len(sys.argv) > 1 else tempfile.mkdtemp(prefix="wft-s9."))
+out = Path(sys.argv[1] if len(sys.argv) > 1 else tempfile.mkdtemp(prefix="dsy-s9."))
 out.mkdir(parents=True, exist_ok=True)
 figures = (out / "figures.txt").open("w")
 
@@ -374,7 +374,7 @@ def main() -> None:
         )
         asyncio.run(spike(f"127.0.0.1:{container.host_ports[0]}"))
     left = subprocess.run(
-        ["docker", "ps", "-aq", "--filter", "label=wft.dev/verify-run"],
+        ["docker", "ps", "-aq", "--filter", "label=dsy.dev/verify-run"],
         capture_output=True,
         text=True,
         check=True,

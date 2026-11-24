@@ -4,8 +4,8 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
-from wft_events import build_event, format_time, from_bytes, to_bytes, to_event_row
-from wft_eventstore import BatchResult, events_for_job, insert_events
+from dsy_events import build_event, format_time, from_bytes, to_bytes, to_event_row
+from dsy_eventstore import BatchResult, events_for_job, insert_events
 
 pytestmark = pytest.mark.integration
 
@@ -19,7 +19,7 @@ TIME = datetime(2026, 10, 30, 12, 0, 0, 123456, tzinfo=UTC)
 def started(sequence=0, time=TIME):
     return build_event(
         "job.started",
-        source="/wft/workflow",
+        source="/dsy/workflow",
         tenant="acme",
         jobid=JOB,
         priorityclass="standard",
@@ -95,7 +95,7 @@ def test_mixed_new_and_duplicate_counts(db):
 def test_events_for_job_orders_by_time_and_holds_the_attempt_as_given(db):
     later = build_event(
         "task.started",
-        source="/wft/workflow",
+        source="/dsy/workflow",
         tenant="acme",
         jobid=JOB,
         priorityclass="standard",

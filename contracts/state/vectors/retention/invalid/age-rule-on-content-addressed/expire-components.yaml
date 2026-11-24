@@ -1,5 +1,5 @@
 ---
 windows:
   event: {drop_after_days: 14}
-  wft-components: {expire_after_days: 28}
+  dsy-components: {expire_after_days: 28}
 housekeeping: {}

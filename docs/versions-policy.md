@@ -16,7 +16,7 @@ The compile image uses the same versions, so a local build and a cluster build r
 
 `componentize-py` is a Python package, so it is not pinned in `nix/wasm-tools.nix`.
 `packages/compile/pyproject.toml` pins it to `==0.25.1`, and `uv.lock` holds it with the hash of every wheel.
-`wft_runtime.pins` names the same version, and `packages/runtime/tests/test_pins.py` holds the two equal.
+`dsy_runtime.pins` names the same version, and `packages/runtime/tests/test_pins.py` holds the two equal.
 
 ## Where each pin lives
 

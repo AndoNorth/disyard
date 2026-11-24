@@ -1,5 +1,5 @@
 {
-  "schema": "urn:wft:schema:job:1.0",
+  "schema": "urn:dsy:schema:job:1.0",
   "tasks": {
     "build": {
       "params": {
@@ -9,7 +9,7 @@
           "name": "bundle.tar.gz",
           "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
           "size": 2048,
-          "uri": "s3://wft-sources/sha256/aa/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          "uri": "s3://dsy-sources/sha256/aa/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
         }
       },
       "type": "compile"

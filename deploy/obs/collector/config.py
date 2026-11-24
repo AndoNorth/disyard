@@ -25,8 +25,8 @@ OTLP_HTTP_PORT = 4318
 OTLP_GRPC_PORT = 4317
 METRICS_PORT = 8888
 HEALTH_PORT = 13133
-LOKI_ENDPOINT = "http://loki.wft-obs:3100/otlp"
-TEMPO_ENDPOINT = "http://tempo.wft-obs:4318"
+LOKI_ENDPOINT = "http://loki.dsy-obs:3100/otlp"
+TEMPO_ENDPOINT = "http://tempo.dsy-obs:4318"
 # The service name of the events, so a query by `service_name` finds them beside the services.
 EVENTS_SERVICE = "kubernetes-events"
 # The uid of the user the image runs as.
@@ -128,7 +128,7 @@ def render() -> list[dict]:
     config = yaml.dump(collector_config(), sort_keys=False)
     meta = {"name": NAME, "namespace": namespace}
     labels = {"app": NAME, "app.kubernetes.io/name": NAME}
-    cluster = "wft-" + NAME
+    cluster = "dsy-" + NAME
     return [
         {"apiVersion": "v1", "kind": "ServiceAccount", "metadata": meta},
         {

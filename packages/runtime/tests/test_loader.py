@@ -8,8 +8,8 @@ from pathlib import Path
 
 import pytest
 import yaml
-from wft_runtime.contract import Refused, heartbeat, wit_version
-from wft_runtime.models import CONTRACT, DigestListSummary, SummaryStatsSummary
+from dsy_runtime.contract import Refused, heartbeat, wit_version
+from dsy_runtime.models import CONTRACT, DigestListSummary, SummaryStatsSummary
 
 ROOT = Path(__file__).resolve().parents[3]
 WORKLOAD = ROOT / "contracts/workload"
@@ -36,7 +36,7 @@ REASONS = {
 
 def check(path: Path) -> subprocess.CompletedProcess:
     return subprocess.run(
-        [sys.executable, "-m", "wft_runtime.contract", "--check", str(path)],
+        [sys.executable, "-m", "dsy_runtime.contract", "--check", str(path)],
         capture_output=True,
         text=True,
     )
@@ -81,7 +81,7 @@ def test_every_file_has_valid_and_invalid_vectors():
 def test_a_missing_file_or_a_missing_flag_is_a_usage_error():
     assert check(WORKLOAD / "nothing.yaml").returncode == 2
     bare = subprocess.run(
-        [sys.executable, "-m", "wft_runtime.contract", str(COMMITTED[0])],
+        [sys.executable, "-m", "dsy_runtime.contract", str(COMMITTED[0])],
         capture_output=True,
         text=True,
     )
@@ -112,7 +112,7 @@ def test_wit_parses():
         ["wasm-tools", "component", "wit", str(WORKLOAD / "wit")], capture_output=True, text=True
     )
     assert result.returncode == 0, result.stderr
-    assert "package wft:task@1.0.0;" in result.stdout
+    assert "package dsy:task@1.0.0;" in result.stdout
     assert "world task {" in result.stdout
     assert "export wasi:cli/run@0.2.9;" in result.stdout
 

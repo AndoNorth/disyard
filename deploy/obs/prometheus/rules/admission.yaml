@@ -1,64 +1,65 @@
 groups:
-  - name: wft-admission
+  - name: dsy-admission
     rules:
-      - alert: WftAdmissionDeadLettered
-        expr: sum by (reason) (increase(wft_admission_dead_lettered_total[10m])) > 0
+      - alert: DsyAdmissionDeadLettered
+        expr: sum by (reason) (increase(dsy_admission_dead_lettered_total[10m])) > 0
         labels:
           severity: critical
         annotations:
           summary: Admission dead-lettered intake messages with reason {{ $labels.reason }}.
           description: Each dead letter needs a recovery decision.
-          runbook_url: https://github.com/AndoNorth/weft/blob/main/docs/runbooks/alerts.md#wftadmissiondeadlettered
-      - alert: WftAdmissionBreakerOpen
-        expr: wft_admission_breaker_open == 1
+          runbook_url: https://github.com/AndoNorth/disyard/blob/main/docs/runbooks/alerts.md#dsyadmissiondeadlettered
+      - alert: DsyAdmissionBreakerOpen
+        expr: dsy_admission_breaker_open == 1
         for: 5m
         labels:
           severity: critical
         annotations:
           summary: The admission breaker for {{ $labels.dependency }} has been open for 5 minutes.
           description: Admission starts no job while a dependency breaker is open.
-          runbook_url: https://github.com/AndoNorth/weft/blob/main/docs/runbooks/alerts.md#wftadmissionbreakeropen
-      - alert: WftAdmissionGlobalCapReached
-        expr: sum(wft_admission_live_jobs) >= max(wft_admission_cap_jobs{scope="global"})
+          runbook_url: https://github.com/AndoNorth/disyard/blob/main/docs/runbooks/alerts.md#dsyadmissionbreakeropen
+      - alert: DsyAdmissionGlobalCapReached
+        expr: sum(dsy_admission_live_jobs) >= max(dsy_admission_cap_jobs{scope="global"})
         for: 30m
         labels:
           severity: warning
         annotations:
           summary: Live jobs have been at the global cap for 30 minutes.
           description: Admission releases no new job until a live job ends.
-          runbook_url: https://github.com/AndoNorth/weft/blob/main/docs/runbooks/alerts.md#wftadmissionglobalcapreached
-      - alert: WftAdmissionOpenCapReached
-        expr: max(wft_admission_open_jobs) >= max(wft_admission_cap_jobs{scope="open"})
+          # yamllint disable-line rule:line-length
+          runbook_url: https://github.com/AndoNorth/disyard/blob/main/docs/runbooks/alerts.md#dsyadmissionglobalcapreached
+      - alert: DsyAdmissionOpenCapReached
+        expr: max(dsy_admission_open_jobs) >= max(dsy_admission_cap_jobs{scope="open"})
         for: 30m
         labels:
           severity: warning
         annotations:
           summary: Open jobs have been at the open cap for 30 minutes.
           description: Admission releases no new job until an open job ends.
-          runbook_url: https://github.com/AndoNorth/weft/blob/main/docs/runbooks/alerts.md#wftadmissionopencapreached
-      - alert: WftAdmissionStaleAdmitted
-        expr: sum(increase(wft_admission_skipped_total{reason="stale-admitted"}[10m])) > 0
+          runbook_url: https://github.com/AndoNorth/disyard/blob/main/docs/runbooks/alerts.md#dsyadmissionopencapreached
+      - alert: DsyAdmissionStaleAdmitted
+        expr: sum(increase(dsy_admission_skipped_total{reason="stale-admitted"}[10m])) > 0
         labels:
           severity: warning
         annotations:
           summary: Admission skipped an intake message for a job the row shows admitted long ago.
           description: A job row stayed admitted with no workflow to show for it.
-          runbook_url: https://github.com/AndoNorth/weft/blob/main/docs/runbooks/alerts.md#wftadmissionstaleadmitted
-      - alert: WftJobPausedNeedsAttention
-        expr: sum(wft_admission_paused_jobs) > 0
+          runbook_url: https://github.com/AndoNorth/disyard/blob/main/docs/runbooks/alerts.md#dsyadmissionstaleadmitted
+      - alert: DsyJobPausedNeedsAttention
+        expr: sum(dsy_admission_paused_jobs) > 0
         for: 1h
         labels:
           severity: warning
         annotations:
           summary: '{{ $value }} job(s) have been paused for over an hour.'
           description: A paused job keeps its workflow build busy until it is resumed or ended.
-          runbook_url: https://github.com/AndoNorth/weft/blob/main/docs/runbooks/alerts.md#wftjobpausedneedsattention
-      - alert: WftResumeWaiting
-        expr: sum(wft_admission_resumes_waiting) > 0
+          runbook_url: https://github.com/AndoNorth/disyard/blob/main/docs/runbooks/alerts.md#dsyjobpausedneedsattention
+      - alert: DsyResumeWaiting
+        expr: sum(dsy_admission_resumes_waiting) > 0
         for: 30m
         labels:
           severity: warning
         annotations:
           summary: '{{ $value }} resume(s) have waited 30 minutes for a free slot.'
           description: The caps leave no room for a paused job to continue.
-          runbook_url: https://github.com/AndoNorth/weft/blob/main/docs/runbooks/alerts.md#wftresumewaiting
+          runbook_url: https://github.com/AndoNorth/disyard/blob/main/docs/runbooks/alerts.md#dsyresumewaiting

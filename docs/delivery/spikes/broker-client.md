@@ -1,7 +1,7 @@
 # Spike: AMQP 1.0 client wrapper over qpid-proton (S4)
 
 Run on 2026-10-27.
-Owner: the [broker epic](https://github.com/AndoNorth/weft/issues/7).
+Owner: the [broker epic](https://github.com/AndoNorth/disyard/issues/7).
 
 ## Question
 
@@ -19,7 +19,7 @@ If any check failed, the fallback was a thin AMQP 0-9-1 client behind the same i
 | Protocol | AMQP 1.0, SASL PLAIN, `guest` user on 127.0.0.1 |
 | Peak broker memory | 154.6 MiB |
 
-Topology: direct exchange `wft.intake`, quorum queues `intake.t1.high` and `intake.t1.low` with `x-delivery-limit=5`, dead-letter exchange `wft.dlx` (strategy `at-least-once`, overflow `reject-publish`) fanning out to quorum queue `intake.dlq`, plus a queue limited to three messages for the queue-full case.
+Topology: direct exchange `dsy.intake`, quorum queues `intake.t1.high` and `intake.t1.low` with `x-delivery-limit=5`, dead-letter exchange `dsy.dlx` (strategy `at-least-once`, overflow `reject-publish`) fanning out to quorum queue `intake.dlq`, plus a queue limited to three messages for the queue-full case.
 Messages are CloudEvents in structured mode: one AMQP `data` section holding JSON with a non-ASCII field, `content-type: application/cloudevents+json; charset=UTF-8`, durable, no application-properties.
 
 ## Method
@@ -48,13 +48,13 @@ No fallback is triggered.
    With `create_receiver(queue, credit=1)` the built-in flow control tops credit up after each message, and one accept led to two unrequested deliveries (broker state ready 2, unacked 2 where ready 3 and unacked 1 was correct).
    The client library creates the receiver with credit 0 and only calls `flow(n)` or `drain(n)`, and must not use `receive()` or `prefetch`.
 2. A dead-letter by delivery limit carries no application reason, only the broker's `x-last-death-reason=delivery_limit`.
-   The reason code reads `x-opt-wft-reason` if present and `x-last-death-reason` otherwise.
+   The reason code reads `x-opt-dsy-reason` if present and `x-last-death-reason` otherwise.
    A consumer that wants an application reason on a limit death must check `delivery_count` and call `dead_letter(reason)` itself on the sixth delivery.
-3. An application dead-letter has broker reason `rejected`, so the `x-opt-wft-reason` annotation, not the broker reason, is the discriminator.
+3. An application dead-letter has broker reason `rejected`, so the `x-opt-dsy-reason` annotation, not the broker reason, is the discriminator.
 4. The broker adds `x-routing-key` and `x-exchange` to any message it routes, replayed ones included.
-   Replay assertions must check for no `x-*death*` and no `x-opt-wft-*` annotations, not for no annotations.
+   Replay assertions must check for no `x-*death*` and no `x-opt-dsy-*` annotations, not for no annotations.
 5. The replay builder rebuilds a message from the bare sections only, with no annotations carried.
-   Resending the received object as it is (the negative control) carries stale `x-first-death-*`, `x-last-death-*`, `x-opt-deaths` and `x-opt-wft-reason`.
+   Resending the received object as it is (the negative control) carries stale `x-first-death-*`, `x-last-death-*`, `x-opt-deaths` and `x-opt-dsy-reason`.
 6. A missing queue or exchange is a refused link attach (`LinkDetached`, `amqp:not-found`), not an outcome, so the client library must map it as a topology bug and not a retryable condition.
 7. `modified` with `delivery-failed=false`, which the official client's `requeue_with_annotations` sends, never reaches the delivery limit.
    The wrapper sets `delivery.local.failed` itself.

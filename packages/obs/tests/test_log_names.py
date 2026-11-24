@@ -22,7 +22,7 @@ def keys(node: ast.expr) -> set[str]:
 
 
 def is_bind(func: ast.expr) -> bool:
-    """`logs.bind`, also reached as `wft_obs.logs.bind`."""
+    """`logs.bind`, also reached as `dsy_obs.logs.bind`."""
     return (
         isinstance(func, ast.Attribute)
         and func.attr == "bind"
@@ -60,7 +60,7 @@ def test_no_log_call_names_a_version_3_field():
         'log.info("x", extra={"jobid": job})',
         'log.info("x", extra=dict(taskid=t))',
         "logs.bind(attempt=1)",
-        "wft_obs.logs.bind(jobid=j)",
+        "dsy_obs.logs.bind(jobid=j)",
     ],
 )
 def test_a_planted_old_name_fails(source):

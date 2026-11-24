@@ -1,10 +1,10 @@
 [project]
-name = "wft-fixture-migrations"
+name = "dsy-fixture-migrations"
 version = "0.0.0"
 requires-python = ">=3.13,<3.14"
 
-[project.entry-points."wft.migrations"]
-fixture = "wft_fixture_migrations"
+[project.entry-points."dsy.migrations"]
+fixture = "dsy_fixture_migrations"
 
 [build-system]
 requires = ["hatchling"]

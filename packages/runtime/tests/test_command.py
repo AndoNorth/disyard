@@ -1,8 +1,8 @@
 """The wasmtime command line of a guest run: guest cap, deadline, mounts and module cache."""
 
 import pytest
-from wft_runtime.command import MIB, PAGE, CapRefused, command, warm_up
-from wft_runtime.pins import GUEST_MIN_PAGES, GUEST_OVERHEAD_MIB
+from dsy_runtime.command import MIB, PAGE, CapRefused, command, warm_up
+from dsy_runtime.pins import GUEST_MIN_PAGES, GUEST_OVERHEAD_MIB
 
 
 def test_guest_cap_is_the_memory_less_the_overhead(tmp_path):

@@ -20,14 +20,14 @@ import opentelemetry.exporter.otlp.proto.http
 import opentelemetry.sdk
 import pyroscope
 import temporalio
-import wft_events
-import wft_obs
+import dsy_events
+import dsy_obs
 import yaml
-from wft_obs import query
-from wft_obs.targets import JOBS
-from wft_obs.testing import FakeObs
+from dsy_obs import query
+from dsy_obs.targets import JOBS
+from dsy_obs.testing import FakeObs
 
-for module in pkgutil.walk_packages(wft_obs.__path__, "wft_obs."):
+for module in pkgutil.walk_packages(dsy_obs.__path__, "dsy_obs."):
     if not module.name.endswith(".__main__"):
         importlib.import_module(module.name)
 assert "rabbitmq-detailed" in JOBS
@@ -61,7 +61,7 @@ def run(*cmd, **kwargs) -> subprocess.CompletedProcess:
 def clean_python(tmp_path_factory) -> Path:
     work = tmp_path_factory.mktemp("wheel")
     wheels = work / "wheels"
-    for package in workspace_closure("wft-obs"):
+    for package in workspace_closure("dsy-obs"):
         run("uv", "build", "--wheel", "--package", package, "-o", str(wheels), cwd=ROOT)
     venv = work / "venv"
     run("uv", "venv", "--python", sys.executable, str(venv))
@@ -78,7 +78,7 @@ def test_wheel_declares_the_dependency_set():
         "pyroscope-io",
         "pyyaml",
         "temporalio",
-        "wft-events",
+        "dsy-events",
     ]
 
 

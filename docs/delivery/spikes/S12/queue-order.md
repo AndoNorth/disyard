@@ -1,7 +1,7 @@
 # Spike: pool queue order (S12)
 
 Run on 2026-11-18.
-Owner: the [task placement scheduler epic](https://github.com/AndoNorth/weft/issues/9), lane S, filed as [spike issue 474](https://github.com/AndoNorth/weft/issues/474).
+Owner: the [task placement scheduler epic](https://github.com/AndoNorth/disyard/issues/9), lane S, filed as [spike issue 474](https://github.com/AndoNorth/disyard/issues/474).
 Spec: [S12 in docs/delivery/epics/14-placement.md](../../epics/14-placement.md#s12-pool-queue-order), whose result informs D14, #15 and #16 and gates nothing.
 Method: [docs/delivery/method.md](../../method.md).
 Throwaway code: [code/](code/), run as `nix develop -c docs/delivery/spikes/S12/code/run.sh --activities 200 --gaps-ms 20,0 --repeat 3`, then the control with `--partitions 1` added.
@@ -29,7 +29,7 @@ With the server's default partitions, in what order does one single-slot worker 
 ## Departure from the spec block
 
 The block names tier T2, the `ci` cluster's Temporal through a `kubectl port-forward`.
-This run is at T1, one Temporal dev server through `wft_itest`, because the run was dispatched with no cluster.
+This run is at T1, one Temporal dev server through `dsy_itest`, because the run was dispatched with no cluster.
 What the departure keeps: the `ci` chart sets no partition key (`deploy/temporal/values.json` holds only the two cache keys), so it runs the server's default, and the dev server answered `ListTaskQueuePartitions` with 4 activity partitions on every fresh queue (`run<n>.activity_partitions`), the server's default.
 What it leaves unmeasured: the chart's matching service on Postgres persistence with 512 history shards, where the dev server runs every service in one process on SQLite, and server 1.32.2 of the chart against the CLI's embedded 1.32.0.
 The partition count is the mechanism the question and D14 are about, and it is the same on both, so the fail is expected to hold on `ci`; a T2 rerun is the code above with `main()` connecting to a port-forward address in place of starting the container.
@@ -40,12 +40,12 @@ The partition count is the mechanism the question and D14 are about, and it is t
 | --- | --- |
 | Host | WSL2, kernel 6.6.87.2 (`host.kernel`), 8 CPUs (`host.cpus`) |
 | Other work on the host | a RabbitMQ container of another worker ran throughout, and a paired T1 session of another worker held both lock files before the control run; neither was touched |
-| Temporal | the `temporalio/temporal` 1.9.1 pin of `deploy/versions.yaml`, `server start-dev --headless`, server 1.32.0 (`temporal.server_version`), started by `wft_itest.Session(containers=1)` at its 1 GiB memory cap |
+| Temporal | the `temporalio/temporal` 1.9.1 pin of `deploy/versions.yaml`, `server start-dev --headless`, server 1.32.0 (`temporal.server_version`), started by `dsy_itest.Session(containers=1)` at its 1 GiB memory cap |
 | Client | Python 3.13.15 of the dev shell (`host.python`), `temporalio` 1.35.0 as locked in `uv.lock` |
 
 ## Method
 
-- [code/measure.py](code/measure.py) starts one dev server through `wft_itest` and runs each measurement on a fresh pair of queues, `s12-<hex>-control` for the measurement workflow and `s12-<hex>-wft-simulate` for the activities, so no run sees another's backlog and no contract queue is touched.
+- [code/measure.py](code/measure.py) starts one dev server through `dsy_itest` and runs each measurement on a fresh pair of queues, `s12-<hex>-control` for the measurement workflow and `s12-<hex>-dsy-simulate` for the activities, so no run sees another's backlog and no contract queue is touched.
 - The measurement workflow schedules activities numbered 0 to 199 on the pool-shaped queue, which has no worker.
   - Gap 20 ms: each activity in its own workflow task, followed by a 20 ms timer, so the server receives them one after another; the dev server fires each timer about 1 s later, so the 200 are scheduled over 200 s (`schedule_s`).
   - Gap 0: all 200 in one workflow task, as a job's sibling tasks are scheduled in one task (`schedule_s` 0.03 to 0.07).
@@ -132,7 +132,7 @@ The other runs' orders are in the PR that recorded this result.
 The captain decided D14 as option (b): keep the server's default of 4 partitions and record approximate start order as the rule.
 
 - Start order across jobs on a pool queue is approximate: a task scheduled apart is overtaken by up to 51 of 200, siblings scheduled together by 146 to 157, and no task starved.
-- Correctness never depends on queue order: a task is ready only after every dependency is done (`settle` in `packages/workflow/src/wft_workflow/ready.py`), so build before run holds under any order.
+- Correctness never depends on queue order: a task is ready only after every dependency is done (`settle` in `packages/workflow/src/dsy_workflow/ready.py`), so build before run holds under any order.
 - A batch finishes at the same time under either order, but the finish order of single jobs is not predictable.
 - The switch is one partition per pool queue, a Temporal dynamic config edit in #6's module, as the control run set `matching.numTaskqueueReadPartitions` and `matching.numTaskqueueWritePartitions` to 1.
   It gives first-in-first-out between tasks scheduled in different workflow tasks and still leaves the sibling tasks of one workflow task unordered.

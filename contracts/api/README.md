@@ -6,7 +6,7 @@ The [Consumers](#consumers) section names who reads each part.
 
 The dispatch and control API is the front door of the platform: a submitter sends a batch of jobs in one call and gets an answer per job, and an operator cancels, pauses, resumes or terminates a job.
 This directory pins the routes, the bodies, the reason codes, the control table and the job fingerprint.
-The schemas under [schemas/](schemas/) are generated from the models of `wft_dispatchapi.models` by `python -m wft_dispatchapi.gen` and never edited by hand.
+The schemas under [schemas/](schemas/) are generated from the models of `dsy_dispatchapi.models` by `python -m dsy_dispatchapi.gen` and never edited by hand.
 The tenants and priority classes that the API accepts live in the [tenancy contract](../tenancy/README.md), the statuses and moves of a job row in the [status contract](../status/README.md), and the events the API writes in the [stage contract](../stages/README.md).
 
 ## Routes
@@ -33,7 +33,7 @@ A client that sends the whole body first is stopped by the answer write timeout,
 
 The batch key is required, and no key is ever generated.
 The key of a job is its entry's `submission_key`, else `<batch key>/<index>`.
-The batch id is `wft_keys.batch_id(tenant, batch_key)` and the job id `wft_keys.job_id(tenant, key)`.
+The batch id is `dsy_keys.batch_id(tenant, batch_key)` and the job id `dsy_keys.job_id(tenant, key)`.
 An entry whose `priority_class` or `job_class` is absent takes the header's, and the header's defaults are `standard` and `short`.
 A resent entry whose key exists answers `duplicate` with the existing row's status when its [fingerprint](#fingerprint) is the same, and `rejected` with `KEY_CONFLICT` otherwise, and changes nothing.
 An `entry-answer` leaves out `index` and `job_id` only when its line did not parse far enough to name them.
@@ -89,14 +89,14 @@ A job at `accepted` has no workflow, a job at `admitted` or `running` is treated
 `request` calls `request_action`, `moves` are status moves in order from the cell's status, `pending_patch: set-or-clear` sets `pending_patch_ref` to the patch when one is sent and clears it otherwise, and `events` are written with the row in one transaction.
 The API sends only `cancel`, `terminate` and `pause` to a workflow, and admission alone sends `resume`.
 
-The id of every event of the control stage is `wft_keys.cloudevent_id(job_id, "", "", <type>, control_seq)` through `wft_events.build_event`, with `sequence` equal to the request's `control_seq`.
+The id of every event of the control stage is `dsy_keys.cloudevent_id(job_id, "", "", <type>, control_seq)` through `dsy_events.build_event`, with `sequence` equal to the request's `control_seq`.
 The `job.accepted` and `job.published` events of the dispatch stage take sequence 0.
 
 ## Fingerprint
 
 The fingerprint of a job is the lower-case hex SHA-256 of the UTF-8 bytes of the canonical JSON of `{"job_class", "manifest_sha256", "parameters", "priority_class", "seed"}`.
 Canonical JSON sorts keys at every depth, writes no whitespace and does not escape non-ASCII characters, and numbers are written as Python's `json` module writes them.
-`wft_dispatchapi.contract.fingerprint` computes it, and [vectors/fingerprint.json](vectors/fingerprint.json), with schema [fingerprint.schema.json](schemas/fingerprint.schema.json), holds its input, canonical and output vectors.
+`dsy_dispatchapi.contract.fingerprint` computes it, and [vectors/fingerprint.json](vectors/fingerprint.json), with schema [fingerprint.schema.json](schemas/fingerprint.schema.json), holds its input, canonical and output vectors.
 
 ## Trace context
 
@@ -114,11 +114,11 @@ A call has one root span whose links name the jobs of its first chunk, and its t
 
 ## Loader
 
-`contracts/api/check.sh <file> [--as NAME]` runs `python -m wft_dispatchapi.contract --check <file> [--as NAME]`.
+`contracts/api/check.sh <file> [--as NAME]` runs `python -m dsy_dispatchapi.contract --check <file> [--as NAME]`.
 `NAME` is the name of a schema under [schemas/](schemas/).
 Without `--as`, the name is the directory under `vectors/` that holds the file, or else the file's stem, so `routes.yaml` is checked as `routes` and `vectors/fingerprint.json` as `fingerprint`.
 It exits 0 when valid, 1 with `reason: <code>: <detail>` on stderr when not, and 2 on usage.
-The loader reads `reasons.yaml`, the status contract and the stage contract through the package data of `wft_dispatchapi`.
+The loader reads `reasons.yaml`, the status contract and the stage contract through the package data of `dsy_dispatchapi`.
 
 The first failing check wins, in this order.
 

@@ -4,36 +4,36 @@ before anything connects."""
 from pathlib import Path
 
 import pytest
-from wft_worker.config import ENV, MIRROR_ENV, PREFIX_ENV, load
+from dsy_worker.config import ENV, MIRROR_ENV, PREFIX_ENV, load
 
 COMPLETE = {
-    ENV["temporal_address"]: "temporal-frontend.wft-infra:7233",
-    ENV["namespace"]: "wft",
-    ENV["store_endpoint"]: "http://objectstore.wft-infra:8333",
-    ENV["store_credentials"]: "/etc/wft/store/credentials.json",
+    ENV["temporal_address"]: "temporal-frontend.dsy-infra:7233",
+    ENV["namespace"]: "dsy",
+    ENV["store_endpoint"]: "http://objectstore.dsy-infra:8333",
+    ENV["store_credentials"]: "/etc/dsy/store/credentials.json",
     ENV["slot_memory_mib"]: "384",
-    ENV["scratch"]: "/var/wft/task",
-    ENV["ready_file"]: "/var/wft/ready",
+    ENV["scratch"]: "/var/dsy/task",
+    ENV["ready_file"]: "/var/dsy/ready",
 }
 
 
 @pytest.mark.parametrize("pool", ["simulate", "aggregate"])
 def test_complete_environment_polls_the_contract_queue(pool):
     config = load(pool, COMPLETE)
-    assert config.queue == f"wft-{pool}"
+    assert config.queue == f"dsy-{pool}"
     assert config.slot_memory_mib == 384
-    assert config.scratch == Path("/var/wft/task")
+    assert config.scratch == Path("/var/dsy/task")
     assert config.mirror is None
 
 
 def test_compile_reads_the_mirror():
-    config = load("compile", {**COMPLETE, MIRROR_ENV: "http://mirror.wft-infra/simple"})
-    assert (config.queue, config.mirror) == ("wft-compile", "http://mirror.wft-infra/simple")
+    config = load("compile", {**COMPLETE, MIRROR_ENV: "http://mirror.dsy-infra/simple"})
+    assert (config.queue, config.mirror) == ("dsy-compile", "http://mirror.dsy-infra/simple")
 
 
 def test_prefix_goes_in_front_of_the_queue():
     config = load("simulate", {**COMPLETE, PREFIX_ENV: "h-1a2b3c4d-"})
-    assert config.queue == "h-1a2b3c4d-wft-simulate"
+    assert config.queue == "h-1a2b3c4d-dsy-simulate"
 
 
 def test_other_pools_ignore_the_mirror():

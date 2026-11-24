@@ -1,45 +1,45 @@
 {
   "buckets": [
-    "wft-sources",
-    "wft-components",
-    "wft-results",
-    "wft-checkpoints"
+    "dsy-sources",
+    "dsy-components",
+    "dsy-results",
+    "dsy-checkpoints"
   ],
   "roles": {
     "submit": {
       "read": [
-        "wft-sources"
+        "dsy-sources"
       ],
       "write": [
-        "wft-sources"
+        "dsy-sources"
       ]
     },
     "compile": {
       "read": [
-        "wft-sources",
-        "wft-components"
+        "dsy-sources",
+        "dsy-components"
       ],
       "write": [
-        "wft-components"
+        "dsy-components"
       ]
     },
     "simulate": {
       "read": [
-        "wft-components",
-        "wft-results",
-        "wft-checkpoints"
+        "dsy-components",
+        "dsy-results",
+        "dsy-checkpoints"
       ],
       "write": [
-        "wft-results",
-        "wft-checkpoints"
+        "dsy-results",
+        "dsy-checkpoints"
       ]
     },
     "aggregate": {
       "read": [
-        "wft-results"
+        "dsy-results"
       ],
       "write": [
-        "wft-results"
+        "dsy-results"
       ]
     }
   }

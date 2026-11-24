@@ -4,7 +4,7 @@ dev server with StaticPlacer, FakeControl and a FakePool per pool.
     uv run --frozen python packages/workflow/tests/replay/record.py <release>
 
 The workers run as the service runs them: the workflow worker versioned under the build label of
-`wft_temporal.corpus`, the tracing interceptor on the client, and a fixed identity, so no host
+`dsy_temporal.corpus`, the tracing interceptor on the client, and a fixed identity, so no host
 name or process id lands in a committed history. A release that exists already is refused, since
 the corpus only grows.
 """
@@ -19,28 +19,28 @@ from contextlib import AsyncExitStack
 from datetime import UTC, datetime
 from pathlib import Path
 
+from dsy_events import Event, build_event
+from dsy_events.models import JobParams
+from dsy_jobdoc.plan_models import Plan
+from dsy_keys import workflow_id
+from dsy_temporal import event_data_converter, tracing_interceptor
+from dsy_temporal.corpus import IDENTITY, build_label, workflow_type_of
+from dsy_workflow import versioning
+from dsy_workflow.contract import naming
+from dsy_workflow.job import JobWorkflow
+from dsy_workflow.models import ControlSignal, ResumeSignal
+from dsy_workflow.placement import StaticPlacer
+from dsy_workflow.taskpath import control_queue
+from dsy_workflow.testing import Fail, FakeControl, FakePool, Hang, Succeed
+from dsy_workflow.testing.control import LoadedPlan
+from dsy_workflow.worker import workflow_worker
 from temporalio.client import Client, WorkflowHandle
 from temporalio.worker import Worker
-from wft_events import Event, build_event
-from wft_events.models import JobParams
-from wft_jobdoc.plan_models import Plan
-from wft_keys import workflow_id
-from wft_temporal import event_data_converter, tracing_interceptor
-from wft_temporal.corpus import IDENTITY, build_label, workflow_type_of
-from wft_workflow import versioning
-from wft_workflow.contract import naming
-from wft_workflow.job import JobWorkflow
-from wft_workflow.models import ControlSignal, ResumeSignal
-from wft_workflow.placement import StaticPlacer
-from wft_workflow.taskpath import control_queue
-from wft_workflow.testing import Fail, FakeControl, FakePool, Hang, Succeed
-from wft_workflow.testing.control import LoadedPlan
-from wft_workflow.worker import workflow_worker
 
 CORPUS = Path(__file__).resolve().parents[2] / "corpus"
 HASH = "a" * 64
 SOURCE = {
-    "uri": f"s3://wft-sources/sha256/aa/{HASH}",
+    "uri": f"s3://dsy-sources/sha256/aa/{HASH}",
     "sha256": HASH,
     "size": 2048,
     "name": "bundle.tar.gz",
@@ -113,7 +113,7 @@ def accepted() -> Event:
     sha256 = uuid.uuid4().hex * 2
     return build_event(
         "job.accepted",
-        source="/wft/dispatch",
+        source="/dsy/dispatch",
         tenant="acme",
         jobid=str(uuid.uuid4()),
         priorityclass="standard",
@@ -122,7 +122,7 @@ def accepted() -> Event:
         time=datetime(2026, 11, 13, 12, 0, tzinfo=UTC),
         data={
             "manifest": {
-                "uri": f"s3://wft-sources/sha256/{sha256[:2]}/{sha256}",
+                "uri": f"s3://dsy-sources/sha256/{sha256[:2]}/{sha256}",
                 "sha256": sha256,
                 "size": 2048,
                 "name": "manifest.json",
@@ -312,7 +312,7 @@ async def _record(address: str, directory: Path, build: str) -> list[Path]:
 
 def record(release: str, root: Path = CORPUS) -> list[Path]:
     """Records every behaviour of RECORDINGS into `root/<release>/`, in one T1 container."""
-    from wft_itest import Session
+    from dsy_itest import Session
 
     build = build_label()
     os.environ[naming().workflow.build_id_env] = build

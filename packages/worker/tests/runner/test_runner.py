@@ -8,7 +8,7 @@ import sys
 import time
 from pathlib import Path
 
-from wft_worker.runner import STOP_GRACE_S, Child, Exit
+from dsy_worker.runner import STOP_GRACE_S, Child, Exit
 
 TAIL_BYTES = 65536
 # A heartbeat line of the guest contract.
@@ -25,7 +25,7 @@ import asyncio
 import sys
 from pathlib import Path
 
-from wft_worker.runner import Child
+from dsy_worker.runner import Child
 
 
 async def main():

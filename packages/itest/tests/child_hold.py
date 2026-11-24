@@ -1,7 +1,7 @@
 """Holds a session for a while and prints when and on which host ports, and is run by
 test_containers.py.
 
-Environment: WFT_RUN_ID, WFT_SLOT and WFT_T1_LOCK_DIR as for any session, HOLD_SECONDS,
+Environment: DSY_RUN_ID, DSY_SLOT and DSY_T1_LOCK_DIR as for any session, HOLD_SECONDS,
 HOLD_SESSION for the containers the session declares (default 2), and HOLD_CONTAINERS for the
 number of canaries to run while holding, each publishing port index 0.
 """
@@ -11,7 +11,7 @@ import sys
 import time
 from contextlib import ExitStack
 
-from wft_itest.session import Session
+from dsy_itest.session import Session
 
 
 def main() -> None:

@@ -1,6 +1,6 @@
 """The service login of the state inputs exporter, and the Secret of its DSN.
 
-The group role `wft_reader` cannot log in, so the exporter gets the login `state_inputs` in it.
+The group role `dsy_reader` cannot log in, so the exporter gets the login `state_inputs` in it.
 Its password is generated on first use into the state directory of the cluster scripts and never
 committed.
 Usage: logins.py render | apply DSN | check DSN
@@ -20,14 +20,14 @@ import psycopg
 from psycopg import sql
 
 # Each login and the one group role it is a member of, keyed by the environment variable of its DSN.
-LOGINS = {"WFT_STATE_INPUTS_DSN": ("state_inputs", "wft_reader")}
-NAMESPACE = "wft-obs"
-DATABASE = "appdb.wft-infra.svc.cluster.local:5432/postgres"
+LOGINS = {"DSY_STATE_INPUTS_DSN": ("state_inputs", "dsy_reader")}
+NAMESPACE = "dsy-obs"
+DATABASE = "appdb.dsy-infra.svc.cluster.local:5432/postgres"
 
 
 def state_file() -> Path:
-    state = os.environ.get("WFT_STATE_DIR") or str(
-        Path(os.environ.get("XDG_STATE_HOME") or Path.home() / ".local/state") / "weft"
+    state = os.environ.get("DSY_STATE_DIR") or str(
+        Path(os.environ.get("XDG_STATE_HOME") or Path.home() / ".local/state") / "disyard"
     )
     return Path(state) / "state-inputs.logins.json"
 

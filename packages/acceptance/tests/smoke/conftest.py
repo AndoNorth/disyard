@@ -18,10 +18,10 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 import pytest
-from wft_kernel import writer
-from wft_kernel.expected import expected_blocks, expected_digest
-from wft_workflow.harness import echo_params
-from wft_workflow.harness.cluster import CurrentBuild
+from dsy_kernel import writer
+from dsy_kernel.expected import expected_blocks, expected_digest
+from dsy_workflow.harness import echo_params
+from dsy_workflow.harness.cluster import CurrentBuild
 
 # Serves the canned answer of the forwarded resource from FAKE_FORWARDS, a JSON map of resource to
 # [status, body], on the forward's local port, or never listens when the answer is "never".
@@ -81,7 +81,7 @@ def forwards(tmp_path, monkeypatch) -> Callable[[dict], Path]:
 def verify(tmp_path, monkeypatch) -> Callable[..., None]:
     """Stands a script in for cluster-verify that prints `stdout` and `stderr`, then sleeps
     `sleep_s`, then exits with `code`."""
-    from wft_acceptance import smoke
+    from dsy_acceptance import smoke
 
     def stand_in(code: int, stdout: str = "", stderr: str = "", sleep_s: float = 0) -> None:
         script = tmp_path / "cluster-verify.sh"
@@ -147,7 +147,7 @@ def task(task_id: str, state: str, attempt: int) -> dict:
 
 def reference(task_id: str, kind: str, name: str, data: bytes) -> dict:
     return {
-        "uri": f"s3://wft-results/acme/b/{JOB_ID}/42/{task_id}/r1a1/{name}",
+        "uri": f"s3://dsy-results/acme/b/{JOB_ID}/42/{task_id}/r1a1/{name}",
         "sha256": hashlib.sha256(data).hexdigest(),
         "size": len(data),
         "name": name,
@@ -197,11 +197,11 @@ class Healthy:
 
 class Service:
     async def describe_namespace(self, request):
-        assert request.namespace == "wft"
+        assert request.namespace == "dsy"
 
 
 class Client:
-    namespace = "wft"
+    namespace = "dsy"
     workflow_service = Service()
 
 
@@ -211,8 +211,8 @@ def healthy(verify, forwards, listener, monkeypatch, tmp_path) -> Healthy:
     with build exit-a current and deployed, and the job admitted, running with its compile done,
     then succeeded with results that hold the known answer. The cluster has no observability
     record, so the switch reads off, and the state directory is the test's own."""
-    from wft_acceptance import smoke
-    from wft_acceptance.clients import broker, store
+    from dsy_acceptance import smoke
+    from dsy_acceptance.clients import broker, store
 
     verify(0, VERIFIED + COUNTED)
     log = forwards({"svc/placement": [200, POOLS]})
@@ -236,7 +236,7 @@ def healthy(verify, forwards, listener, monkeypatch, tmp_path) -> Healthy:
 
         def upload_source(self, data):
             job.calls.append(("upload", hashlib.sha256(data).hexdigest()))
-            return {"uri": "s3://wft-sources/sha256/ab/abc", "kind": "source"}
+            return {"uri": "s3://dsy-sources/sha256/ab/abc", "kind": "source"}
 
         def submit_one(self, document, batch_key):
             job.calls.append(("submit", batch_key))
@@ -264,13 +264,13 @@ def healthy(verify, forwards, listener, monkeypatch, tmp_path) -> Healthy:
         return Client()
 
     async def current(client, context, timeout_s):
-        assert (context, timeout_s) == ("kind-wft", smoke.POLLERS_S)
+        assert (context, timeout_s) == ("kind-dsy", smoke.POLLERS_S)
         return CurrentBuild("exit-a", ("exit-a",), None)
 
     monkeypatch.setattr(smoke.temporal, "connect", connect)
     monkeypatch.setattr(smoke, "make_deployed_current", current)
-    monkeypatch.delenv("WFT_PRESET", raising=False)
-    monkeypatch.setenv("WFT_STATE_DIR", str(tmp_path / "state"))
+    monkeypatch.delenv("DSY_PRESET", raising=False)
+    monkeypatch.setenv("DSY_STATE_DIR", str(tmp_path / "state"))
     return Healthy(log, job)
 
 
@@ -306,8 +306,8 @@ def obs_trace(*services: str) -> dict:
 
 def seed_obs(fake, compiled: bool = True) -> None:
     """Makes the fake stack show everything the job's telemetry row asks for."""
-    from wft_acceptance.smoke import telemetry
-    from wft_obs.targets import JOBS
+    from dsy_acceptance.smoke import telemetry
+    from dsy_obs.targets import JOBS
 
     now = time.time()
     fake.vectors["up"] = [
@@ -326,18 +326,18 @@ def seed_obs(fake, compiled: bool = True) -> None:
         fake.streams[asked] = [{"stream": labels, "values": [[str(int(now * 1e9)), "a line"]]}]
     fake.traces[TRACE_ID] = obs_trace(*telemetry.TRACED)
     fake.services = [
-        f"wft.{c}" for c in (*telemetry.PROFILED, *(["compile-worker"] if compiled else []))
+        f"dsy.{c}" for c in (*telemetry.PROFILED, *(["compile-worker"] if compiled else []))
     ]
 
 
 @pytest.fixture
 def fake_obs(healthy, record, monkeypatch, tmp_path):
-    """A started FakeObs that shows a healthy stack, standing behind every forward to `wft-obs`
+    """A started FakeObs that shows a healthy stack, standing behind every forward to `dsy-obs`
     and at Grafana's address, the record at `on`, and the telemetry row's deadline and poll
     shortened."""
-    from wft_acceptance import smoke
-    from wft_acceptance.smoke import results, telemetry
-    from wft_obs.testing import FakeObs
+    from dsy_acceptance import smoke
+    from dsy_acceptance.smoke import results, telemetry
+    from dsy_obs.testing import FakeObs
 
     original = smoke.forwarded
 

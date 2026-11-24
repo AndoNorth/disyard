@@ -3,23 +3,23 @@
 import os
 
 import pytest
-from wft_itest import session
-from wft_itest.session import LockTimeout, host_port, image_ref, lock_paths
+from dsy_itest import session
+from dsy_itest.session import LockTimeout, host_port, image_ref, lock_paths
 
 
 @pytest.fixture
 def lock_dir(tmp_path, monkeypatch):
-    monkeypatch.setenv("WFT_T1_LOCK_DIR", str(tmp_path))
+    monkeypatch.setenv("DSY_T1_LOCK_DIR", str(tmp_path))
     return tmp_path
 
 
 def test_lock_files_are_two_named_files_in_the_lock_dir(lock_dir):
-    assert lock_paths() == [lock_dir / "wft-t1.0.lock", lock_dir / "wft-t1.1.lock"]
+    assert lock_paths() == [lock_dir / "dsy-t1.0.lock", lock_dir / "dsy-t1.1.lock"]
 
 
 def test_default_lock_files_are_the_host_wide_pair(monkeypatch):
-    monkeypatch.delenv("WFT_T1_LOCK_DIR", raising=False)
-    assert [str(p) for p in lock_paths()] == ["/tmp/wft-t1.0.lock", "/tmp/wft-t1.1.lock"]
+    monkeypatch.delenv("DSY_T1_LOCK_DIR", raising=False)
+    assert [str(p) for p in lock_paths()] == ["/tmp/dsy-t1.0.lock", "/tmp/dsy-t1.1.lock"]
 
 
 def test_two_sessions_hold_one_file_each_and_a_third_times_out_naming_the_holders(lock_dir):
@@ -42,7 +42,7 @@ def test_a_released_file_is_taken_by_the_next_session(lock_dir):
     held = session._acquire_lock("run-b", timeout=1)
     os.close(first)
     third = session._acquire_lock("run-c", timeout=1)
-    assert (lock_dir / "wft-t1.0.lock").read_text().strip().endswith("run=run-c")
+    assert (lock_dir / "dsy-t1.0.lock").read_text().strip().endswith("run=run-c")
     os.close(held)
     os.close(third)
 
@@ -62,7 +62,7 @@ def test_a_port_index_of_10_or_more_is_refused(slot, k):
 
 @pytest.mark.parametrize("slot", ["10", "-1"])
 def test_a_slot_outside_0_to_9_is_refused(slot, monkeypatch):
-    monkeypatch.setenv("WFT_SLOT", slot)
+    monkeypatch.setenv("DSY_SLOT", slot)
     with pytest.raises(ValueError):
         session.slot_from_env()
 

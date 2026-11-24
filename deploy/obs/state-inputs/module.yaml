@@ -1,6 +1,6 @@
 name: state-inputs
 group: obs
-namespace: wft-obs
+namespace: dsy-obs
 artifact:
   kind: image
   pin: python

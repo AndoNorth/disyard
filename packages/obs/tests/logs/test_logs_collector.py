@@ -6,7 +6,7 @@ import subprocess
 import time
 
 import pytest
-from wft_obs import logs
+from dsy_obs import logs
 
 pytestmark = pytest.mark.integration
 
@@ -60,14 +60,14 @@ def test_a_record_reaches_the_collector(t1, tmp_path, root, monkeypatch):
     with t1.container(
         IMAGE,
         ports={0: 4318},
-        command=["--config=/etc/wft/collector.yaml"],
-        mounts={config: "/etc/wft/collector.yaml"},
+        command=["--config=/etc/dsy/collector.yaml"],
+        mounts={config: "/etc/dsy/collector.yaml"},
     ) as collector:
         collector.wait_ready(0)
         monkeypatch.setenv(logs.ENDPOINT, f"http://127.0.0.1:{collector.host_ports[0]}")
         logs.install("workflow")
         with logs.bind(job_id="j1", traceparent=f"00-{TRACE_ID}-{SPAN_ID}-01"):
-            logging.getLogger("wft.test").info("through the collector", extra={"pool": "compile"})
+            logging.getLogger("dsy.test").info("through the collector", extra={"pool": "compile"})
         next(h for h in root.handlers if isinstance(h, logs.OtlpHandler)).close()
         deadline = time.monotonic() + 30
         while not (records := exported(collector.id)) and time.monotonic() < deadline:

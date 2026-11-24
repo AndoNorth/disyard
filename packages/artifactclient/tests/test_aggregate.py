@@ -6,12 +6,12 @@ import tracemalloc
 from pathlib import Path
 
 import pytest
+from dsy_artifactclient.aggregate import build_index, read_index
+from dsy_artifactclient.contract import Refused, check_index
+from dsy_artifactclient.models import IndexEntry
+from dsy_events.models import AttemptReference, ContentReference, ProducerRef
 from hypothesis import given
 from hypothesis import strategies as st
-from wft_artifactclient.aggregate import build_index, read_index
-from wft_artifactclient.contract import Refused, check_index
-from wft_artifactclient.models import IndexEntry
-from wft_events.models import AttemptReference, ContentReference, ProducerRef
 
 JOB = "123e4567-e89b-42d3-a456-426614174000"
 TENANT = "acme"
@@ -22,7 +22,7 @@ TASK_IDS = st.from_regex(r"[a-z0-9][a-z0-9._-]{0,20}", fullmatch=True)
 def result(task: str, tenant: str = TENANT) -> AttemptReference:
     digest = hashlib.sha256(task.encode()).hexdigest()
     return AttemptReference(
-        uri=f"s3://wft-results/{tenant}/b1/{JOB}/1/{task}/r0a1/result.xml",
+        uri=f"s3://dsy-results/{tenant}/b1/{JOB}/1/{task}/r0a1/result.xml",
         sha256=digest,
         size=1024,
         name="result.xml",
@@ -55,7 +55,7 @@ class IndexClient:
 def index_reference(data: bytes) -> ContentReference:
     digest = hashlib.sha256(data).hexdigest()
     return ContentReference(
-        uri=f"s3://wft-sources/sha256/{digest[:2]}/{digest}",
+        uri=f"s3://dsy-sources/sha256/{digest[:2]}/{digest}",
         sha256=digest,
         size=len(data),
         name="index.jsonl",
@@ -116,7 +116,7 @@ def test_partial_policy_refuse_and_allow():
 
 def test_foreign_tenant_result_is_refused():
     other = [entry("a"), entry("b", tenant="rival")]
-    with pytest.raises(Refused, match="^foreign-tenant: b reads s3://wft-results/rival/"):
+    with pytest.raises(Refused, match="^foreign-tenant: b reads s3://dsy-results/rival/"):
         read(built(other, partial="allow"))
     with pytest.raises(Refused, match="^foreign-tenant: the index is of acme, not rival"):
         read(built([entry("a")]), tenant="rival")

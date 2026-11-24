@@ -13,22 +13,22 @@ import uuid
 from dataclasses import dataclass
 
 import pytest
+from dsy_dispatchapi.control import control_job
+from dsy_dispatchapi.gateway import TemporalGateway
+from dsy_dispatchapi.models import ControlRequest
+from dsy_dispatchapi.ports import NoWorkflow
+from dsy_dispatchapi.retrier import BACKOFF_MAX_S, Retrier
+from dsy_dispatchapi.testing import FakeGateway
+from dsy_events import from_bytes
+from dsy_eventstore import events_for_job
+from dsy_itest.session import Container
+from dsy_jobstate import get_job, mark_published, request_action, transition
+from dsy_keys import cloudevent_id, workflow_id
+from dsy_stages.recording import type_name
+from dsy_workflow.contract import naming
+from dsy_workflow.models import ControlSignal
+from dsy_workflow.testing import connect
 from temporalio.api.enums.v1 import EventType
-from wft_dispatchapi.control import control_job
-from wft_dispatchapi.gateway import TemporalGateway
-from wft_dispatchapi.models import ControlRequest
-from wft_dispatchapi.ports import NoWorkflow
-from wft_dispatchapi.retrier import BACKOFF_MAX_S, Retrier
-from wft_dispatchapi.testing import FakeGateway
-from wft_events import from_bytes
-from wft_eventstore import events_for_job
-from wft_itest.session import Container
-from wft_jobstate import get_job, mark_published, request_action, transition
-from wft_keys import cloudevent_id, workflow_id
-from wft_stages.recording import type_name
-from wft_workflow.contract import naming
-from wft_workflow.models import ControlSignal
-from wft_workflow.testing import connect
 
 pytestmark = [pytest.mark.integration, pytest.mark.pair]
 
@@ -171,7 +171,7 @@ def test_signal_twice_after_crash_is_harmless(
             with TemporalGateway(server.address) as gateway:
                 control_job(control_conn, gateway, "acme", row.job_id, "pause", ControlRequest())
                 with monkeypatch.context() as crash:
-                    crash.setattr("wft_dispatchapi.retrier.mark_delivered", _die)
+                    crash.setattr("dsy_dispatchapi.retrier.mark_delivered", _die)
                     with pytest.raises(Died):
                         await asyncio.to_thread(retrier(gateway).deliver)
                 assert outbox(db, row)[3] is None
@@ -236,7 +236,7 @@ def test_resume_pending_without_workflow_returns_to_accepted(server, db, seed, r
     assert (after.status, after.requested_action, after.control_seq) == ("accepted", None, 1)
     assert after.published_at is not None
     [resumed] = [from_bytes(e.body.encode()) for e in events_for_job(db, row.job_id)]
-    assert (resumed.type, resumed.source) == ("dev.wft.job.resumed.v1", "/wft/control")
+    assert (resumed.type, resumed.source) == ("dev.dsy.job.resumed.v1", "/dsy/control")
     assert resumed.id == cloudevent_id(row.job_id, "", "", "job.resumed", 1)
 
 
@@ -256,7 +256,7 @@ def test_stop_of_a_stopped_job_without_workflow_ends_on_the_row(
         assert retrier(gateway).deliver() == 1
     assert outbox(db, row)[:3] == (ended, None, seq)
     [event] = [from_bytes(e.body.encode()) for e in events_for_job(db, row.job_id)]
-    assert (event.type, event.source) == (f"dev.wft.job.{ended}.v1", "/wft/control")
+    assert (event.type, event.source) == (f"dev.dsy.job.{ended}.v1", "/dsy/control")
     assert event.id == cloudevent_id(row.job_id, "", "", f"job.{ended}", seq)
 
 

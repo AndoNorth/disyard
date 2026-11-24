@@ -5,9 +5,9 @@ the collector and Pyroscope exactly when the pod has the telemetry endpoint."""
 import socket
 
 import pytest
-from wft_worker import probe
-from wft_worker.config import MIRROR_ENV
-from wft_worker.probe import OBS_ENV
+from dsy_worker import probe
+from dsy_worker.config import MIRROR_ENV
+from dsy_worker.probe import OBS_ENV
 
 OBS = {"collector", "pyroscope"}
 
@@ -61,12 +61,12 @@ def test_probe_answers_against_policy(endpoints, monkeypatch, capsys, mirror, re
 @pytest.mark.parametrize(
     ("endpoint", "reachable", "code"),
     [
-        ("http://collector.wft-obs:4318", OBS, 0),
+        ("http://collector.dsy-obs:4318", OBS, 0),
         ("", set(), 0),
         ("", OBS, 1),
-        ("http://collector.wft-obs:4318", set(), 1),
-        ("http://collector.wft-obs:4318", {"collector"}, 1),
-        ("http://collector.wft-obs:4318", {"pyroscope"}, 1),
+        ("http://collector.dsy-obs:4318", set(), 1),
+        ("http://collector.dsy-obs:4318", {"collector"}, 1),
+        ("http://collector.dsy-obs:4318", {"pyroscope"}, 1),
     ],
 )
 def test_obs_targets_are_expected_exactly_when_the_endpoint_is_set(

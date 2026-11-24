@@ -1,14 +1,14 @@
 [project]
-name = "wft-jobexamples"
+name = "dsy-jobexamples"
 version = "0.0.0"
 license = "Apache-2.0"
 requires-python = ">=3.13,<3.14"
-dependencies = ["wft-jobdoc", "wft-jobcheck", "wft-plan"]
+dependencies = ["dsy-jobdoc", "dsy-jobcheck", "dsy-plan"]
 
 [tool.uv.sources]
-wft-jobdoc = { workspace = true }
-wft-jobcheck = { workspace = true }
-wft-plan = { workspace = true }
+dsy-jobdoc = { workspace = true }
+dsy-jobcheck = { workspace = true }
+dsy-plan = { workspace = true }
 
 [build-system]
 requires = ["hatchling"]

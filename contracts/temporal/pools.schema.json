@@ -40,7 +40,7 @@
       "type": "object"
     }
   },
-  "$id": "urn:wft:schema:temporal:pools:1",
+  "$id": "urn:dsy:schema:temporal:pools:1",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
   "description": "pools.yaml: pool table v0, the ci slots and the timeouts of each pool.",

@@ -4,33 +4,33 @@
 # admin provisions buckets and lifecycle rules for the bootstrap and is used by no pod.
 roles:
   admin:
-    wft-sources: [bucket, lifecycle]
-    wft-components: [bucket, lifecycle]
-    wft-results: [bucket, lifecycle]
-    wft-checkpoints: [bucket, lifecycle]
+    dsy-sources: [bucket, lifecycle]
+    dsy-components: [bucket, lifecycle]
+    dsy-results: [bucket, lifecycle]
+    dsy-checkpoints: [bucket, lifecycle]
   submit:
-    wft-sources: [get, list, put, multipart]
+    dsy-sources: [get, list, put, multipart]
   indexer:
-    wft-sources: [put, multipart]
+    dsy-sources: [put, multipart]
   compile:
-    wft-sources: [get, list]
-    wft-components: [put, multipart]
-    wft-results: [put, multipart]
+    dsy-sources: [get, list]
+    dsy-components: [put, multipart]
+    dsy-results: [put, multipart]
   simulate:
-    wft-components: [get, list]
-    wft-results: [put, multipart]
-    wft-checkpoints: [get, list, put, multipart]
+    dsy-components: [get, list]
+    dsy-results: [put, multipart]
+    dsy-checkpoints: [get, list, put, multipart]
   aggregate:
-    wft-sources: [get]
-    wft-results: [get, list, put, multipart]
+    dsy-sources: [get]
+    dsy-results: [get, list, put, multipart]
   workflow:
-    wft-sources: [get, list]
-    wft-components: [get, list]
-    wft-results: [get, list]
+    dsy-sources: [get, list]
+    dsy-components: [get, list]
+    dsy-results: [get, list]
   export:
-    wft-results: [get, list]
+    dsy-results: [get, list]
   reaper:
-    wft-sources: [list, delete]
-    wft-components: [list, delete]
-    wft-results: [list, delete]
-    wft-checkpoints: [list, delete]
+    dsy-sources: [list, delete]
+    dsy-components: [list, delete]
+    dsy-results: [list, delete]
+    dsy-checkpoints: [list, delete]

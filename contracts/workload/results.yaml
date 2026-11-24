@@ -1,9 +1,9 @@
 ---
-# The schema file of the result format wft.sim.v1. Schema: results.schema.json.
+# The schema file of the result format dsy.sim.v1. Schema: results.schema.json.
 # A results.xml is one root results element with schema and seed, block elements with id and kind, and row elements
 # whose values are attributes, exactly the columns of the block's kind. The value formats of each column type are
-# the rules of wft_kernel.format. A change is additive only inside wft.sim.v1: a new kind or a new column.
-schema: wft.sim.v1
+# the rules of dsy_kernel.format. A change is additive only inside dsy.sim.v1: a new kind or a new column.
+schema: dsy.sim.v1
 kinds:
   echo:
     columns:

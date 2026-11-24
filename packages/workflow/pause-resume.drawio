@@ -2,7 +2,7 @@
   <root>
     <mxCell id="0"/>
     <mxCell id="1" parent="0"/>
-    <mxCell id="t" value="Pause and resume: a worked example from wft_workflow.job, with the values of test_pause.py" style="text;html=1;fontSize=16;fontStyle=1;align=left;" vertex="1" parent="1"><mxGeometry x="20" y="10" width="1260" height="30" as="geometry"/></mxCell>
+    <mxCell id="t" value="Pause and resume: a worked example from dsy_workflow.job, with the values of test_pause.py" style="text;html=1;fontSize=16;fontStyle=1;align=left;" vertex="1" parent="1"><mxGeometry x="20" y="10" width="1260" height="30" as="geometry"/></mxCell>
     <mxCell id="a" value="Resume from the checkpoint head: one checkpoint-capable sim, retries 1" style="swimlane;startSize=30;fillColor=#f5f5f5;strokeColor=#666666;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="20" y="60" width="620" height="706" as="geometry"/></mxCell>
     <mxCell id="a0" value="&lt;b&gt;1. r0a1 fails timeout, hands over checkpoint c1&lt;/b&gt;&lt;br&gt;indexed, task.checkpoint.committed; guest budget 1 to 0; kept checkpoints [c1]" style="rounded=1;whiteSpace=wrap;html=1;fontSize=10;align=left;spacingLeft=6;fillColor=#ffffff;strokeColor=#666666;" vertex="1" parent="a"><mxGeometry x="10" y="40" width="600" height="56" as="geometry"/></mxCell>
     <mxCell id="a1" value="&lt;b&gt;2. r0a2 starts from c1, fails timeout, hands over c2&lt;/b&gt;&lt;br&gt;guest budget exhausted, plan checkpoint flag set: sim paused, task.retries.exhausted; kept [c2, c1]" style="rounded=1;whiteSpace=wrap;html=1;fontSize=10;align=left;spacingLeft=6;fillColor=#ffffff;strokeColor=#666666;" vertex="1" parent="a"><mxGeometry x="10" y="114" width="600" height="56" as="geometry"/></mxCell>

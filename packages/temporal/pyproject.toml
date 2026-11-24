@@ -1,14 +1,14 @@
 [project]
-name = "wft-temporal"
+name = "dsy-temporal"
 version = "0.0.0"
 license = "Apache-2.0"
 requires-python = ">=3.13,<3.14"
-dependencies = ["opentelemetry-api", "opentelemetry-sdk", "pyyaml", "temporalio", "wft-events", "wft-itest", "wft-keys"]
+dependencies = ["opentelemetry-api", "opentelemetry-sdk", "pyyaml", "temporalio", "dsy-events", "dsy-itest", "dsy-keys"]
 
 [tool.uv.sources]
-wft-events = { workspace = true }
-wft-itest = { workspace = true }
-wft-keys = { workspace = true }
+dsy-events = { workspace = true }
+dsy-itest = { workspace = true }
+dsy-keys = { workspace = true }
 
 [build-system]
 requires = ["hatchling"]

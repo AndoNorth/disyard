@@ -8,21 +8,21 @@ from datetime import UTC, datetime
 
 import psycopg
 import pytest
+from dsy_events import build_event
+from dsy_eventstore import insert_events
+from dsy_jobstate import JobRow, insert_accepted, mark_published
+from dsy_temporal import event_data_converter, new_traceparent, tracing_interceptor
+from dsy_workflow.contract import naming
+from dsy_workflow.testing import connect
 from psycopg import sql
 from psycopg.conninfo import make_conninfo
 from temporalio.api.enums.v1 import IndexedValueType
 from temporalio.api.operatorservice.v1 import AddSearchAttributesRequest
 from temporalio.client import Client
-from wft_events import build_event
-from wft_eventstore import insert_events
-from wft_jobstate import JobRow, insert_accepted, mark_published
-from wft_temporal import event_data_converter, new_traceparent, tracing_interceptor
-from wft_workflow.contract import naming
-from wft_workflow.testing import connect
 
 SHA = "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08"
 MANIFEST = {
-    "uri": f"s3://wft-sources/sha256/9f/{SHA}",
+    "uri": f"s3://dsy-sources/sha256/9f/{SHA}",
     "sha256": SHA,
     "size": 2048,
     "name": "manifest.json",
@@ -39,7 +39,7 @@ def accepted_event(
 ):
     return build_event(
         "job.accepted",
-        source="/wft/dispatch",
+        source="/dsy/dispatch",
         tenant=tenant,
         jobid=job_id,
         priorityclass=priorityclass,
@@ -81,10 +81,10 @@ def db(appdb):
 
 @pytest.fixture
 def admission_dsn(appdb, db):
-    """The DSN of a fresh login in `wft_admission`, the group of admission's service login."""
+    """The DSN of a fresh login in `dsy_admission`, the group of admission's service login."""
     user = f"admission_{time.time_ns()}"
     db.execute(
-        sql.SQL("CREATE ROLE {} LOGIN PASSWORD 'standin' IN ROLE wft_admission").format(
+        sql.SQL("CREATE ROLE {} LOGIN PASSWORD 'standin' IN ROLE dsy_admission").format(
             sql.Identifier(user)
         )
     )

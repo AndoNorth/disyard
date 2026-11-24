@@ -2,14 +2,14 @@
 reasons:
   - code: UNSUPPORTED_VERSION
     source: application
-    read_from: x-opt-wft-reason
+    read_from: x-opt-dsy-reason
     on_intake: expected
     event: job.dead.lettered
     recovery: after-fix
     action: deploy a reader of that major inside the replay window of a previous major, then replay
   - code: ADMISSION_FAILED
     source: application
-    read_from: x-opt-wft-reason
+    read_from: x-opt-dsy-reason
     on_intake: expected
     event: null
     recovery: replay
@@ -44,7 +44,7 @@ reasons:
     action: fix the topology, then replay
   - code: MALFORMED
     source: application
-    read_from: x-opt-wft-reason
+    read_from: x-opt-dsy-reason
     on_intake: expected
     event: job.dead.lettered
     recovery: never

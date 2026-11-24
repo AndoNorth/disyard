@@ -43,8 +43,8 @@ def test_deployment_recreates_its_single_pod():
 
 def test_pod_runs_on_the_obs_pool_inside_the_resources_of_its_manifest():
     pod = deployment()["spec"]["template"]["spec"]
-    assert pod["nodeSelector"] == {"wft.dev/pool": "obs"}
-    assert pod["tolerations"][0]["key"] == "wft.dev/pool"
+    assert pod["nodeSelector"] == {"dsy.dev/pool": "obs"}
+    assert pod["tolerations"][0]["key"] == "dsy.dev/pool"
     module = yaml.safe_load((MODULE / "module.yaml").read_text())
     resources = container()["resources"]
     assert resources == module["resources"]["pyroscope"]
@@ -64,7 +64,7 @@ def test_pod_is_scraped_through_a_port_named_metrics():
 
 def test_every_object_is_in_the_obs_namespace():
     for obj in pyroscope.render():
-        assert obj["metadata"]["namespace"] == "wft-obs"
+        assert obj["metadata"]["namespace"] == "dsy-obs"
 
 
 def test_profiles_keep_three_days_on_a_local_volume():

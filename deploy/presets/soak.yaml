@@ -39,5 +39,5 @@ obs_stack:
 obs_memory_mib: 17664
 host:
   ports: deploy/host/ports.yaml
-  data_dir: ~/.local/share/wft/soak
+  data_dir: ~/.local/share/dsy/soak
 mirror: false

@@ -4,8 +4,8 @@ import os
 
 import pytest
 import yaml
-from wft_runtime.classify import Facts, classify, read_error_file
-from wft_runtime.models import CONTRACT
+from dsy_runtime.classify import Facts, classify, read_error_file
+from dsy_runtime.models import CONTRACT
 
 TRAP = """\
 Error: failed to run main module `component.wasm`

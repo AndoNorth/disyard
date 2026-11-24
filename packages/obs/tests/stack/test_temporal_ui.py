@@ -31,7 +31,7 @@ helper = load_render()
 
 def render(tmp_path, monkeypatch, obs):
     """The module rendered under the switch, with the ports file beside it."""
-    monkeypatch.setenv("WFT_OBS", obs)
+    monkeypatch.setenv("DSY_OBS", obs)
     (tmp_path / "deploy/host").mkdir(parents=True)
     shutil.copy(ROOT / "deploy/host/ports.yaml", tmp_path / "deploy/host/ports.yaml")
     return helper.render(tmp_path)
@@ -56,9 +56,9 @@ def test_switch_on_renders_the_ui_on_the_infra_node_inside_its_resources(tmp_pat
     assert container["resources"] == module["resources"]["temporal-web"]
     assert container["resources"]["requests"] == container["resources"]["limits"]
     assert container["resources"]["limits"]["memory"] == "64Mi"
-    assert pod["nodeSelector"] == {"wft.dev/pool": "infra"}
+    assert pod["nodeSelector"] == {"dsy.dev/pool": "infra"}
     assert pod["tolerations"] == [helper.INFRA_TOLERATION]
-    assert deployment["metadata"]["namespace"] == "wft-infra"
+    assert deployment["metadata"]["namespace"] == "dsy-infra"
     assert deployment["spec"]["strategy"] == {"type": "Recreate"}
 
 

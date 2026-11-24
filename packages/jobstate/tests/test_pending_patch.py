@@ -5,9 +5,7 @@ import uuid
 
 import psycopg
 import pytest
-from psycopg import sql
-from psycopg.conninfo import make_conninfo
-from wft_jobstate import (
+from dsy_jobstate import (
     JobNotFound,
     JobRow,
     Lost,
@@ -17,11 +15,13 @@ from wft_jobstate import (
     set_pending_patch,
     transition,
 )
+from psycopg import sql
+from psycopg.conninfo import make_conninfo
 
 pytestmark = pytest.mark.integration
 SHA = "a" * 64
 PATCH = {
-    "uri": f"s3://wft-sources/sha256/cc/{'c' * 64}",
+    "uri": f"s3://dsy-sources/sha256/cc/{'c' * 64}",
     "sha256": "c" * 64,
     "size": 9,
     "name": "patch",
@@ -56,7 +56,7 @@ def login(appdb):
 
 @pytest.fixture
 def control(login):
-    return login("wft_control")
+    return login("dsy_control")
 
 
 @pytest.fixture
@@ -69,13 +69,13 @@ def resume_pending(appdb):
         batch_id=str(uuid.uuid4()),
         priority_class="standard",
         manifest_ref={
-            "uri": f"s3://wft-sources/sha256/aa/{SHA}",
+            "uri": f"s3://dsy-sources/sha256/aa/{SHA}",
             "sha256": SHA,
             "size": 7,
             "name": "m",
             "kind": "manifest",
         },
-        schema_version="wft.job.accepted/3",
+        schema_version="dsy.job.accepted/3",
         traceparent="00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01",
         seed=3,
         parameters={"a": 1},
@@ -120,7 +120,7 @@ def test_pending_patch_loses_to_a_cleared_action(control, resume_pending):
 
 def test_pending_patch_is_refused_to_dispatch(login, resume_pending):
     job, seq = resume_pending
-    dispatch = login("wft_dispatch")
+    dispatch = login("dsy_dispatch")
     with pytest.raises(psycopg.errors.InsufficientPrivilege):
         set_pending_patch(dispatch, job, seq, PATCH)
 

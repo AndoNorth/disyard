@@ -22,7 +22,7 @@ expect docs docs/architecture/15-contracts.drawio docs/architecture/15-contracts
 expect docs docs/animations/src/scenes/job.tsx docs/animations/package.json
 expect docs docs/delivery/spikes/S8/run.sh
 expect full docs/delivery/spikes/S8/code/node.py
-expect full docs/dev-setup.md packages/plan/src/wft_plan/__init__.py
+expect full docs/dev-setup.md packages/plan/src/dsy_plan/__init__.py
 expect full contracts/state/README.md
 expect full packages/temporal/README.md
 expect full contracts/job/job.schema.json

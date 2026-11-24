@@ -5,8 +5,8 @@ import json
 from pathlib import Path
 
 import pytest
-from wft_kernel.expected import expected_blocks, expected_digest
-from wft_kernel.rows import WORKLOADS
+from dsy_kernel.expected import expected_blocks, expected_digest
+from dsy_kernel.rows import WORKLOADS
 
 ROOT = Path(__file__).resolve().parents[3]
 VECTORS = json.loads((Path(__file__).parent / "vectors" / "workloads.json").read_text())

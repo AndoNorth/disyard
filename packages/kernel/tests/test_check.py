@@ -1,4 +1,4 @@
-"""python -m wft_kernel.check results compares parsed values with the blocks of the input."""
+"""python -m dsy_kernel.check results compares parsed values with the blocks of the input."""
 
 import io
 import json
@@ -7,8 +7,8 @@ import sys
 from pathlib import Path
 
 import pytest
-from wft_kernel import check, expected
-from wft_kernel.writer import KINDS, write
+from dsy_kernel import check, expected
+from dsy_kernel.writer import KINDS, write
 
 LEVEL0 = Path(__file__).resolve().parents[3] / "contracts/workload/vectors/level0"
 DIGEST = "0123456789abcdef"
@@ -59,7 +59,7 @@ def test_check_results_reads_values_not_bytes(kernel, tmp_path):
     input_path, _ = golden("sum_squares")
     results = tmp_path / "results.xml"
     results.write_text(
-        "<results seed='3' schema='wft.sim.v1'><!-- by hand -->\n"
+        "<results seed='3' schema='dsy.sim.v1'><!-- by hand -->\n"
         "<block kind='scalar' id='result'><row value='338350' name='sum_&#x73;quares'></row>"
         "</block></results>"
     )
@@ -86,7 +86,7 @@ def test_check_results_not_equal(kernel, tmp_path, capsys, seed, value, message)
 def test_check_results_refuses_a_broken_document_with_its_reason(kernel, tmp_path, capsys):
     input_path, _ = golden("sum_squares")
     results = tmp_path / "results.xml"
-    results.write_text('<!DOCTYPE results><results schema="wft.sim.v1" seed="3"/>')
+    results.write_text('<!DOCTYPE results><results schema="dsy.sim.v1" seed="3"/>')
     assert check.main(["results", "--input", str(input_path), "--results", str(results)]) == 1
     assert capsys.readouterr().err.startswith("reason: doctype-present: ")
 
@@ -115,6 +115,6 @@ def test_check_summary_is_dispatched_to_the_summary_module(monkeypatch):
 @pytest.mark.parametrize("argv", [[], ["results"], ["other"]])
 def test_check_usage_exits_2(argv):
     run = subprocess.run(
-        [sys.executable, "-m", "wft_kernel.check", *argv], capture_output=True, text=True
+        [sys.executable, "-m", "dsy_kernel.check", *argv], capture_output=True, text=True
     )
     assert run.returncode == 2, run.stderr

@@ -3,22 +3,22 @@ import json
 from pathlib import Path
 
 import pytest
-from wft_jobdoc import parse_document
-from wft_jobdoc.profile_files import load_profile
+from dsy_jobdoc import parse_document
+from dsy_jobdoc.profile_files import load_profile
 
 ROOT = Path(__file__).resolve().parents[3]
 VECTORS = ROOT / "contracts/job/vectors"
 
 HASH = "a" * 64
 SOURCE = {
-    "uri": f"s3://wft-sources/sha256/aa/{HASH}",
+    "uri": f"s3://dsy-sources/sha256/aa/{HASH}",
     "sha256": HASH,
     "size": 2048,
     "name": "bundle.tar.gz",
     "kind": "source",
 }
 GOOD = {
-    "schema": "urn:wft:schema:job:1.0",
+    "schema": "urn:dsy:schema:job:1.0",
     "parameters": {"seed": "seed"},
     "tasks": {
         "build": {"type": "compile", "params": {"source": SOURCE, "entry": "sim"}},

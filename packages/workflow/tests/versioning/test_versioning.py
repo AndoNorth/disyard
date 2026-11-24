@@ -16,6 +16,19 @@ from contextlib import AsyncExitStack, asynccontextmanager
 from datetime import UTC, datetime
 
 import pytest
+from dsy_artifactreaper import schedule
+from dsy_events import Event, build_event
+from dsy_events.models import JobParams
+from dsy_jobdoc.plan_models import Plan
+from dsy_keys import workflow_id
+from dsy_workflow import versioning
+from dsy_workflow.contract import naming
+from dsy_workflow.job import JobWorkflow
+from dsy_workflow.placement import StaticPlacer
+from dsy_workflow.service import Config, serve
+from dsy_workflow.testing import Fail, FakeControl, FakePool, Succeed, connect
+from dsy_workflow.testing.control import Emit, Emitted, LoadedPlan
+from dsy_workflow.worker import workflow_worker
 from temporalio import activity, workflow
 from temporalio.api.enums.v1 import EventType, TaskQueueType, WorkflowTaskFailedCause
 from temporalio.api.taskqueue.v1 import TaskQueue
@@ -24,19 +37,6 @@ from temporalio.client import Client, WorkflowHandle, WorkflowQueryFailedError
 from temporalio.common import VersioningBehavior
 from temporalio.worker import UnsandboxedWorkflowRunner, Worker
 from temporalio.worker.workflow_sandbox import SandboxedWorkflowRunner
-from wft_artifactreaper import schedule
-from wft_events import Event, build_event
-from wft_events.models import JobParams
-from wft_jobdoc.plan_models import Plan
-from wft_keys import workflow_id
-from wft_workflow import versioning
-from wft_workflow.contract import naming
-from wft_workflow.job import JobWorkflow
-from wft_workflow.placement import StaticPlacer
-from wft_workflow.service import Config, serve
-from wft_workflow.testing import Fail, FakeControl, FakePool, Succeed, connect
-from wft_workflow.testing.control import Emit, Emitted, LoadedPlan
-from wft_workflow.worker import workflow_worker
 
 pytestmark = pytest.mark.integration
 
@@ -119,7 +119,7 @@ def plan(checkpoint: bool = False) -> Plan:
                     "checkpoint": False,
                     "params": {
                         "source": {
-                            "uri": f"s3://wft-sources/sha256/aa/{HASH}",
+                            "uri": f"s3://dsy-sources/sha256/aa/{HASH}",
                             "sha256": HASH,
                             "size": 2048,
                             "name": "bundle.tar.gz",
@@ -183,7 +183,7 @@ async def start_job(client: Client, control: FakeControl, job_plan: Plan) -> Wor
     sha256 = uuid.uuid4().hex * 2
     accepted = build_event(
         "job.accepted",
-        source="/wft/dispatch",
+        source="/dsy/dispatch",
         tenant="acme",
         jobid=str(uuid.uuid4()),
         priorityclass="standard",
@@ -192,7 +192,7 @@ async def start_job(client: Client, control: FakeControl, job_plan: Plan) -> Wor
         time=datetime(2026, 11, 12, 12, 0, tzinfo=UTC),
         data={
             "manifest": {
-                "uri": f"s3://wft-sources/sha256/{sha256[:2]}/{sha256}",
+                "uri": f"s3://dsy-sources/sha256/{sha256[:2]}/{sha256}",
                 "sha256": sha256,
                 "size": 2048,
                 "name": "manifest.json",

@@ -7,10 +7,10 @@ import json
 from pathlib import Path
 
 import pytest
-from wft_artifactclient import faults
-from wft_artifactclient.contract import failure_codes
-from wft_artifactclient.keys import split_uri
-from wft_storecheck.s3 import Creds, dump_credentials
+from dsy_artifactclient import faults
+from dsy_artifactclient.contract import failure_codes
+from dsy_artifactclient.keys import split_uri
+from dsy_storecheck.s3 import Creds, dump_credentials
 
 # Each code names the scenario of a test_faults_*isolated.py module that provokes it.
 # One scenario can provoke two codes.
@@ -25,7 +25,7 @@ SCENARIOS = {
     "CHECKPOINT_CORRUPT": "test_a_corrupted_checkpoint_fails_and_the_previous_one_verifies",
 }
 SCENARIO_FILES = sorted(Path(__file__).parent.glob("test_faults_*isolated.py"))
-BUCKET = "wft-checkpoints"
+BUCKET = "dsy-checkpoints"
 FOLDER = "acme/b1/job/7/sim/r0a1/0/"
 DATA = f"s3://{BUCKET}/{FOLDER}data.bin"
 META = f"s3://{BUCKET}/{FOLDER}checkpoint.json"

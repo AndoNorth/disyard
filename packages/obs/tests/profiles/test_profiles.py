@@ -1,11 +1,11 @@
-"""`setup` starts the Pyroscope profiler only when `WFT_PYROSCOPE_ADDRESS` is set."""
+"""`setup` starts the Pyroscope profiler only when `DSY_PYROSCOPE_ADDRESS` is set."""
 
+import dsy_obs.setup as obs_setup
 import pyroscope
 import pytest
-import wft_obs.setup as obs_setup
-from wft_obs import logs, profiles, traces
+from dsy_obs import logs, profiles, traces
 
-ADDRESS = "http://pyroscope.wft-obs:4040"
+ADDRESS = "http://pyroscope.dsy-obs:4040"
 
 
 @pytest.fixture
@@ -33,7 +33,7 @@ def test_with_the_address_set_configure_is_called_once_with_the_name_and_pool(
     obs_setup.setup("simulate-worker", pool="simulate")
     assert configured == [
         {
-            "application_name": "wft.simulate-worker",
+            "application_name": "dsy.simulate-worker",
             "server_address": ADDRESS,
             "tags": {"pool": "simulate"},
         }
@@ -44,4 +44,4 @@ def test_a_component_without_a_pool_has_no_tags(configured, monkeypatch):
     monkeypatch.setenv(profiles.ADDRESS, ADDRESS)
     obs_setup.setup("dispatch")
     [call] = configured
-    assert call["application_name"] == "wft.dispatch" and call["tags"] is None
+    assert call["application_name"] == "dsy.dispatch" and call["tags"] is None

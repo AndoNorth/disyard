@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/AndoNorth/weft/contracts/stages/stages.schema.json",
+  "$id": "https://github.com/AndoNorth/disyard/contracts/stages/stages.schema.json",
   "title": "contracts/stages/stages.yaml",
   "type": "object",
   "required": ["stages"],
@@ -27,7 +27,7 @@
       "required": ["source", "reads", "emits"],
       "additionalProperties": false,
       "properties": {
-        "source": { "type": "string", "pattern": "^/wft/[a-z][a-z0-9-]*$" },
+        "source": { "type": "string", "pattern": "^/dsy/[a-z][a-z0-9-]*$" },
         "reads": {
           "type": "object",
           "required": ["attributes", "data"],
@@ -59,7 +59,7 @@
             "additionalProperties": false,
             "properties": {
               "type": { "allOf": [{ "$ref": "#/$defs/type" }, { "not": { "const": "task.requested" } }] },
-              "source": { "type": "string", "pattern": "^/wft/[a-z][a-z0-9-]*$" },
+              "source": { "type": "string", "pattern": "^/dsy/[a-z][a-z0-9-]*$" },
               "when": { "type": "string", "minLength": 1, "maxLength": 200 }
             }
           }

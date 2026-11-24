@@ -14,36 +14,36 @@ from types import SimpleNamespace
 
 import psycopg
 import pytest
-from wft_artifactclient.client import ArtifactClient, RetryPolicy
-from wft_artifactclient.errors import ArtifactNotFound
-from wft_compile import bundle
-from wft_dispatchapi.control import ControlRefused, control_job
-from wft_dispatchapi.gateway import TemporalGateway
-from wft_dispatchapi.models import ControlRequest
-from wft_dispatchapi.patch import Resume
-from wft_dispatchapi.resolver import StoreSourceResolver
-from wft_dispatchapi.retrier import Retrier
-from wft_dispatchapi.testing import running_status
-from wft_events import from_bytes
-from wft_events.models import ContentReference
-from wft_eventstore import events_for_job
-from wft_jobcheck import validate
-from wft_jobcheck.resolver import BundleInfo
-from wft_jobdoc.profile_files import load_profile
-from wft_jobstate import get_job, insert_accepted, transition
-from wft_plan import bind, canonical_bytes, compile_plan, manifest_reference, read_plan
-from wft_plan.canonical import MANIFEST_NAME
-from wft_storecheck.fixtures import running
-from wft_workflow.job import JobWorkflow
-from wft_workflow.models import ResumeSignal, TaskStatus
-from wft_workflow.testing import FakePool, Succeed, connect
-from wft_workflow.testing.control import LoadedPlan
+from dsy_artifactclient.client import ArtifactClient, RetryPolicy
+from dsy_artifactclient.errors import ArtifactNotFound
+from dsy_compile import bundle
+from dsy_dispatchapi.control import ControlRefused, control_job
+from dsy_dispatchapi.gateway import TemporalGateway
+from dsy_dispatchapi.models import ControlRequest
+from dsy_dispatchapi.patch import Resume
+from dsy_dispatchapi.resolver import StoreSourceResolver
+from dsy_dispatchapi.retrier import Retrier
+from dsy_dispatchapi.testing import running_status
+from dsy_events import from_bytes
+from dsy_events.models import ContentReference
+from dsy_eventstore import events_for_job
+from dsy_jobcheck import validate
+from dsy_jobcheck.resolver import BundleInfo
+from dsy_jobdoc.profile_files import load_profile
+from dsy_jobstate import get_job, insert_accepted, transition
+from dsy_plan import bind, canonical_bytes, compile_plan, manifest_reference, read_plan
+from dsy_plan.canonical import MANIFEST_NAME
+from dsy_storecheck.fixtures import running
+from dsy_workflow.job import JobWorkflow
+from dsy_workflow.models import ResumeSignal, TaskStatus
+from dsy_workflow.testing import FakePool, Succeed, connect
+from dsy_workflow.testing.control import LoadedPlan
 
 pytestmark = [pytest.mark.integration, pytest.mark.pair]
 
 NO_WAIT = RetryPolicy(sleep=lambda seconds: None)
 LIMIT_S = 180
-REQUESTED = "dev.wft.job.resume.requested.v1"
+REQUESTED = "dev.dsy.job.resume.requested.v1"
 
 
 @pytest.fixture(scope="session")
@@ -54,7 +54,7 @@ def profile(root):
 def template(source: dict, n: int) -> dict:
     """A compile of `source` and one checkpoint-capable simulate of `n` steps, seeded per job."""
     return {
-        "schema": "urn:wft:schema:job:1.0",
+        "schema": "urn:dsy:schema:job:1.0",
         "parameters": {"seed": "seed"},
         "tasks": {
             "build": {"type": "compile", "params": {"source": source, "entry": "job"}},
@@ -292,7 +292,7 @@ def test_patch_is_put_in_force_by_the_workflow(
     row's sequence and pending patch: the workflow loads the patch, checks it and runs again."""
     sha = secrets.token_hex(32)
     source = {
-        "uri": f"s3://wft-sources/sha256/{sha[:2]}/{sha}",
+        "uri": f"s3://dsy-sources/sha256/{sha[:2]}/{sha}",
         "sha256": sha,
         "size": 2048,
         "name": bundle.NAME,

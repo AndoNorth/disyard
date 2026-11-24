@@ -1,4 +1,4 @@
-"""The key vectors against the functions of wft_keys.
+"""The key vectors against the functions of dsy_keys.
 
 A name in STUBBED is still a stub and must raise the not-implemented error, and every other
 name must match its vectors, so the stub and the real functions share this one test.
@@ -8,8 +8,8 @@ import builtins
 import json
 from pathlib import Path
 
+import dsy_keys
 import pytest
-import wft_keys
 
 VECTORS = json.loads(
     (Path(__file__).resolve().parents[3] / "contracts/events/vectors/keys.json").read_text()
@@ -19,15 +19,15 @@ CASES = [(name, case) for name, cases in VECTORS["functions"].items() for case i
 
 
 def test_every_function_has_vectors():
-    assert set(VECTORS["functions"]) == set(wft_keys.__all__)
-    assert STUBBED <= set(wft_keys.__all__)
+    assert set(VECTORS["functions"]) == set(dsy_keys.__all__)
+    assert STUBBED <= set(dsy_keys.__all__)
 
 
 @pytest.mark.parametrize(
     ("name", "case"), CASES, ids=[f"{n}-{i}" for i, (n, _) in enumerate(CASES)]
 )
 def test_vector(name, case):
-    function = getattr(wft_keys, name)
+    function = getattr(dsy_keys, name)
     if name in STUBBED:
         with pytest.raises(NotImplementedError, match="not implemented: owned by lane K"):
             function(*case["args"])

@@ -4,10 +4,10 @@ import json
 
 import pytest
 import yaml
+from dsy_compat.window import MAX_JOB_DURATION_DAYS
+from dsy_jobdoc.profile import PROFILES, Limits, LimitsFile
+from dsy_jobdoc.profile_files import load_profile
 from jsonschema import ValidationError, validate
-from wft_compat.window import MAX_JOB_DURATION_DAYS
-from wft_jobdoc.profile import PROFILES, Limits, LimitsFile
-from wft_jobdoc.profile_files import load_profile
 
 
 @pytest.fixture

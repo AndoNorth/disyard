@@ -3,9 +3,9 @@
 import json
 from pathlib import Path
 
+from dsy_kernel.rng import MASK, SplitMix64
 from hypothesis import given
 from hypothesis import strategies as st
-from wft_kernel.rng import MASK, SplitMix64
 
 VECTORS = json.loads((Path(__file__).parent / "vectors" / "splitmix64.json").read_text())
 # The first values of seed 0 published with the reference implementation of SplitMix64.

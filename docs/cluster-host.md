@@ -71,22 +71,22 @@ The setup steps are in [docs/dev-setup.md](dev-setup.md).
 The observability stack runs only on a `ci` or `soak` cluster brought up with the switch on, and `off` is the default.
 
 ```sh
-WFT_OBS=on nix develop -c just up
+DSY_OBS=on nix develop -c just up
 ```
 
 With the switch on, each `obs` node takes the preset's `obs_stack` size instead of its own, so the host needs `obs_memory_mib` instead of `memory_mib` (15,488 MiB for `ci`, 17,664 MiB for `soak`).
-`memory-vs-preset` reads `obs_memory_mib` when `WFT_OBS=on`, and warns when the host holds `memory_mib` but not `obs_memory_mib`, because the same host still runs the cluster with the switch off.
-`dev` has no `obs_stack`, so `WFT_OBS=on` with `dev` is a usage error (exit 2).
+`memory-vs-preset` reads `obs_memory_mib` when `DSY_OBS=on`, and warns when the host holds `memory_mib` but not `obs_memory_mib`, because the same host still runs the cluster with the switch off.
+`dev` has no `obs_stack`, so `DSY_OBS=on` with `dev` is a usage error (exit 2).
 
-The node size is fixed when kind creates the node, so the switch is chosen at `just up` and recorded as `cluster.obs` beside `cluster.owner` in the state directory (`$XDG_STATE_HOME/weft`, default `~/.local/state/weft`).
+The node size is fixed when kind creates the node, so the switch is chosen at `just up` and recorded as `cluster.obs` beside `cluster.owner` in the state directory (`$XDG_STATE_HOME/disyard`, default `~/.local/state/disyard`).
 A later `just up` with the other value is refused (exit 4) until `just nuke`, which removes the record.
 A missing record reads as `off`, so a cluster brought up before the switch existed is a switch-off cluster.
 
 `scripts/cluster/obs.sh` prints the recorded value.
-`scripts/tilt/run.sh` and `just cluster-verify` export it as `WFT_OBS` over the caller's own, so Tilt enables the `opt_in` groups of `deploy/tilt/profiles.yaml` and the checks expect the obs node that exists.
-`scripts/cluster/render.sh`, `namespaces.sh` and `budget.sh` run before or without a cluster, so they read `WFT_OBS` from the environment.
+`scripts/tilt/run.sh` and `just cluster-verify` export it as `DSY_OBS` over the caller's own, so Tilt enables the `opt_in` groups of `deploy/tilt/profiles.yaml` and the checks expect the obs node that exists.
+`scripts/cluster/render.sh`, `namespaces.sh` and `budget.sh` run before or without a cluster, so they read `DSY_OBS` from the environment.
 A module adds `obs_env()` from `deploy/tilt/obs.star` to its container env, which names the collector and Pyroscope only with the switch on.
-GitHub CI never deploys the stack: `just up` refuses `WFT_OBS=on` when `GITHUB_ACTIONS` is `true` (exit 2), and no workflow sets it.
+GitHub CI never deploys the stack: `just up` refuses `DSY_OBS=on` when `GITHUB_ACTIONS` is `true` (exit 2), and no workflow sets it.
 
 ## Host access map
 
@@ -101,12 +101,12 @@ The renderer places the mappings on the control plane node as `extraPortMappings
 | `grafana` | `127.0.0.1:13000` | 30300 |
 | `temporal-ui` | `127.0.0.1:18233` | 30233 |
 
-`deploy/host/dummy-endpoint.yaml` is a stand-in for the `control-api` endpoint, one busybox replica in `wft-control`, until a real module serves it.
+`deploy/host/dummy-endpoint.yaml` is a stand-in for the `control-api` endpoint, one busybox replica in `dsy-control`, until a real module serves it.
 Port mappings are fixed when the cluster is created, so a changed table takes effect after `just nuke` and `just up`.
 A mapped port answers only once the Service behind it has endpoints, and a request before that is reset.
 
 ```sh
-kubectl --context kind-wft apply -f deploy/host/dummy-endpoint.yaml
+kubectl --context kind-dsy apply -f deploy/host/dummy-endpoint.yaml
 ss -ltn | grep -E ':(18080|18081|13000|18233)\b'
 curl http://127.0.0.1:18080/
 ```
@@ -124,7 +124,7 @@ The renderer creates the directory so it belongs to the user, while the node con
 
 `just nuke` can be repeated, and a run with nothing left exits 0.
 It removes only a directory that a preset in `deploy/presets/` names, and otherwise exits 4 before deleting anything.
-`WFT_DATA_DIR` names another directory for it, which makes the refusal testable and is refused for every path outside the presets.
+`DSY_DATA_DIR` names another directory for it, which makes the refusal testable and is refused for every path outside the presets.
 
 `just up` also applies the namespaces and their quotas, rendered from the preset by `scripts/cluster/namespaces.sh`, once every node is Ready.
 A preset resize needs `just nuke` first on a host that holds a cluster.

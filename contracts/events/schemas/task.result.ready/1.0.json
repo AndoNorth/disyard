@@ -59,7 +59,7 @@
           "type": "integer"
         },
         "uri": {
-          "pattern": "^s3://wft-(sources|components|results|checkpoints)/.+$",
+          "pattern": "^s3://dsy-(sources|components|results|checkpoints)/.+$",
           "title": "Uri",
           "type": "string"
         }
@@ -76,10 +76,10 @@
       "type": "object"
     }
   },
-  "$id": "urn:wft:schema:task.result.ready:1.0",
+  "$id": "urn:dsy:schema:task.result.ready:1.0",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
-  "description": "Data of dev.wft.task.result.ready.v1: one reference to the result, never its bytes.",
+  "description": "Data of dev.dsy.task.result.ready.v1: one reference to the result, never its bytes.",
   "properties": {
     "result": {
       "$ref": "#/$defs/ResultReference"

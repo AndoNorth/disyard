@@ -5,15 +5,15 @@ import hashlib
 from pathlib import Path
 
 import pytest
+from dsy_artifactclient.keys import attempt_key, uri_of
+from dsy_artifactclient.staging import upload_tail
+from dsy_events import format_time
+from dsy_events.models import AttemptReference, ProducerRef
+from dsy_keys import attempt_identity
+from dsy_worker.activity import serving
+from dsy_worker.pools import Context
+from dsy_workflow.models import LogTailReference, TaskInput, TaskResult
 from temporalio import activity
-from wft_artifactclient.keys import attempt_key, uri_of
-from wft_artifactclient.staging import upload_tail
-from wft_events import format_time
-from wft_events.models import AttemptReference, ProducerRef
-from wft_keys import attempt_identity
-from wft_worker.activity import serving
-from wft_worker.pools import Context
-from wft_workflow.models import LogTailReference, TaskInput, TaskResult
 
 VECTOR = Path(__file__).resolve().parents[4] / "contracts/activity/vectors/task-input/valid"
 
@@ -81,6 +81,6 @@ def context(tmp_path) -> Context:
 @pytest.fixture
 def path(monkeypatch):
     """Sets the simulate task path to the coroutine function given."""
-    import wft_worker.pools.simulate
+    import dsy_worker.pools.simulate
 
-    return lambda run: monkeypatch.setattr(wft_worker.pools.simulate, "run", run)
+    return lambda run: monkeypatch.setattr(dsy_worker.pools.simulate, "run", run)

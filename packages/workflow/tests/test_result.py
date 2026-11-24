@@ -1,19 +1,19 @@
 """The job result: pause or fail of an exhausted task, and the status a job stops in."""
 
 import pytest
+from dsy_events.models import PartialData
+from dsy_jobdoc.plan_models import Plan
+from dsy_workflow.models import REASON_MAX
+from dsy_workflow.ready import initial, resume, settle, to_place
+from dsy_workflow.result import exhausted, outcome
 from hypothesis import given, settings
 from hypothesis import strategies as st
-from wft_events.models import PartialData
-from wft_jobdoc.plan_models import Plan
-from wft_workflow.models import REASON_MAX
-from wft_workflow.ready import initial, resume, settle, to_place
-from wft_workflow.result import exhausted, outcome
 
 HASH = "b" * 64
 PARAMS = {
     "compile": {
         "source": {
-            "uri": f"s3://wft-sources/sha256/bb/{HASH}",
+            "uri": f"s3://dsy-sources/sha256/bb/{HASH}",
             "sha256": HASH,
             "size": 1,
             "name": "src.tar.gz",

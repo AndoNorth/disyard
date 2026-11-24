@@ -4,7 +4,7 @@ import importlib
 import inspect
 
 import pytest
-from wft_artifactclient.contract import failure_codes
+from dsy_artifactclient.contract import failure_codes
 
 LANES = {
     "client": "C",
@@ -19,7 +19,7 @@ LANES = {
     "bench": "K",
     "faults": "F",
 }
-MODULES = {name: importlib.import_module(f"wft_artifactclient.{name}") for name in LANES}
+MODULES = {name: importlib.import_module(f"dsy_artifactclient.{name}") for name in LANES}
 
 
 @pytest.mark.parametrize("module", MODULES)
@@ -36,7 +36,7 @@ def test_every_stub_of_a_module_is_listed(module):
 
 
 def test_the_typed_errors_are_the_exceptions_and_codes_of_failures_yaml():
-    from wft_artifactclient import errors
+    from dsy_artifactclient import errors
 
     classes = {n: c for n, c in inspect.getmembers(errors, inspect.isclass) if n != "ArtifactError"}
     classes = {n: c for n, c in classes.items() if issubclass(c, errors.ArtifactError)}

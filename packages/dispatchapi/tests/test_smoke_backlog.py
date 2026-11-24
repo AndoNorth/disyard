@@ -1,5 +1,5 @@
 import pytest
-from wft_dispatchapi import smoke
+from dsy_dispatchapi import smoke
 
 
 @pytest.fixture

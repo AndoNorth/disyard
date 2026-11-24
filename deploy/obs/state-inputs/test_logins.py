@@ -1,5 +1,5 @@
 """The service login against a migrated app database: two applies, the second changing nothing, the
-login in only `wft_reader` and able to log in, drift found and repaired, and the Secret of the
+login in only `dsy_reader` and able to log in, drift found and repaired, and the Secret of the
 module."""
 
 import importlib.util
@@ -21,7 +21,7 @@ ITEM = f"login: {LOGIN} in {GROUP}"
 
 @pytest.fixture(autouse=True)
 def state(tmp_path, monkeypatch):
-    monkeypatch.setenv("WFT_STATE_DIR", str(tmp_path))
+    monkeypatch.setenv("DSY_STATE_DIR", str(tmp_path))
     return tmp_path
 
 
@@ -72,13 +72,13 @@ def test_drifted_membership_and_attributes_repaired(server, capsys):
     appdb = server
     logins.main("apply", appdb)
     with psycopg.connect(appdb, autocommit=True) as conn:
-        conn.execute(f"grant wft_admission to {LOGIN}")
+        conn.execute(f"grant dsy_admission to {LOGIN}")
         conn.execute(f"alter role {LOGIN} createrole")
     capsys.readouterr()
 
     code, out, _ = run("check", appdb, capsys)
     assert code == 1
-    assert out == [f"{ITEM} differs: attributes; member of wft_admission, {GROUP}"]
+    assert out == [f"{ITEM} differs: attributes; member of dsy_admission, {GROUP}"]
     assert run("apply", appdb, capsys)[:2] == (0, [f"{ITEM} updated", "changed: 1"])
     assert memberships(appdb) == [GROUP]
 
@@ -88,10 +88,10 @@ def test_render_secret(state):
     assert logins.render() == first
     assert oct(logins.state_file().stat().st_mode & 0o777) == "0o600"
     [dsns] = first
-    assert dsns["metadata"] == {"name": "state-inputs-logins", "namespace": "wft-obs"}
+    assert dsns["metadata"] == {"name": "state-inputs-logins", "namespace": "dsy-obs"}
     known = json.loads(logins.state_file().read_text())
     assert dsns["stringData"] == {
-        "WFT_STATE_INPUTS_DSN": (
-            f"postgresql://{LOGIN}:{known[LOGIN]}@appdb.wft-infra.svc.cluster.local:5432/postgres"
+        "DSY_STATE_INPUTS_DSN": (
+            f"postgresql://{LOGIN}:{known[LOGIN]}@appdb.dsy-infra.svc.cluster.local:5432/postgres"
         )
     }

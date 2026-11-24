@@ -38,7 +38,7 @@ scan_images() {
 
 # scan_image NAME SCRIPT [POOL]: builds the image, scans it and removes it.
 scan_image() {
-    local name=$1 script=$2 ref="weft-scan/$1:scan"
+    local name=$1 script=$2 ref="disyard-scan/$1:scan"
     echo "== scan image $name"
     "$script" ${3:+"$3"} "$ref"
     local rc=0

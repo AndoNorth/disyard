@@ -1,6 +1,6 @@
 name: temporal
 group: infra
-namespace: wft-infra
+namespace: dsy-infra
 artifact:
   kind: chart
   pin: temporal
@@ -50,8 +50,8 @@ resources:
 readiness:
   command:
     - kubectl
-    - --context=kind-wft
-    - --namespace=wft-infra
+    - --context=kind-dsy
+    - --namespace=dsy-infra
     - wait
     - --for=condition=Available
     - deployment

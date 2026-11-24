@@ -3,10 +3,10 @@
 import shutil
 
 import pytest
-from wft_compat import read_event
-from wft_compat.vectors import GOLDEN, MANIFEST, check_manifest, golden_files, main
-from wft_events import from_bytes, to_bytes
-from wft_events.models import DATA_MODELS
+from dsy_compat import read_event
+from dsy_compat.vectors import GOLDEN, MANIFEST, check_manifest, golden_files, main
+from dsy_events import from_bytes, to_bytes
+from dsy_events.models import DATA_MODELS
 
 FILES = golden_files()
 

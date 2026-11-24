@@ -3,9 +3,9 @@ import subprocess
 from pathlib import Path
 
 import pytest
-from wft_jobcheck import validate
-from wft_jobexamples import examples, load
-from wft_plan import bind, check_job_params, compile_plan, plan_hash
+from dsy_jobcheck import validate
+from dsy_jobexamples import examples, load
+from dsy_plan import bind, check_job_params, compile_plan, plan_hash
 
 CONTRACT = Path(__file__).resolve().parents[3] / "contracts/job"
 VECTORS = CONTRACT / "vectors"

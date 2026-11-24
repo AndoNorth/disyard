@@ -16,7 +16,7 @@ Schema: [module.schema.json](module.schema.json).
 | --- | --- |
 | `name` | module name, unique across `deploy/` |
 | `group` | `infra`, `control`, `workers` or `obs` |
-| `namespace` | the namespace of the group: `wft-infra`, `wft-control`, `wft-workers` or `wft-obs` |
+| `namespace` | the namespace of the group: `dsy-infra`, `dsy-control`, `dsy-workers` or `dsy-obs` |
 | `artifact` | `{kind: chart or image, pin}`, where `pin` is a key under `charts` or `images` in `deploy/versions.yaml` |
 | `resources` | one entry per workload, each with `requests` and `limits` of `cpu` and `memory` |
 | `readiness` | `{command: [...]}` or `{resource: <kind>/<name>, condition: <type>}`, never both |
@@ -34,7 +34,7 @@ A manifest whose `group` is not `obs` and whose `depends_on` lists an `obs/...` 
 
 `contracts/module/check.sh <file>` validates one manifest.
 It exits 0 when valid, 1 with `reason: <code>: <detail>` on stderr when not, and 2 on usage.
-Artifact pins resolve against `deploy/versions.yaml`, or against `WFT_VERSIONS` when set.
+Artifact pins resolve against `deploy/versions.yaml`, or against `DSY_VERSIONS` when set.
 
 | Reason | Fails when |
 | --- | --- |

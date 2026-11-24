@@ -12,13 +12,13 @@ pool = {"key": topology["pool_label"], "value": "infra"}
 tenancy = read_yaml("../../contracts/tenancy/tenancy.yaml")
 ports = {p["name"]: p["node_port"] for p in read_yaml("../host/ports.yaml")["ports"]}
 
-tilt_profile = os.getenv("WFT_TILT_PROFILE", "")
+tilt_profile = os.getenv("DSY_TILT_PROFILE", "")
 if not tilt_profile:
-    fail("WFT_TILT_PROFILE is unset: load this module through the root Tiltfile")
+    fail("DSY_TILT_PROFILE is unset: load this module through the root Tiltfile")
 if tilt_profile not in tenancy["tilt_profiles"]:
     fail("no tenancy profile for Tilt profile %r in contracts/tenancy/tenancy.yaml" % tilt_profile)
 
-image = "wft-" + name
+image = "dsy-" + name
 custom_build(
     image,
     os.path.abspath("image.sh"),
@@ -50,24 +50,24 @@ k8s_yaml(encode_yaml({
     "kind": "Secret",
     "metadata": {"name": name + "-broker", "namespace": namespace},
     "type": "Opaque",
-    "stringData": {"WFT_BROKER_PASSWORD": broker_password},
+    "stringData": {"DSY_BROKER_PASSWORD": broker_password},
 }))
 
-svc = lambda service, port: "%s.wft-infra.svc.cluster.local:%d" % (service, port)
-credentials = "/etc/wft/store/credentials.json"
+svc = lambda service, port: "%s.dsy-infra.svc.cluster.local:%d" % (service, port)
+credentials = "/etc/dsy/store/credentials.json"
 labels = {"app.kubernetes.io/name": name}
 # Each listener at the container port the service binds by default, behind the NodePort of its row in the host map.
 listeners = {"dispatch-api": 8081, "control-api": 8080}
 env = {
-    "WFT_TEMPORAL_ADDRESS": svc("temporal-frontend", 7233),
-    "WFT_STORE_ENDPOINT": "http://" + svc("objectstore", 8333),
-    "WFT_SUBMIT_CREDENTIALS": credentials,
-    "WFT_BROKER_ADDRESS": svc("rabbitmq", 5672),
-    "WFT_TENANCY_PROFILE": tenancy["tilt_profiles"][tilt_profile],
-    "WFT_METRICS_ADDRESS": "0.0.0.0:9090",
+    "DSY_TEMPORAL_ADDRESS": svc("temporal-frontend", 7233),
+    "DSY_STORE_ENDPOINT": "http://" + svc("objectstore", 8333),
+    "DSY_SUBMIT_CREDENTIALS": credentials,
+    "DSY_BROKER_ADDRESS": svc("rabbitmq", 5672),
+    "DSY_TENANCY_PROFILE": tenancy["tilt_profiles"][tilt_profile],
+    "DSY_METRICS_ADDRESS": "0.0.0.0:9090",
 }
 # Loaded only with the switch on, so a switch-off module never resolves the helper.
-if os.getenv("WFT_OBS") == "on":
+if os.getenv("DSY_OBS") == "on":
     env.update(load_dynamic("../tilt/obs.star")["obs_env"]())
 
 k8s_yaml(encode_yaml({
@@ -116,7 +116,7 @@ k8s_yaml(encode_yaml({
                         "capabilities": {"drop": ["ALL"]},
                     },
                     "volumeMounts": [
-                        {"name": "store", "mountPath": "/etc/wft/store", "readOnly": True},
+                        {"name": "store", "mountPath": "/etc/dsy/store", "readOnly": True},
                         {"name": "tmp", "mountPath": "/tmp"},
                     ],
                 }],

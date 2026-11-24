@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 import yaml
-from wft_plan import check_job_params
+from dsy_plan import check_job_params
 
 VECTORS = Path(__file__).resolve().parents[3] / "contracts/job/vectors/job-params/invalid"
 TEMPLATES = sorted(VECTORS.glob("*/*.template.json"))

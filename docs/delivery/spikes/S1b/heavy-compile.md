@@ -1,7 +1,7 @@
 # Spike: heavy compile in the `ci` compile slot (S1b)
 
 Run on 2026-11-09.
-Owner: the [workload toolchain epic](https://github.com/AndoNorth/weft/issues/11), lane S, filed as [spike issue 274](https://github.com/AndoNorth/weft/issues/274).
+Owner: the [workload toolchain epic](https://github.com/AndoNorth/disyard/issues/11), lane S, filed as [spike issue 274](https://github.com/AndoNorth/disyard/issues/274).
 Method: [docs/delivery/method.md](../../method.md).
 Spec: the S1b block of [docs/delivery/epics/07-workload-toolchain.md](../../epics/07-workload-toolchain.md), and this spike gates C.2.
 Throwaway code: [code/](code/), run as `nix develop -c docs/delivery/spikes/S1b/code/run.sh`.
@@ -22,7 +22,7 @@ Recorded for D9: `unshare --user --net` fails with `Operation not permitted` in 
 The fail consequences, in the order of the issue:
 
 1. Part (1) passed, so no compile slot resize goes to the cluster epic.
-2. Part (2) failed, so C.2 keeps only the bundle that exceeds a short `--timeout`, and the compile OOM at the slot is left to the failure scenarios epic ([#15](https://github.com/AndoNorth/weft/issues/15)) on the cluster.
+2. Part (2) failed, so C.2 keeps only the bundle that exceeds a short `--timeout`, and the compile OOM at the slot is left to the failure scenarios epic ([#15](https://github.com/AndoNorth/disyard/issues/15)) on the cluster.
 3. Part (3) passed, so D9 does not fall back on account of the network check, though the `unshare` probe above means D9 (a) never takes effect in a default-profile container, as "What the numbers change" states.
 
 ## Question
@@ -35,34 +35,34 @@ Does the workload library bundle build inside the `ci` compile slot of 1 CPU and
 | --- | --- |
 | Host | WSL2, 20,002 MiB `MemTotal` (`host.mem_total_mib`), 8 CPUs (`host.cpus`), kernel 6.6.87.2 (`host.kernel`), Docker 29.1.3 (`host.docker`), builtin seccomp profile and cgroup namespaces (`host.seccomp`) |
 | Other work on the host | 1 other container running (`host.other_containers`), not touched, 16,540 MiB `MemAvailable` before (`host.mem_available_mib.before`) and 16,326 MiB after (`host.mem_available_mib.after`) |
-| Locks | one of the two `wft-t1` lock files for the whole run, no cluster |
-| Containers | one at a time, `--memory 1g --memory-swap 1g --cpus 1`, run as the invoking user, label `wft.dev/verify-run`, each removed after its step, no published port |
-| Left behind | none: `docker ps -a --filter label=wft.dev/verify-run` lists 0 after the run (`containers.left.label_all`) |
+| Locks | one of the two `dsy-t1` lock files for the whole run, no cluster |
+| Containers | one at a time, `--memory 1g --memory-swap 1g --cpus 1`, run as the invoking user, label `dsy.dev/verify-run`, each removed after its step, no published port |
+| Left behind | none: `docker ps -a --filter label=dsy.dev/verify-run` lists 0 after the run (`containers.left.label_all`) |
 | Image | `python:3.13-slim-bookworm@sha256:a5a7017efc5969e00ae2b91c8eb0631049a569652aa4ffc4501769049ae45c72`, Python 3.13.18 (`tool.image_python`) |
 | Build | `componentize-py` 0.25.1 (`install.<n>.componentize_py`) installed with `pip` into a throwaway venv in the run directory, never in `uv.lock`, `wasm-tools` 1.262.0 (`tool.wasm_tools`) on the host for the target check |
-| WIT | `package wft:task@1.0.0; world task { include wasi:cli/command@0.2.9; }`, with the WASI 0.2.9 WIT packages from the hash-checked `WebAssembly/WASI` v0.2.9 release, as in the [cold start spike](../S6/cold-start.md) |
+| WIT | `package dsy:task@1.0.0; world task { include wasi:cli/command@0.2.9; }`, with the WASI 0.2.9 WIT packages from the hash-checked `WebAssembly/WASI` v0.2.9 release, as in the [cold start spike](../S6/cold-start.md) |
 
 ## The stand-in bundle
 
 The workload library and the kernel do not exist yet, so the bundle is a stand-in of both, written by [code/gen.py](code/gen.py).
 
-- Entry: `wft_workloads.main` with the `Run` export class, which imports `hashlib`, `json`, `struct`, `time`, `xml.etree.ElementTree` and `xml.sax.saxutils` at the top, reads `/in/input.json` and writes one digest block.
-- Kernel: `wft_kernel.gen0`, one generated module of 262,346 bytes of source (`bundle-0.25-1-0.source_bytes`), 564 functions of 64-bit arithmetic with a loop, a branch and a table lookup each, imported at the top of the entry.
+- Entry: `dsy_workloads.main` with the `Run` export class, which imports `hashlib`, `json`, `struct`, `time`, `xml.etree.ElementTree` and `xml.sax.saxutils` at the top, reads `/in/input.json` and writes one digest block.
+- Kernel: `dsy_kernel.gen0`, one generated module of 262,346 bytes of source (`bundle-0.25-1-0.source_bytes`), 564 functions of 64-bit arithmetic with a loop, a branch and a table lookup each, imported at the top of the entry.
 - Output: a component of 29.4 to 29.5 MiB (`standin.<n>.component_bytes`), which `wasm-tools component targets` accepts against the world on 3 of 3 runs (`standin.<n>.targets_ok`).
 
 How it differs from the real workload library bundle:
 
-- The real bundle holds `wft_kernel` and `wft_workloads` as their issues define them, which are hand-written modules and not one generated module.
+- The real bundle holds `dsy_kernel` and `dsy_workloads` as their issues define them, which are hand-written modules and not one generated module.
   The 256 KiB of generated source is an estimate set above the size of those packages as the spec lists them, and the build peak grows with the source and with the number of functions, so the real bundle should build at or below these figures.
 - The real build installs locked dependencies with `uv pip install --target` from the wheelhouse mirror, while the stand-in has none, as the workload library will have none, so the install step here is only the `pip` install of `componentize-py` itself.
-- The real build runs inside the compile image with the build library (`python -m wft_compile build`), not a bare `componentize-py` call in a stock Python image.
+- The real build runs inside the compile image with the build library (`python -m dsy_compile build`), not a bare `componentize-py` call in a stock Python image.
 
-The heavy bundles use the same generator with a larger kernel module (`--size-mib N`), as the spec's `python -m wft_compile.heavy --size-mib N` proposes, and three probes vary the shape: the same source split across several modules (`--modules K`) and a module that fills memory at import time and keeps only its length (`--hold-mib H`).
+The heavy bundles use the same generator with a larger kernel module (`--size-mib N`), as the spec's `python -m dsy_compile.heavy --size-mib N` proposes, and three probes vary the shape: the same source split across several modules (`--modules K`) and a module that fills memory at import time and keeps only its length (`--hold-mib H`).
 
 ## Method
 
 - Per run, an install container with the default network creates a venv on the shared work directory and installs `componentize-py==0.25.1` into it with `pip`, and is removed.
-- Each build then gets its own container with `--network none` that starts idle (`sleep`), copies the bundle tree and the WIT tree into its own `/tmp` from inside the container, so their page cache is charged to it, and runs `componentize-py -d wit -w task componentize wft_workloads.main` through `docker exec`.
+- Each build then gets its own container with `--network none` that starts idle (`sleep`), copies the bundle tree and the WIT tree into its own `/tmp` from inside the container, so their page cache is charged to it, and runs `componentize-py -d wit -w task componentize dsy_workloads.main` through `docker exec`.
 - Peak container memory is read from the container's cgroup two ways, as in the cold start spike:
   - `memory.peak`, which counts page cache;
   - the peak working set, `memory.current` less `inactive_file` (what `docker stats` reports), and the peak anon, sampled every 10 ms.
@@ -136,7 +136,7 @@ A manual probe before the run gave the same `Operation not permitted` as root in
 1. Compile slot: no resize, the stand-in uses 417 MiB of the slot at most.
 2. Heavy-compile bundles (C.2): the spec's row asks S1b for the smallest N whose build exceeds the slot, and none exists with `componentize-py` 0.25.1, so by the fail consequence C.2 keeps only the bundle that exceeds a short `--timeout`.
    Every build here took 7.56 to 10.68 s at one CPU, so the stand-in itself exceeds a `--timeout` of 5 s, and a 2.25 MiB module, the largest that builds, gives the widest margin.
-3. A proposal for C.2, not part of the fail consequence: a single generated module of 2.5 MiB fails in about 8.5 s on 3 of 3 runs with exit 1 and the fuel message, so it is a deterministic `compile_failed` bundle that `python -m wft_compile.heavy --size-mib 2.5` would give for free.
+3. A proposal for C.2, not part of the fail consequence: a single generated module of 2.5 MiB fails in about 8.5 s on 3 of 3 runs with exit 1 and the fuel message, so it is a deterministic `compile_failed` bundle that `python -m dsy_compile.heavy --size-mib 2.5` would give for free.
 4. Compile OOM (#15): with `componentize-py` 0.25.1, a bundle cannot drive the `componentize-py` step past about 930 MiB of `memory.peak`, so a `compile_oom` at the 1 GiB slot needs another heavy step or a lower memory limit.
    By inference from the peak anon, not measured, a 2.0 MiB module (848 to 849 MiB anon) would be killed under a 768 MiB limit, because anon memory cannot be reclaimed with no swap.
 5. D9: option (a) as written runs the step under `unshare` only when the profile allows it, and the default seccomp profile does not, so in a default-profile pod the build library always takes its fallback and the step runs without in-process network isolation.

@@ -2,21 +2,21 @@
 reasons:
   - code: MALFORMED
     source: application
-    read_from: x-opt-wft-reason
+    read_from: x-opt-dsy-reason
     on_intake: expected
     event: job.dead.lettered
     recovery: never
     action: show, then purge, and end the named job through the control API
   - code: UNSUPPORTED_VERSION
     source: application
-    read_from: x-opt-wft-reason
+    read_from: x-opt-dsy-reason
     on_intake: expected
     event: job.dead.lettered
     recovery: after-fix
     action: deploy a reader of that major inside the replay window of a previous major, then replay
   - code: ADMISSION_FAILED
     source: application
-    read_from: x-opt-wft-reason
+    read_from: x-opt-dsy-reason
     on_intake: expected
     event: job.dead.lettered
     recovery: replay

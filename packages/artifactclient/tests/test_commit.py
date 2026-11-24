@@ -1,7 +1,7 @@
 """Commit by reference and the index-first put of a connection holder, with a store and a database.
 
-The database login is a stand-in member of `wft_artifacts`, the group role of the dispatch API and
-of the workflow's record activity, and the purge is run by a stand-in member of `wft_reaper`.
+The database login is a stand-in member of `dsy_artifacts`, the group role of the dispatch API and
+of the workflow's record activity, and the purge is run by a stand-in member of `dsy_reaper`.
 """
 
 import hashlib
@@ -11,17 +11,17 @@ from datetime import UTC, datetime, timedelta
 
 import psycopg
 import pytest
+from dsy_artifactclient import client as client_module
+from dsy_artifactclient.client import ArtifactClient, RetryPolicy
+from dsy_artifactclient.commit import CommitRefused, commit
+from dsy_artifactclient.errors import ArtifactLost, ArtifactNotFound, OutputUploadFailed
+from dsy_artifactclient.keys import split_uri
+from dsy_artifactindex import Deleted, Purged, index_reference, purge, tombstone, uses_of
+from dsy_events.models import ProducerRef
+from dsy_storecheck.fixtures import running
+from dsy_storecheck.s3 import client as s3_client
 from psycopg import sql
 from psycopg.conninfo import make_conninfo
-from wft_artifactclient import client as client_module
-from wft_artifactclient.client import ArtifactClient, RetryPolicy
-from wft_artifactclient.commit import CommitRefused, commit
-from wft_artifactclient.errors import ArtifactLost, ArtifactNotFound, OutputUploadFailed
-from wft_artifactclient.keys import split_uri
-from wft_artifactindex import Deleted, Purged, index_reference, purge, tombstone, uses_of
-from wft_events.models import ProducerRef
-from wft_storecheck.fixtures import running
-from wft_storecheck.s3 import client as s3_client
 
 pytestmark = [pytest.mark.integration, pytest.mark.pair]
 
@@ -79,12 +79,12 @@ def login(appdb):
 
 @pytest.fixture
 def artifacts(login):
-    return login("wft_artifacts")
+    return login("dsy_artifacts")
 
 
 @pytest.fixture
 def reaper(login):
-    return login("wft_reaper")
+    return login("dsy_reaper")
 
 
 @pytest.fixture
@@ -289,7 +289,7 @@ def test_put_content_links_the_job_after_the_bytes(role, artifacts, job, monkeyp
     submit = role("submit")
     data = payload("manifest")
     sha256 = hashlib.sha256(data).hexdigest()
-    uri = f"s3://wft-sources/sha256/{sha256[:2]}/{sha256}"
+    uri = f"s3://dsy-sources/sha256/{sha256[:2]}/{sha256}"
     seen = []
     send = submit._upload
 

@@ -5,7 +5,7 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: s14-hostpath
-  namespace: wft-obs
+  namespace: dsy-obs
 spec:
   accessModes: [ReadWriteOnce]
   storageClassName: standard
@@ -17,7 +17,7 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: s14-local
-  namespace: wft-obs
+  namespace: dsy-obs
   annotations:
     volumeType: local
 spec:
@@ -31,12 +31,12 @@ apiVersion: v1
 kind: Pod
 metadata:
   name: s14-volumes
-  namespace: wft-obs
+  namespace: dsy-obs
 spec:
   nodeSelector:
-    wft.dev/pool: obs
+    dsy.dev/pool: obs
   tolerations:
-    - key: wft.dev/pool
+    - key: dsy.dev/pool
       operator: Equal
       value: obs
       effect: NoSchedule

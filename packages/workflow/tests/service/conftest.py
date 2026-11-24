@@ -8,18 +8,18 @@ from contextlib import asynccontextmanager
 from datetime import UTC, datetime
 
 import pytest
+from dsy_events import build_event
+from dsy_events.models import JobParams
+from dsy_jobdoc.plan_models import Plan
+from dsy_keys import workflow_id
+from dsy_workflow.contract import naming
+from dsy_workflow.job import JobWorkflow
+from dsy_workflow.service import Config, serve
+from dsy_workflow.testing import FakeControl
+from dsy_workflow.testing.control import LoadedPlan
 from temporalio.client import Client, WorkflowHandle
 from temporalio.common import PinnedVersioningOverride, WorkerDeploymentVersion
 from temporalio.service import RPCError
-from wft_events import build_event
-from wft_events.models import JobParams
-from wft_jobdoc.plan_models import Plan
-from wft_keys import workflow_id
-from wft_workflow.contract import naming
-from wft_workflow.job import JobWorkflow
-from wft_workflow.service import Config, serve
-from wft_workflow.testing import FakeControl
-from wft_workflow.testing.control import LoadedPlan
 
 HASH = "a" * 64
 # One compile task, whose path runs a control activity of each kind it needs on the control
@@ -45,7 +45,7 @@ PLAN = Plan.model_validate(
                 "allow_partial": False,
                 "params": {
                     "source": {
-                        "uri": f"s3://wft-sources/sha256/aa/{HASH}",
+                        "uri": f"s3://dsy-sources/sha256/aa/{HASH}",
                         "sha256": HASH,
                         "size": 2048,
                         "name": "bundle.tar.gz",
@@ -113,7 +113,7 @@ async def _start_job(client: Client, control: FakeControl, build_id: str) -> Wor
     sha256 = uuid.uuid4().hex * 2
     accepted = build_event(
         "job.accepted",
-        source="/wft/dispatch",
+        source="/dsy/dispatch",
         tenant="acme",
         jobid=str(uuid.uuid4()),
         priorityclass="standard",
@@ -122,7 +122,7 @@ async def _start_job(client: Client, control: FakeControl, build_id: str) -> Wor
         time=datetime(2026, 11, 12, 12, 0, tzinfo=UTC),
         data={
             "manifest": {
-                "uri": f"s3://wft-sources/sha256/{sha256[:2]}/{sha256}",
+                "uri": f"s3://dsy-sources/sha256/{sha256[:2]}/{sha256}",
                 "sha256": sha256,
                 "size": 2048,
                 "name": "manifest.json",

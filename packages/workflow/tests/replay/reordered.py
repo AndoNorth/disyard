@@ -1,12 +1,12 @@
 """Builds of JobWorkflow outside the workflow package: one that changes nothing, which the recorded
 histories replay on, and one that reorders two activities, which they must not replay on."""
 
+from dsy_events import Event
+from dsy_events.models import JobParams
+from dsy_workflow.contract import naming
+from dsy_workflow.job import Identity, JobWorkflow
 from temporalio import workflow
 from temporalio.common import VersioningBehavior
-from wft_events import Event
-from wft_events.models import JobParams
-from wft_workflow.contract import naming
-from wft_workflow.job import Identity, JobWorkflow
 
 
 @workflow.defn(name=naming().workflow.type, versioning_behavior=VersioningBehavior.PINNED)

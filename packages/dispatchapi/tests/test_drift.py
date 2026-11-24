@@ -6,7 +6,7 @@ import sys
 from pathlib import Path
 
 import pytest
-from wft_dispatchapi.models import FILES, schema_path
+from dsy_dispatchapi.models import FILES, schema_path
 
 ROOT = Path(__file__).resolve().parents[3]
 SCHEMAS = [schema_path(name) for name in FILES]
@@ -15,7 +15,7 @@ SCHEMAS = [schema_path(name) for name in FILES]
 RENAME = """
 import sys
 from pydantic import create_model
-from wft_dispatchapi import gen, models
+from dsy_dispatchapi import gen, models
 name, field = sys.argv[1:]
 model = models.FILES[name]
 
@@ -39,7 +39,7 @@ sys.exit(gen.main(["--check"]))
 
 def run(*args):
     return subprocess.run(
-        [sys.executable, "-m", "wft_dispatchapi.gen", *args], capture_output=True, text=True
+        [sys.executable, "-m", "dsy_dispatchapi.gen", *args], capture_output=True, text=True
     )
 
 

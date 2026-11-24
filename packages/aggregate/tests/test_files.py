@@ -6,19 +6,19 @@ import json
 from importlib.resources import files as package_files
 from pathlib import Path
 
+import dsy_aggregate.__main__ as cli
 import pytest
-import wft_aggregate.__main__ as cli
-from wft_aggregate.run import run
-from wft_artifactclient.aggregate import put_index
-from wft_artifactclient.bench import ListCounter
-from wft_artifactclient.client import ArtifactClient, RetryPolicy
-from wft_artifactclient.models import IndexEntry
-from wft_events.models import ProducerRef
-from wft_kernel.expected import expected_digest
-from wft_kernel.rows import blocks
-from wft_kernel.summary import difference, expected_summary
-from wft_kernel.writer import write
-from wft_runtime.contract import check
+from dsy_aggregate.run import run
+from dsy_artifactclient.aggregate import put_index
+from dsy_artifactclient.bench import ListCounter
+from dsy_artifactclient.client import ArtifactClient, RetryPolicy
+from dsy_artifactclient.models import IndexEntry
+from dsy_events.models import ProducerRef
+from dsy_kernel.expected import expected_digest
+from dsy_kernel.rows import blocks
+from dsy_kernel.summary import difference, expected_summary
+from dsy_kernel.writer import write
+from dsy_runtime.contract import check
 
 JOB = "123e4567-e89b-42d3-a456-426614174000"
 TENANT = "acme"
@@ -62,7 +62,7 @@ def test_output_bytes_independent_of_arrival_order(tmp_path, aggregation):
 )
 def test_summary_equals_host_expectation(tmp_path, aggregation, args):
     """Two level 1 fixture results and one missing input, against the pure Python host summary."""
-    level1 = package_files("wft_kernel") / "fixtures" / "level1"
+    level1 = package_files("dsy_kernel") / "fixtures" / "level1"
     inputs = {
         task: json.loads((level1 / workload / "input.json").read_text())
         for task, workload in (("t1", "cpu_burn"), ("t2", "mem_hold"))

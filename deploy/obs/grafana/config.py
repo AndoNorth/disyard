@@ -28,7 +28,7 @@ DASHBOARDS_PATH = "/var/lib/grafana-dashboards"
 VOLUME_SIZE = "1Gi"
 # A ConfigMap holds at most 1 MiB, and the dashboards share one.
 CONFIGMAP_LIMIT = 1024 * 1024
-# The workflow id of a job is wft_keys.workflow_id(job_id).
+# The workflow id of a job is dsy_keys.workflow_id(job_id).
 WORKFLOW_ID_PREFIX = "job-"
 
 
@@ -53,7 +53,7 @@ def datasources() -> dict:
                 "uid": "prometheus",
                 "type": "prometheus",
                 "access": "proxy",
-                "url": "http://prometheus.wft-obs:9090",
+                "url": "http://prometheus.dsy-obs:9090",
                 "isDefault": True,
             },
             {
@@ -61,7 +61,7 @@ def datasources() -> dict:
                 "uid": "loki",
                 "type": "loki",
                 "access": "proxy",
-                "url": "http://loki.wft-obs:3100",
+                "url": "http://loki.dsy-obs:3100",
                 "jsonData": {
                     # The correlation ids are structured metadata, read by label name.
                     "derivedFields": [
@@ -88,7 +88,7 @@ def datasources() -> dict:
                 "uid": "tempo",
                 "type": "tempo",
                 "access": "proxy",
-                "url": "http://tempo.wft-obs:3200",
+                "url": "http://tempo.dsy-obs:3200",
                 "correlations": [
                     {
                         "label": "Workflow",
@@ -107,7 +107,7 @@ def datasources() -> dict:
                 "uid": "pyroscope",
                 "type": "grafana-pyroscope-datasource",
                 "access": "proxy",
-                "url": "http://pyroscope.wft-obs:4040",
+                "url": "http://pyroscope.dsy-obs:4040",
             },
         ],
     }
@@ -123,7 +123,7 @@ def dashboard_provider() -> dict:
         "apiVersion": 1,
         "providers": [
             {
-                "name": "weft",
+                "name": "disyard",
                 "type": "file",
                 "disableDeletion": True,
                 "allowUiUpdates": False,

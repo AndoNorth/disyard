@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# Builds the image of one pool worker from this tree: wheels of the workspace packages that wft-worker with the pool's
+# Builds the image of one pool worker from this tree: wheels of the workspace packages that dsy-worker with the pool's
 # extra needs, built on the host, over the third-party packages that uv.lock pins by hash, on the pinned Python base,
 # with the pool's release binaries from the url of nix/wasm-tools.nix (wasm-tools on compile, wasmtime on simulate),
 # each refused when its SHA-256 differs from the pin's hash. uv reaches the compile image as a wheel of its extra.
-# The release assets and the third-party packages are read from the build cache first, $WFT_BUILD_CACHE, by default
-# $XDG_CACHE_HOME/weft/build, so a repeated build downloads nothing.
+# The release assets and the third-party packages are read from the build cache first, $DSY_BUILD_CACHE, by default
+# $XDG_CACHE_HOME/disyard/build, so a repeated build downloads nothing.
 # The default tag carries the short commit, for tracing only.
 # Usage: image.sh POOL [REF]. REF defaults to EXPECTED_REF, which Tilt sets, then to <POOL>-worker:<short commit>.
 # Exit 0 built, 1 a failed fetch, hash check or build, 2 usage.
@@ -26,7 +26,7 @@ context=$(mktemp -d)
 trap 'rm -rf "$context"' EXIT
 mkdir "$context/bin"
 
-cache=${WFT_BUILD_CACHE:-${XDG_CACHE_HOME:-$HOME/.cache}/weft/build}
+cache=${DSY_BUILD_CACHE:-${XDG_CACHE_HOME:-$HOME/.cache}/disyard/build}
 
 # The binary of one release asset of nix/wasm-tools.nix, with a fixed modification time, which names the wasmtime
 # module cache. The asset is cached under its SHA-256, and a cached copy is checked again before it is used.
@@ -49,7 +49,7 @@ release() {
 }
 for tool in "${tools[@]}"; do release "$tool"; done
 
-export=(uv export --frozen --quiet --no-dev --package wft-worker --extra "$pool")
+export=(uv export --frozen --quiet --no-dev --package dsy-worker --extra "$pool")
 "${export[@]}" --no-emit-workspace -o "$context/requirements.txt"
 "${export[@]}" --only-emit-workspace --no-editable --no-hashes --no-annotate --no-header | while read -r package; do
     uv build --quiet --wheel --out-dir "$context/wheels" "$package"

@@ -11,11 +11,11 @@ This page does not repeat them.
 
 | Rule | Why | How it is enforced |
 | --- | --- | --- |
-| One cluster at a time | the kind cluster is always named `wft`, and it binds fixed ports on `127.0.0.1` | `just up` refuses (exit 4) a cluster it did not start, or one started for another preset or observability value |
-| The cluster lock | two recipes touching the cluster at once corrupt a run | every cluster recipe takes `/tmp/wft-cluster.lock` and waits up to 900 s, unless the caller already holds it (`WFT_CLUSTER_LOCK_HELD`) |
+| One cluster at a time | the kind cluster is always named `dsy`, and it binds fixed ports on `127.0.0.1` | `just up` refuses (exit 4) a cluster it did not start, or one started for another preset or observability value |
+| The cluster lock | two recipes touching the cluster at once corrupt a run | every cluster recipe takes `/tmp/dsy-cluster.lock` and waits up to 900 s, unless the caller already holds it (`DSY_CLUSTER_LOCK_HELD`) |
 | Enough memory | the nodes are containers inside the WSL VM, and a short host gets nodes OOM-killed | `just up` refuses (exit 4) when the preset needs more memory than the host has |
 | One preset per cluster | node sizes are fixed when kind creates a node | `just nuke` first, then `just up` for another preset |
-| One observability value per cluster | the observability node is sized at creation | `just nuke` first, then `just up` with the other `WFT_OBS` |
+| One observability value per cluster | the observability node is sized at creation | `just nuke` first, then `just up` with the other `DSY_OBS` |
 | Loopback only | no published port may be reachable from the network | `just cluster-verify` checks every host port listens on `127.0.0.1` |
 
 The lock is released when a recipe ends, so `just up`, `just cluster-verify` and `just smoke` can follow each other.
@@ -23,14 +23,14 @@ Another person's or agent's recipe holding the lock makes yours wait, and a wait
 Check who holds it before assuming a hang, which prints nothing when the lock is free:
 
 ```sh
-fuser -v /tmp/wft-cluster.lock
+fuser -v /tmp/dsy-cluster.lock
 ```
 
 ### Presets and memory
 
-`WFT_PRESET` selects the preset, `ci` when unset.
+`DSY_PRESET` selects the preset, `ci` when unset.
 
-| Preset | Memory needed | With `WFT_OBS=on` | Nodes | Use |
+| Preset | Memory needed | With `DSY_OBS=on` | Nodes | Use |
 | --- | --- | --- | --- | --- |
 | `ci` | 12,032 MiB | 15,488 MiB | one each of control plane, infra, obs, compile, simulate and aggregate | the default, and the only preset `just smoke` accepts |
 | `dev` | 12,288 MiB | not available | the same six, with more CPU | iterating with live update, `scripts/tilt/run.sh dev` |
@@ -49,7 +49,7 @@ A resized preset needs `just nuke` first, because the kubelet reservation is wri
    ```
 
    Every line must be `ok` or `warn`, see [`just doctor`](../dev-setup.md#just-doctor).
-   A `warn memory-vs-preset` with `WFT_OBS=on` means the host fits the cluster only with the observability switch off.
+   A `warn memory-vs-preset` with `DSY_OBS=on` means the host fits the cluster only with the observability switch off.
 
 2. Check the ports.
 
@@ -66,7 +66,7 @@ A resized preset needs `just nuke` first, because the kubelet reservation is wri
    nix develop -c just up
    ```
 
-   It creates the six kind nodes and the local registry `wft-registry`, applies the namespaces and quotas, and ends with `cluster wft ready: preset ci, WFT_OBS=off, 6 nodes`.
+   It creates the six kind nodes and the local registry `dsy-registry`, applies the namespaces and quotas, and ends with `cluster dsy ready: preset ci, DSY_OBS=off, 6 nodes`.
    Running it again with nothing changed leaves every container as it was.
 
 4. Deploy the modules.
@@ -77,7 +77,7 @@ A resized preset needs `just nuke` first, because the kubelet reservation is wri
 
    `tilt ci` builds the images, deploys every module of the profile and exits when all resources are ready, or non-zero when one fails.
    `just up` creates the cluster and does not deploy anything, so a cluster that passed step 3 holds no workload until this step.
-   `scripts/tilt/run.sh` takes the observability value from the cluster's record, so it needs no `WFT_OBS`.
+   `scripts/tilt/run.sh` takes the observability value from the cluster's record, so it needs no `DSY_OBS`.
 
 5. Check the cluster and then prove the platform, see [Check health](#check-health).
 
@@ -86,7 +86,7 @@ A resized preset needs `just nuke` first, because the kubelet reservation is wri
 The observability stack (Prometheus and its alert rules, Loki, Tempo, Pyroscope, Grafana) runs only when the cluster is created with the switch on:
 
 ```sh
-WFT_OBS=on nix develop -c just up
+DSY_OBS=on nix develop -c just up
 scripts/tilt/run.sh ci
 ```
 
@@ -121,7 +121,7 @@ To follow a job after it was submitted, ask the control API for its status, with
 curl -s http://127.0.0.1:18080/v1/tenants/acme/jobs/<job id>
 ```
 
-The Temporal UI shows the same job at `http://127.0.0.1:18233/namespaces/wft/workflows/job-<job id>`.
+The Temporal UI shows the same job at `http://127.0.0.1:18233/namespaces/dsy/workflows/job-<job id>`.
 The control actions are `cancel`, `terminate`, `pause` and `resume`, posted to `/v1/tenants/acme/jobs/<job id>/<action>` or, for a whole batch, to `/v1/tenants/acme/batches/<batch key>/<action>`.
 The routes, bodies and reason codes are in [the API contract](../../contracts/api/README.md).
 
@@ -129,8 +129,8 @@ More drivers, each needing the cluster up and the modules deployed:
 
 | Driver | What it runs |
 | --- | --- |
-| `uv run --frozen python -m wft_dispatchapi.smoke --scenario submit --jobs 3` | the API scenarios `upload`, `submit`, `cancel-before-start`, `run`, `pause-resume`, `cancel-running` and `restart` |
-| `uv run --frozen python -m wft_workflow.harness --kube-context kind-wft smoke --pools real --jobs 5` | real jobs through the deployed pool workers |
+| `uv run --frozen python -m dsy_dispatchapi.smoke --scenario submit --jobs 3` | the API scenarios `upload`, `submit`, `cancel-before-start`, `run`, `pause-resume`, `cancel-running` and `restart` |
+| `uv run --frozen python -m dsy_workflow.harness --kube-context kind-dsy smoke --pools real --jobs 5` | real jobs through the deployed pool workers |
 
 A job that is stuck has a path through [triage by symptom](triage.md).
 
@@ -141,14 +141,14 @@ nix develop -c just cluster-verify
 ```
 
 It is read-only and prints one `ok <check>` or `FAIL <check>` line each for the preset, pod slots, module budget, nodes, node limits, quotas, module readiness, live requests, pressure and loopback ports, then a count line.
-It exits 0 when every check is ok, 1 when one failed, and 4 when there is no cluster `wft` or it was started for another preset.
+It exits 0 when every check is ok, 1 when one failed, and 4 when there is no cluster `dsy` or it was started for another preset.
 
 `just smoke` starts with the same checks (row `cluster-verify`) and then drives a job, so on a deployed cluster `just smoke` alone is the whole health check.
 
 For a quick look at the pods:
 
 ```sh
-kubectl --context kind-wft get pods -A
+kubectl --context kind-dsy get pods -A
 ```
 
 With the observability stack on, firing alerts are at `http://127.0.0.1:19090/alerts` after a forward, and each has an entry in [alert response](alerts.md).
@@ -162,35 +162,35 @@ The `cluster-health` and `stack-health` dashboards in Grafana show nodes, pods, 
 | Start clean, or change the preset or the switch | `nix develop -c just nuke` | nothing of the cluster: it deletes the cluster, the registry and the host data directory |
 
 `just nuke` is safe to repeat, and it removes only a data directory that a preset in `deploy/presets/` names.
-It reads the preset from the cluster's own record, so `WFT_PRESET` is only needed when that record is gone.
+It reads the preset from the cluster's own record, so `DSY_PRESET` is only needed when that record is gone.
 
 ### Confirm nothing is left behind
 
 ```sh
 kind get clusters
-docker ps -a --filter label=io.x-k8s.kind.cluster=wft --format '{{.Names}}'
-docker ps -a --filter name=wft-registry --format '{{.Names}}'
-ls ~/.local/share/wft
-ls ~/.local/state/weft/cluster.owner ~/.local/state/weft/cluster.obs
+docker ps -a --filter label=io.x-k8s.kind.cluster=dsy --format '{{.Names}}'
+docker ps -a --filter name=dsy-registry --format '{{.Names}}'
+ls ~/.local/share/dsy
+ls ~/.local/state/disyard/cluster.owner ~/.local/state/disyard/cluster.obs
 nix develop -c just ports
 ```
 
-After `just nuke` the first command prints `No kind clusters found.`, the two `docker ps` commands print nothing, `ls ~/.local/share/wft` shows no directory of the preset you ran (a later render or test run can recreate it empty), the two state files are reported missing, and `just ports` exits 0 unless something else holds a port.
+After `just nuke` the first command prints `No kind clusters found.`, the two `docker ps` commands print nothing, `ls ~/.local/share/dsy` shows no directory of the preset you ran (a later render or test run can recreate it empty), the two state files are reported missing, and `just ports` exits 0 unless something else holds a port.
 A container that `just ports` labels a leftover is named in its output and is never removed by it, so remove it by hand with `docker rm -f <name>`.
 
 What survives on purpose, because it is not part of the cluster:
 
 | What | Where | Remove with |
 | --- | --- | --- |
-| Generated credentials of the services | `~/.local/state/weft/` (`$WFT_STATE_DIR`, else `$XDG_STATE_HOME/weft`) | `rm -r` the directory, only with no cluster running |
-| The build download cache | `~/.cache/weft/build` (`$WFT_BUILD_CACHE`) | `rm -r`, always safe |
-| The cluster lock file | `/tmp/wft-cluster.lock` | harmless, leave it |
+| Generated credentials of the services | `~/.local/state/disyard/` (`$DSY_STATE_DIR`, else `$XDG_STATE_HOME/disyard`) | `rm -r` the directory, only with no cluster running |
+| The build download cache | `~/.cache/disyard/build` (`$DSY_BUILD_CACHE`) | `rm -r`, always safe |
+| The cluster lock file | `/tmp/dsy-cluster.lock` | harmless, leave it |
 
 ## Host sleep and restart
 
 Windows sleep, a Windows update reboot and `wsl --shutdown` stop the VM and every node without a graceful shutdown.
 Run `nix develop -c just up` after the host is back: it starts the stopped node containers and waits for the API server.
-Then run `nix develop -c just cluster-verify`, because pods that restarted show in [WftPodRestartUnexpected](alerts.md#wftpodrestartunexpected) and the data on the host data directory survives.
+Then run `nix develop -c just cluster-verify`, because pods that restarted show in [DsyPodRestartUnexpected](alerts.md#dsypodrestartunexpected) and the data on the host data directory survives.
 The WSL settings that keep the VM running are in [the cluster host guide](../cluster-host.md#what-no-setting-covers).
 
 ## Where the names are
@@ -200,7 +200,7 @@ The cluster, its kubectl context and the namespaces are the only names a command
 
 | Name | Meaning | Defined in |
 | --- | --- | --- |
-| `wft` | the kind cluster, and the prefix of namespaces and environment variables | [scripts/cluster/](../../scripts/cluster/) and [deploy/presets/](../../deploy/presets/) |
-| `kind-wft` | the kubectl context | `context=` in [scripts/up.sh](../../scripts/up.sh) |
-| `wft-infra`, `wft-control`, `wft-workers`, `wft-obs` | the namespaces | [contracts/topology/topology.yaml](../../contracts/topology/topology.yaml) |
+| `dsy` | the kind cluster, and the prefix of namespaces and environment variables | [scripts/cluster/](../../scripts/cluster/) and [deploy/presets/](../../deploy/presets/) |
+| `kind-dsy` | the kubectl context | `context=` in [scripts/up.sh](../../scripts/up.sh) |
+| `dsy-infra`, `dsy-control`, `dsy-workers`, `dsy-obs` | the namespaces | [contracts/topology/topology.yaml](../../contracts/topology/topology.yaml) |
 | `acme` | the first tenant | [contracts/tenancy/](../../contracts/tenancy/README.md) |

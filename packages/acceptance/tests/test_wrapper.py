@@ -10,7 +10,7 @@ import pytest
 ROOT = Path(__file__).resolve().parents[3]
 SMOKE = ROOT / "scripts/smoke.sh"
 BASH = shutil.which("bash")
-DRIVER = ["uv", "run", "--frozen", "python", "-m", "wft_acceptance.smoke"]
+DRIVER = ["uv", "run", "--frozen", "python", "-m", "dsy_acceptance.smoke"]
 
 # Each fake appends its arguments and the lock variable it saw to calls.log.
 FAKES = {
@@ -29,7 +29,7 @@ def bin_dir(tmp_path) -> Path:
     bin_dir.mkdir()
     for name, body in FAKES.items():
         fake = bin_dir / name
-        log = 'echo "${0##*/} lock=${WFT_CLUSTER_LOCK_HELD:-} $*" >>"$FAKE_LOG"'
+        log = 'echo "${0##*/} lock=${DSY_CLUSTER_LOCK_HELD:-} $*" >>"$FAKE_LOG"'
         fake.write_text(f"#!{BASH}\n{log}\n{body}\n")
         fake.chmod(0o755)
     (bin_dir / "dirname").symlink_to(shutil.which("dirname"))
@@ -39,7 +39,7 @@ def bin_dir(tmp_path) -> Path:
 def smoke(bin_dir: Path, **env: str) -> tuple[subprocess.CompletedProcess, list[str]]:
     log = bin_dir.parent / "calls.log"
     log.touch()
-    base = {k: v for k, v in os.environ.items() if not k.startswith(("WFT_", "FAKE_"))}
+    base = {k: v for k, v in os.environ.items() if not k.startswith(("DSY_", "FAKE_"))}
     result = subprocess.run(
         [BASH, SMOKE],
         capture_output=True,
@@ -50,7 +50,7 @@ def smoke(bin_dir: Path, **env: str) -> tuple[subprocess.CompletedProcess, list[
 
 
 def test_another_preset_is_usage(bin_dir):
-    result, calls = smoke(bin_dir, WFT_PRESET="dev")
+    result, calls = smoke(bin_dir, DSY_PRESET="dev")
     assert result.returncode == 2
     assert "preset ci, the only preset that deploys the pool workers, not dev" in result.stderr
     assert calls == []
@@ -67,12 +67,12 @@ def test_a_missing_tool_is_usage(bin_dir):
 def test_a_lock_not_taken_is_refused(bin_dir):
     result, calls = smoke(bin_dir, FAKE_FLOCK_EXIT="1")
     assert result.returncode == 4
-    assert result.stderr.strip() == "refused: could not take /tmp/wft-cluster.lock in 900 s"
+    assert result.stderr.strip() == "refused: could not take /tmp/dsy-cluster.lock in 900 s"
     assert calls == ["flock lock= -w 900 9"]
 
 
 def test_the_lock_held_by_a_caller_is_not_taken_again(bin_dir):
-    result, calls = smoke(bin_dir, WFT_CLUSTER_LOCK_HELD="1")
+    result, calls = smoke(bin_dir, DSY_CLUSTER_LOCK_HELD="1")
     assert result.returncode == 0
     assert [c.split()[0] for c in calls] == ["timeout", "uv"]
 

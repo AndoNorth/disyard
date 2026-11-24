@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Module loader: validates one deploy/<component>/module.yaml and names the reason when it fails.
-# Artifact pins resolve against WFT_VERSIONS, default deploy/versions.yaml.
+# Artifact pins resolve against DSY_VERSIONS, default deploy/versions.yaml.
 # Usage: check.sh <file>. Exit 0 valid, 1 invalid with "reason: <code>: <detail>" on stderr, 2 usage.
 set -euo pipefail
 here=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
@@ -9,7 +9,7 @@ source "$here/../../scripts/verify/cluster/lib/tools.sh"
 
 [ $# -eq 1 ] && [ -f "$1" ] || { echo "usage: check.sh <module.yaml>" >&2; exit 2; }
 file=$1
-versions=${WFT_VERSIONS:-$here/../../deploy/versions.yaml}
+versions=${DSY_VERSIONS:-$here/../../deploy/versions.yaml}
 
 fail() {
     echo "reason: $1: $2" >&2

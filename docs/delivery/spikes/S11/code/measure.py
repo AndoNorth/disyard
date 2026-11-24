@@ -23,35 +23,35 @@ import uuid
 from datetime import timedelta
 from pathlib import Path
 
+from dsy_artifactclient.aggregate import put_index
+from dsy_artifactclient.client import ArtifactClient, kind_caps
+from dsy_artifactclient.models import IndexEntry
+from dsy_compile.build import build
+from dsy_events.models import ProducerRef
+from dsy_itest.session import RUN_LABEL, Session, image_ref
+from dsy_runtime.pins import GUEST_OVERHEAD_MIB
+from dsy_storecheck.fixtures import running
+from dsy_storecheck.s3 import dump_credentials
+from dsy_temporal import event_data_converter
+from dsy_workflow.contract import naming
+from dsy_workloads import bundle
 from temporalio import workflow
 from temporalio.client import Client
 from temporalio.common import RetryPolicy
 from temporalio.worker import UnsandboxedWorkflowRunner, Worker
-from wft_artifactclient.aggregate import put_index
-from wft_artifactclient.client import ArtifactClient, kind_caps
-from wft_artifactclient.models import IndexEntry
-from wft_compile.build import build
-from wft_events.models import ProducerRef
-from wft_itest.session import RUN_LABEL, Session, image_ref
-from wft_runtime.pins import GUEST_OVERHEAD_MIB
-from wft_storecheck.fixtures import running
-from wft_storecheck.s3 import dump_credentials
-from wft_temporal import event_data_converter
-from wft_workflow.contract import naming
-from wft_workloads import bundle
 
 MIB = 1048576
 ROOT = Path(__file__).resolve().parents[5]
 CODE = Path(__file__).resolve().parent
 JOB = "123e4567-e89b-42d3-a456-426614174000"
 TENANT = "acme"
-ENTRY = "wft_workloads.main"
+ENTRY = "dsy_workloads.main"
 ECHO = json.loads((ROOT / "contracts/workload/vectors/level0/echo/input.json").read_text())
 # The smallest valid row, so a result at the staging cap holds the most rows, as the aggregate
 # library's own memory test builds it.
 HEAD = (
     b'<?xml version="1.0" encoding="UTF-8"?>\n'
-    b'<results schema="wft.sim.v1" seed="3">\n'
+    b'<results schema="dsy.sim.v1" seed="3">\n'
     b'<block id="b" kind="scalar">\n'
 )
 ROW = b'<row name="" value="0"/>\n'
@@ -149,7 +149,7 @@ def docker(*args: str, check: bool = True) -> subprocess.CompletedProcess:
 def temporal_binary(out: Path, run_id: str) -> Path:
     """The temporal CLI of the pinned image, copied out of a container that is never started."""
     binary = out / "temporal"
-    name = f"wft-{run_id}-temporal-cli"
+    name = f"dsy-{run_id}-temporal-cli"
     docker(
         "create",
         "--name",
@@ -184,7 +184,7 @@ def start_dev_server(binary: Path, port: int, out: Path) -> subprocess.Popen:
 
 
 def seed(store, out: Path) -> dict:
-    """The workload library bundle, its component built by wft_compile, and an index of one result
+    """The workload library bundle, its component built by dsy_compile, and an index of one result
     at the staging cap."""
     role = lambda name: ArtifactClient(store.endpoint, store.credentials[name])  # noqa: E731
     store.store().create_buckets()
@@ -224,7 +224,7 @@ class Capped:
     def __init__(
         self, args, pool: str, run: int, memory_mib: int, cpus: float, address: str, store
     ):
-        self.name = f"wft-{args.run_id}-{pool}-{memory_mib}-{run}"
+        self.name = f"dsy-{args.run_id}-{pool}-{memory_mib}-{run}"
         self.scratch = Path(tempfile.mkdtemp(prefix=f"s11-{pool}-", dir=args.out))
         creds = self.scratch.parent / f"{self.name}.creds.json"
         dump_credentials(
@@ -236,15 +236,15 @@ class Capped:
         )
         self.queue = f"s11-{pool}-{uuid.uuid4().hex[:8]}"
         env = {
-            "HOME": "/var/wft/home", "TMPDIR": "/var/wft/tmp", "UV_CACHE_DIR": "/var/wft/uv-cache",
-            "XDG_CACHE_HOME": "/var/wft/xdg-cache",
+            "HOME": "/var/dsy/home", "TMPDIR": "/var/dsy/tmp", "UV_CACHE_DIR": "/var/dsy/uv-cache",
+            "XDG_CACHE_HOME": "/var/dsy/xdg-cache",
         }  # fmt: skip
         command = [
             "docker", "run", "--detach", "--name", self.name,
             "--label", f"{RUN_LABEL}={args.run_id}",
             "--memory", f"{memory_mib}m", "--memory-swap", f"{memory_mib}m", "--cpus", str(cpus),
             "--network", "host", "--read-only", "--user", f"{os.getuid()}:{os.getgid()}",
-            f"--volume={self.scratch}:/var/wft", f"--volume={creds}:/etc/s11/creds.json:ro",
+            f"--volume={self.scratch}:/var/dsy", f"--volume={creds}:/etc/s11/creds.json:ro",
             f"--volume={CODE / 'worker.py'}:/opt/s11/worker.py:ro",
             *(f"--env={k}={v}" for k, v in env.items()), args.image,
             "python", "/opt/s11/worker.py", "--pool", pool, "--temporal", address,

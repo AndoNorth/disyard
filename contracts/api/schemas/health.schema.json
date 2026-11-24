@@ -1,5 +1,5 @@
 {
-  "$id": "urn:wft:schema:api:health:1",
+  "$id": "urn:dsy:schema:api:health:1",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
   "properties": {

@@ -27,7 +27,7 @@
           "type": "integer"
         },
         "uri": {
-          "pattern": "^s3://wft-sources/.+$",
+          "pattern": "^s3://dsy-sources/.+$",
           "title": "Uri",
           "type": "string"
         }
@@ -43,7 +43,7 @@
       "type": "object"
     }
   },
-  "$id": "urn:wft:schema:temporal:resume-signal:1",
+  "$id": "urn:dsy:schema:temporal:resume-signal:1",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
   "description": "The argument of the signal resume, with the row's pending patch or null.",

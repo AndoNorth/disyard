@@ -1,15 +1,15 @@
 """The ready set: dependencies, max_parallel, fan-out and fan-in, blocked dependents, aggregate
 readiness, the manual pause and the resume."""
 
+from dsy_jobdoc.plan_models import Plan
+from dsy_workflow.ready import DONE, initial, resume, settle, to_interrupt, to_place
+from dsy_workflow.result import exhausted, outcome
 from hypothesis import given, settings
 from hypothesis import strategies as st
-from wft_jobdoc.plan_models import Plan
-from wft_workflow.ready import DONE, initial, resume, settle, to_interrupt, to_place
-from wft_workflow.result import exhausted, outcome
 
 HASH = "a" * 64
 SOURCE = {
-    "uri": f"s3://wft-sources/sha256/aa/{HASH}",
+    "uri": f"s3://dsy-sources/sha256/aa/{HASH}",
     "sha256": HASH,
     "size": 2048,
     "name": "bundle.tar.gz",

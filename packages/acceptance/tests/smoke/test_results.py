@@ -4,8 +4,8 @@ address, each test changing the record or what the fake refuses."""
 import base64
 import json
 
-from wft_acceptance import smoke
-from wft_acceptance.smoke import results
+from dsy_acceptance import smoke
+from dsy_acceptance.smoke import results
 
 ROWS = [*map(str, range(1, 12)), "run"]
 
@@ -35,10 +35,10 @@ def gauges(fake) -> dict[str, list[dict]]:
 def test_results_push_every_row_and_the_run_and_post_one_annotation(fake_obs, capsys):
     code, lines, err = run(capsys)
     pushed = gauges(fake_obs)
-    verdicts = pushed["wft_smoke_row_verdict"]
+    verdicts = pushed["dsy_smoke_row_verdict"]
     assert [p["row"] for p in verdicts] == ROWS
     assert all(p["verdict"] == "ok" and p["value"] == 1.0 for p in verdicts)
-    seconds = pushed["wft_smoke_row_seconds"]
+    seconds = pushed["dsy_smoke_row_seconds"]
     assert [p["row"] for p in seconds] == ROWS
     assert all(p["value"] >= 0 for p in seconds)
     assert seconds[-1]["value"] >= max(p["value"] for p in seconds[:-1])
@@ -80,7 +80,7 @@ def test_results_of_a_failed_row_6_still_push_with_row_11_skipped_and_the_run_fa
 
     monkeypatch.setattr(smoke.api.Api, "submit_one", refused)
     code, lines, _ = run(capsys)
-    verdicts = {p["row"]: p["verdict"] for p in gauges(fake_obs)["wft_smoke_row_verdict"]}
+    verdicts = {p["row"]: p["verdict"] for p in gauges(fake_obs)["dsy_smoke_row_verdict"]}
     assert [*verdicts] == ROWS
     assert verdicts["6"] == "FAIL"
     assert verdicts["11"] == "skip"

@@ -1,36 +1,36 @@
 [project]
-name = "wft-worker"
+name = "dsy-worker"
 version = "0.0.0"
 license = "Apache-2.0"
 requires-python = ">=3.13,<3.14"
 dependencies = [
     "temporalio",
-    "wft-artifactclient",
-    "wft-events",
-    "wft-keys",
-    "wft-obs",
-    "wft-stages",
-    "wft-temporal",
-    "wft-workflow",
+    "dsy-artifactclient",
+    "dsy-events",
+    "dsy-keys",
+    "dsy-obs",
+    "dsy-stages",
+    "dsy-temporal",
+    "dsy-workflow",
 ]
 
 # One extra per pool image: the library its child processes run, and the binary it needs on PATH.
 [project.optional-dependencies]
-compile = ["uv==0.11.21", "wft-compile"]
-simulate = ["wft-runtime"]
-aggregate = ["wft-aggregate"]
+compile = ["uv==0.11.21", "dsy-compile"]
+simulate = ["dsy-runtime"]
+aggregate = ["dsy-aggregate"]
 
 [tool.uv.sources]
-wft-aggregate = { workspace = true }
-wft-artifactclient = { workspace = true }
-wft-compile = { workspace = true }
-wft-events = { workspace = true }
-wft-keys = { workspace = true }
-wft-obs = { workspace = true }
-wft-runtime = { workspace = true }
-wft-stages = { workspace = true }
-wft-temporal = { workspace = true }
-wft-workflow = { workspace = true }
+dsy-aggregate = { workspace = true }
+dsy-artifactclient = { workspace = true }
+dsy-compile = { workspace = true }
+dsy-events = { workspace = true }
+dsy-keys = { workspace = true }
+dsy-obs = { workspace = true }
+dsy-runtime = { workspace = true }
+dsy-stages = { workspace = true }
+dsy-temporal = { workspace = true }
+dsy-workflow = { workspace = true }
 
 [build-system]
 requires = ["hatchling"]

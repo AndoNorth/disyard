@@ -3,4 +3,4 @@ inputs:
   - name: connections
     unit: connections
     source: {kind: sql, ref: select 1}
-    metric: wft_connections
+    metric: dsy_connections

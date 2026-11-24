@@ -1,5 +1,5 @@
 # State inputs exporter of the observability stack: one Deployment on the obs pool that reads the state inputs of the app
-# database as the wft_reader group and serves them as wft_state_* gauges on the metrics port, which Prometheus scrapes.
+# database as the dsy_reader group and serves them as dsy_state_* gauges on the metrics port, which Prometheus scrapes.
 # The host-side resource state-inputs-logins creates the login in the app database before the pod starts, as admission
 # does for its own, and the Secret state-inputs-logins carries its DSN.
 load("../../tilt/obs.star", "obs_env")
@@ -11,7 +11,7 @@ res = module["resources"]
 topology = read_yaml("../../../contracts/topology/topology.yaml")
 pool = {"key": topology["pool_label"], "value": "obs"}
 
-image = "wft-" + name
+image = "dsy-" + name
 custom_build(
     image,
     os.path.abspath("image.sh"),
@@ -31,11 +31,11 @@ local_resource(
     labels = [module["group"]],
 )
 
-ready = "/tmp/wft-ready"
+ready = "/tmp/dsy-ready"
 labels = {"app.kubernetes.io/name": name}
 env = {
-    "WFT_METRICS_ADDRESS": "0.0.0.0:9464",
-    "WFT_READY_FILE": ready,
+    "DSY_METRICS_ADDRESS": "0.0.0.0:9464",
+    "DSY_READY_FILE": ready,
 }
 env.update(obs_env())
 

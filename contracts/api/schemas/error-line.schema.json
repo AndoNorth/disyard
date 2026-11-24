@@ -28,7 +28,7 @@
       "type": "object"
     }
   },
-  "$id": "urn:wft:schema:api:error-line:1",
+  "$id": "urn:dsy:schema:api:error-line:1",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
   "description": "The last line of a call that stopped after it began answering.",

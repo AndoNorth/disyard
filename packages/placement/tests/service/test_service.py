@@ -12,9 +12,9 @@ import urllib.error
 import urllib.request
 
 import pytest
-from wft_placement import service
-from wft_workflow.placement import PlacementRequest, ServicePlacer, StaticPlacer
-from wft_workflow.testing import placer_contract
+from dsy_placement import service
+from dsy_workflow.placement import PlacementRequest, ServicePlacer, StaticPlacer
+from dsy_workflow.testing import placer_contract
 
 SIMULATE = PlacementRequest(task_type="simulate", cpu_milli=250, memory_mib=512, run_timeout_s=900)
 ENV = {"KUBERNETES_SERVICE_HOST": "10.96.0.1", "KUBERNETES_SERVICE_PORT": "443"}
@@ -43,7 +43,7 @@ def test_place_logs_one_line(ci_api, running, decisions, until):
     placer.place(SIMULATE.model_copy(update={"memory_mib": 600}))
     placer.place(SIMULATE.model_copy(update={"task_type": "no such\ntype"}))
     assert decisions() == [
-        "placed type=simulate cpu_milli=250 memory_mib=512 escalate=true queue=wft-simulate "
+        "placed type=simulate cpu_milli=250 memory_mib=512 escalate=true queue=dsy-simulate "
         "memory_class=512Mi escalated=false snapshot_age_s=0 ready_workers=1",
         'unschedulable type=simulate failure=insufficient_memory reason="600 MiB is above the 512 '
         'MiB simulate slot" snapshot_age_s=0 ready_workers=1',
@@ -102,7 +102,7 @@ def test_pools_view_shape(ci_api, running, until):
     before = json.loads(body)
     assert before["snapshot"] is None and before["last_error"] is None
     assert before["pools"]["simulate"] == {
-        "queue": "wft-simulate",
+        "queue": "dsy-simulate",
         "slot": {
             "cpu_milli": 250,
             "memory_mib": 512,
@@ -118,13 +118,13 @@ def test_pools_view_shape(ci_api, running, until):
     view = json.loads(call(served.url, "/pools", method="GET")[1])
     assert list(view["pools"]) == ["compile", "simulate", "aggregate"]
     assert view["pools"]["simulate"]["capacity"] == {
-        "nodes": ["wft-worker4"],
+        "nodes": ["dsy-worker4"],
         "allocatable_cpu_milli": 400,
         "allocatable_memory_mib": 584,
         "requested_cpu_milli": 350,
         "requested_memory_mib": 562,
         "ready_workers": 1,
-        "images": ["wft-simulate-worker:tilt-0d5a8e3c7b2f1946"],
+        "images": ["dsy-simulate-worker:tilt-0d5a8e3c7b2f1946"],
         "free_cpu_milli": 50,
         "free_memory_mib": 22,
     }
@@ -135,13 +135,13 @@ def test_pools_view_shape(ci_api, running, until):
 @pytest.mark.parametrize(
     ("changes", "named"),
     [
-        ({"WFT_PLACEMENT_LISTEN": "8080"}, "WFT_PLACEMENT_LISTEN"),
-        ({"WFT_PLACEMENT_LISTEN": "0.0.0.0:http"}, "WFT_PLACEMENT_LISTEN"),
-        ({"WFT_PLACEMENT_LISTEN": "0.0.0.0:65536"}, "WFT_PLACEMENT_LISTEN"),
-        ({"WFT_SNAPSHOT_EVERY_S": "0"}, "WFT_SNAPSHOT_EVERY_S"),
-        ({"WFT_SNAPSHOT_EVERY_S": "-5"}, "WFT_SNAPSHOT_EVERY_S"),
-        ({"WFT_SNAPSHOT_EVERY_S": "nan"}, "WFT_SNAPSHOT_EVERY_S"),
-        ({"WFT_SNAPSHOT_EVERY_S": "soon"}, "WFT_SNAPSHOT_EVERY_S"),
+        ({"DSY_PLACEMENT_LISTEN": "8080"}, "DSY_PLACEMENT_LISTEN"),
+        ({"DSY_PLACEMENT_LISTEN": "0.0.0.0:http"}, "DSY_PLACEMENT_LISTEN"),
+        ({"DSY_PLACEMENT_LISTEN": "0.0.0.0:65536"}, "DSY_PLACEMENT_LISTEN"),
+        ({"DSY_SNAPSHOT_EVERY_S": "0"}, "DSY_SNAPSHOT_EVERY_S"),
+        ({"DSY_SNAPSHOT_EVERY_S": "-5"}, "DSY_SNAPSHOT_EVERY_S"),
+        ({"DSY_SNAPSHOT_EVERY_S": "nan"}, "DSY_SNAPSHOT_EVERY_S"),
+        ({"DSY_SNAPSHOT_EVERY_S": "soon"}, "DSY_SNAPSHOT_EVERY_S"),
         ({"KUBERNETES_SERVICE_HOST": ""}, "KUBERNETES_SERVICE_HOST"),
         ({"KUBERNETES_SERVICE_PORT": "https"}, "KUBERNETES_SERVICE_PORT"),
     ],
@@ -153,14 +153,14 @@ def test_config_refused_exits_2(changes, named):
 
 def test_config_refused_exits_2_from_the_command():
     result = subprocess.run(
-        [sys.executable, "-m", "wft_placement"],
-        env=os.environ | ENV | {"WFT_SNAPSHOT_EVERY_S": "soon"},
+        [sys.executable, "-m", "dsy_placement"],
+        env=os.environ | ENV | {"DSY_SNAPSHOT_EVERY_S": "soon"},
         capture_output=True,
         text=True,
     )
     assert result.returncode == 2
     assert result.stdout == ""
-    assert result.stderr == "wft_placement: WFT_SNAPSHOT_EVERY_S='soon' is not a positive number\n"
+    assert result.stderr == "dsy_placement: DSY_SNAPSHOT_EVERY_S='soon' is not a positive number\n"
 
 
 def test_config_defaults():

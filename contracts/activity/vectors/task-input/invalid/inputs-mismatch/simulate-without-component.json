@@ -18,19 +18,19 @@
       "task_type": "simulate"
     },
     "datacontenttype": "application/json",
-    "dataschema": "urn:wft:schema:task.requested:1.0",
+    "dataschema": "urn:dsy:schema:task.requested:1.0",
     "id": "579a2286-be81-522f-821b-c664abfaec0c",
     "jobclass": "short",
     "jobid": "3a9617fa-df7c-5760-a644-42d559e0f433",
     "priorityclass": "standard",
-    "source": "/wft/workflow",
+    "source": "/dsy/workflow",
     "specversion": "1.0",
     "subject": "3a9617fa-df7c-5760-a644-42d559e0f433/sim-0",
     "taskid": "sim-0",
     "tenant": "acme",
     "time": "2026-11-10T12:00:00.123456Z",
     "traceparent": "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01",
-    "type": "dev.wft.task.requested.v1"
+    "type": "dev.dsy.task.requested.v1"
   },
   "resume_counter": 0,
   "seed": 7,

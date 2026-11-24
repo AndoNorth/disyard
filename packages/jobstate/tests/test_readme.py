@@ -3,7 +3,7 @@
 import re
 from pathlib import Path
 
-from wft_jobstate.models import JobRow
+from dsy_jobstate.models import JobRow
 
 README = (Path(__file__).resolve().parents[3] / "contracts/state/README.md").read_text()
 

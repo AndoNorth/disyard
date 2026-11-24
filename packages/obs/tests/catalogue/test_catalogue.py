@@ -1,14 +1,14 @@
 """Every series a dashboard query or a rule expression reads is in the platform catalogue, and, with
 `-m cluster` after one `just smoke`, every catalogue entry has samples in Prometheus.
 
-The live check needs `WFT_OBS_PROMETHEUS_URL`, and names each absent entry in its failure."""
+The live check needs `DSY_OBS_PROMETHEUS_URL`, and names each absent entry in its failure."""
 
 import os
 import time
 from pathlib import Path
 
 import pytest
-from wft_obs import catalogue
+from dsy_obs import catalogue
 
 ROOT = Path(__file__).resolve().parents[4]
 DASHBOARDS = sorted((ROOT / "deploy/obs/grafana/dashboards").glob("*.json"))
@@ -20,12 +20,12 @@ SCRAPE_WAIT_S = 60
 @pytest.mark.parametrize(
     ("expr", "expected"),
     [
-        ("wft_a_total", {"wft_a_total"}),
-        ('sum by (pool) (rate(wft_a_total{pool="x"}[$__rate_interval]))', {"wft_a_total"}),
-        ("histogram_quantile(0.5, sum by (le) (rate(wft_h_bucket[5m])))", {"wft_h_bucket"}),
+        ("dsy_a_total", {"dsy_a_total"}),
+        ('sum by (pool) (rate(dsy_a_total{pool="x"}[$__rate_interval]))', {"dsy_a_total"}),
+        ("histogram_quantile(0.5, sum by (le) (rate(dsy_h_bucket[5m])))", {"dsy_h_bucket"}),
         ("a / on (pool) group_left (x) b > bool 1", {"a", "b"}),
         ('sum(x) unless label_replace(y, "z", "$1", "w", "(.*)")', {"x", "y"}),
-        ('{__name__="wft_c", job="j"}', {"wft_c"}),
+        ('{__name__="dsy_c", job="j"}', {"dsy_c"}),
         ("count(max by (pod) (kube_pod_info offset 5m)) or vector(0)", {"kube_pod_info"}),
         ("topk(3, rate(a[1h])) * 100", {"a"}),
     ],
@@ -58,51 +58,51 @@ def test_a_dashboard_naming_an_unknown_series_fails_the_check(tmp_path):
     dashboard = tmp_path / "bad.json"
     dashboard.write_text(
         '{"panels": [{"datasource": {"type": "prometheus", "uid": "prometheus"}, "targets":'
-        ' [{"expr": "sum(rate(wft_nope_total[5m]))"}]}]}'
+        ' [{"expr": "sum(rate(dsy_nope_total[5m]))"}]}]}'
     )
     assert catalogue.uncatalogued(catalogue.dashboard_exprs(dashboard), CATALOGUE) == {
-        "wft_nope_total"
+        "dsy_nope_total"
     }
 
 
 def test_a_rule_naming_an_unknown_series_fails_the_check(tmp_path):
     rules = tmp_path / "bad.yaml"
     rules.write_text(
-        "groups:\n- name: g\n  rules:\n  - alert: A\n    expr: wft_nope_total > 0\n"
-        "  - record: wft:ok\n    expr: wft_admission_live_jobs\n"
-        "  - alert: B\n    expr: wft:ok > 1\n"
+        "groups:\n- name: g\n  rules:\n  - alert: A\n    expr: dsy_nope_total > 0\n"
+        "  - record: dsy:ok\n    expr: dsy_admission_live_jobs\n"
+        "  - alert: B\n    expr: dsy:ok > 1\n"
     )
     unknown = catalogue.uncatalogued(
         catalogue.rule_exprs(rules), CATALOGUE, catalogue.recorded(rules)
     )
-    assert unknown == {"wft_nope_total"}
+    assert unknown == {"dsy_nope_total"}
 
 
 def test_histogram_suffixes_are_the_catalogued_name():
     names = catalogue.names(CATALOGUE)
-    assert "wft_workflow_job_seconds_bucket" in names
-    assert "wft_workflow_jobs_total_bucket" not in names
+    assert "dsy_workflow_job_seconds_bucket" in names
+    assert "dsy_workflow_jobs_total_bucket" not in names
 
 
 def test_absent_lists_the_entries_with_no_sample(fake):
     small = {
         "metrics": {
-            "wft_a": {"type": "gauge"},
-            "wft_b_seconds": {"type": "histogram"},
-            "wft_c_total": {"type": "counter"},
+            "dsy_a": {"type": "gauge"},
+            "dsy_b_seconds": {"type": "histogram"},
+            "dsy_c_total": {"type": "counter"},
         },
         "external": {"ext_d": {"type": "gauge"}, "ext_e": {"type": "gauge", "conditional": True}},
     }
     sample = [{"metric": {}, "value": [0, "1"]}]
-    fake.vectors["count(last_over_time(wft_a[10m]))"] = sample
-    fake.vectors["count(last_over_time(wft_b_seconds_bucket[10m]))"] = sample
-    assert catalogue.absent(fake.url, small) == ["ext_d", "wft_c_total"]
+    fake.vectors["count(last_over_time(dsy_a[10m]))"] = sample
+    fake.vectors["count(last_over_time(dsy_b_seconds_bucket[10m]))"] = sample
+    assert catalogue.absent(fake.url, small) == ["ext_d", "dsy_c_total"]
 
 
 @pytest.mark.cluster
 def test_every_catalogue_entry_is_in_prometheus():
-    if not (url := os.environ.get("WFT_OBS_PROMETHEUS_URL")):
-        pytest.skip("WFT_OBS_PROMETHEUS_URL is not set")
+    if not (url := os.environ.get("DSY_OBS_PROMETHEUS_URL")):
+        pytest.skip("DSY_OBS_PROMETHEUS_URL is not set")
     # A series written just before the check appears after the next scrape.
     deadline = time.monotonic() + SCRAPE_WAIT_S
     while (missing := catalogue.absent(url, CATALOGUE)) and time.monotonic() < deadline:

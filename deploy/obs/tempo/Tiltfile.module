@@ -1,5 +1,5 @@
 # Tempo of the observability stack: one monolithic pod on the obs pool that keeps traces on a local volume
-# for the retention of decision 20, takes spans from the collector by OTLP HTTP, and serves the trace API that wft_obs.query reads.
+# for the retention of decision 20, takes spans from the collector by OTLP HTTP, and serves the trace API that dsy_obs.query reads.
 # config.py renders every object of the module, and the configuration is watched, so a change rolls the pod.
 module = read_yaml("module.yaml")
 name = module["name"]

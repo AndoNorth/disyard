@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Usage: ui-check.sh <url> <png-path>
 # Opens a live page in a real browser through chrome-devtools-axi, reads its title and URL, and saves a screenshot.
-# The browser comes from the environment, never from this repo: the weft browser-cdp instance exports the
+# The browser comes from the environment, never from this repo: the disyard browser-cdp instance exports the
 # endpoint (CHROME_DEVTOOLS_AXI_BROWSER_URL) and the bridge session (CHROME_DEVTOOLS_AXI_SESSION).
 # Prints "ok|FAIL <step> <detail>" lines. Exit 0 all steps ok, 1 a step failed, 2 usage or no browser.
 set -euo pipefail
@@ -11,7 +11,7 @@ url=$1
 png=$2
 
 # shellcheck disable=SC2016 # the command substitution is text for the user to run
-hint='start the weft browser and load its env: BROWSER_CDP_INSTANCE=weft browser-cdp start && eval "$(BROWSER_CDP_INSTANCE=weft browser-cdp env)"'
+hint='start the disyard browser and load its env: BROWSER_CDP_INSTANCE=disyard browser-cdp start && eval "$(BROWSER_CDP_INSTANCE=disyard browser-cdp env)"'
 command -v chrome-devtools-axi >/dev/null || { echo "usage: chrome-devtools-axi not on PATH, install the owner's dotfiles" >&2; exit 2; }
 [ -n "${CHROME_DEVTOOLS_AXI_BROWSER_URL:-}" ] || { echo "usage: CHROME_DEVTOOLS_AXI_BROWSER_URL is not set, $hint" >&2; exit 2; }
 # A bridge keeps the URL it started with, so a missing session would reuse another instance's bridge.

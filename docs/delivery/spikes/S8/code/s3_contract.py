@@ -1,5 +1,5 @@
 # ruff: noqa: B023, E501  (the closures run in the iteration that binds their variables, and detail strings are long)
-"""S3 contract script for the wft object store.
+"""S3 contract script for the dsy object store.
 
   s3_contract.py --endpoint http://127.0.0.1:PORT base|access|lifecycle [opts]
 
@@ -110,7 +110,7 @@ def base(ep):
         request_checksum_calculation="when_required",
         response_checksum_validation="when_required",
     )
-    b = "wft-contract-base"
+    b = "dsy-contract-base"
     data = os.urandom(1 << 20)
 
     def chk(cid, fn, want=None):
@@ -295,10 +295,10 @@ def access(ep):
             f"A.{name}.put_lifecycle refused (not admin)",
             code(e) if not ok else "ACCEPTED",
         )
-        ok, e = attempt(lambda: s3.create_bucket(Bucket=f"wft-rogue-{name}"))
+        ok, e = attempt(lambda: s3.create_bucket(Bucket=f"dsy-rogue-{name}"))
         rec(not ok, f"A.{name}.create_bucket refused", code(e) if not ok else "ACCEPTED")
     bad = client(ep, R["roles"]["submit"]["ak"], "wrongsecretwrongsecretwrongsecret00")
-    ok, e = attempt(lambda: bad.put_object(Bucket="wft-sources", Key="probe/badsecret", Body=b"x"))
+    ok, e = attempt(lambda: bad.put_object(Bucket="dsy-sources", Key="probe/badsecret", Body=b"x"))
     rec(not ok, "A.badsecret.put refused", code(e) if not ok else "ACCEPTED")
     anon = boto3.client(
         "s3",
@@ -310,9 +310,9 @@ def access(ep):
             retries={"max_attempts": 1},
         ),
     )
-    ok, e = attempt(lambda: anon.put_object(Bucket="wft-sources", Key="probe/anon", Body=b"x"))
+    ok, e = attempt(lambda: anon.put_object(Bucket="dsy-sources", Key="probe/anon", Body=b"x"))
     rec(not ok, "A.anonymous.put refused", code(e) if not ok else "ACCEPTED")
-    ok, e = attempt(lambda: anon.get_object(Bucket="wft-sources", Key="probe/seed"))
+    ok, e = attempt(lambda: anon.get_object(Bucket="dsy-sources", Key="probe/seed"))
     rec(not ok, "A.anonymous.get refused", code(e) if not ok else "ACCEPTED")
 
 
@@ -324,10 +324,10 @@ def lifecycle(ep, timeout, mode):
     now = dt.datetime.now(dt.UTC)
     midnight = now.replace(hour=0, minute=0, second=0, microsecond=0)
     exp = {"Date": midnight} if mode == "date" else {"Days": 1}
-    # rule only on wft-results prefix exp/, nothing on wft-checkpoints or wft-results prefix keep/
+    # rule only on dsy-results prefix exp/, nothing on dsy-checkpoints or dsy-results prefix keep/
     ok, e = attempt(
         lambda: s3.put_bucket_lifecycle_configuration(
-            Bucket="wft-results",
+            Bucket="dsy-results",
             LifecycleConfiguration={
                 "Rules": [
                     {
@@ -346,20 +346,20 @@ def lifecycle(ep, timeout, mode):
             },
         )
     )
-    rec(ok, f"L01 put rule on wft-results ({mode})", "" if ok else code(e))
+    rec(ok, f"L01 put rule on dsy-results ({mode})", "" if ok else code(e))
     if not ok:
         return
-    got = s3.get_bucket_lifecycle_configuration(Bucket="wft-results")["Rules"]
+    got = s3.get_bucket_lifecycle_configuration(Bucket="dsy-results")["Rules"]
     rec(
         any(r["ID"] == "short" for r in got),
         "L02 rule read back",
         json.dumps(got, default=str)[:300],
     )
-    targets = {("wft-results", f"exp-{tag}/a"), ("wft-results", f"exp-{tag}/b")}
+    targets = {("dsy-results", f"exp-{tag}/a"), ("dsy-results", f"exp-{tag}/b")}
     controls = {
-        ("wft-results", f"keep-{tag}/a"),
-        ("wft-checkpoints", f"exp-{tag}/a"),
-        ("wft-sources", f"exp-{tag}/a"),
+        ("dsy-results", f"keep-{tag}/a"),
+        ("dsy-checkpoints", f"exp-{tag}/a"),
+        ("dsy-sources", f"exp-{tag}/a"),
     }
     for bk, k in targets | controls:
         s3.put_object(Bucket=bk, Key=k, Body=b"x" * 1024)
@@ -383,7 +383,7 @@ def lifecycle(ep, timeout, mode):
     )
     listed = [
         o["Key"]
-        for o in s3.list_objects_v2(Bucket="wft-results", Prefix=f"exp-{tag}/").get("Contents", [])
+        for o in s3.list_objects_v2(Bucket="dsy-results", Prefix=f"exp-{tag}/").get("Contents", [])
     ]
     rec(not listed, "L05 expired keys also gone from listing", f"listed={listed}")
 

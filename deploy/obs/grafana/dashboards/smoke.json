@@ -3,7 +3,7 @@
   "title": "Smoke",
   "description": "Results of just smoke, pushed once per run: the last verdict, each row's seconds and failures over runs, and one annotation per run.",
   "tags": [
-    "wft"
+    "dsy"
   ],
   "editable": false,
   "schemaVersion": 39,
@@ -113,7 +113,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "wft_smoke_row_verdict{row=\"run\"} == 1",
+          "expr": "dsy_smoke_row_verdict{row=\"run\"} == 1",
           "legendFormat": "{{verdict}}"
         }
       ],
@@ -181,7 +181,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "last_over_time(wft_smoke_row_seconds{row=\"run\"}[$__range])",
+          "expr": "last_over_time(dsy_smoke_row_seconds{row=\"run\"}[$__range])",
           "legendFormat": "run",
           "instant": true,
           "range": false
@@ -227,7 +227,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "count_over_time(wft_smoke_row_seconds{row=\"run\"}[$__range])",
+          "expr": "count_over_time(dsy_smoke_row_seconds{row=\"run\"}[$__range])",
           "legendFormat": "runs",
           "instant": true,
           "range": false
@@ -292,7 +292,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "last_over_time(wft_smoke_row_seconds{row!=\"run\"}[$__interval])",
+          "expr": "last_over_time(dsy_smoke_row_seconds{row!=\"run\"}[$__interval])",
           "legendFormat": "row {{row}}"
         }
       ],
@@ -342,7 +342,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "last_over_time(wft_smoke_row_seconds{row=\"run\"}[$__interval])",
+          "expr": "last_over_time(dsy_smoke_row_seconds{row=\"run\"}[$__interval])",
           "legendFormat": "run"
         }
       ],
@@ -391,7 +391,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "last_over_time(wft_smoke_row_verdict{verdict=\"FAIL\",row!=\"run\"}[$__interval]) == 1",
+          "expr": "last_over_time(dsy_smoke_row_verdict{verdict=\"FAIL\",row!=\"run\"}[$__interval]) == 1",
           "legendFormat": "row {{row}}"
         }
       ],

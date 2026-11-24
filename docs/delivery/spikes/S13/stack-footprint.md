@@ -37,7 +37,7 @@ Iteration 2 asks the follow-up: which configuration of the stack runs under the 
 
 ### Iteration 1
 
-- `WFT_OBS=on just up` on preset `ci`, under `/tmp/wft-cluster.lock`. The obs node is 1.5 CPU and 2,304 MiB.
+- `DSY_OBS=on just up` on preset `ci`, under `/tmp/dsy-cluster.lock`. The obs node is 1.5 CPU and 2,304 MiB.
 - The eight obs Deployments of `code/stack.yaml` and `code/grafana.yaml`, at D9's limits, with requests equal to limits, strategy `Recreate`, and a scrape of every D1 target at 30 s.
 - Prometheus keeps 10 days and 4 GB, Loki and Tempo and Pyroscope take the retention of decision 20.
 - The wiring (`code/payload`, `code/wire.py`): an init container copies the OpenTelemetry SDK and `pyroscope-io` into an emptyDir, `PYTHONPATH` loads a `sitecustomize` that starts the tracer (sampler `ParentBased(TraceIdRatioBased(1.0))`), the OTLP log handler and the profiler, and a NetworkPolicy allows egress to the collector and Pyroscope. The services and workers are not changed, so the wiring is a stand-in for H.3.
@@ -54,9 +54,9 @@ Iteration 2 asks the follow-up: which configuration of the stack runs under the 
   The kubelet reports 3,584 MiB allocatable on the obs node, which is the reservation rule of iteration 1 (the node less 256 MiB less one sixteenth of the node).
 - The host had at least 15 GiB of `MemAvailable` before the bring-up (15,377 MiB).
 - The services are deployed by `scripts/tilt/run.sh ci`, and the same eight obs Deployments are applied by `code/apply.sh`.
-  The services now carry the in-repository `wft_obs.setup` wiring (logs, traces and profiles, switched on by `OTEL_EXPORTER_OTLP_ENDPOINT` and `WFT_PYROSCOPE_ADDRESS`), so `code/wire.py` and its payload are not used, and the pod figures below are those of the shipped wiring.
+  The services now carry the in-repository `dsy_obs.setup` wiring (logs, traces and profiles, switched on by `OTEL_EXPORTER_OTLP_ENDPOINT` and `DSY_PYROSCOPE_ADDRESS`), so `code/wire.py` and its payload are not used, and the pod figures below are those of the shipped wiring.
 - The pod NetworkPolicies of the repository select the collector, Pyroscope and Prometheus by the label `app.kubernetes.io/name`, so `code/stack.yaml` carries that label on those three pods.
-- The state inputs stand-in (`code/exporter`) is built and pushed to the local registry, and its login is the `admission-logins` secret copied into `wft-obs` as `state-inputs-login`.
+- The state inputs stand-in (`code/exporter`) is built and pushed to the local registry, and its login is the `admission-logins` secret copied into `dsy-obs` as `state-inputs-login`.
 - Arms and load are those of iteration 1: the pod arm (`code/arm.sh`, then a compile that misses the cache) and the harness with a dashboard query load, through `code/harness-loop.sh`.
 - Each run changed one thing, restarted every service and worker beforehand so the pod peaks count only that run, and was read from `memory.peak`, the cAdvisor working set and the pod restart and OOM counters.
 - Peaks of obs containers are lifetime peaks of a container that was not restarted between runs (only the container whose limit changed starts again), so a later run includes the earlier ones.
@@ -111,10 +111,10 @@ Nothing restarted, so trace sampling, the Tempo tuning and the savings elsewhere
 ### Runs 2 and 4: a harness defect, not the stack
 
 In both runs one `start_workflow` of the 2,000 was retried by the Temporal client after a timeout when its first attempt had already reached the server.
-The retry raised `WorkflowAlreadyStartedError` (run 2, "already running") or an RPC error "already finished" (run 4), and `wft_workflow.harness` exited with status 1 after 103 s and 164 s.
+The retry raised `WorkflowAlreadyStartedError` (run 2, "already running") or an RPC error "already finished" (run 4), and `dsy_workflow.harness` exited with status 1 after 103 s and 164 s.
 The harness runs its fake pools in its own process, so the exit left the started jobs without pools.
 In run 2 the next batch then ran against the orphans, and finished 480 jobs and failed 1,520 (3,688 s).
-`start` in `packages/workflow/src/wft_workflow/harness/__init__.py` is not idempotent, and that file is outside this spike's scope, so it is reported here and not changed.
+`start` in `packages/workflow/src/dsy_workflow/harness/__init__.py` is not idempotent, and that file is outside this spike's scope, so it is reported here and not changed.
 `code/harness_idem.py` wraps the harness and returns the existing handle when a start finds its workflow already there, and run 5 used it.
 The same stack configuration passed run 3 cleanly, so the obs figures of runs 2 and 4 carry no verdict.
 
@@ -122,7 +122,7 @@ The same stack configuration passed run 3 cleanly, so the obs figures of runs 2 
 
 Two batches of 2,000 jobs (2,184 s and 2,189 s), 4,000 of 4,000 finished, 0 failed, 3 and 1 infra retries.
 304,039 spans reached Tempo (cumulative since the cluster came up, including run 2) and none was discarded, 3,528 dashboard queries ran and none failed, head series reached 85,282 and ingest was about 2,730 samples/s.
-No pod of `wft-obs`, `wft-control` or `wft-workers` restarted, and the sum of restarts over the 4,384 s window is 0.
+No pod of `dsy-obs`, `dsy-control` or `dsy-workers` restarted, and the sum of restarts over the 4,384 s window is 0.
 All obs containers stay at or under 73 percent of their limits by working set.
 
 ### Run 5: why it is not a confirming run
@@ -234,9 +234,9 @@ Every row except two ran in run 3 at these figures: Prometheus ran at 512 MiB in
   The obs node is 4,096 MiB and 1.5 CPU, so allocatable is 3,584 MiB (the node less 256 MiB less one sixteenth) and 1,400m.
   The stack takes 84 percent of the memory and 49 percent of the CPU, which leaves 576 MiB.
 - R.2's `obs_stack`: `memory_mib` 4096, `cpus` 1.5 (unchanged), and so `obs_memory_mib` 15488 (the 12,032 MiB of the preset less the 640 MiB obs node plus 4,096 MiB).
-  The `wft-obs` ResourceQuota the kubelet and `namespaces.sh` rendered on this node is 3,764 MiB of requests and limits and 1,470m of CPU requests, which holds 3,008 MiB and 690m.
+  The `dsy-obs` ResourceQuota the kubelet and `namespaces.sh` rendered on this node is 3,764 MiB of requests and limits and 1,470m of CPU requests, which holds 3,008 MiB and 690m.
 - Trace ratio stays 1.0.
-  The sampler is `SAMPLE_RATIO = 1.0` in `packages/obs/src/wft_obs/traces.py`, the single key to lower if the span volume grows (the throwaway collector configuration has no sampling processor).
+  The sampler is `SAMPLE_RATIO = 1.0` in `packages/obs/src/dsy_obs/traces.py`, the single key to lower if the span volume grows (the throwaway collector configuration has no sampling processor).
   Sampling at 0.5, 0.25 and 0.1 was not run because Tempo at 1 GiB held at 1.0.
 - Pyroscope is kept.
   Dropping it was not needed, and it costs 135 MiB of working set and about 8 MB/h.
@@ -304,15 +304,15 @@ Every row except two ran in run 3 at these figures: Prometheus ran at 512 MiB in
 ```
 free -m                                     # at least 15 GiB MemAvailable
 # local preset override, not committed: in deploy/presets/ci.yaml set obs_stack.memory_mib 4096 and obs_memory_mib 15488
-flock /tmp/wft-cluster.lock env WFT_CLUSTER_LOCK_HELD=1 WFT_OBS=on nix develop -c just up
-WFT_CLUSTER_LOCK_HELD=1 nix develop -c scripts/tilt/run.sh ci
+flock /tmp/dsy-cluster.lock env DSY_CLUSTER_LOCK_HELD=1 DSY_OBS=on nix develop -c just up
+DSY_CLUSTER_LOCK_HELD=1 nix develop -c scripts/tilt/run.sh ci
 # state inputs stand-in: build docs/delivery/spikes/S13/code/exporter with BASE set to the pinned python image, push it
-# to localhost:5001/s13-exporter:1, and copy the secret admission-logins of wft-control to wft-obs as state-inputs-login
+# to localhost:5001/s13-exporter:1, and copy the secret admission-logins of dsy-control to dsy-obs as state-inputs-login
 nix develop -c docs/delivery/spikes/S13/code/apply.sh
 nix develop -c docs/delivery/spikes/S13/code/arm.sh on <output directory>
 nix develop -c docs/delivery/spikes/S13/code/harness-loop.sh 3600 <output directory>
-nix develop -c python docs/delivery/spikes/S13/code/report.py <output directory>/snapshots.jsonl wft-obs
-nix develop -c python docs/delivery/spikes/S13/code/queries.py 4384 wft-obs wft-control wft-workers
+nix develop -c python docs/delivery/spikes/S13/code/report.py <output directory>/snapshots.jsonl dsy-obs
+nix develop -c python docs/delivery/spikes/S13/code/queries.py 4384 dsy-obs dsy-control dsy-workers
 ```
 
 `harness-loop.sh` runs the harness through `code/harness_idem.py`, and a duration of 3,600 s runs two batches of about 2,200 s.

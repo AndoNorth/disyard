@@ -5,8 +5,8 @@ import typing
 
 import pytest
 import yaml
-from wft_jobdoc import models
-from wft_jobdoc.registry import AGGREGATIONS, PARAMETER_TYPES, REGISTRY, TASK_TYPES
+from dsy_jobdoc import models
+from dsy_jobdoc.registry import AGGREGATIONS, PARAMETER_TYPES, REGISTRY, TASK_TYPES
 
 
 def tags(union):

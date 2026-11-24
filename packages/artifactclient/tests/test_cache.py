@@ -1,7 +1,7 @@
 """The compile cache client against a real store and database.
 
-The database login is a stand-in member of `wft_artifacts`, the group role of the workflow's record
-activity, and expiry is run by a stand-in member of `wft_reaper`.
+The database login is a stand-in member of `dsy_artifacts`, the group role of the workflow's record
+activity, and expiry is run by a stand-in member of `dsy_reaper`.
 """
 
 import hashlib
@@ -12,17 +12,17 @@ from datetime import UTC, datetime, timedelta
 
 import psycopg
 import pytest
+from dsy_artifactclient import cache
+from dsy_artifactclient import commit as commit_module
+from dsy_artifactclient.cache import Hit, Lost, Miss, WasmGone, Won, lookup
+from dsy_artifactclient.client import ArtifactClient, RetryPolicy
+from dsy_artifactclient.errors import ArtifactLost, StoreUnavailable
+from dsy_artifactclient.keys import split_uri
+from dsy_artifactindex import Invalidated, NoEntry, expired_cache_entries, uses_of
+from dsy_storecheck.fixtures import running
+from dsy_storecheck.s3 import client as s3_client
 from psycopg import sql
 from psycopg.conninfo import make_conninfo
-from wft_artifactclient import cache
-from wft_artifactclient import commit as commit_module
-from wft_artifactclient.cache import Hit, Lost, Miss, WasmGone, Won, lookup
-from wft_artifactclient.client import ArtifactClient, RetryPolicy
-from wft_artifactclient.errors import ArtifactLost, StoreUnavailable
-from wft_artifactclient.keys import split_uri
-from wft_artifactindex import Invalidated, NoEntry, expired_cache_entries, uses_of
-from wft_storecheck.fixtures import running
-from wft_storecheck.s3 import client as s3_client
 
 pytestmark = [pytest.mark.integration, pytest.mark.pair]
 
@@ -79,12 +79,12 @@ def login(appdb):
 
 @pytest.fixture
 def artifacts(login):
-    return login("wft_artifacts")
+    return login("dsy_artifacts")
 
 
 @pytest.fixture
 def reaper(login):
-    return login("wft_reaper")
+    return login("dsy_reaper")
 
 
 @pytest.fixture
@@ -204,7 +204,7 @@ def test_lookup_error_is_raised_and_never_a_miss(shelf, role, artifacts, login, 
     with pytest.raises(StoreUnavailable):
         lookup(artifacts, unreachable, key)
 
-    stale = login("wft_artifacts")
+    stale = login("dsy_artifacts")
     stale.close()
     with pytest.raises(psycopg.OperationalError):
         lookup(stale, role("workflow"), key)

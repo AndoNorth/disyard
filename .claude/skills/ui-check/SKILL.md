@@ -10,15 +10,15 @@ Check a live UI in a real browser and put the screenshot in the PR body.
 ## Browser contract
 
 - The repo ships no browser launcher. The browser comes from the owner's dotfiles (`browser-cdp`, `chrome-devtools-axi`, `playwright-axi`).
-- Always use the browser instance named `weft`: `BROWSER_CDP_INSTANCE=weft`.
+- Always use the browser instance named `disyard`: `BROWSER_CDP_INSTANCE=disyard`.
   Use that same value for `start`, `status`, `stop` and `env`.
   With no instance set, `browser-cdp` means the shared default browser that other work depends on.
   Never run `start`, `stop` or restart without the instance, and never touch another instance.
 - Start it and load the endpoint from the environment:
 
   ```sh
-  BROWSER_CDP_INSTANCE=weft browser-cdp start
-  eval "$(BROWSER_CDP_INSTANCE=weft browser-cdp env)"
+  BROWSER_CDP_INSTANCE=disyard browser-cdp start
+  eval "$(BROWSER_CDP_INSTANCE=disyard browser-cdp env)"
   ```
 
   `env` exports `CHROME_DEVTOOLS_AXI_BROWSER_URL`, `PLAYWRIGHT_MCP_CDP_ENDPOINT` and `CHROME_DEVTOOLS_AXI_SESSION`.

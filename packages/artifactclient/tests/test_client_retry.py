@@ -9,8 +9,8 @@ from collections import deque
 
 import pytest
 from botocore.exceptions import ClientError, ConnectTimeoutError, EndpointConnectionError
-from wft_artifactclient.client import ArtifactClient, RetryPolicy
-from wft_artifactclient.errors import (
+from dsy_artifactclient.client import ArtifactClient, RetryPolicy
+from dsy_artifactclient.errors import (
     ArtifactCorrupt,
     ArtifactLost,
     ArtifactNotFound,
@@ -18,14 +18,14 @@ from wft_artifactclient.errors import (
     StoreForbidden,
     StoreUnavailable,
 )
-from wft_events.models import ProducerRef
-from wft_storecheck.s3 import Creds, dump_credentials
+from dsy_events.models import ProducerRef
+from dsy_storecheck.s3 import Creds, dump_credentials
 
 PRODUCER = ProducerRef(job="123e4567-e89b-42d3-a456-426614174000", task="t", attempt="r0a1")
 BYTES = b"artifact bytes"
 SHA = hashlib.sha256(BYTES).hexdigest()
 REFERENCE = {
-    "uri": f"s3://wft-sources/sha256/{SHA[:2]}/{SHA}",
+    "uri": f"s3://dsy-sources/sha256/{SHA[:2]}/{SHA}",
     "sha256": SHA,
     "size": len(BYTES),
     "name": "n",
@@ -250,7 +250,7 @@ def test_verify_command_reports_a_store_that_is_down_in_under_a_minute(tmp_path)
         [
             sys.executable,
             "-m",
-            "wft_artifactclient",
+            "dsy_artifactclient",
             "verify",
             "--endpoint",
             "http://127.0.0.1:1",

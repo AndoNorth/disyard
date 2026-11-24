@@ -1,5 +1,5 @@
 [project]
-name = "wft-stateops"
+name = "dsy-stateops"
 version = "0.0.0"
 license = "Apache-2.0"
 requires-python = ">=3.13,<3.14"
@@ -7,24 +7,24 @@ dependencies = [
     "psycopg[binary]",
     "pydantic",
     "pyyaml",
-    "wft-events",
-    "wft-eventstore",
-    "wft-jobstate",
-    "wft-keys",
-    "wft-migrate",
-    "wft-storecheck",
+    "dsy-events",
+    "dsy-eventstore",
+    "dsy-jobstate",
+    "dsy-keys",
+    "dsy-migrate",
+    "dsy-storecheck",
 ]
 
-[project.entry-points."wft.migrations"]
-stateops = "wft_stateops.migrations"
+[project.entry-points."dsy.migrations"]
+stateops = "dsy_stateops.migrations"
 
 [tool.uv.sources]
-wft-events = { workspace = true }
-wft-eventstore = { workspace = true }
-wft-jobstate = { workspace = true }
-wft-keys = { workspace = true }
-wft-migrate = { workspace = true }
-wft-storecheck = { workspace = true }
+dsy-events = { workspace = true }
+dsy-eventstore = { workspace = true }
+dsy-jobstate = { workspace = true }
+dsy-keys = { workspace = true }
+dsy-migrate = { workspace = true }
+dsy-storecheck = { workspace = true }
 
 [build-system]
 requires = ["hatchling"]

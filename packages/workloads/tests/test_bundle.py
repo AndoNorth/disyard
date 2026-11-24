@@ -5,13 +5,13 @@ import subprocess
 import sys
 import tarfile
 
-from wft_compile import bundle as compile_bundle
-from wft_workloads import bundle
+from dsy_compile import bundle as compile_bundle
+from dsy_workloads import bundle
 
 
 def write(out) -> bytes:
     done = subprocess.run(
-        [sys.executable, "-m", "wft_workloads.bundle", "--out", str(out)],
+        [sys.executable, "-m", "dsy_workloads.bundle", "--out", str(out)],
         capture_output=True,
         text=True,
     )
@@ -24,7 +24,7 @@ def test_bundle_is_reproducible(tmp_path):
     print(f"{len(first)} bytes, the same twice: {first == second}")
     assert first == second
     info = compile_bundle.info(tmp_path / "a" / bundle.NAME)
-    assert {"wft_workloads.main", "wft_kernel.writer"} <= info.modules
+    assert {"dsy_workloads.main", "dsy_kernel.writer"} <= info.modules
     with tarfile.open(tmp_path / "a" / bundle.NAME) as tar:
         assert all(m.mtime == m.uid == m.gid == 0 and m.isfile() for m in tar)
 

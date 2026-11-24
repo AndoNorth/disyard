@@ -1,5 +1,5 @@
 [project]
-name = "wft-obs"
+name = "dsy-obs"
 version = "0.0.0"
 license = "Apache-2.0"
 requires-python = ">=3.13,<3.14"
@@ -10,16 +10,16 @@ dependencies = [
     "pyroscope-io",
     "pyyaml",
     "temporalio",
-    "wft-events",
+    "dsy-events",
 ]
 
 # The state inputs exporter reads the job tables, so only the process that runs it installs this.
 [project.optional-dependencies]
-stateops = ["wft-stateops"]
+stateops = ["dsy-stateops"]
 
 [tool.uv.sources]
-wft-events = { workspace = true }
-wft-stateops = { workspace = true }
+dsy-events = { workspace = true }
+dsy-stateops = { workspace = true }
 
 [build-system]
 requires = ["hatchling"]

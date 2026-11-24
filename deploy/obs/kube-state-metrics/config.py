@@ -42,7 +42,7 @@ def render() -> list[dict]:
     namespace = module["namespace"]
     topology = yaml.safe_load((ROOT / "contracts/topology/topology.yaml").read_text())
     meta = {"name": NAME, "namespace": namespace}
-    cluster = "wft-" + NAME
+    cluster = "dsy-" + NAME
     served = sorted(r for group in RESOURCES.values() for r in group)
     return [
         {"apiVersion": "v1", "kind": "ServiceAccount", "metadata": meta},

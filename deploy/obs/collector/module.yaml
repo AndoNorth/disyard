@@ -1,6 +1,6 @@
 name: collector
 group: obs
-namespace: wft-obs
+namespace: dsy-obs
 artifact:
   kind: image
   pin: otel/opentelemetry-collector-contrib

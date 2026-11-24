@@ -5,10 +5,10 @@ from collections import Counter
 from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 
+from dsy_admission.policy import Caps, Queue, Readmission, Resume, Snapshot, Turn, plan
+from dsy_broker.tenancy import load
 from hypothesis import given
 from hypothesis import strategies as st
-from wft_admission.policy import Caps, Queue, Readmission, Resume, Snapshot, Turn, plan
-from wft_broker.tenancy import load
 
 CLASSES = ["gold", "silver", "bronze"]
 TENANTS = ["a", "b", "c"]

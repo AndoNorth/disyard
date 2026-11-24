@@ -8,7 +8,7 @@ The rules every component follows are the [instrumentation contract](../../contr
 ## Turning it on
 
 ```sh
-WFT_OBS=on just up
+DSY_OBS=on just up
 ```
 
 The switch is chosen when the cluster is created, so a cluster brought up without it stays without the stack until `just nuke`.
@@ -16,7 +16,7 @@ The switch is chosen when the cluster is created, so a cluster brought up withou
 
 ## What runs
 
-Every module is group `obs`, in namespace `wft-obs`, on the obs node.
+Every module is group `obs`, in namespace `dsy-obs`, on the obs node.
 
 | Component | Role |
 | --- | --- |
@@ -35,18 +35,18 @@ Every module is group `obs`, in namespace `wft-obs`, on the obs node.
    Always name one service and keep the range short, because a selector that matches every stream over a wide range forces Loki to scan all logs and killed it at 256 MiB.
    Repeat the query for each service that handled the job.
    Each line's `trace_id` links to its trace in Tempo, and its `job_id` links to the job's workflow page in the Temporal UI.
-2. The Temporal UI shows the job's timeline at `http://127.0.0.1:18233/namespaces/wft/workflows/job-<job id>`.
+2. The Temporal UI shows the job's timeline at `http://127.0.0.1:18233/namespaces/dsy/workflows/job-<job id>`.
 3. Without the UI, the timeline comes from the CLI through a forward of the Temporal frontend:
 
    ```sh
-   kubectl --context kind-wft -n wft-infra port-forward --address 127.0.0.1 svc/temporal-frontend 17233:7233
-   temporal workflow show --address 127.0.0.1:17233 --namespace wft --workflow-id job-<job id>
+   kubectl --context kind-dsy -n dsy-infra port-forward --address 127.0.0.1 svc/temporal-frontend 17233:7233
+   temporal workflow show --address 127.0.0.1:17233 --namespace dsy --workflow-id job-<job id>
    ```
 
 Temporal keeps a closed workflow's history for 24 hours, so the Temporal UI and the CLI lose a finished job's timeline a day after it ends.
 Its logs, traces and metrics stay in the stack for their own retention.
-The 24 hours are revisited with the soak work, https://github.com/AndoNorth/weft/issues/16.
+The 24 hours are revisited with the soak work, https://github.com/AndoNorth/disyard/issues/16.
 
 ## Reading the stack from code
 
-`wft_obs.query` in [packages/obs](../../packages/obs/README.md) is the one client of the Prometheus, Loki, Tempo and Pyroscope APIs, and `wft_obs.testing.FakeObs` stands in for them in tests.
+`dsy_obs.query` in [packages/obs](../../packages/obs/README.md) is the one client of the Prometheus, Loki, Tempo and Pyroscope APIs, and `dsy_obs.testing.FakeObs` stands in for them in tests.

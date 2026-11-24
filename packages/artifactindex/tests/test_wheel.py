@@ -11,12 +11,12 @@ ROOT = Path(__file__).resolve().parents[3]
 PROBE = """
 import json
 from importlib import resources
-from wft_artifactindex.models import CONTRACT, ArtifactRow, ArtifactUse
+from dsy_artifactindex.models import CONTRACT, ArtifactRow, ArtifactUse
 
 for name in ['artifact-row/2.json', 'artifact-use/1.json']:
     assert (CONTRACT / name).is_file(), name
 for name in ['0300_artifact_index.sql', '0301_artifact_use.sql', 'R__artifact_kinds.sql']:
-    assert (resources.files('wft_artifactindex.migrations') / name).is_file(), name
+    assert (resources.files('dsy_artifactindex.migrations') / name).is_file(), name
 schema = json.loads((CONTRACT / 'artifact-row/2.json').read_text())
 assert set(schema["properties"]) == set(ArtifactRow.model_fields)
 schema = json.loads((CONTRACT / 'artifact-use/1.json').read_text())
@@ -35,7 +35,7 @@ def run(*cmd, **kwargs) -> subprocess.CompletedProcess:
 def clean_python(tmp_path_factory) -> Path:
     work = tmp_path_factory.mktemp("wheel")
     wheels = work / "wheels"
-    for package in ("wft-artifactindex", "wft-events", "wft-keys"):
+    for package in ("dsy-artifactindex", "dsy-events", "dsy-keys"):
         run("uv", "build", "--wheel", "--package", package, "-o", str(wheels), cwd=ROOT)
     venv = work / "venv"
     run("uv", "venv", "--python", sys.executable, str(venv))

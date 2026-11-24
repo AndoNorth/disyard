@@ -9,14 +9,14 @@ import uuid
 from pathlib import Path
 
 import pytest
+from dsy_worker.activity import run_task
+from dsy_worker.runner import Child
+from dsy_workflow.contract import check_failure
+from dsy_workflow.models import REASON_MAX, HeartbeatDetails, RaisedFailure
+from dsy_workflow.testing import connect
+from dsy_workflow.testing.pool import RunTaskOnce, run_task_once
 from temporalio.client import Client, WorkflowExecutionStatus
 from temporalio.worker import UnsandboxedWorkflowRunner, Worker
-from wft_worker.activity import run_task
-from wft_worker.runner import Child
-from wft_workflow.contract import check_failure
-from wft_workflow.models import REASON_MAX, HeartbeatDetails, RaisedFailure
-from wft_workflow.testing import connect
-from wft_workflow.testing.pool import RunTaskOnce, run_task_once
 
 pytestmark = pytest.mark.integration
 
@@ -32,7 +32,7 @@ def run(body):
 async def served(address: str):
     """A client, and the activity served on a queue of its own."""
     client = await connect(address)
-    queue = f"wft-simulate-{uuid.uuid4()}"
+    queue = f"dsy-simulate-{uuid.uuid4()}"
     async with Worker(client, task_queue=queue, activities=[run_task], max_concurrent_activities=1):
         yield client, queue
 
@@ -41,7 +41,7 @@ async def served(address: str):
 async def started(client: Client, queue: str, task, heartbeat_s: int, cancel: bool = False):
     """The workflow of run_task_once started on its own queue, for a test that acts while the
     activity runs."""
-    once = f"wft-run-task-once-{uuid.uuid4()}"
+    once = f"dsy-run-task-once-{uuid.uuid4()}"
     async with Worker(
         client,
         task_queue=once,

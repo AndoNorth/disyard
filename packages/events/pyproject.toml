@@ -1,12 +1,12 @@
 [project]
-name = "wft-events"
+name = "dsy-events"
 version = "0.0.0"
 license = "Apache-2.0"
 requires-python = ">=3.13,<3.14"
-dependencies = ["pydantic", "jsonschema", "pyyaml", "wft-keys", "psycopg[binary]"]
+dependencies = ["pydantic", "jsonschema", "pyyaml", "dsy-keys", "psycopg[binary]"]
 
 [tool.uv.sources]
-wft-keys = { workspace = true }
+dsy-keys = { workspace = true }
 
 [build-system]
 requires = ["hatchling"]

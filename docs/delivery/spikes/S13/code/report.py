@@ -30,7 +30,7 @@ for snap in snapshots:
             continue
         key = (
             c["namespace"],
-            c["pod"].rsplit("-", 2)[0] if c["namespace"] != "wft-infra" else c["pod"],
+            c["pod"].rsplit("-", 2)[0] if c["namespace"] != "dsy-infra" else c["pod"],
             c["container"],
         )
         rows.setdefault(key, {})[snap["label"]] = c

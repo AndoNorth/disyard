@@ -28,4 +28,4 @@ RUN pip install --no-cache-dir --no-deps --no-index /tmp/build/proton/*.whl /tmp
     && rm -rf /tmp/build
 ENV PYTHONUNBUFFERED=1
 USER 65532:65532
-ENTRYPOINT ["python", "-m", "wft_admission.service"]
+ENTRYPOINT ["python", "-m", "dsy_admission.service"]

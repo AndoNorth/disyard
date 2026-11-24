@@ -1,5 +1,5 @@
 {
-  "$id": "urn:wft:schema:job.paused:1.0",
+  "$id": "urn:dsy:schema:job.paused:1.0",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
   "description": "Data of an event whose type and context attributes say everything.",

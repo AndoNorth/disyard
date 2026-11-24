@@ -6,10 +6,10 @@ import json
 from pathlib import Path
 
 import pytest
-from wft_acceptance.clients import Failed
-from wft_acceptance.clients.api import Api, batch, batch_key, template
-from wft_dispatchapi import smoke as driver
-from wft_workflow.harness import echo_params
+from dsy_acceptance.clients import Failed
+from dsy_acceptance.clients.api import Api, batch, batch_key, template
+from dsy_dispatchapi import smoke as driver
+from dsy_workflow.harness import echo_params
 
 VECTORS = Path(__file__).resolve().parents[4] / "contracts/api/vectors"
 TENANT = "acme"

@@ -5,12 +5,12 @@ import asyncio
 import json
 
 import pytest
+from dsy_stages.recording import type_name
+from dsy_temporal import event_data_converter, tracing_interceptor
+from dsy_workflow.job import JobWorkflow
+from dsy_workflow.testing import Fail, Succeed, connect
 from temporalio.api.enums.v1 import EventType
 from temporalio.worker import Replayer
-from wft_stages.recording import type_name
-from wft_temporal import event_data_converter, tracing_interceptor
-from wft_workflow.job import JobWorkflow
-from wft_workflow.testing import Fail, Succeed, connect
 
 pytestmark = pytest.mark.integration
 

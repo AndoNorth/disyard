@@ -1,27 +1,27 @@
-# wft-workflow
+# dsy-workflow
 
 The job workflow on Temporal, its control activities and worker service, and the models and the loader of the activity and Temporal contracts.
 The contracts it loads are pinned in `contracts/activity/README.md` and `contracts/temporal/README.md`.
 
 ## State
 
-The models (`wft_workflow.models`), the loader `python -m wft_workflow.contract --check FILE [--as NAME]` and the schema generator `python -m wft_workflow.gen [--check]` are delivered.
+The models (`dsy_workflow.models`), the loader `python -m dsy_workflow.contract --check FILE [--as NAME]` and the schema generator `python -m dsy_workflow.gen [--check]` are delivered.
 The placer and the stubs are delivered too:
 
-- `wft_workflow.placement`: the `Placer` interface, `StaticPlacer` over pool table v0 and the `place` local activity.
-- `wft_workflow.testing`: `placer_contract`, `FakePool` with `activity_contract`, and `FakeControl` with `control_activity_contract`, where `wft_workflow.testing.control` pins the argument and result of each control activity.
+- `dsy_workflow.placement`: the `Placer` interface, `StaticPlacer` over pool table v0 and the `place` local activity.
+- `dsy_workflow.testing`: `placer_contract`, `FakePool` with `activity_contract`, and `FakeControl` with `control_activity_contract`, where `dsy_workflow.testing.control` pins the argument and result of each control activity.
 
 The rest of the package is delivered as well:
 
 - The pure rules: `ready`, `result`, `failures` and `budgets`.
-- `wft_workflow.activities`: the control activities.
-- `wft_workflow.job`: `JobWorkflow`, with `wft_workflow.versioning` for its builds and the replay corpus in `corpus/`, whose rules are in `corpus/README.md`.
-- `wft_workflow.service`: the worker service, which `deploy/workflow/README.md` deploys.
-- `wft_workflow.harness`: the harness that runs smoke, restart and rollout jobs against a dev server or the cluster.
+- `dsy_workflow.activities`: the control activities.
+- `dsy_workflow.job`: `JobWorkflow`, with `dsy_workflow.versioning` for its builds and the replay corpus in `corpus/`, whose rules are in `corpus/README.md`.
+- `dsy_workflow.service`: the worker service, which `deploy/workflow/README.md` deploys.
+- `dsy_workflow.harness`: the harness that runs smoke, restart and rollout jobs against a dev server or the cluster.
 
 ## Package data
 
-`wft_workflow/contract/` holds links to the contract files the package reads: the pinned failure class table, naming and pool table, and the exit classes, artifact failures, staging, registry and status files of the other contracts.
+`dsy_workflow/contract/` holds links to the contract files the package reads: the pinned failure class table, naming and pool table, and the exit classes, artifact failures, staging, registry and status files of the other contracts.
 A built wheel carries the files themselves, so the package never reads a repository path.
 
 ## Commands
@@ -29,11 +29,11 @@ A built wheel carries the files themselves, so the package never reads a reposit
 ```sh
 nix develop -c uv run --frozen pytest packages/workflow -q
 nix develop -c uv run --frozen pytest packages/workflow -v -k "placer_contract or activity_contract or control_contract"
-nix develop -c uv run --frozen python -m wft_workflow.contract --check FILE
-nix develop -c uv run --frozen python -m wft_workflow.gen --check
-nix develop -c uv run --frozen python -m wft_workflow.service
-nix develop -c uv run --frozen python -m wft_workflow.harness (--address HOST:PORT | --kube-context NAME) describe|smoke|restart|rollout
+nix develop -c uv run --frozen python -m dsy_workflow.contract --check FILE
+nix develop -c uv run --frozen python -m dsy_workflow.gen --check
+nix develop -c uv run --frozen python -m dsy_workflow.service
+nix develop -c uv run --frozen python -m dsy_workflow.harness (--address HOST:PORT | --kube-context NAME) describe|smoke|restart|rollout
 ```
 
-`wft_workflow.service` reads its configuration from the environment only and exits 2 when a variable is missing.
+`dsy_workflow.service` reads its configuration from the environment only and exits 2 when a variable is missing.
 The harness exits 0 when every job finished, 1 when one did not, and 2 for a usage error or a command the tier refuses.

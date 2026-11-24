@@ -34,7 +34,7 @@ D
 }
 
 # run <case> leaves the exit code in $rc and the output in $out.
-run() { rc=0; out=$(WFT_CONTRACTS_ROOT="$work/$1" "$check" 2>&1) || rc=$?; }
+run() { rc=0; out=$(DSY_CONTRACTS_ROOT="$work/$1" "$check" 2>&1) || rc=$?; }
 
 pass=0
 expect() {

@@ -138,9 +138,9 @@ def test_characterization_shows_every_histogram_on_its_buckets():
 
 def test_smoke_reads_the_pushed_results_and_annotations():
     text = exprs("smoke")
-    assert any("wft_smoke_row_seconds" in e for e in text)
-    assert any('wft_smoke_row_verdict{row="run"}' in e for e in text)
-    assert any('wft_smoke_row_verdict{verdict="FAIL"' in e for e in text)
+    assert any("dsy_smoke_row_seconds" in e for e in text)
+    assert any('dsy_smoke_row_verdict{row="run"}' in e for e in text)
+    assert any('dsy_smoke_row_verdict{verdict="FAIL"' in e for e in text)
     smoke = load(ROOT / "deploy/obs/grafana/dashboards/smoke.json")
     tags = [a["target"]["tags"] for a in smoke["annotations"]["list"] if "target" in a]
     assert ["smoke"] in tags

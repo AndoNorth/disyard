@@ -9,18 +9,18 @@ import time
 
 import pytest
 from botocore.exceptions import ClientError
-from wft_artifactclient.client import PART_BYTES, ArtifactClient, RetryPolicy, verify
-from wft_artifactclient.errors import (
+from dsy_artifactclient.client import PART_BYTES, ArtifactClient, RetryPolicy, verify
+from dsy_artifactclient.errors import (
     ArtifactCorrupt,
     ArtifactLost,
     ArtifactNotFound,
     StoreForbidden,
     StoreUnavailable,
 )
-from wft_artifactclient.keys import split_uri
-from wft_events.models import ProducerRef
-from wft_storecheck.s3 import Creds, dump_credentials
-from wft_storecheck.s3 import client as s3_client
+from dsy_artifactclient.keys import split_uri
+from dsy_events.models import ProducerRef
+from dsy_storecheck.s3 import Creds, dump_credentials
+from dsy_storecheck.s3 import client as s3_client
 
 pytestmark = pytest.mark.integration
 
@@ -87,7 +87,7 @@ def test_round_trip_at_the_part_boundary(size, role, unique, tmp_path):
     assert (scoped.sha256, scoped.size) == (sha256, size)
     content = role("indexer").put_content(data, "index", "idx.jsonl")
     assert (content.sha256, content.size) == (sha256, size)
-    assert content.uri == f"s3://wft-sources/sha256/{sha256[:2]}/{sha256}"
+    assert content.uri == f"s3://dsy-sources/sha256/{sha256[:2]}/{sha256}"
 
     again = role("indexer").put_content(tmp_path_of(tmp_path, data), "index", "idx.jsonl")
     assert again == content
@@ -193,7 +193,7 @@ def test_multipart_abort_leaves_no_parts(role, unique, admin):
 
     with pytest.raises(RuntimeError, match="gave up"):
         put_result(role, unique, payload(40 * MIB), progress=fail_on_third)
-    assert uploads(admin, "wft-results", unique) == []
+    assert uploads(admin, "dsy-results", unique) == []
 
     class Failing(io.RawIOBase):
         def __init__(self):
@@ -211,7 +211,7 @@ def test_multipart_abort_leaves_no_parts(role, unique, admin):
 
     with pytest.raises(OSError, match="source broke"):
         put_result(role, unique, io.BufferedReader(Failing()), name="broken.bin")
-    assert uploads(admin, "wft-results", unique) == []
+    assert uploads(admin, "dsy-results", unique) == []
 
 
 def test_multipart_that_finds_the_object_there_is_a_success_and_leaves_no_parts(
@@ -221,7 +221,7 @@ def test_multipart_that_finds_the_object_there_is_a_success_and_leaves_no_parts(
     first = role("indexer").put_content(data, "index", "idx.jsonl")
     again = role("indexer").put_content(data, "index", "idx.jsonl")
     assert first == again
-    assert uploads(admin, "wft-sources", "sha256/") == []
+    assert uploads(admin, "dsy-sources", "sha256/") == []
 
 
 class Recorder(io.RawIOBase):
@@ -303,9 +303,9 @@ def test_product_facts_if_none_match_and_the_md5_entity_tag(store, admin):
     key = f"facts/{store.product}"
     body = b"facts"
     md5 = hashlib.md5(body, usedforsecurity=False).hexdigest()
-    first = admin.put_object(Bucket="wft-sources", Key=key, Body=body, IfNoneMatch="*")
+    first = admin.put_object(Bucket="dsy-sources", Key=key, Body=body, IfNoneMatch="*")
     try:
-        admin.put_object(Bucket="wft-sources", Key=key, Body=b"other", IfNoneMatch="*")
+        admin.put_object(Bucket="dsy-sources", Key=key, Body=b"other", IfNoneMatch="*")
         honoured = "overwritten"
     except ClientError as error:
         honoured = f"refused with {error.response['ResponseMetadata']['HTTPStatusCode']}"
@@ -314,32 +314,32 @@ def test_product_facts_if_none_match_and_the_md5_entity_tag(store, admin):
     print(f"fact {store.product}: single part entity tag is {'the MD5' if etag == md5 else etag}")
     completed = multipart(admin, key)
     print(f"fact {store.product}: If-None-Match completion of a multipart upload is {completed}")
-    admin.delete_object(Bucket="wft-sources", Key=key)
+    admin.delete_object(Bucket="dsy-sources", Key=key)
 
 
 def multipart(admin, key: str) -> str:
     """What completing a multipart upload with If-None-Match does to an object that exists."""
-    upload = admin.create_multipart_upload(Bucket="wft-sources", Key=key)["UploadId"]
+    upload = admin.create_multipart_upload(Bucket="dsy-sources", Key=key)["UploadId"]
     parts = [b"a" * 5 * MIB, b"b"]
     done = [
         {
             "PartNumber": number,
             "ETag": admin.upload_part(
-                Bucket="wft-sources", Key=key, UploadId=upload, PartNumber=number, Body=body
+                Bucket="dsy-sources", Key=key, UploadId=upload, PartNumber=number, Body=body
             )["ETag"],
         }
         for number, body in enumerate(parts, start=1)
     ]
     try:
         admin.complete_multipart_upload(
-            Bucket="wft-sources",
+            Bucket="dsy-sources",
             Key=key,
             UploadId=upload,
             MultipartUpload={"Parts": done},
             IfNoneMatch="*",
         )
     except ClientError as error:
-        admin.abort_multipart_upload(Bucket="wft-sources", Key=key, UploadId=upload)
+        admin.abort_multipart_upload(Bucket="dsy-sources", Key=key, UploadId=upload)
         return f"refused with {error.response['ResponseMetadata']['HTTPStatusCode']}"
     return "overwritten"
 
@@ -351,7 +351,7 @@ def run_verify(store, role: str, reference, tmp_path, endpoint: str | None = Non
     command = [
         sys.executable,
         "-m",
-        "wft_artifactclient",
+        "dsy_artifactclient",
         "verify",
         "--endpoint",
         endpoint or store.endpoint,

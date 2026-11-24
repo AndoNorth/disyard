@@ -1,5 +1,5 @@
 [project]
-name = "wft-artifactclient"
+name = "dsy-artifactclient"
 version = "0.0.0"
 license = "Apache-2.0"
 requires-python = ">=3.13,<3.14"
@@ -8,20 +8,20 @@ dependencies = [
     "pydantic",
     "pytest",
     "pyyaml",
-    "wft-artifactindex",
-    "wft-compat",
-    "wft-events",
-    "wft-storecheck",
+    "dsy-artifactindex",
+    "dsy-compat",
+    "dsy-events",
+    "dsy-storecheck",
 ]
 
 [project.entry-points.pytest11]
-wft_artifactclient = "wft_artifactclient.testing"
+dsy_artifactclient = "dsy_artifactclient.testing"
 
 [tool.uv.sources]
-wft-artifactindex = { workspace = true }
-wft-compat = { workspace = true }
-wft-events = { workspace = true }
-wft-storecheck = { workspace = true }
+dsy-artifactindex = { workspace = true }
+dsy-compat = { workspace = true }
+dsy-events = { workspace = true }
+dsy-storecheck = { workspace = true }
 
 [build-system]
 requires = ["hatchling"]

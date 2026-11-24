@@ -14,15 +14,15 @@ from pathlib import Path
 
 import pytest
 import yaml
+from dsy_artifactclient.errors import StoreUnavailable
+from dsy_obs.logs import JsonFormatter
+from dsy_worker import metrics
+from dsy_worker.activity import run_task, serving
+from dsy_worker.metrics import ADDRESS_ENV, BUCKETS, Metrics, classes_of, runtime_of
+from dsy_worker.pools import Context
+from dsy_workflow.models import TaskInput
 from temporalio.exceptions import ApplicationError
 from temporalio.testing import ActivityEnvironment
-from wft_artifactclient.errors import StoreUnavailable
-from wft_obs.logs import JsonFormatter
-from wft_worker import metrics
-from wft_worker.activity import run_task, serving
-from wft_worker.metrics import ADDRESS_ENV, BUCKETS, Metrics, classes_of, runtime_of
-from wft_worker.pools import Context
-from wft_workflow.models import TaskInput
 
 ROOT = Path(__file__).resolve().parents[3]
 VECTORS = ROOT / "contracts/activity/vectors/task-input/valid"
@@ -105,7 +105,7 @@ def script(monkeypatch, pool: str, outcome) -> None:
             raise outcome
         return outcome
 
-    monkeypatch.setattr(importlib.import_module(f"wft_worker.pools.{pool}"), "run", run)
+    monkeypatch.setattr(importlib.import_module(f"dsy_worker.pools.{pool}"), "run", run)
 
 
 def run(task: TaskInput, environment: ActivityEnvironment | None = None):
@@ -128,23 +128,23 @@ def test_each_exit_class_is_counted_under_its_pool(monkeypatch, served, pool, ex
     except ApplicationError:
         pass
     samples = scrape(address)
-    assert samples["wft_worker_tasks_total", pool_labels(pool, exit_class)] == 1
+    assert samples["dsy_worker_tasks_total", pool_labels(pool, exit_class)] == 1
     others = {
         labels
         for (name, labels), value in samples.items()
-        if name == "wft_worker_tasks_total" and value and labels != pool_labels(pool, exit_class)
+        if name == "dsy_worker_tasks_total" and value and labels != pool_labels(pool, exit_class)
     }
     assert not others
-    assert samples["wft_worker_task_seconds_count", pool_labels(pool, exit_class)] == 1
+    assert samples["dsy_worker_task_seconds_count", pool_labels(pool, exit_class)] == 1
 
 
 @pytest.mark.parametrize("pool", POOLS)
 def test_every_series_of_a_pool_is_served_before_its_first_task(served, pool):
     samples = scrape(served(pool))
     for exit_class in classes_of(pool):
-        assert samples["wft_worker_tasks_total", pool_labels(pool, exit_class)] == 0
-    assert samples["wft_worker_aggregate_inputs_total", frozenset()] == 0
-    assert samples["wft_worker_aggregate_rows_total", frozenset()] == 0
+        assert samples["dsy_worker_tasks_total", pool_labels(pool, exit_class)] == 0
+    assert samples["dsy_worker_aggregate_inputs_total", frozenset()] == 0
+    assert samples["dsy_worker_aggregate_rows_total", frozenset()] == 0
 
 
 @pytest.mark.parametrize(
@@ -161,7 +161,7 @@ def test_an_error_outside_the_pool_classes_is_logged_and_not_counted(monkeypatch
     with pytest.raises(ApplicationError) as raised:
         run(task_of("simulate"))
     samples = scrape(address)
-    assert not [v for (n, _), v in samples.items() if n == "wft_worker_tasks_total" and v]
+    assert not [v for (n, _), v in samples.items() if n == "dsy_worker_tasks_total" and v]
     [line] = [x for x in lines() if x["msg"].startswith("task ended")]
     assert line["exit_class"] == raised.value.type
 
@@ -193,16 +193,16 @@ def test_heartbeats_are_recorded_and_never_logged(monkeypatch, served, lines):
         await asyncio.sleep(1.2)
         return object()
 
-    import wft_worker.pools.simulate
+    import dsy_worker.pools.simulate
 
-    monkeypatch.setattr(wft_worker.pools.simulate, "run", slow)
+    monkeypatch.setattr(dsy_worker.pools.simulate, "run", slow)
     environment = ActivityEnvironment()
     environment.info = dataclasses.replace(
         environment.info, heartbeat_timeout=timedelta(seconds=0.9)
     )
     run(task_of("simulate"), environment)
     lag = scrape(address)[
-        "wft_worker_heartbeat_lag_seconds_count", frozenset({("pool", "simulate")})
+        "dsy_worker_heartbeat_lag_seconds_count", frozenset({("pool", "simulate")})
     ]
     assert lag >= 2
     assert len([x for x in lines() if x["msg"].startswith("task ended")]) == 1

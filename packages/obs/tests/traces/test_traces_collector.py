@@ -5,10 +5,10 @@ import subprocess
 import time
 
 import pytest
+from dsy_obs import logs, traces
+from dsy_obs.setup import setup
+from dsy_temporal.trace import stage_span
 from opentelemetry import trace
-from wft_obs import logs, traces
-from wft_obs.setup import setup
-from wft_temporal.trace import stage_span
 
 pytestmark = pytest.mark.integration
 
@@ -58,14 +58,14 @@ def test_a_span_reaches_the_collector(t1, tmp_path, fresh, monkeypatch):
     with t1.container(
         IMAGE,
         ports={0: 4318},
-        command=["--config=/etc/wft/collector.yaml"],
-        mounts={config: "/etc/wft/collector.yaml"},
+        command=["--config=/etc/dsy/collector.yaml"],
+        mounts={config: "/etc/dsy/collector.yaml"},
     ) as collector:
         collector.wait_ready(0)
         monkeypatch.setenv(traces.ENDPOINT, f"http://127.0.0.1:{collector.host_ports[0]}")
         monkeypatch.setattr(logs, "CLOSE_SECONDS", 0.1)
         setup("workflow")
-        with stage_span(trace.get_tracer("wft"), "stage", f"00-{TRACE_ID}-{SPAN_ID}-01"):
+        with stage_span(trace.get_tracer("dsy"), "stage", f"00-{TRACE_ID}-{SPAN_ID}-01"):
             pass
         trace.get_tracer_provider().shutdown()
         deadline = time.monotonic() + 30

@@ -37,7 +37,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
-      WFT_PRESET: ci
+      DSY_PRESET: ci
     steps:
       - uses: actions/checkout@v7
       - uses: DeterminateSystems/nix-installer-action@v23
@@ -55,7 +55,7 @@ jobs:
       - run: nix develop -c just up
       - name: Export cluster logs
         if: ${{ failure() }}
-        run: nix develop -c kind export logs --name wft "$RUNNER_TEMP/cluster-logs"
+        run: nix develop -c kind export logs --name dsy "$RUNNER_TEMP/cluster-logs"
       - name: Upload cluster logs
         if: ${{ failure() }}
         uses: actions/upload-artifact@v4

@@ -1,19 +1,19 @@
 #!/usr/bin/env bash
 # Usage: check-dev-ports.sh
 # Reports every host port a run is about to bind that something already listens on, with the holder's pid, start time
-# and command, and a wft-* container that publishes it as a leftover. Nothing is stopped or removed.
-# Ports come from scripts/dev-ports.map and deploy/host/ports.yaml, and WFT_SLOT shifts the rows that have a stride.
-# WFT_PORT_MAP and WFT_HOST_PORTS replace the two tables, WFT_PORT_TOOL (lsof, ss or none) limits the probes.
+# and command, and a dsy-* container that publishes it as a leftover. Nothing is stopped or removed.
+# Ports come from scripts/dev-ports.map and deploy/host/ports.yaml, and DSY_SLOT shifts the rows that have a stride.
+# DSY_PORT_MAP and DSY_HOST_PORTS replace the two tables, DSY_PORT_TOOL (lsof, ss or none) limits the probes.
 # Exit 0 every port free, or neither lsof nor ss installed, 1 a port is held.
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
-map=${WFT_PORT_MAP:-scripts/dev-ports.map}
-host_ports=${WFT_HOST_PORTS:-deploy/host/ports.yaml}
-slot=${WFT_SLOT:-0}
+map=${DSY_PORT_MAP:-scripts/dev-ports.map}
+host_ports=${DSY_HOST_PORTS:-deploy/host/ports.yaml}
+slot=${DSY_SLOT:-0}
 
 # lsof only sees the sockets of the user's own processes, so a port a root-owned docker-proxy holds needs ss as well.
-tools=${WFT_PORT_TOOL:-}
+tools=${DSY_PORT_TOOL:-}
 if [ -z "$tools" ]; then
     tools=""
     for t in lsof ss; do command -v "$t" >/dev/null && tools+="$t "; done
@@ -35,7 +35,7 @@ probe() {
         ss)
             ss -ltnpH "( sport >= :$lo and sport <= :$hi )" 2>/dev/null |
                 awk '{ n = split($4, a, ":"); pid = "?"; if (match($0, /pid=[0-9]+/)) pid = substr($0, RSTART + 4, RLENGTH - 4); print a[n], pid }' || true ;;
-        *) echo "check-dev-ports: unknown WFT_PORT_TOOL $tool" >&2; exit 2 ;;
+        *) echo "check-dev-ports: unknown DSY_PORT_TOOL $tool" >&2; exit 2 ;;
     esac
 }
 
@@ -55,7 +55,7 @@ describe() {
 # A published port is held by docker-proxy, so the container behind it names the real owner.
 container_of() {
     command -v docker >/dev/null || return 0
-    timeout 5 docker ps --filter "publish=$1" --format '{{.Names}}' 2>/dev/null | grep '^wft-' | head -n 1 || true
+    timeout 5 docker ps --filter "publish=$1" --format '{{.Names}}' 2>/dev/null | grep '^dsy-' | head -n 1 || true
 }
 
 held=0
@@ -66,7 +66,7 @@ check() {
         held=1
         box=$(container_of "$port")
         echo "held: $name port $port, $(describe "$pid")"
-        [ -z "$box" ] || echo "  leftover wft container $box, left running"
+        [ -z "$box" ] || echo "  leftover dsy container $box, left running"
     done < <(listeners "$lo" "$hi")
 }
 
@@ -79,5 +79,5 @@ if [ -f "$host_ports" ]; then
     while read -r name port; do check "$name" "$port" "$port"; done < <(yq -r '.ports[] | .name + " " + (.host_port | tostring)' "$host_ports")
 fi
 
-[ "$held" -eq 0 ] || { echo "check-dev-ports: a port above is held, stop its holder or pick another WFT_SLOT" >&2; exit 1; }
+[ "$held" -eq 0 ] || { echo "check-dev-ports: a port above is held, stop its holder or pick another DSY_SLOT" >&2; exit 1; }
 echo "check-dev-ports: every port is free"

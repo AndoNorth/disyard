@@ -4,11 +4,11 @@ import hashlib
 import io
 import json
 
+import dsy_aggregate.__main__ as cli
 import pytest
-import wft_aggregate.__main__ as cli
-from wft_artifactclient.aggregate import build_index
-from wft_artifactclient.errors import ArtifactCorrupt, ArtifactLost, StoreUnavailable
-from wft_events.models import AttemptReference, ContentReference, ProducerRef
+from dsy_artifactclient.aggregate import build_index
+from dsy_artifactclient.errors import ArtifactCorrupt, ArtifactLost, StoreUnavailable
+from dsy_events.models import AttemptReference, ContentReference, ProducerRef
 
 JOB = "123e4567-e89b-42d3-a456-426614174000"
 TENANT = "acme"
@@ -16,7 +16,7 @@ TENANT = "acme"
 
 def result(task: str) -> AttemptReference:
     return AttemptReference(
-        uri=f"s3://wft-results/{TENANT}/b1/{JOB}/1/{task}/r0a1/results.xml",
+        uri=f"s3://dsy-results/{TENANT}/b1/{JOB}/1/{task}/r0a1/results.xml",
         sha256=hashlib.sha256(task.encode()).hexdigest(),
         size=1024,
         name="results.xml",
@@ -74,7 +74,7 @@ def test_input_failures_classified(monkeypatch, tmp_path, capsys, client, cls, d
     data = index()
     digest = hashlib.sha256(data).hexdigest()
     reference = ContentReference(
-        uri=f"s3://wft-sources/sha256/{digest[:2]}/{digest}",
+        uri=f"s3://dsy-sources/sha256/{digest[:2]}/{digest}",
         sha256=digest,
         size=len(data),
         name="index.jsonl",

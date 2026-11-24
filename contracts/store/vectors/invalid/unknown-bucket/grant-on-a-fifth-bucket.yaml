@@ -1,11 +1,11 @@
 ---
 roles:
-  admin: {wft-sources: [bucket]}
-  submit: {wft-sources: [put], wft-scratch: [put]}
-  indexer: {wft-sources: [put]}
-  compile: {wft-sources: [get]}
-  simulate: {wft-results: [put]}
-  aggregate: {wft-results: [get]}
-  workflow: {wft-sources: [get]}
-  export: {wft-results: [get]}
-  reaper: {wft-results: [delete]}
+  admin: {dsy-sources: [bucket]}
+  submit: {dsy-sources: [put], dsy-scratch: [put]}
+  indexer: {dsy-sources: [put]}
+  compile: {dsy-sources: [get]}
+  simulate: {dsy-results: [put]}
+  aggregate: {dsy-results: [get]}
+  workflow: {dsy-sources: [get]}
+  export: {dsy-results: [get]}
+  reaper: {dsy-results: [delete]}

@@ -7,8 +7,8 @@ import subprocess
 import sys
 
 import pytest
-from wft_kernel.digest import digest, fnv1a64
-from wft_kernel.expected import expected_digest
+from dsy_kernel.digest import digest, fnv1a64
+from dsy_kernel.expected import expected_digest
 
 # Published test values of FNV-1a 64.
 PUBLISHED = {b"": 0xCBF29CE484222325, b"a": 0xAF63DC4C8601EC8C, b"foobar": 0x85944171F73967E8}
@@ -20,7 +20,7 @@ CASES = [
 ]
 PROGRAM = """
 import json, sys
-from wft_kernel.expected import expected_digest
+from dsy_kernel.expected import expected_digest
 print(json.dumps([expected_digest(w, s, a) for w, s, a in json.loads(sys.argv[1])]))
 """
 

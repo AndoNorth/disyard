@@ -1,5 +1,5 @@
-# The stand-in pool worker image: the pinned Python base, the hash-pinned third-party packages of wft-workflow and
-# wft-aggregate, the workspace wheels, uv, and the hash-checked wasmtime and wasm-tools release binaries with their
+# The stand-in pool worker image: the pinned Python base, the hash-pinned third-party packages of dsy-workflow and
+# dsy-aggregate, the workspace wheels, uv, and the hash-checked wasmtime and wasm-tools release binaries with their
 # modification time fixed, since wasmtime names its module cache after it. One image serves the three pools here.
 ARG BASE
 FROM ${BASE}

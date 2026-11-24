@@ -1,15 +1,15 @@
 [project]
-name = "wft-migrate"
+name = "dsy-migrate"
 version = "0.0.0"
 license = "Apache-2.0"
 requires-python = ">=3.13,<3.14"
-dependencies = ["psycopg[binary]", "pytest", "wft-itest"]
+dependencies = ["psycopg[binary]", "pytest", "dsy-itest"]
 
 [project.entry-points.pytest11]
-wft_migrate = "wft_migrate.fixtures"
+dsy_migrate = "dsy_migrate.fixtures"
 
 [tool.uv.sources]
-wft-itest = { workspace = true }
+dsy-itest = { workspace = true }
 
 [build-system]
 requires = ["hatchling"]

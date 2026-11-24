@@ -1,25 +1,25 @@
 groups:
-  - name: wft-workflow
+  - name: dsy-workflow
     rules:
-      - alert: WftScheduleToStartBreached
-        expr: sum(increase(wft_workflow_reschedules_total[15m])) > 0
+      - alert: DsyScheduleToStartBreached
+        expr: sum(increase(dsy_workflow_reschedules_total[15m])) > 0
         labels:
           severity: warning
         annotations:
           summary: Tasks timed out waiting for a worker slot and were placed again.
           description: A pool queue backs up past the schedule-to-start timeout.
-          runbook_url: https://github.com/AndoNorth/weft/blob/main/docs/runbooks/alerts.md#wftscheduletostartbreached
-      - alert: WftHistoryLengthHigh
+          runbook_url: https://github.com/AndoNorth/disyard/blob/main/docs/runbooks/alerts.md#dsyscheduletostartbreached
+      - alert: DsyHistoryLengthHigh
         expr: |
-          sum(increase(wft_workflow_history_events_bucket{le="+Inf"}[15m]))
-          - sum(increase(wft_workflow_history_events_bucket{le="10000"}[15m])) > 0
+          sum(increase(dsy_workflow_history_events_bucket{le="+Inf"}[15m]))
+          - sum(increase(dsy_workflow_history_events_bucket{le="10000"}[15m])) > 0
         labels:
           severity: warning
         annotations:
           summary: A job workflow woke with a history over 10,000 events.
           description: The history budget ends a job well before Temporal's hard limit of 51,200 events.
-          runbook_url: https://github.com/AndoNorth/weft/blob/main/docs/runbooks/alerts.md#wfthistorylengthhigh
-      - alert: WftTemporalWorkerUnhealthy
+          runbook_url: https://github.com/AndoNorth/disyard/blob/main/docs/runbooks/alerts.md#dsyhistorylengthhigh
+      - alert: DsyTemporalWorkerUnhealthy
         expr: |
           sum by (task_queue) (temporal_num_pollers{poller_type=~"workflow_task|activity_task"}) == 0
         for: 5m
@@ -28,8 +28,8 @@ groups:
         annotations:
           summary: No worker polls Temporal task queue {{ $labels.task_queue }}.
           description: The worker exports its metrics but has no poller, and tasks on the queue wait.
-          runbook_url: https://github.com/AndoNorth/weft/blob/main/docs/runbooks/alerts.md#wfttemporalworkerunhealthy
-      - alert: WftOldBuildIdLingering
+          runbook_url: https://github.com/AndoNorth/disyard/blob/main/docs/runbooks/alerts.md#dsytemporalworkerunhealthy
+      - alert: DsyOldBuildIdLingering
         expr: |
           (time() - kube_deployment_created{deployment=~"workflow-worker-.+"} > 7 * 86400)
           and on (namespace, deployment)
@@ -43,4 +43,4 @@ groups:
         annotations:
           summary: Workflow build {{ $labels.deployment }} still runs after 7 days beside a newer build.
           description: A build lives until its jobs finish, and no job lasts over 7 days, so a job is stuck on it.
-          runbook_url: https://github.com/AndoNorth/weft/blob/main/docs/runbooks/alerts.md#wftoldbuildidlingering
+          runbook_url: https://github.com/AndoNorth/disyard/blob/main/docs/runbooks/alerts.md#dsyoldbuildidlingering

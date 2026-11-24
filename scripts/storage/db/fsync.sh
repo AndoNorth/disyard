@@ -4,9 +4,9 @@
 # Usage: fsync.sh. Exit 0 the probe ran, 1 it did not.
 set -euo pipefail
 
-context=kind-wft
+context=kind-dsy
 data=/var/lib/postgresql/data
-k() { kubectl --context "$context" -n wft-infra "$@"; }
+k() { kubectl --context "$context" -n dsy-infra "$@"; }
 
 probe=$data/fsync-probe
 trap 'k exec statefulset/appdb -- rm -f "$probe"' EXIT

@@ -6,7 +6,7 @@ import inspect
 import pytest
 
 LANES = {"command": "R", "classify": "R", "__main__": "R", "calibrate": "R"}
-MODULES = {name: importlib.import_module(f"wft_runtime.{name}") for name in LANES}
+MODULES = {name: importlib.import_module(f"dsy_runtime.{name}") for name in LANES}
 
 
 @pytest.mark.parametrize("module", MODULES)

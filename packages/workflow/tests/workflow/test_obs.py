@@ -9,15 +9,15 @@ import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 import pytest
+from dsy_obs import logs, traces
+from dsy_temporal import tracing_interceptor
+from dsy_temporal.trace import stage_span
+from dsy_workflow.testing import connect
 from opentelemetry import trace
 from opentelemetry.proto.collector.trace.v1.trace_service_pb2 import ExportTraceServiceRequest
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.util._once import Once
 from temporalio.client import Client
-from wft_obs import logs, traces
-from wft_temporal import tracing_interceptor
-from wft_temporal.trace import stage_span
-from wft_workflow.testing import connect
 
 pytestmark = pytest.mark.integration
 
@@ -58,15 +58,15 @@ def test_a_job_end_is_counted_and_logged_and_a_cache_hit_is_logged(
 
     first, second, updates = asyncio.run(asyncio.wait_for(body(), LIMIT_S))
     labels = {"job_class": "short", "outcome": "succeeded"}
-    for name in ("wft_workflow_jobs_total", "wft_workflow_job_seconds"):
+    for name in ("dsy_workflow_jobs_total", "dsy_workflow_job_seconds"):
         ours = [u for u in updates if u.metric.name == name]
         assert ours, name
         assert all(
             u.attributes["job_class"] == "short" and u.attributes["outcome"] == "succeeded"
             for u in ours
         )
-    assert sum(u.value for u in updates if u.metric.name == "wft_workflow_jobs_total") == 2
-    assert all(u.value >= 0 for u in updates if u.metric.name == "wft_workflow_job_seconds")
+    assert sum(u.value for u in updates if u.metric.name == "dsy_workflow_jobs_total") == 2
+    assert all(u.value >= 0 for u in updates if u.metric.name == "dsy_workflow_job_seconds")
     lines = json_logs()
     ended = [line for line in lines if line["msg"].startswith("job ended")]
     assert {line["job_id"] for line in ended} == {first.jobid, second.jobid}
@@ -131,7 +131,7 @@ def test_the_activity_spans_of_a_job_carry_its_trace_id(temporal, rig, plan, fan
         async with rig(client) as this:
             # Only the client that starts the job carries the trace context into its headers.
             this.client = Client(**{**client.config(), "interceptors": [tracing_interceptor()]})
-            with stage_span(trace.get_tracer("wft"), "dispatch", event.traceparent):
+            with stage_span(trace.get_tracer("dsy"), "dispatch", event.traceparent):
                 handle = await this.start(plan(fan), event)
             await handle.result()
 

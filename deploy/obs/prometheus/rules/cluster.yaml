@@ -1,7 +1,7 @@
 groups:
-  - name: wft-cluster
+  - name: dsy-cluster
     rules:
-      - alert: WftContainerOOM
+      - alert: DsyContainerOOM
         expr: |
           max by (namespace, pod, container) (
             kube_pod_container_status_last_terminated_exitcode == 137
@@ -20,11 +20,11 @@ groups:
           description: >-
             The last exit was 137 with reason OOMKilled, or the container waits on memory over 5 percent
             of the time, which is a container at its limit or a node short of memory.
-          runbook_url: https://github.com/AndoNorth/weft/blob/main/docs/runbooks/alerts.md#wftcontaineroom
-      - alert: WftPodRestartUnexpected
+          runbook_url: https://github.com/AndoNorth/disyard/blob/main/docs/runbooks/alerts.md#dsycontaineroom
+      - alert: DsyPodRestartUnexpected
         expr: |
           sum by (namespace, pod, container) (
-            increase(kube_pod_container_status_restarts_total{namespace=~"wft(-.+)?"}[15m])
+            increase(kube_pod_container_status_restarts_total{namespace=~"dsy(-.+)?"}[15m])
           ) > 0
           unless on (namespace, pod, container)
           kube_pod_container_status_last_terminated_reason{reason="OOMKilled"} == 1
@@ -32,9 +32,9 @@ groups:
           severity: warning
         annotations:
           summary: Container {{ $labels.container }} of pod {{ $labels.pod }} restarted.
-          description: The restart was not an OOM kill, which WftContainerOOM reports.
-          runbook_url: https://github.com/AndoNorth/weft/blob/main/docs/runbooks/alerts.md#wftpodrestartunexpected
-      - alert: WftTargetDown
+          description: The restart was not an OOM kill, which DsyContainerOOM reports.
+          runbook_url: https://github.com/AndoNorth/disyard/blob/main/docs/runbooks/alerts.md#dsypodrestartunexpected
+      - alert: DsyTargetDown
         expr: up == 0
         for: 5m
         labels:
@@ -42,12 +42,12 @@ groups:
         annotations:
           summary: Prometheus cannot scrape {{ $labels.job }} target {{ $labels.instance }}.
           description: Series and alerts that depend on the target are blind.
-          runbook_url: https://github.com/AndoNorth/weft/blob/main/docs/runbooks/alerts.md#wfttargetdown
-      - alert: WftWatchdog
+          runbook_url: https://github.com/AndoNorth/disyard/blob/main/docs/runbooks/alerts.md#dsytargetdown
+      - alert: DsyWatchdog
         expr: vector(1)
         labels:
           severity: info
         annotations:
           summary: The alerting pipeline is alive.
           description: This alert always fires, and its absence means rules are not evaluated.
-          runbook_url: https://github.com/AndoNorth/weft/blob/main/docs/runbooks/alerts.md#wftwatchdog
+          runbook_url: https://github.com/AndoNorth/disyard/blob/main/docs/runbooks/alerts.md#dsywatchdog

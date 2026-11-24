@@ -5,14 +5,9 @@ import uuid
 from datetime import UTC, datetime
 
 import pytest
-from opentelemetry.sdk.trace import TracerProvider
-from opentelemetry.sdk.trace.export import SimpleSpanProcessor
-from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
-from temporalio.client import Client
-from temporalio.worker import Worker
-from wft_events import build_event, from_bytes, to_bytes
-from wft_events.models import JobParams
-from wft_temporal import (
+from dsy_events import build_event, from_bytes, to_bytes
+from dsy_events.models import JobParams
+from dsy_temporal import (
     current_traceparent,
     event_data_converter,
     new_traceparent,
@@ -20,13 +15,18 @@ from wft_temporal import (
     trace_id_of,
     tracing_interceptor,
 )
-from wft_temporal.standin import RUNNER, TASK_QUEUE, StandInJob, run_task
+from dsy_temporal.standin import RUNNER, TASK_QUEUE, StandInJob, run_task
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import SimpleSpanProcessor
+from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
+from temporalio.client import Client
+from temporalio.worker import Worker
 
 pytestmark = pytest.mark.integration
 
 JOB = "3a9617fa-df7c-5760-a644-42d559e0f433"
 MANIFEST = {
-    "uri": "s3://wft-sources/sha256/9f/9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08",
+    "uri": "s3://dsy-sources/sha256/9f/9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08",
     "sha256": "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08",
     "size": 2048,
     "name": "manifest.json",
@@ -56,7 +56,7 @@ async def run_stages(port: int, tracer, interceptor):
     with stage_span(tracer, "stage.submit", submitted):
         accepted = build_event(
             "job.accepted",
-            source="/wft/dispatch",
+            source="/dsy/dispatch",
             tenant="acme",
             jobid=JOB,
             priorityclass="standard",
@@ -88,7 +88,7 @@ def test_every_stage_span_is_on_the_submit_trace_and_follows_the_stage_before(t1
     exporter = InMemorySpanExporter()
     provider = TracerProvider()
     provider.add_span_processor(SimpleSpanProcessor(exporter))
-    tracer = provider.get_tracer("wft")
+    tracer = provider.get_tracer("dsy")
     with t1.container(
         "temporalio/temporal",
         ports={0: 7233},

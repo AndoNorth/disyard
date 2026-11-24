@@ -1,30 +1,30 @@
 """The publisher and the reconciler against Postgres and the pinned RabbitMQ, publishing as the
-broker user `dispatch` with wft_broker's own client."""
+broker user `dispatch` with dsy_broker's own client."""
 
 import time
 from datetime import timedelta
 
 import psycopg
 import pytest
-from wft_broker.client import Credentials, connect
-from wft_broker.contract import topology
-from wft_broker.testing.container import broker_container
-from wft_dispatchapi.publish import Publisher
-from wft_dispatchapi.reconciler import Reconciler
-from wft_dispatchapi.submit import SCHEMA_VERSION, accepted_event
-from wft_events import to_bytes
-from wft_events.metrics import registry
-from wft_eventstore import insert_events
-from wft_jobstate import JobRow, get_job, insert_accepted
-from wft_keys import batch_id, job_id
-from wft_temporal import new_traceparent
+from dsy_broker.client import Credentials, connect
+from dsy_broker.contract import topology
+from dsy_broker.testing.container import broker_container
+from dsy_dispatchapi.publish import Publisher
+from dsy_dispatchapi.reconciler import Reconciler
+from dsy_dispatchapi.submit import SCHEMA_VERSION, accepted_event
+from dsy_events import to_bytes
+from dsy_events.metrics import registry
+from dsy_eventstore import insert_events
+from dsy_jobstate import JobRow, get_job, insert_accepted
+from dsy_keys import batch_id, job_id
+from dsy_temporal import new_traceparent
 
 pytestmark = [pytest.mark.integration, pytest.mark.pair]
 
 QUEUE = "intake.acme.standard"
 SHA = "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08"
 MANIFEST = {
-    "uri": f"s3://wft-sources/sha256/9f/{SHA}",
+    "uri": f"s3://dsy-sources/sha256/9f/{SHA}",
     "sha256": SHA,
     "size": 2048,
     "name": "manifest.json",
@@ -94,7 +94,7 @@ def test_publish_rabbitmq(rabbitmq, dispatch, db):
         admission.close()
 
     stored = db.execute(
-        "SELECT body FROM event WHERE type = 'dev.wft.job.accepted.v1'"
+        "SELECT body FROM event WHERE type = 'dev.dsy.job.accepted.v1'"
         " AND job_id = ANY(%s::uuid[])",
         (submitted + reconciled,),
     ).fetchall()
@@ -104,7 +104,7 @@ def test_publish_rabbitmq(rabbitmq, dispatch, db):
     )
     assert published == {**dict.fromkeys(submitted + reconciled, True), unroutable[0]: False}
     count = db.execute(
-        "SELECT count(*) FROM event WHERE type = 'dev.wft.job.published.v1'"
+        "SELECT count(*) FROM event WHERE type = 'dev.dsy.job.published.v1'"
     ).fetchone()[0]
     assert count == 5
     assert to_bytes(events[0]) in bodies
@@ -131,9 +131,9 @@ def test_reconciler_against_a_full_queue(rabbitmq, dispatch):
         ).fetchone()[0]
 
     def rejected_by_pass() -> int:
-        before = registry.count("wft_broker_publish_total", outcome="rejected")
+        before = registry.count("dsy_broker_publish_total", outcome="rejected")
         reconciler.run_pass(dispatch)
-        return registry.count("wft_broker_publish_total", outcome="rejected") - before
+        return registry.count("dsy_broker_publish_total", outcome="rejected") - before
 
     assert rejected_by_pass() == 1
     queued = limit + 100 - unpublished()

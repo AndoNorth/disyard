@@ -3,8 +3,8 @@
 import json
 from pathlib import Path
 
-from wft_compat import check_catalogue, readable_days, window
-from wft_events.models import INTRODUCED
+from dsy_compat import check_catalogue, readable_days, window
+from dsy_events.models import INTRODUCED
 
 FIXTURES = Path(__file__).parent / "fixtures"
 

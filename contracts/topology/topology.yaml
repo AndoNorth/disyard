@@ -1,6 +1,6 @@
 # Pool and namespace topology. Schema: topology.schema.json.
-# The wft.dev prefix is a placeholder, and consumers read the label key from here.
-pool_label: wft.dev/pool
+# The dsy.dev prefix is a placeholder, and consumers read the label key from here.
+pool_label: dsy.dev/pool
 taint_effect: NoSchedule
 # Preset node role to pool label value. The control-plane role has no pool and keeps its own taint.
 pools:
@@ -11,7 +11,7 @@ pools:
   aggregate: aggregate
 # Every namespace carries a ResourceQuota and a LimitRange.
 namespaces:
-  wft-infra: {group: infra}
-  wft-control: {group: control}
-  wft-workers: {group: workers}
-  wft-obs: {group: obs}
+  dsy-infra: {group: infra}
+  dsy-control: {group: control}
+  dsy-workers: {group: workers}
+  dsy-obs: {group: obs}

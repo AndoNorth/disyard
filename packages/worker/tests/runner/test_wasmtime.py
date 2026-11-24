@@ -7,11 +7,11 @@ import time
 from pathlib import Path
 
 import pytest
-from wft_compile.build import build
-from wft_runtime.command import GUEST_INPUT, INPUT_FILE, OUTPUT, command, warm_up
-from wft_runtime.contract import canonical
-from wft_worker.runner import Child, Exit
-from wft_workloads import bundle
+from dsy_compile.build import build
+from dsy_runtime.command import GUEST_INPUT, INPUT_FILE, OUTPUT, command, warm_up
+from dsy_runtime.contract import canonical
+from dsy_worker.runner import Child, Exit
+from dsy_workloads import bundle
 
 pytestmark = pytest.mark.integration
 
@@ -26,7 +26,7 @@ STOP_WITHIN_S = 6
 @pytest.fixture(scope="module")
 def component(tmp_path_factory) -> Path:
     work = tmp_path_factory.mktemp("workloads")
-    return build(bundle.write(work), "wft_workloads.main", work / "built").component
+    return build(bundle.write(work), "dsy_workloads.main", work / "built").component
 
 
 @pytest.fixture(scope="module")

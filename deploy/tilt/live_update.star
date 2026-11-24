@@ -1,5 +1,5 @@
 # Live-update library for Python services, applied by a module's Tiltfile.module (see live-update.md).
-# The Tiltfile exports the profile's live_update flag as WFT_LIVE_UPDATE, and a module opts in by calling
+# The Tiltfile exports the profile's live_update flag as DSY_LIVE_UPDATE, and a module opts in by calling
 # python_live_update instead of docker_build.
 
 def python_live_update(ref, context, src, dest, requirements = "requirements.txt", dockerfile = "Dockerfile"):
@@ -9,7 +9,7 @@ def python_live_update(ref, context, src, dest, requirements = "requirements.txt
     Outside a live-update profile the image is built plain, so the deployed tag is the content-addressed tilt tag.
     """
     kwargs = {}
-    if os.getenv("WFT_LIVE_UPDATE") == "1":
+    if os.getenv("DSY_LIVE_UPDATE") == "1":
         kwargs["live_update"] = [
             sync(context + "/" + requirements, dest + "/" + requirements),
             sync(context + "/" + src, dest + "/" + src),

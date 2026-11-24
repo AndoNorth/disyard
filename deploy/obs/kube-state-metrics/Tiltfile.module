@@ -16,8 +16,8 @@ k8s_resource(
     name,
     objects = [
         name + ":serviceaccount:" + namespace,
-        "wft-" + name + ":clusterrole",
-        "wft-" + name + ":clusterrolebinding",
+        "dsy-" + name + ":clusterrole",
+        "dsy-" + name + ":clusterrolebinding",
     ],
     labels = [module["group"]],
     resource_deps = [d.split("/")[1] for d in module.get("depends_on", [])],

@@ -8,7 +8,7 @@ RabbitMQ is the intake buffer for submitted jobs and nothing else.
 It holds each accepted event between the dispatch API and admission, keeps it durable across restarts, and gives an intake message that cannot be processed a dead-letter queue with a reason that says how to recover it.
 The broker never owns job state: Temporal owns workflow lifecycle, and Postgres owns the job rows.
 This directory pins the topology, the message shape, the memory of the broker, the publish outcomes, the settle calls, the rules of the client, the dead-letter reasons and the alert rules.
-The schemas are generated from the models of `wft_broker.models` and never edited by hand.
+The schemas are generated from the models of `dsy_broker.models` and never edited by hand.
 The tenants and priority classes that the intake queues are named after live in the [tenancy contract](../tenancy/README.md).
 The exchanges, the queues, the dead-letter path and the client calls are drawn in [docs/architecture/19-broker-intake-and-dead-letter.drawio](../../docs/architecture/19-broker-intake-and-dead-letter.drawio).
 
@@ -19,15 +19,15 @@ The exchanges, the queues, the dead-letter path and the client calls are drawn i
 | Key | v1 value | Rule |
 | --- | --- | --- |
 | `vhost` | `/` | one vhost |
-| `intake_exchange` | `wft.intake`, direct, durable | publishing to the exchange answers `released` for a routing key with no queue, where a publish to a missing queue address would be a refused link |
-| `intake_queue` | template `intake.<tenant>.<class>`, quorum, initial group size 1, bound to `wft.intake` by its own name | one per tenant and priority class of the tenancy profile, and the tenant and class patterns of the event profile hold no dot, so a name maps to one pair |
-| `intake_policy` | `wft-intake` on `^intake\.[a-z0-9][a-z0-9-]*\.[a-z0-9][a-z0-9-]*$`, applied to quorum queues: `delivery_limit` 5, `max_length` 1,000 (estimate), `overflow` `reject-publish`, `dead_letter_exchange` `wft.dlx`, `dead_letter_strategy` `at-least-once`, `delayed_retry_type` `failed` with `delayed_retry_min` 1,000 and `delayed_retry_max` 30,000 ms | at-least-once dead-lettering needs `reject-publish` on the source queue, and a full queue rejects the publish so the backlog of a large batch waits in Postgres. The delayed retry spaces the five counted retries of a message 1, 2, 3, 4 and 5 s apart, so a transient failure needs 15 s to dead-letter it, and type `failed` leaves `release()` immediate |
-| `dead_letter_exchange` | `wft.dlx`, fanout, durable | every dead letter of every intake queue goes through it |
-| `dead_letter_queue` | `intake.dlq`, quorum, initial group size 1, bound to `wft.dlx` | one queue for every tenant, class and reason, with no length bound |
-| `dlq_policy` | `wft-dlq` on `^intake\.dlq$`: `delivery_limit` -1, which turns the limit off, and no message TTL | a dead letter leaves only by `dlq replay` or `dlq purge`, and `dlq list` marks one older than `wft_compat.window.DEAD_LETTER_RETENTION_DAYS` as `stale` |
-| `addresses` | publish to `/exchanges/wft.intake/<routing key>`, consume from `/queues/<queue>` | the AMQP 1.0 address format of RabbitMQ 4.x |
-| `message` | one `data` section, `content_type` `application/cloudevents+json; charset=utf-8`, `durable` true, no application-properties, no message annotations on publish | the `dev.wft.job.accepted.v1` event in structured mode, with no context attribute mapped to an AMQP property |
-| `annotations` | `x-opt-wft-reason`, `x-opt-wft-detail` of at most 1,024 characters | set by `dead_letter` in the same settle |
+| `intake_exchange` | `dsy.intake`, direct, durable | publishing to the exchange answers `released` for a routing key with no queue, where a publish to a missing queue address would be a refused link |
+| `intake_queue` | template `intake.<tenant>.<class>`, quorum, initial group size 1, bound to `dsy.intake` by its own name | one per tenant and priority class of the tenancy profile, and the tenant and class patterns of the event profile hold no dot, so a name maps to one pair |
+| `intake_policy` | `dsy-intake` on `^intake\.[a-z0-9][a-z0-9-]*\.[a-z0-9][a-z0-9-]*$`, applied to quorum queues: `delivery_limit` 5, `max_length` 1,000 (estimate), `overflow` `reject-publish`, `dead_letter_exchange` `dsy.dlx`, `dead_letter_strategy` `at-least-once`, `delayed_retry_type` `failed` with `delayed_retry_min` 1,000 and `delayed_retry_max` 30,000 ms | at-least-once dead-lettering needs `reject-publish` on the source queue, and a full queue rejects the publish so the backlog of a large batch waits in Postgres. The delayed retry spaces the five counted retries of a message 1, 2, 3, 4 and 5 s apart, so a transient failure needs 15 s to dead-letter it, and type `failed` leaves `release()` immediate |
+| `dead_letter_exchange` | `dsy.dlx`, fanout, durable | every dead letter of every intake queue goes through it |
+| `dead_letter_queue` | `intake.dlq`, quorum, initial group size 1, bound to `dsy.dlx` | one queue for every tenant, class and reason, with no length bound |
+| `dlq_policy` | `dsy-dlq` on `^intake\.dlq$`: `delivery_limit` -1, which turns the limit off, and no message TTL | a dead letter leaves only by `dlq replay` or `dlq purge`, and `dlq list` marks one older than `dsy_compat.window.DEAD_LETTER_RETENTION_DAYS` as `stale` |
+| `addresses` | publish to `/exchanges/dsy.intake/<routing key>`, consume from `/queues/<queue>` | the AMQP 1.0 address format of RabbitMQ 4.x |
+| `message` | one `data` section, `content_type` `application/cloudevents+json; charset=utf-8`, `durable` true, no application-properties, no message annotations on publish | the `dev.dsy.job.accepted.v1` event in structured mode, with no context attribute mapped to an AMQP property |
+| `annotations` | `x-opt-dsy-reason`, `x-opt-dsy-detail` of at most 1,024 characters | set by `dead_letter` in the same settle |
 | `users` | `dispatch`, `admission`, `operator` | the permissions below |
 | `ports` | `amqp` 5672, `prometheus` 15692 | the queue counts come from the detailed endpoint of `rabbitmq_prometheus` |
 | `memory` | `limit_mib` 320, `high_watermark_mib` 192 | the request and the limit of the broker container are both `limit_mib`, and `vm_memory_high_watermark.absolute` is `high_watermark_mib`, 0.6 of it, set absolute so it never depends on the memory the container detects. A broker that recovers four full intake queues and a full `intake.dlq` after a restart peaks at about 160 MiB, which raised the alarm at a 256 MiB limit, and the alarm blocks every publisher |
@@ -44,9 +44,9 @@ Each password is generated into the state directory and never committed.
 
 | User | Write | Read | Why |
 | --- | --- | --- | --- |
-| `dispatch` | `^wft\.intake$` | nothing | publishes accepted events, and a defect in dispatch cannot consume |
+| `dispatch` | `^dsy\.intake$` | nothing | publishes accepted events, and a defect in dispatch cannot consume |
 | `admission` | nothing | the intake queue pattern | consumes, and re-admits a job from its row, never by a publish |
-| `operator` | `^wft\.intake$` | `^intake\.dlq$` and the intake queue pattern | replays dead letters, and reads the intake queues for the regression suite only |
+| `operator` | `^dsy\.intake$` | `^intake\.dlq$` and the intake queue pattern | replays dead letters, and reads the intake queues for the regression suite only |
 
 ## Publish outcomes
 
@@ -68,7 +68,7 @@ On an intake queue the client sends only these outcomes, so `released` and `reje
 | Call | AMQP outcome | Counts toward the limit | Use |
 | --- | --- | --- | --- |
 | `ack()` | `accepted` | no, the message is gone | the workflow started, or the row says the message needs nothing |
-| `retry()` | `modified`, `delivery-failed=true`, `undeliverable-here=false` | yes, and on a `last` delivery the broker dead-letters with `delivery_limit` | a failure of this message that may pass on a redelivery, which comes after the delayed retry of `wft-intake` |
+| `retry()` | `modified`, `delivery-failed=true`, `undeliverable-here=false` | yes, and on a `last` delivery the broker dead-letters with `delivery_limit` | a failure of this message that may pass on a redelivery, which comes after the delayed retry of `dsy-intake` |
 | `dead_letter(reason, detail)` | `modified`, `delivery-failed=true`, `undeliverable-here=true`, the two annotations | dead-letters at once with broker reason `rejected` | a message that can never be processed, or a `last` delivery |
 | `release()` | `modified`, `delivery-failed=false`, `undeliverable-here=false` | no, and the message goes back to the head of its queue at once | a dependency outage, a job class at its cap, the consumer's internal breaker open, or the consumer's drain on shutdown, and never a fault of the one message |
 
@@ -80,7 +80,7 @@ A message settled back, counted or not, goes ahead of every message never delive
 
 ## Client rules
 
-The client of `wft_broker.client` holds to these rules, which RabbitMQ 4.4.0 makes necessary.
+The client of `dsy_broker.client` holds to these rules, which RabbitMQ 4.4.0 makes necessary.
 
 - A receiver starts at credit 0 and gets credit only through `flow(n)` and `drain(n)`, and the client never uses prefetch.
 - The client grants credit only after the broker has answered the attach, because credit sent on a link that a refused attach has already detached ends the whole session with `amqp:session:unattached-handle`.
@@ -92,7 +92,7 @@ The client of `wft_broker.client` holds to these rules, which RabbitMQ 4.4.0 mak
 ## Dead-letter reasons
 
 [reasons.yaml](reasons.yaml), with schema [reasons.schema.json](reasons.schema.json), one row per code.
-The reason of a dead letter is `x-opt-wft-reason` when present, and `x-last-death-reason` otherwise.
+The reason of a dead letter is `x-opt-dsy-reason` when present, and `x-last-death-reason` otherwise.
 
 | Code | Source | On an intake queue | Event | Recovery | Operator action |
 | --- | --- | --- | --- | --- | --- |
@@ -100,7 +100,7 @@ The reason of a dead letter is `x-opt-wft-reason` when present, and `x-last-deat
 | `UNSUPPORTED_VERSION` | application | expected | `job.dead.lettered` with `dlq_reason: UNSUPPORTED_VERSION` | `after-fix` | deploy a reader of that major inside the replay window of a previous major, then `replay` |
 | `ADMISSION_FAILED` | application | expected | none | `replay` | find the cause from the detail token and the admission log of the job, fix it, then `replay` |
 | `delivery_limit` | broker | expected, when a last delivery is lost to a crash, a restart or a dropped connection | none | `replay` | check why the consumer lost it, then `replay` |
-| `rejected` | broker | not expected without `x-opt-wft-reason`, a consumer defect | none | `after-fix` | fix the consumer, then `replay` |
+| `rejected` | broker | not expected without `x-opt-dsy-reason`, a consumer defect | none | `after-fix` | fix the consumer, then `replay` |
 | `maxlen` | broker | not expected, because intake queues reject publishes | none | `after-fix` | fix the topology, then `replay` |
 | `expired` | broker | not expected, because intake queues have no TTL | none | `after-fix` | fix the topology, then `replay` |
 
@@ -108,12 +108,12 @@ The reason of a dead letter is `x-opt-wft-reason` when present, and `x-last-deat
 A dead-lettered job keeps its row at `accepted`, so a replay can admit it, and the dead-letter queue is the only record of a message that names no job.
 `job.dead.lettered` 1.0 carries only `MALFORMED` and `UNSUPPORTED_VERSION`, so `ADMISSION_FAILED` has no event until the events contract adds the code.
 
-`x-opt-wft-detail` starts with a stable token and `: `, then free text, so recovery can group dead letters without parsing the text.
+`x-opt-dsy-detail` starts with a stable token and `: `, then free text, so recovery can group dead letters without parsing the text.
 
 | Code | Detail token |
 | --- | --- |
-| `MALFORMED` | the `reason` of the raised `wft_events` error, or `wrong-type` for a valid event that is not `job.accepted`, `unknown-tenant` or `unknown-class` for a pair outside the consumer's tenancy profile, and `queue-mismatch` when the `tenant` or `priorityclass` of the body differs from the queue |
-| `UNSUPPORTED_VERSION` | the `reason` of the raised `wft_events` error |
+| `MALFORMED` | the `reason` of the raised `dsy_events` error, or `wrong-type` for a valid event that is not `job.accepted`, `unknown-tenant` or `unknown-class` for a pair outside the consumer's tenancy profile, and `queue-mismatch` when the `tenant` or `priorityclass` of the body differs from the queue |
+| `UNSUPPORTED_VERSION` | the `reason` of the raised `dsy_events` error |
 | `ADMISSION_FAILED` | `no-row` for a job with no row, or the error class otherwise |
 
 ## Metrics and alerts
@@ -125,15 +125,15 @@ The queue counts come from the detailed endpoint of `rabbitmq_prometheus` on por
 | `queue_coarse_metrics` | `rabbitmq_detailed_queue_messages_ready`, `rabbitmq_detailed_queue_messages_unacked`, `rabbitmq_detailed_queue_messages` |
 | `queue_consumer_count` | `rabbitmq_detailed_queue_consumers` |
 
-The client counts `wft_broker_publish_total{outcome}`, `wft_broker_settle_total{call}` and `wft_broker_dead_letter_total{reason}` in the registry of `wft_events.metrics`, as [contracts/instrumentation/README.md](../instrumentation/README.md) pins them.
+The client counts `dsy_broker_publish_total{outcome}`, `dsy_broker_settle_total{call}` and `dsy_broker_dead_letter_total{reason}` in the registry of `dsy_events.metrics`, as [contracts/instrumentation/README.md](../instrumentation/README.md) pins them.
 
 The observability epic installs these alert rules with the Prometheus it deploys.
 
 | Alert | Expression, on the detailed endpoint and the client counters | Why |
 | --- | --- | --- |
-| `WftDeadLetterQueueNotEmpty` | `rabbitmq_detailed_queue_messages_ready` of `intake.dlq` above 0 for 5 minutes | every dead letter needs a recovery decision |
-| `WftIntakeQueueStalled` | an intake queue with `rabbitmq_detailed_queue_messages_ready` above 0 and `rabbitmq_detailed_queue_consumers` at 0 for 10 minutes | nothing admits the jobs of that queue, and a full queue alone is not alerted, because the backlog of a large batch waits in Postgres by design |
-| `WftIntakePublishUnroutable` | `wft_broker_publish_total{outcome="unroutable"}` rising for 10 minutes | the topology differs from the tenancy profile of the publisher, a defect, while `rejected` is designed back-pressure and is not alerted |
+| `DsyDeadLetterQueueNotEmpty` | `rabbitmq_detailed_queue_messages_ready` of `intake.dlq` above 0 for 5 minutes | every dead letter needs a recovery decision |
+| `DsyIntakeQueueStalled` | an intake queue with `rabbitmq_detailed_queue_messages_ready` above 0 and `rabbitmq_detailed_queue_consumers` at 0 for 10 minutes | nothing admits the jobs of that queue, and a full queue alone is not alerted, because the backlog of a large batch waits in Postgres by design |
+| `DsyIntakePublishUnroutable` | `dsy_broker_publish_total{outcome="unroutable"}` rising for 10 minutes | the topology differs from the tenancy profile of the publisher, a defect, while `rejected` is designed back-pressure and is not alerted |
 
 ## Consumers
 
@@ -147,11 +147,11 @@ The observability epic installs these alert rules with the Prometheus it deploys
 
 ## Loader
 
-`contracts/broker/check.sh <file> [--as NAME]` runs `python -m wft_broker.contract --check <file> [--as NAME]`, the loader of both this contract and the tenancy contract.
+`contracts/broker/check.sh <file> [--as NAME]` runs `python -m dsy_broker.contract --check <file> [--as NAME]`, the loader of both this contract and the tenancy contract.
 `NAME` is `topology` or `reasons`.
 Without `--as`, the name is the directory under `vectors/` that holds the file, or else the file's stem, so `topology.yaml` is checked as `topology`.
 It exits 0 when valid, 1 with `reason: <code>: <detail>` on stderr when not, and 2 on usage.
-The loader reads the event profile and the `job.dead.lettered` schemas through the package data of `wft_events`.
+The loader reads the event profile and the `job.dead.lettered` schemas through the package data of `dsy_events`.
 
 The first failing check wins, in this order, where `bad-name`, `dlq-ttl-set` and `bad-user` apply to `topology.yaml` and `duplicate-code`, `event-code-mismatch` and `unexpected-recovery` to `reasons.yaml`.
 

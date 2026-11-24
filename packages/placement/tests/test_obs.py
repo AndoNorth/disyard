@@ -7,10 +7,10 @@ import threading
 import urllib.request
 
 import pytest
-from wft_obs import metrics as obs_metrics
-from wft_placement import service
-from wft_placement.metrics import BUCKETS, Metrics
-from wft_workflow.placement import PlacementRequest, ServicePlacer
+from dsy_obs import metrics as obs_metrics
+from dsy_placement import service
+from dsy_placement.metrics import BUCKETS, Metrics
+from dsy_workflow.placement import PlacementRequest, ServicePlacer
 
 SIMULATE = PlacementRequest(task_type="simulate", cpu_milli=250, memory_mib=512, run_timeout_s=900)
 TOO_BIG = SIMULATE.model_copy(update={"memory_mib": 600})
@@ -56,8 +56,8 @@ def _value(text: str, name: str, **labels: str) -> float:
 def test_every_name_is_served_at_zero(endpoint):
     _, url = endpoint
     text = _scrape(url)
-    assert _value(text, "wft_placement_decisions_total", pool="simulate", verdict="placed") == 0
-    assert _value(text, "wft_placement_escalations_total", pool="compile") == 0
+    assert _value(text, "dsy_placement_decisions_total", pool="simulate", verdict="placed") == 0
+    assert _value(text, "dsy_placement_escalations_total", pool="compile") == 0
 
 
 def test_one_decision_is_counted_by_pool_and_verdict(endpoint):
@@ -73,17 +73,17 @@ def test_one_decision_is_counted_by_pool_and_verdict(endpoint):
     def gained(name: str, **labels: str) -> float:
         return _value(text, name, **labels) - _value(before, name, **labels)
 
-    assert gained("wft_placement_decisions_total", pool="simulate", verdict="placed") == 1
-    assert gained("wft_placement_decisions_total", pool="simulate", verdict="unschedulable") == 1
-    assert gained("wft_placement_escalations_total", pool="simulate") == 1
-    assert gained("wft_placement_decisions_total", pool="compile", verdict="placed") == 0
+    assert gained("dsy_placement_decisions_total", pool="simulate", verdict="placed") == 1
+    assert gained("dsy_placement_decisions_total", pool="simulate", verdict="unschedulable") == 1
+    assert gained("dsy_placement_escalations_total", pool="simulate") == 1
+    assert gained("dsy_placement_decisions_total", pool="compile", verdict="placed") == 0
     served.stop()
-    assert "wft_placement_place_seconds_bucket" in text
-    assert _value(text, "wft_placement_snapshot_age_seconds") == 3
+    assert "dsy_placement_place_seconds_bucket" in text
+    assert _value(text, "dsy_placement_snapshot_age_seconds") == 3
 
 
 def test_the_metrics_address_comes_from_the_environment():
     env = {"KUBERNETES_SERVICE_HOST": "10.96.0.1"}
     assert service.Config.from_env(env).metrics_address == "0.0.0.0:9464"
-    env["WFT_METRICS_ADDRESS"] = "127.0.0.1:1"
+    env["DSY_METRICS_ADDRESS"] = "127.0.0.1:1"
     assert service.Config.from_env(env).metrics_address == "127.0.0.1:1"

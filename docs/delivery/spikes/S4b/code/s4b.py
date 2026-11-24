@@ -58,9 +58,9 @@ def bare(raw: bytes) -> bytes:
     return b"".join(s[k] for k in (0x70, PROPERTIES, APP_PROPERTIES, DATA) if k in s)
 
 
-def death_or_wft(annotations) -> list[str]:
+def death_or_dsy(annotations) -> list[str]:
     return sorted(
-        str(k) for k in annotations if "death" in str(k) or str(k).startswith("x-opt-wft")
+        str(k) for k in annotations if "death" in str(k) or str(k).startswith("x-opt-dsy")
     )
 
 
@@ -96,7 +96,7 @@ def check1(t, b, pub, adm, op):
     probe.close()
     probe = amqp.connect(b.address, "operator", b.passwords["operator"])
     try:
-        probe.publish("x", GOLDEN, timeout_s=3, address="/exchanges/wft.missing/x")
+        probe.publish("x", GOLDEN, timeout_s=3, address="/exchanges/dsy.missing/x")
     except Exception as exc:
         figure(
             f"{t.prefix}.check1.unpermitted_exchange",
@@ -181,7 +181,7 @@ def check4(t, b, pub, adm, op):
         reason = dead[0].annotations.get("x-last-death-reason")
         figure(f"{t.prefix}.check4.limit_reason", reason)
         t.check(reason == "delivery_limit", "4 broker reason delivery_limit")
-        t.check("x-opt-wft-reason" not in dead[0].annotations, "4 no application reason")
+        t.check("x-opt-dsy-reason" not in dead[0].annotations, "4 no application reason")
         dead[0].ack()
     # A sixth delivery that is acked never dead-letters.
     pub.publish(Q, GOLDEN)
@@ -198,9 +198,9 @@ def check4(t, b, pub, adm, op):
     t.check(len(dead) == 1, "4 dead_letter moves the message at once")
     if dead:
         a = dead[0].annotations
-        t.check(a.get("x-opt-wft-reason") == "MALFORMED", "4 reason annotation set")
+        t.check(a.get("x-opt-dsy-reason") == "MALFORMED", "4 reason annotation set")
         t.check(
-            a.get("x-opt-wft-detail") == "not-json: body is not JSON", "4 detail annotation set"
+            a.get("x-opt-dsy-detail") == "not-json: body is not JSON", "4 detail annotation set"
         )
         t.check(a.get("x-last-death-reason") == "rejected", "4 broker reason rejected")
         figure(f"{t.prefix}.check4.dead_letter_annotations", ",".join(sorted(map(str, a))))
@@ -236,7 +236,7 @@ def check5(t, b, pub, adm, op):
     for code, name in ((PROPERTIES, "properties"), (DATA, "data")):
         t.check(s_re.get(code) == sent_raw.get(code), f"5 {name} identical after replay")
     t.check(replayed.body == GOLDEN, "5 body identical after replay")
-    t.check(death_or_wft(replayed.annotations) == [], "5 no death or wft annotation after replay")
+    t.check(death_or_dsy(replayed.annotations) == [], "5 no death or dsy annotation after replay")
     figure(f"{t.prefix}.check5.bytes", len(replayed.body))
     figure(
         f"{t.prefix}.check5.replay_annotations", ",".join(sorted(map(str, replayed.annotations)))
@@ -248,8 +248,8 @@ def check5(t, b, pub, adm, op):
     op.publish_raw(Q, dead.raw)
     dead.ack()
     stale = c.pull(1, 10)[0]
-    t.check(death_or_wft(stale.annotations) != [], "5 negative control carries stale annotations")
-    figure(f"{t.prefix}.check5.control_annotations", ",".join(death_or_wft(stale.annotations)))
+    t.check(death_or_dsy(stale.annotations) != [], "5 negative control carries stale annotations")
+    figure(f"{t.prefix}.check5.control_annotations", ",".join(death_or_dsy(stale.annotations)))
     flipped = bytearray(stale.body)
     flipped[-2] ^= 1
     t.check(bytes(flipped) != GOLDEN, "5 negative control body check can fail")
@@ -350,7 +350,7 @@ def m7(b):
         "set_policy",
         "--apply-to",
         "quorum_queues",
-        "wft-intake",
+        "dsy-intake",
         broker.INTAKE_PATTERN,
         json.dumps(
             {
@@ -375,7 +375,7 @@ def m7(b):
             "set_policy",
             "--apply-to",
             "quorum_queues",
-            "wft-intake",
+            "dsy-intake",
             broker.INTAKE_PATTERN,
             json.dumps(
                 {
@@ -426,7 +426,7 @@ def m7(b):
         "set_policy",
         "--apply-to",
         "quorum_queues",
-        "wft-intake",
+        "dsy-intake",
         broker.INTAKE_PATTERN,
         json.dumps(broker.INTAKE_POLICY),
     )
@@ -456,14 +456,14 @@ def m8(b):
         "list_exchanges", "name", "type", "durable", "--no-table-headers"
     ).splitlines():
         name, kind, durable = (line.split("\t") + ["", "", ""])[:3]
-        if name.startswith("wft"):
+        if name.startswith("dsy"):
             figure(f"m8.exchange.{name}", f"{kind};durable={durable}")
     figure(
         "m8.bindings",
         sum(
             1
             for line in b.ctl("list_bindings", "source_name", "--no-table-headers").splitlines()
-            if line.startswith("wft")
+            if line.startswith("dsy")
         ),
     )
     try:
@@ -476,7 +476,7 @@ def m8(b):
     for who, conn, fn in (
         ("dispatch_consume", pub, lambda c: c.consumer(Q).pull(1, 2)),
         ("admission_publish", adm, lambda c: c.publish(Q, GOLDEN, timeout_s=3)),
-        ("operator_publish_dlx", op, lambda c: c.publish("x", GOLDEN, 3, "/exchanges/wft.dlx/x")),
+        ("operator_publish_dlx", op, lambda c: c.publish("x", GOLDEN, 3, "/exchanges/dsy.dlx/x")),
     ):
         try:
             figure(f"m8.refused.{who}", f"allowed:{fn(conn)}")
@@ -507,7 +507,7 @@ def m9(b):
     orders, counts = [], []
     for _ in range(25):
         got = d.pull(5, 10)
-        orders.append("".join(m.annotations["x-opt-wft-detail"][-1] for m in got))
+        orders.append("".join(m.annotations["x-opt-dsy-detail"][-1] for m in got))
         counts.append(
             ",".join(
                 f"{m.delivery_count}/{m.annotations.get('x-delivery-count')}"
@@ -529,7 +529,7 @@ def m9(b):
     again = d.pull(5, 10)
     figure(
         "m9.order_after_out_of_order_release",
-        "".join(m.annotations["x-opt-wft-detail"][-1] for m in again),
+        "".join(m.annotations["x-opt-dsy-detail"][-1] for m in again),
     )
     for m in again:
         m.released()
@@ -541,7 +541,7 @@ def m9(b):
             break
         a = got[0].annotations
         counts.append(
-            f"{a['x-opt-wft-detail'][-1]}:{got[0].delivery_count}"
+            f"{a['x-opt-dsy-detail'][-1]}:{got[0].delivery_count}"
             f"/{a.get('x-delivery-count')}/{a.get('x-acquired-count')}"
         )
         got[0].retry()

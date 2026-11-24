@@ -11,10 +11,10 @@ ROOT = Path(__file__).resolve().parents[3]
 
 PROBE = """
 import proton
-from wft_broker.contract import reasons, tenancy, topology
-from wft_broker.models import CONTRACT
-from wft_broker.tenancy import load
-from wft_broker.testing import FakeBroker, broker_contract
+from dsy_broker.contract import reasons, tenancy, topology
+from dsy_broker.models import CONTRACT
+from dsy_broker.tenancy import load
+from dsy_broker.testing import FakeBroker, broker_contract
 
 assert proton.VERSION == (0, 40, 0)
 assert topology().intake_policy.definition.delayed_retry_type == "failed"
@@ -53,7 +53,7 @@ def run(*cmd, **kwargs) -> subprocess.CompletedProcess:
 def clean_python(tmp_path_factory) -> Path:
     work = tmp_path_factory.mktemp("wheel")
     wheels = work / "wheels"
-    for package in workspace_closure("wft-broker"):
+    for package in workspace_closure("dsy-broker"):
         run("uv", "build", "--wheel", "--package", package, "-o", str(wheels), cwd=ROOT)
     venv = work / "venv"
     run("uv", "venv", "--python", sys.executable, str(venv))
@@ -77,7 +77,7 @@ def test_wheel_loader_checks_a_file_away_from_the_repository(clean_python, tmp_p
     copy = tmp_path / Path(relative).name
     copy.write_text((ROOT / "contracts" / relative).read_text())
     result = subprocess.run(
-        [clean_python, "-I", "-m", "wft_broker.contract", "--check", str(copy)],
+        [clean_python, "-I", "-m", "dsy_broker.contract", "--check", str(copy)],
         capture_output=True,
         text=True,
         cwd=tmp_path,

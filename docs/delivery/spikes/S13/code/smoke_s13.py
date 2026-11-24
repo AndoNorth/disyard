@@ -9,8 +9,8 @@ Usage, from the root of the tree: uv run --frozen python docs/delivery/spikes/S1
 import os
 import sys
 
-from wft_acceptance import smoke
-from wft_acceptance.smoke import report
+from dsy_acceptance import smoke
+from dsy_acceptance.smoke import report
 
 
 def standin(self) -> None:

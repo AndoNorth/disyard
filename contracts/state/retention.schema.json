@@ -69,7 +69,7 @@
       "type": "object"
     }
   },
-  "$id": "urn:wft:schema:state.retention:1",
+  "$id": "urn:dsy:schema:state.retention:1",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
   "description": "contracts/state/retention.yaml, keyed by the table or the bucket that a rule applies to.",

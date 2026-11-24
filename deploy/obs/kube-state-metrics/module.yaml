@@ -1,6 +1,6 @@
 name: kube-state-metrics
 group: obs
-namespace: wft-obs
+namespace: dsy-obs
 artifact:
   kind: image
   pin: kube-state-metrics/kube-state-metrics

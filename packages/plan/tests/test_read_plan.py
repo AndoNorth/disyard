@@ -1,8 +1,8 @@
 import json
 
 import pytest
+from dsy_plan import Plan, UnsupportedPlanVersion, canonical_bytes, read_plan
 from pydantic import ValidationError
-from wft_plan import Plan, UnsupportedPlanVersion, canonical_bytes, read_plan
 
 GOLDEN = sorted(
     (__import__("pathlib").Path(__file__).resolve().parents[3]).glob(

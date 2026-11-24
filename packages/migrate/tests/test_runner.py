@@ -5,9 +5,9 @@ import time
 
 import psycopg
 import pytest
-from wft_migrate import LOCK_KEY, Refused, apply, check, discover, status
-from wft_migrate.__main__ import main
-from wft_migrate.runner import Migration, from_dirs, lint
+from dsy_migrate import LOCK_KEY, Refused, apply, check, discover, status
+from dsy_migrate.__main__ import main
+from dsy_migrate.runner import Migration, from_dirs, lint
 
 pytestmark = pytest.mark.integration
 
@@ -50,7 +50,7 @@ def shape(dsn):
 def test_from_empty_and_from_previous_release_reach_the_same_schema(
     tmp_path, empty_db, appdb_server
 ):
-    from wft_migrate.fixtures import PASSWORD, _connect
+    from dsy_migrate.fixtures import PASSWORD, _connect
 
     with _connect(appdb_server) as admin:
         admin.execute("CREATE DATABASE upgraded")

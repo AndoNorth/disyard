@@ -25,7 +25,7 @@
         <mxCell id="tilt" value="&lt;b&gt;Tiltfile.module&lt;/b&gt;&lt;br&gt;helm template with values.json&lt;br&gt;and an overlay of the image pins,&lt;br&gt;the infra pool and the limits, and&lt;br&gt;checksum/dynamic-config = sha256 of dynamicConfig" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="src">
           <mxGeometry x="15" y="360" width="310" height="95" as="geometry"/>
         </mxCell>
-        <mxCell id="node" value="infra node: 3 CPUs, 5,120 MiB. wft-infra quota used 2,990m of 3,045m CPU, 3,632 of 4,772 MiB" style="swimlane;startSize=30;fillColor=#f5f5f5;strokeColor=#666666;fontStyle=1;" vertex="1" parent="1">
+        <mxCell id="node" value="infra node: 3 CPUs, 5,120 MiB. dsy-infra quota used 2,990m of 3,045m CPU, 3,632 of 4,772 MiB" style="swimlane;startSize=30;fillColor=#f5f5f5;strokeColor=#666666;fontStyle=1;" vertex="1" parent="1">
           <mxGeometry x="390" y="50" width="720" height="465" as="geometry"/>
         </mxCell>
         <mxCell id="db" value="&lt;b&gt;temporaldb&lt;/b&gt;&lt;br&gt;temporal, temporal_visibility" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;size=10;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="node">

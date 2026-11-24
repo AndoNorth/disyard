@@ -1,26 +1,26 @@
 [project]
-name = "wft-acceptance"
+name = "dsy-acceptance"
 version = "0.0.0"
 license = "Apache-2.0"
 requires-python = ">=3.13,<3.14"
 # Every dependency the clients and the gate import, declared here so the wheel test catches an undeclared one.
 dependencies = [
     "temporalio",
-    "wft-broker",
-    "wft-clusterkit",
-    "wft-kernel",
-    "wft-obs",
-    "wft-workflow",
-    "wft-workloads",
+    "dsy-broker",
+    "dsy-clusterkit",
+    "dsy-kernel",
+    "dsy-obs",
+    "dsy-workflow",
+    "dsy-workloads",
 ]
 
 [tool.uv.sources]
-wft-broker = { workspace = true }
-wft-clusterkit = { workspace = true }
-wft-kernel = { workspace = true }
-wft-obs = { workspace = true }
-wft-workflow = { workspace = true }
-wft-workloads = { workspace = true }
+dsy-broker = { workspace = true }
+dsy-clusterkit = { workspace = true }
+dsy-kernel = { workspace = true }
+dsy-obs = { workspace = true }
+dsy-workflow = { workspace = true }
+dsy-workloads = { workspace = true }
 
 [build-system]
 requires = ["hatchling"]

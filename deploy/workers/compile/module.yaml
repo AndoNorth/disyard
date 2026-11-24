@@ -1,6 +1,6 @@
 name: compile-worker
 group: workers
-namespace: wft-workers
+namespace: dsy-workers
 artifact:
   kind: image
   pin: python
@@ -16,8 +16,8 @@ resources:
 readiness:
   command:
     - kubectl
-    - --context=kind-wft
-    - --namespace=wft-workers
+    - --context=kind-dsy
+    - --namespace=dsy-workers
     - wait
     - --for=condition=Available
     - deployment/compile-worker

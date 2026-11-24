@@ -18,11 +18,11 @@ from contextlib import contextmanager
 from pathlib import Path
 
 import pytest
-from wft_compile import bundle
-from wft_compile.__main__ import main
+from dsy_compile import bundle
+from dsy_compile.__main__ import main
 
 # The package exports the build function under the name of its module.
-building = importlib.import_module("wft_compile.build")
+building = importlib.import_module("dsy_compile.build")
 ROOT = Path(__file__).resolve().parents[3]
 WIT = ROOT / "contracts/workload/wit"
 
@@ -36,7 +36,7 @@ class Run(exports.Run):
         with open("/in/input.json") as f:
             seed = json.load(f)["seed"]
         with open("/out/results.xml", "w") as f:
-            f.write(f'<results schema="wft.sim.v1" seed="{seed}"/>\\n')
+            f.write(f'<results schema="dsy.sim.v1" seed="{seed}"/>\\n')
 """
 NO_RUN = "import json\n\nVALUE = json.dumps(1)\n"
 
@@ -138,7 +138,7 @@ def test_build_minimal_bundle(minimal, capsys, tmp_path):
     )
     assert targets.returncode == 0, targets.stderr
     loader = subprocess.run(
-        [sys.executable, "-m", "wft_runtime.contract", "--check", str(built.build_info)],
+        [sys.executable, "-m", "dsy_runtime.contract", "--check", str(built.build_info)],
         capture_output=True,
         text=True,
     )

@@ -1,4 +1,4 @@
-"""Bootstraps the Temporal server for the platform: namespace `wft` with its retention, the search
+"""Bootstraps the Temporal server for the platform: namespace `dsy` with its retention, the search
 attributes of the naming contract, and the reaper's Schedule in that namespace.
 Usage: bootstrap.py apply|check ADDRESS
 `apply` is idempotent and prints one line per item with what it did, ending with the count of
@@ -11,6 +11,8 @@ import sys
 from collections.abc import Awaitable, Callable
 from datetime import timedelta
 
+from dsy_artifactreaper.schedule import SCHEDULE_ID, definition, ensure_schedule
+from dsy_workflow.contract import naming
 from google.protobuf.duration_pb2 import Duration
 from temporalio.api.enums.v1 import IndexedValueType
 from temporalio.api.namespace.v1 import NamespaceConfig
@@ -25,8 +27,6 @@ from temporalio.api.workflowservice.v1 import (
 )
 from temporalio.client import Client
 from temporalio.service import RPCError, RPCStatusCode
-from wft_artifactreaper.schedule import SCHEDULE_ID, definition, ensure_schedule
-from wft_workflow.contract import naming
 
 RETENTION = timedelta(days=1)
 TYPES = {

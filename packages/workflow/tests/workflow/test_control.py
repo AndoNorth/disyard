@@ -7,13 +7,13 @@ import asyncio
 import time
 
 import pytest
+from dsy_stages.recording import type_name
+from dsy_workflow.job import JobWorkflow
+from dsy_workflow.models import ControlSignal, FailureDetails, ResumeSignal
+from dsy_workflow.testing import Die, Hang, Interruptible, connect
 from temporalio.api.enums.v1 import EventType
 from temporalio.client import WorkflowFailureError
 from temporalio.exceptions import CancelledError
-from wft_stages.recording import type_name
-from wft_workflow.job import JobWorkflow
-from wft_workflow.models import ControlSignal, FailureDetails, ResumeSignal
-from wft_workflow.testing import Die, Hang, Interruptible, connect
 
 pytestmark = pytest.mark.integration
 
@@ -271,7 +271,7 @@ def test_cancel_while_resume_pending(temporal, rig, plan, meter):
         ("paused", "cancelled", "resume-pending"),
         ("resume-pending", "cancelled", None),
     ]
-    assert "wft_workflow_lost_transitions_total" not in {u.metric.name for u in updates}
+    assert "dsy_workflow_lost_transitions_total" not in {u.metric.name for u in updates}
     assert job_events(this.control) == ["job.started", "job.paused", "job.cancelled"]
 
 
@@ -505,6 +505,6 @@ def test_unexpected_lost_resends(temporal, rig, plan, meter, recording):
         ("admitted", "running", None),
         ("running", "succeeded", None),
     ]
-    lost = [u for u in updates if u.metric.name == "wft_workflow_lost_transitions_total"]
+    lost = [u for u in updates if u.metric.name == "dsy_workflow_lost_transitions_total"]
     assert sum(u.value for u in lost) == len(losses)
     assert job_events(this.control) == ["job.started", "job.succeeded"]

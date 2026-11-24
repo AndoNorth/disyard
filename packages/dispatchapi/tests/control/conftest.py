@@ -18,34 +18,34 @@ from types import SimpleNamespace
 
 import psycopg
 import pytest
+from dsy_events import Event, build_event
+from dsy_events.models import JobParams
+from dsy_jobstate import JobRow, get_job, insert_accepted, transition
+from dsy_keys import batch_id, job_id, workflow_id
+from dsy_plan import Plan
+from dsy_temporal import new_traceparent
+from dsy_workflow.contract import naming
+from dsy_workflow.placement import StaticPlacer, place_activity
+from dsy_workflow.testing import FakeControl, FakePool, Interruptible
+from dsy_workflow.testing.control import LoadedPlan
 from psycopg import sql
 from psycopg.conninfo import make_conninfo
 from temporalio.client import Client, WorkflowHandle
 from temporalio.common import WorkerDeploymentVersion
 from temporalio.worker import Worker, WorkerDeploymentConfig
-from wft_events import Event, build_event
-from wft_events.models import JobParams
-from wft_jobstate import JobRow, get_job, insert_accepted, transition
-from wft_keys import batch_id, job_id, workflow_id
-from wft_plan import Plan
-from wft_temporal import new_traceparent
-from wft_workflow.contract import naming
-from wft_workflow.placement import StaticPlacer, place_activity
-from wft_workflow.testing import FakeControl, FakePool, Interruptible
-from wft_workflow.testing.control import LoadedPlan
 
 os.environ.setdefault(naming().workflow.build_id_env, "test-build")
 BUILD_ID = os.environ[naming().workflow.build_id_env]
 
-from wft_workflow import versioning  # noqa: E402
-from wft_workflow.activities.emit import Emitter  # noqa: E402
-from wft_workflow.job import JobWorkflow  # noqa: E402
-from wft_workflow.taskpath import control_queue  # noqa: E402
+from dsy_workflow import versioning  # noqa: E402
+from dsy_workflow.activities.emit import Emitter  # noqa: E402
+from dsy_workflow.job import JobWorkflow  # noqa: E402
+from dsy_workflow.taskpath import control_queue  # noqa: E402
 
 TENANT = "acme"
 SHA = "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08"
 MANIFEST = {
-    "uri": f"s3://wft-sources/sha256/9f/{SHA}",
+    "uri": f"s3://dsy-sources/sha256/9f/{SHA}",
     "sha256": SHA,
     "size": 2048,
     "name": "manifest.json",
@@ -80,10 +80,10 @@ WAIT_S = 60
 
 @pytest.fixture
 def workflow_dsn(appdb, db):
-    """The DSN of a fresh login in `wft_workflow`, which the real emit activity writes as."""
+    """The DSN of a fresh login in `dsy_workflow`, which the real emit activity writes as."""
     user = f"workflow_{time.time_ns()}"
     db.execute(
-        sql.SQL("CREATE ROLE {} LOGIN PASSWORD 'standin' IN ROLE wft_workflow").format(
+        sql.SQL("CREATE ROLE {} LOGIN PASSWORD 'standin' IN ROLE dsy_workflow").format(
             sql.Identifier(user)
         )
     )
@@ -109,7 +109,7 @@ def new_row(key: str, index: int = 0) -> JobRow:
         priority_class="standard",
         job_class="short",
         manifest_ref=MANIFEST,
-        schema_version="urn:wft:schema:job.accepted:1.0",
+        schema_version="urn:dsy:schema:job.accepted:1.0",
         traceparent=new_traceparent(),
         seed=index,
         parameters={},
@@ -135,7 +135,7 @@ def accepted_of(row: JobRow) -> Event:
     """The accepted event of the row, as admission rebuilds it to start the job."""
     return build_event(
         "job.accepted",
-        source="/wft/dispatch",
+        source="/dsy/dispatch",
         tenant=row.tenant,
         jobid=row.job_id,
         priorityclass=row.priority_class,

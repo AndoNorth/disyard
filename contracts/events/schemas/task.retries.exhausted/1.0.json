@@ -1,5 +1,5 @@
 {
-  "$id": "urn:wft:schema:task.retries.exhausted:1.0",
+  "$id": "urn:dsy:schema:task.retries.exhausted:1.0",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
   "properties": {

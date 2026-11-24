@@ -2,7 +2,7 @@
 # third-party packages, and wheels/, the workspace packages built from the tree.
 ARG BASE
 FROM ${BASE}
-ARG WFT_BUILD_ID
+ARG DSY_BUILD_ID
 COPY requirements.txt /tmp/build/
 # The hash-pinned packages install from dists/, mounted rather than copied so its files add no layer, with no network.
 RUN --network=none --mount=type=bind,source=dists,target=/tmp/dists \
@@ -10,6 +10,6 @@ RUN --network=none --mount=type=bind,source=dists,target=/tmp/dists \
     -r /tmp/build/requirements.txt
 COPY wheels /tmp/build/wheels
 RUN pip install --no-cache-dir --no-deps --no-index /tmp/build/wheels/*.whl && pip check && rm -rf /tmp/build
-ENV WFT_BUILD_ID=${WFT_BUILD_ID} PYTHONUNBUFFERED=1
+ENV DSY_BUILD_ID=${DSY_BUILD_ID} PYTHONUNBUFFERED=1
 USER 65532:65532
-ENTRYPOINT ["python", "-m", "wft_workflow.service"]
+ENTRYPOINT ["python", "-m", "dsy_workflow.service"]

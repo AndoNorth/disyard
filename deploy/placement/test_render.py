@@ -13,12 +13,12 @@ from pathlib import Path
 
 import pytest
 import yaml
-from wft_placement.service import ENV
+from dsy_placement.service import ENV
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
 INPUTS = ["deploy/versions.yaml", "contracts/topology/topology.yaml", "deploy/tilt/obs.star"]
-ROLE = "wft-placement-read"
+ROLE = "dsy-placement-read"
 
 pytestmark = pytest.mark.skipif(shutil.which("tilt") is None, reason="tilt not on PATH")
 
@@ -38,7 +38,7 @@ def rendered(tmp_path_factory):
         "load_dynamic('deploy/placement/Tiltfile.module')\n"
         "config.set_enabled_resources(['placement'])\n"
     )
-    env = os.environ | {"KUBECONFIG": str(ROOT / "scripts/tilt/fixtures/kubeconfig-wft.yaml")}
+    env = os.environ | {"KUBECONFIG": str(ROOT / "scripts/tilt/fixtures/kubeconfig-dsy.yaml")}
     run = subprocess.run(
         ["tilt", "alpha", "tiltfile-result", "-f", str(root / "Tiltfile")],
         cwd=root,
@@ -73,13 +73,13 @@ def env_of(objects) -> dict[str, str]:
 def test_one_replica_recreated_on_the_infra_pool(rendered):
     _, objects = rendered
     deployment = objects["Deployment", "placement"]
-    assert deployment["metadata"]["namespace"] == "wft-control"
+    assert deployment["metadata"]["namespace"] == "dsy-control"
     assert deployment["spec"]["replicas"] == 1
     assert deployment["spec"]["strategy"] == {"type": "Recreate"}
     assert deployment["spec"]["template"]["metadata"]["labels"] == {
         "app.kubernetes.io/name": "placement"
     }
-    assert pod_of(objects)["nodeSelector"] == {"wft.dev/pool": "infra"}
+    assert pod_of(objects)["nodeSelector"] == {"dsy.dev/pool": "infra"}
 
 
 def test_resources_of_the_module(rendered):
@@ -104,7 +104,7 @@ def test_service_configuration_from_env(rendered):
     env = env_of(objects)
     assert env == {
         ENV["listen"]: "0.0.0.0:8080",
-        ENV["ready_file"]: "/tmp/wft-ready",
+        ENV["ready_file"]: "/tmp/dsy-ready",
         ENV["metrics_address"]: "0.0.0.0:9464",
     }
     assert "envFrom" not in container_of(objects)
@@ -113,7 +113,7 @@ def test_service_configuration_from_env(rendered):
 def test_cluster_ip_service_on_8080_and_no_node_port(rendered):
     _, objects = rendered
     service = objects["Service", "placement"]
-    assert service["metadata"]["namespace"] == "wft-control"
+    assert service["metadata"]["namespace"] == "dsy-control"
     assert service["spec"]["type"] == "ClusterIP"
     assert service["spec"]["selector"] == {"app.kubernetes.io/name": "placement"}
     [port] = service["spec"]["ports"]
@@ -134,7 +134,7 @@ def test_pod_mounts_the_token_of_its_own_service_account(rendered):
     assert pod["serviceAccountName"] == "placement"
     assert pod["automountServiceAccountToken"] is True
     account = objects["ServiceAccount", "placement"]
-    assert account["metadata"]["namespace"] == "wft-control"
+    assert account["metadata"]["namespace"] == "dsy-control"
 
 
 def test_cluster_role_only_gets_and_lists_nodes_and_pods(rendered):
@@ -149,7 +149,7 @@ def test_cluster_role_only_gets_and_lists_nodes_and_pods(rendered):
         "name": ROLE,
     }
     assert binding["subjects"] == [
-        {"kind": "ServiceAccount", "name": "placement", "namespace": "wft-control"}
+        {"kind": "ServiceAccount", "name": "placement", "namespace": "dsy-control"}
     ]
     assert {kind for kind, _ in objects} == {
         "ServiceAccount",
@@ -183,7 +183,7 @@ def test_one_resource_with_its_rbac_and_the_image_of_image_sh(rendered):
 def test_dockerfile_runs_the_service_as_non_root():
     dockerfile = (HERE / "Dockerfile").read_text()
     assert "USER 65532:65532" in dockerfile
-    assert dockerfile.rstrip().endswith('ENTRYPOINT ["python", "-m", "wft_placement"]')
+    assert dockerfile.rstrip().endswith('ENTRYPOINT ["python", "-m", "dsy_placement"]')
 
 
 def test_drops_every_capability_under_the_runtime_seccomp_profile(rendered):

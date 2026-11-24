@@ -3,7 +3,7 @@
 import re
 from pathlib import Path
 
-from wft_artifactindex.models import ArtifactRow, ArtifactUse
+from dsy_artifactindex.models import ArtifactRow, ArtifactUse
 
 README_PATH = Path(__file__).resolve().parents[3] / "contracts/state/README.md"
 README = README_PATH.read_text()

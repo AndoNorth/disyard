@@ -7,11 +7,11 @@ from pathlib import Path
 
 import pytest
 import yaml
+from dsy_events import EventTooLarge, SchemaInvalid, UnsupportedMajor, from_bytes, to_bytes
+from dsy_events.errors import EventError
+from dsy_events.models import ManifestReference
+from dsy_events.profile import CONTRACT_DIR
 from jsonschema import Draft7Validator, validate
-from wft_events import EventTooLarge, SchemaInvalid, UnsupportedMajor, from_bytes, to_bytes
-from wft_events.errors import EventError
-from wft_events.models import ManifestReference
-from wft_events.profile import CONTRACT_DIR
 
 ROOT = CONTRACT_DIR.parents[1]
 VALID = sorted((CONTRACT_DIR / "vectors/accepted/valid").glob("*.json"))

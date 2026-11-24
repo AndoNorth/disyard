@@ -8,7 +8,7 @@
 # Usage: secrets.sh [render|password]. Exit 0 ok, 2 usage.
 set -euo pipefail
 
-state=${WFT_STATE_DIR:-${XDG_STATE_HOME:-$HOME/.local/state}/weft}
+state=${DSY_STATE_DIR:-${XDG_STATE_HOME:-$HOME/.local/state}/disyard}
 file=$state/grafana.credential
 mode=${1:-render}
 
@@ -28,7 +28,7 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: grafana-admin
-  namespace: wft-obs
+  namespace: dsy-obs
 type: Opaque
 stringData:
   admin-user: admin

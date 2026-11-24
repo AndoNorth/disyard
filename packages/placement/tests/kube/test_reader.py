@@ -7,7 +7,7 @@ from urllib.parse import parse_qs, urlsplit
 
 import pytest
 import yaml
-from wft_placement import kube
+from dsy_placement import kube
 
 
 def query(path: str) -> dict[str, list[str]]:
@@ -34,9 +34,9 @@ def test_reader_lists_pool_nodes(api, tls, token, root):
     [(path, _)] = api.requests
     assert urlsplit(path).path == "/api/v1/nodes"
     assert query(path) == {"labelSelector": [kube.topology()["pool_label"]]}
-    assert kube.topology()["pool_label"] == "wft.dev/pool"
+    assert kube.topology()["pool_label"] == "dsy.dev/pool"
     # The label comes from the package's own copy of the topology contract.
-    shipped = resources.files("wft_placement") / "contract" / "topology.yaml"
+    shipped = resources.files("dsy_placement") / "contract" / "topology.yaml"
     assert yaml.safe_load(shipped.read_text()) == kube.topology()
     pinned = yaml.safe_load((root / "contracts/topology/topology.yaml").read_text())
     assert kube.topology() == pinned

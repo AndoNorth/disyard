@@ -2,11 +2,11 @@
 
 from datetime import timedelta
 
-from wft_events import Event, to_bytes, to_event_row
-from wft_stages import FAKES, Facts, build_task_request, invoke
-from wft_stages.contract import sample_event
-from wft_stages.facts import EPOCH
-from wft_stages.recording import type_name
+from dsy_events import Event, to_bytes, to_event_row
+from dsy_stages import FAKES, Facts, build_task_request, invoke
+from dsy_stages.contract import sample_event
+from dsy_stages.facts import EPOCH
+from dsy_stages.recording import type_name
 
 
 def run_flow() -> list[Event]:

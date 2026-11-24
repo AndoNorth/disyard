@@ -1,5 +1,5 @@
 [project]
-name = "wft-workflow"
+name = "dsy-workflow"
 version = "0.0.0"
 license = "Apache-2.0"
 requires-python = ">=3.13,<3.14"
@@ -8,48 +8,48 @@ dependencies = [
     "pydantic",
     "pyyaml",
     "temporalio",
-    "wft-artifactclient",
-    "wft-artifactindex",
-    "wft-artifactreaper",
-    "wft-compat",
-    "wft-compile",
-    "wft-events",
-    "wft-eventstore",
-    "wft-itest",
-    "wft-jobdoc",
-    "wft-jobpatch",
-    "wft-jobstate",
-    "wft-keys",
-    "wft-obs",
-    "wft-plan",
-    "wft-runtime",
-    "wft-stages",
-    "wft-temporal",
+    "dsy-artifactclient",
+    "dsy-artifactindex",
+    "dsy-artifactreaper",
+    "dsy-compat",
+    "dsy-compile",
+    "dsy-events",
+    "dsy-eventstore",
+    "dsy-itest",
+    "dsy-jobdoc",
+    "dsy-jobpatch",
+    "dsy-jobstate",
+    "dsy-keys",
+    "dsy-obs",
+    "dsy-plan",
+    "dsy-runtime",
+    "dsy-stages",
+    "dsy-temporal",
 ]
 
 # The drivers of a deployed cluster, which no image runs.
 [project.optional-dependencies]
-cluster = ["wft-clusterkit"]
+cluster = ["dsy-clusterkit"]
 
 [tool.uv.sources]
-wft-artifactclient = { workspace = true }
-wft-artifactindex = { workspace = true }
-wft-artifactreaper = { workspace = true }
-wft-clusterkit = { workspace = true }
-wft-compat = { workspace = true }
-wft-compile = { workspace = true }
-wft-events = { workspace = true }
-wft-eventstore = { workspace = true }
-wft-itest = { workspace = true }
-wft-jobdoc = { workspace = true }
-wft-jobpatch = { workspace = true }
-wft-jobstate = { workspace = true }
-wft-keys = { workspace = true }
-wft-obs = { workspace = true }
-wft-plan = { workspace = true }
-wft-runtime = { workspace = true }
-wft-stages = { workspace = true }
-wft-temporal = { workspace = true }
+dsy-artifactclient = { workspace = true }
+dsy-artifactindex = { workspace = true }
+dsy-artifactreaper = { workspace = true }
+dsy-clusterkit = { workspace = true }
+dsy-compat = { workspace = true }
+dsy-compile = { workspace = true }
+dsy-events = { workspace = true }
+dsy-eventstore = { workspace = true }
+dsy-itest = { workspace = true }
+dsy-jobdoc = { workspace = true }
+dsy-jobpatch = { workspace = true }
+dsy-jobstate = { workspace = true }
+dsy-keys = { workspace = true }
+dsy-obs = { workspace = true }
+dsy-plan = { workspace = true }
+dsy-runtime = { workspace = true }
+dsy-stages = { workspace = true }
+dsy-temporal = { workspace = true }
 
 [build-system]
 requires = ["hatchling"]

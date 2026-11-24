@@ -8,7 +8,7 @@ from contextlib import ExitStack
 from pathlib import Path
 
 import pytest
-from wft_itest.session import RUN_LABEL, ContainerError
+from dsy_itest.session import RUN_LABEL, ContainerError
 
 # A pair session holds both host lock files, which is what lets the child sessions below run
 # two containers between them without the host ever running more than two.
@@ -83,8 +83,8 @@ def test_three_containers_check_is_not_confused_by_a_reused_name(t1):
 def child(run_id, lock_dir, hold, containers, session=2):
     env = {
         **os.environ,
-        "WFT_RUN_ID": run_id,
-        "WFT_T1_LOCK_DIR": str(lock_dir),
+        "DSY_RUN_ID": run_id,
+        "DSY_T1_LOCK_DIR": str(lock_dir),
         "HOLD_SECONDS": str(hold),
         "HOLD_CONTAINERS": str(containers),
         "HOLD_SESSION": str(session),
@@ -129,8 +129,8 @@ def test_two_sessions_that_each_want_two_hold_two_containers_between_them_one_af
 
 
 def test_two_sessions_in_the_same_slot_publish_on_different_host_ports(t1, tmp_path, monkeypatch):
-    # Two workers that both leave WFT_SLOT unset, each holding one of the two lock files at once.
-    monkeypatch.delenv("WFT_SLOT", raising=False)
+    # Two workers that both leave DSY_SLOT unset, each holding one of the two lock files at once.
+    monkeypatch.delenv("DSY_SLOT", raising=False)
     ids = [f"itest-slot-{os.getpid()}-{i}" for i in range(2)]
     children = [child(run_id, tmp_path, hold=5, containers=1, session=1) for run_id in ids]
     try:
@@ -152,7 +152,7 @@ def test_two_sessions_in_the_same_slot_publish_on_different_host_ports(t1, tmp_p
 
 
 def test_a_session_opened_inside_a_session_shares_its_containers_and_ports(t1):
-    from wft_itest import Session
+    from dsy_itest import Session
 
     with canary(t1, "store") as first:
         with (

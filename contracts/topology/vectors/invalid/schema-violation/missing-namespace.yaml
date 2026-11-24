@@ -1,4 +1,4 @@
-pool_label: wft.dev/pool
+pool_label: dsy.dev/pool
 taint_effect: NoSchedule
 pools:
   infra: infra
@@ -7,6 +7,6 @@ pools:
   simulate: simulate
   aggregate: aggregate
 namespaces:
-  wft-infra: {group: infra}
-  wft-control: {group: control}
-  wft-workers: {group: workers}
+  dsy-infra: {group: infra}
+  dsy-control: {group: control}
+  dsy-workers: {group: workers}

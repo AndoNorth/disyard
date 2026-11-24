@@ -29,6 +29,6 @@ def test_submit_100000(route, post, entries, template, db):
         assert summary[outcome] == JOBS
         rows = db.execute("SELECT count(*) FROM accepted_job").fetchone()[0]
         events = db.execute(
-            "SELECT count(*) FROM event WHERE type = 'dev.wft.job.accepted.v1'"
+            "SELECT count(*) FROM event WHERE type = 'dev.dsy.job.accepted.v1'"
         ).fetchone()[0]
         assert (rows, events) == (JOBS, JOBS)

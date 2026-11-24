@@ -42,7 +42,7 @@ jobs:
       - name: Restore the build download cache
         uses: actions/cache@v6
         with:
-          path: ~/.cache/weft/build
+          path: ~/.cache/disyard/build
           key: build-downloads-${{ hashFiles('uv.lock', 'nix/wasm-tools.nix', 'deploy/versions.yaml') }}
           restore-keys: build-downloads-
       - name: Restore the uv cache

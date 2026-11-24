@@ -16,8 +16,8 @@ k8s_resource(
     name,
     objects = [
         name + ":serviceaccount:" + namespace,
-        "wft-" + name + ":clusterrole",
-        "wft-" + name + ":clusterrolebinding",
+        "dsy-" + name + ":clusterrole",
+        "dsy-" + name + ":clusterrolebinding",
         name + "-config:configmap:" + namespace,
     ],
     labels = [module["group"]],

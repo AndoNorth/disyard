@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Bootstraps Temporal in the cluster through a port-forward to the frontend bound to 127.0.0.1: namespace wft with its
+# Bootstraps Temporal in the cluster through a port-forward to the frontend bound to 127.0.0.1: namespace dsy with its
 # retention, the search attributes of the naming contract and the reaper's Schedule. Waits for the frontend first, so
 # it can run as a Tilt local_resource or by hand.
 #   apply  create or converge what differs and print what changed (default)
@@ -13,8 +13,8 @@ source scripts/cluster/forward.sh
 mode=${1:-apply}
 case $mode in apply | check) ;; *) echo "usage: bootstrap.sh [apply|check]" >&2; exit 2 ;; esac
 
-context=kind-wft
-namespace=wft-infra
+context=kind-dsy
+namespace=dsy-infra
 port=7233
 k() { kubectl --context "$context" -n "$namespace" "$@"; }
 

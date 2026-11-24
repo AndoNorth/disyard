@@ -5,11 +5,11 @@ import io
 import json
 
 import pytest
-from wft_compile import bundle
-from wft_dispatchapi.resolver import StoreSourceResolver
-from wft_jobcheck import validate
-from wft_jobcheck.resolver import BundleNotFound, ResolverContractError, resolver_contract
-from wft_jobdoc.profile_files import load_profile
+from dsy_compile import bundle
+from dsy_dispatchapi.resolver import StoreSourceResolver
+from dsy_jobcheck import validate
+from dsy_jobcheck.resolver import BundleNotFound, ResolverContractError, resolver_contract
+from dsy_jobdoc.profile_files import load_profile
 
 pytestmark = pytest.mark.integration
 

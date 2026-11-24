@@ -8,7 +8,7 @@ import os
 import tarfile
 
 import pytest
-from wft_compile import bundle
+from dsy_compile import bundle
 
 
 def tree_of(root, files: dict[str, str]):

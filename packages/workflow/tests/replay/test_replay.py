@@ -6,9 +6,9 @@ import json
 from pathlib import Path
 
 import pytest
-from wft_temporal.corpus import CorpusError, histories, replay_corpus
-from wft_workflow.contract import naming
-from wft_workflow.job import JobWorkflow
+from dsy_temporal.corpus import CorpusError, histories, replay_corpus
+from dsy_workflow.contract import naming
+from dsy_workflow.job import JobWorkflow
 
 CORPUS = Path(__file__).resolve().parents[2] / "corpus"
 # The status each history's job ended with, the signals it took and the attempts it ran on a pool:

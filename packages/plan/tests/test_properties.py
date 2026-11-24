@@ -1,12 +1,12 @@
 import json
 
+from dsy_plan import canonical_bytes, plan_hash
 from hypothesis import given, settings
 from hypothesis import strategies as st
-from wft_plan import canonical_bytes, plan_hash
 
 HASH = "a" * 64
 SOURCE = {
-    "uri": f"s3://wft-sources/sha256/aa/{HASH}",
+    "uri": f"s3://dsy-sources/sha256/aa/{HASH}",
     "sha256": HASH,
     "size": 2048,
     "name": "bundle.tar.gz",
@@ -54,7 +54,7 @@ def documents(draw):
             "run_timeout_s": 600,
             "params": {"aggregation": "digest_list"},
         }
-    return {"schema": "urn:wft:schema:job:1.0", "tasks": tasks}
+    return {"schema": "urn:dsy:schema:job:1.0", "tasks": tasks}
 
 
 def reshuffled(value, rnd):

@@ -1,11 +1,11 @@
 groups:
-  - name: wft-events
+  - name: dsy-events
     rules:
-      - alert: WftEventRejected
-        expr: sum by (reason) (increase(wft_event_rejected_total[10m])) > 0
+      - alert: DsyEventRejected
+        expr: sum by (reason) (increase(dsy_event_rejected_total[10m])) > 0
         labels:
           severity: warning
         annotations:
           summary: The event serializer refused events with reason {{ $labels.reason }}.
           description: A producer emits events that fail the contract.
-          runbook_url: https://github.com/AndoNorth/weft/blob/main/docs/runbooks/alerts.md#wfteventrejected
+          runbook_url: https://github.com/AndoNorth/disyard/blob/main/docs/runbooks/alerts.md#dsyeventrejected

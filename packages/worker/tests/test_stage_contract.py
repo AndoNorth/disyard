@@ -3,10 +3,10 @@
 from pathlib import Path
 
 import pytest
-from wft_stages import Facts, run_stage_contract
-from wft_stages.contract import ContractViolation
-from wft_worker import read_request
-from wft_workflow.models import TaskInput
+from dsy_stages import Facts, run_stage_contract
+from dsy_stages.contract import ContractViolation
+from dsy_worker import read_request
+from dsy_workflow.models import TaskInput
 
 VECTORS = Path(__file__).resolve().parents[3] / "contracts/activity/vectors/task-input/valid"
 

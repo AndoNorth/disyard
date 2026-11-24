@@ -22,11 +22,11 @@ BANNED_IMPORTS = {
     "secrets",
     "uuid",
     "logging",
-    "wft_events",
+    "dsy_events",
 }
 BANNED_CALLS = {"open", "print"}
 # The modules that exist to touch the file system or the command line.
-EXEMPT = {"wft_jobdoc.profile_files", "wft_jobdoc.schemagen", "wft_jobcheck.check"}
+EXEMPT = {"dsy_jobdoc.profile_files", "dsy_jobdoc.schemagen", "dsy_jobcheck.check"}
 
 
 def no_io_imports(source: str) -> list[str]:
@@ -74,8 +74,8 @@ def test_the_exempt_modules_exist():
         "import os.path",
         "from pathlib import Path",
         "from datetime import datetime",
-        "import wft_events",
-        "from wft_events import keys",
+        "import dsy_events",
+        "from dsy_events import keys",
         "import random",
         "def f():\n    open('x')",
         "def f():\n    print('x')",

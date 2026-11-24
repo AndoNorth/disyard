@@ -5,9 +5,9 @@ from pathlib import Path
 
 import pytest
 import yaml
-from wft_broker.models import PRESETS, Tenancy
-from wft_broker.tenancy import load
-from wft_jobdoc.profile_files import load_profile
+from dsy_broker.models import PRESETS, Tenancy
+from dsy_broker.tenancy import load
+from dsy_jobdoc.profile_files import load_profile
 
 ROOT = Path(__file__).resolve().parents[3]
 PINNED = ROOT / "contracts/tenancy/tenancy.yaml"

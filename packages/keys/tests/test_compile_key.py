@@ -4,8 +4,8 @@ import os
 import subprocess
 import sys
 
+import dsy_keys
 import pytest
-import wft_keys
 
 SOURCE = "a" * 64
 LOCKFILE = "b" * 64
@@ -25,35 +25,35 @@ BASE = (SOURCE, LOCKFILE, "1.2.3", "0.1.0", ENTRY)
     ids=["source_hash", "lockfile_hash", "componentize_py_version", "wit_version", "entry"],
 )
 def test_key_changes_when_any_one_input_changes(changed):
-    assert wft_keys.compile_cache_key(*changed) != wft_keys.compile_cache_key(*BASE)
+    assert dsy_keys.compile_cache_key(*changed) != dsy_keys.compile_cache_key(*BASE)
 
 
 def test_compile_key_entry():
-    sim = wft_keys.compile_cache_key(SOURCE, LOCKFILE, "1.2.3", "0.1.0", "sim")
-    echo = wft_keys.compile_cache_key(SOURCE, LOCKFILE, "1.2.3", "0.1.0", "echo")
+    sim = dsy_keys.compile_cache_key(SOURCE, LOCKFILE, "1.2.3", "0.1.0", "sim")
+    echo = dsy_keys.compile_cache_key(SOURCE, LOCKFILE, "1.2.3", "0.1.0", "echo")
     assert sim != echo
-    assert {wft_keys.compile_cache_key(*BASE) for _ in range(3)} == {sim}
+    assert {dsy_keys.compile_cache_key(*BASE) for _ in range(3)} == {sim}
 
 
 def test_version_boundary_is_part_of_the_key():
-    assert wft_keys.compile_cache_key(
+    assert dsy_keys.compile_cache_key(
         SOURCE, LOCKFILE, "1.2", "3", ENTRY
-    ) != wft_keys.compile_cache_key(SOURCE, LOCKFILE, "1", "2.3", ENTRY)
+    ) != dsy_keys.compile_cache_key(SOURCE, LOCKFILE, "1", "2.3", ENTRY)
 
 
 def test_the_boundary_between_wit_version_and_entry_is_part_of_the_key():
-    assert wft_keys.compile_cache_key(
+    assert dsy_keys.compile_cache_key(
         SOURCE, LOCKFILE, "1.2.3", "0.1.0", "sim"
-    ) != wft_keys.compile_cache_key(SOURCE, LOCKFILE, "1.2.3", "0.1.0s", "im")
+    ) != dsy_keys.compile_cache_key(SOURCE, LOCKFILE, "1.2.3", "0.1.0s", "im")
 
 
 def test_an_empty_entry_is_refused():
     with pytest.raises(ValueError, match="entry"):
-        wft_keys.compile_cache_key(SOURCE, LOCKFILE, "1.2.3", "0.1.0", "")
+        dsy_keys.compile_cache_key(SOURCE, LOCKFILE, "1.2.3", "0.1.0", "")
 
 
 def test_equal_inputs_give_equal_keys_across_interpreters():
-    program = f"import wft_keys;print(wft_keys.compile_cache_key{BASE!r})"
+    program = f"import dsy_keys;print(dsy_keys.compile_cache_key{BASE!r})"
     outputs = {
         subprocess.run(
             [sys.executable, "-c", program],
@@ -64,7 +64,7 @@ def test_equal_inputs_give_equal_keys_across_interpreters():
         ).stdout.strip()
         for seed in ("0", "1")
     }
-    assert outputs == {wft_keys.compile_cache_key(*BASE)}
+    assert outputs == {dsy_keys.compile_cache_key(*BASE)}
 
 
 @pytest.mark.parametrize(
@@ -76,4 +76,4 @@ def test_malformed_hash_raises(bad, position):
     args = list(BASE)
     args[position] = bad
     with pytest.raises(ValueError):
-        wft_keys.compile_cache_key(*args)
+        dsy_keys.compile_cache_key(*args)

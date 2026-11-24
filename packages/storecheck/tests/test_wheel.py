@@ -11,8 +11,8 @@ ROOT = Path(__file__).resolve().parents[3]
 PROBE = """
 import json
 import yaml
-from wft_storecheck.contract import check
-from wft_storecheck.models import CONTRACT, Lifecycle, Products, Roles
+from dsy_storecheck.contract import check
+from dsy_storecheck.models import CONTRACT, Lifecycle, Products, Roles
 
 for name in ("roles.yaml", "lifecycle.yaml", "products.yaml"):
     check(yaml.safe_load((CONTRACT / name).read_text()))
@@ -32,7 +32,7 @@ def run(*cmd, **kwargs) -> subprocess.CompletedProcess:
 def clean_python(tmp_path_factory) -> Path:
     work = tmp_path_factory.mktemp("wheel")
     wheels = work / "wheels"
-    for package in ("wft-storecheck",):
+    for package in ("dsy-storecheck",):
         run("uv", "build", "--wheel", "--package", package, "-o", str(wheels), cwd=ROOT)
     venv = work / "venv"
     run("uv", "venv", "--python", sys.executable, str(venv))
@@ -51,10 +51,10 @@ def test_a_wheel_in_a_clean_venv_loads_the_committed_contract(clean_python, tmp_
 
 def test_a_wheel_cli_reports_a_missing_option_as_usage(clean_python, tmp_path):
     result = subprocess.run(
-        [clean_python, "-I", "-m", "wft_storecheck", "run", "--mode", "base"],
+        [clean_python, "-I", "-m", "dsy_storecheck", "run", "--mode", "base"],
         capture_output=True,
         text=True,
         cwd=tmp_path,
     )
     assert result.returncode == 2, result.stderr
-    assert result.stderr.startswith("usage: wft_storecheck run")
+    assert result.stderr.startswith("usage: dsy_storecheck run")

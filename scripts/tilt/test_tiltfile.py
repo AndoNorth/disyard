@@ -22,14 +22,14 @@ PROFILES = yaml.safe_load((ROOT / "deploy/tilt/profiles.yaml").read_text())["pro
 pytestmark = pytest.mark.skipif(shutil.which("tilt") is None, reason="tilt not on PATH")
 
 
-def tiltfile_result(profile="ci", kubeconfig="kubeconfig-wft.yaml", modules=MODULES, obs="off"):
+def tiltfile_result(profile="ci", kubeconfig="kubeconfig-dsy.yaml", modules=MODULES, obs="off"):
     return subprocess.run(
         [
             "tilt", "alpha", "tiltfile-result", "--",
             "--profile", profile, "--modules_dir", str(modules),
         ],
         cwd=ROOT,
-        env={**os.environ, "KUBECONFIG": str(FIXTURES / kubeconfig), "WFT_OBS": obs},
+        env={**os.environ, "KUBECONFIG": str(FIXTURES / kubeconfig), "DSY_OBS": obs},
         capture_output=True,
         text=True,
     )  # fmt: skip
@@ -63,7 +63,7 @@ def test_obs_tier_and_mirror_differ_per_profile():
 def test_an_unknown_switch_value_is_refused():
     run = tiltfile_result(obs="yes")
     assert run.returncode != 0
-    assert "WFT_OBS is yes, expected on or off" in run.stderr
+    assert "DSY_OBS is yes, expected on or off" in run.stderr
 
 
 def fake(path, body):
@@ -96,9 +96,9 @@ def test_run_enables_the_obs_group_for_ci_only_with_the_recorded_switch_on(
         env={
             **os.environ,
             "PATH": f"{tmp_path}:{os.environ['PATH']}",
-            "KUBECONFIG": str(FIXTURES / "kubeconfig-wft.yaml"),
-            "WFT_STATE_DIR": str(state_dir(tmp_path, record)),
-            "WFT_OBS": caller,
+            "KUBECONFIG": str(FIXTURES / "kubeconfig-dsy.yaml"),
+            "DSY_STATE_DIR": str(state_dir(tmp_path, record)),
+            "DSY_OBS": caller,
         },
         capture_output=True,
         text=True,
@@ -127,8 +127,8 @@ def test_obs_env_is_empty_with_the_switch_off(tmp_path):
             next(m for m in json.loads(run.stdout)["Manifests"] if m["Name"] == "probe")
         )
     assert "4318" not in cmds["off"] and "4040" not in cmds["off"]
-    assert "http://collector.wft-obs:4318" in cmds["on"]
-    assert "http://pyroscope.wft-obs:4040" in cmds["on"]
+    assert "http://collector.dsy-obs:4318" in cmds["on"]
+    assert "http://pyroscope.dsy-obs:4040" in cmds["on"]
 
 
 def test_cluster_verify_follows_the_record_over_the_callers_switch(tmp_path):
@@ -137,7 +137,7 @@ def test_cluster_verify_follows_the_record_over_the_callers_switch(tmp_path):
     render = subprocess.run(
         [ROOT / "scripts/cluster/namespaces.sh", "render", "ci"],
         cwd=ROOT,
-        env={**os.environ, "WFT_OBS": "off"},
+        env={**os.environ, "DSY_OBS": "off"},
         capture_output=True,
         text=True,
         check=True,
@@ -145,7 +145,7 @@ def test_cluster_verify_follows_the_record_over_the_callers_switch(tmp_path):
     quotas.write_text(render.stdout)
     bin_dir = tmp_path / "bin"
     bin_dir.mkdir()
-    fake(bin_dir / "kind", "echo wft\n")
+    fake(bin_dir / "kind", "echo dsy\n")
     fake(bin_dir / "docker", "exit 0\n")
     fake(bin_dir / "ss", "exit 0\n")
     fake(
@@ -165,29 +165,29 @@ def test_cluster_verify_follows_the_record_over_the_callers_switch(tmp_path):
         env={
             **os.environ,
             "PATH": f"{bin_dir}:{os.environ['PATH']}",
-            "WFT_STATE_DIR": str(state_dir(tmp_path, "off")),
-            "WFT_OBS": "on",
-            "WFT_CLUSTER_LOCK_HELD": "1",
-            "WFT_MODULES_DIR": str(MODULES),
-            "WFT_RENDER_DIR": str(tmp_path / "render"),
-            "WFT_HOST_MEM_KIB": "16000000",
-            "WFT_HOST_CPUS": "8",
+            "DSY_STATE_DIR": str(state_dir(tmp_path, "off")),
+            "DSY_OBS": "on",
+            "DSY_CLUSTER_LOCK_HELD": "1",
+            "DSY_MODULES_DIR": str(MODULES),
+            "DSY_RENDER_DIR": str(tmp_path / "render"),
+            "DSY_HOST_MEM_KIB": "16000000",
+            "DSY_HOST_CPUS": "8",
         },
         capture_output=True,
         text=True,
     )
-    assert "ok ready 5 modules of profile ci with WFT_OBS=off ready" in run.stdout, (
+    assert "ok ready 5 modules of profile ci with DSY_OBS=off ready" in run.stdout, (
         run.stdout + run.stderr
     )
     # The obs node is kind's worker2, wanted at 0.5 CPU and 640 MiB.
-    assert "wft-worker2 (, want 500000000 671088640 671088640)" in run.stdout
+    assert "dsy-worker2 (, want 500000000 671088640 671088640)" in run.stdout
     assert "ok quotas every namespace has its rendered quota and LimitRange" in run.stdout
 
 
 def test_guard_refuses_a_second_kind_context():
     run = tiltfile_result(kubeconfig="kubeconfig-other.yaml")
     assert run.returncode != 0
-    assert "refusing context kind-other, only kind-wft is allowed" in run.stderr
+    assert "refusing context kind-other, only kind-dsy is allowed" in run.stderr
 
 
 def test_unknown_profile_is_refused():

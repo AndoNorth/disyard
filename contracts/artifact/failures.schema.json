@@ -82,7 +82,7 @@
       "type": "object"
     }
   },
-  "$id": "urn:wft:schema:artifact:failures:3",
+  "$id": "urn:dsy:schema:artifact:failures:3",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
   "description": "failures.yaml: every artifact failure with its cause, retry rule, class and surface.",

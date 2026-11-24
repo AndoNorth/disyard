@@ -4,11 +4,11 @@ TMPDIR it empties, the heartbeat details of a beat, and the worker stage it read
 import asyncio
 
 import pytest
+from dsy_artifactclient.errors import ArtifactNotFound, StoreUnavailable
+from dsy_stages import Facts, run_stage_contract
+from dsy_worker.activity import heartbeat_details, path_of, run_task
 from temporalio.exceptions import ApplicationError
 from temporalio.testing import ActivityEnvironment
-from wft_artifactclient.errors import ArtifactNotFound, StoreUnavailable
-from wft_stages import Facts, run_stage_contract
-from wft_worker.activity import heartbeat_details, path_of, run_task
 
 STARTED = "2026-11-15T00:00:00.000000Z"
 

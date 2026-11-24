@@ -1,5 +1,5 @@
 import pytest
-from wft_plan import chains, stats
+from dsy_plan import chains, stats
 
 GOLDEN = {
     "chain": dict(

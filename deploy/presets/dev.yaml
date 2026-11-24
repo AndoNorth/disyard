@@ -34,5 +34,5 @@ nodes:
     memory_mib: 1536
 host:
   ports: deploy/host/ports.yaml
-  data_dir: ~/.local/share/wft/dev
+  data_dir: ~/.local/share/dsy/dev
 mirror: false
