@@ -1,6 +1,6 @@
 # Disyard
 
-Durable batch simulation, woven at scale.
+Dump in your jobs. Disyard runs them in order.
 
 <p align="center">
   <a href="https://github.com/AndoNorth/disyard/actions/workflows/ci.yml"><img alt="ci" src="https://github.com/AndoNorth/disyard/actions/workflows/ci.yml/badge.svg?branch=main"></a>
@@ -13,6 +13,10 @@ Disyard is a proof of concept that runs large scale digital validation as durabl
 Guest workloads run as WebAssembly components.
 
 ![System context](docs/architecture/01-system-context.drawio.svg)
+
+The name comes from dispatch scrapyard: a load is tipped in, sorted, and processed in order.
+Solid boxes are built, the dashed one is planned, and the amber frame is the observability stack, which runs only on a cluster brought up with `DSY_OBS=on`.
+[Diagram 05](docs/architecture/05-observability-data-flow.drawio.svg) draws the stack's data flow.
 
 ## Worked example
 
