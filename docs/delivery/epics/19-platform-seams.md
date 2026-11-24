@@ -542,14 +542,15 @@ def load() -> list[tuple[str, Callable[[Context], list[Worker]]]]: ...
 
 The host change is one loop in `serve`: for each `(name, workers)` of `modules.load()`, `workers(ctx)` is called, with a construction error skipped and logged at error level with the module name.
 Each module worker runs under its own supervisor task in the same loop, outside `_run_until`.
-`_run_until` and the three built-in workers stay unchanged and fail-fast.
+What is frozen is the supervision and fail-fast logic of `_run_until` for the three built-in workers: the `FIRST_COMPLETED` wait, the shutdown and the gather.
+Its ready-file touch and unlink lines and the type of its `ready_file` parameter move to `ReadyFile` in WFL-1, and nothing else in it changes.
 A supervisor logs the failure of its module worker at error level and does not stop the host.
 At SIGTERM the host shuts the module workers down together with the built-in ones, and the drain holds because the module builds its `Worker` with `graceful_shutdown_timeout=ctx.drain`.
 A module that needs a thread pool for synchronous activities owns it and closes it itself, as the reaper does, and never uses the host's executor.
 A module owns its task queue name, as the reaper does, and imports only the names `dsy_workflow.modules.__all__` and its own README list.
 
 A bad module never keeps the host from serving jobs: a module that raises on import, in construction or on a repeated name is skipped and logged at error level, the host starts without it, and a module worker that dies later does not end the host.
-The three built-in workers keep their fail-fast behaviour under the unchanged `_run_until`, and they stay as they are: moving them into modules is not needed for the seam and would touch the most delicate code of the service.
+The three built-in workers keep their fail-fast behaviour under the frozen supervision logic of `_run_until`, and they stay as they are: moving them into modules is not needed for the seam and would touch the most delicate code of the service.
 This is a design choice flagged for the captain's review, and it is listed in the architecture note with the other seams that remain.
 
 ### 5.3 The worked example
@@ -765,7 +766,7 @@ After approval these blocks are replaced by `#NNN` links.
 WFL has no H2 item, because the workflow service already uses `dsy_obs.metrics.runtime`.
 
 **WFL-1 Cache `naming()` and `pools()`; the workflow service adopts config and lifecycle** - S, mech
-- Scope: `@cache` on `contract.py:106,110`; `MissingEnv` aliases the kit's error and `require` replaces the check (`:118`); `ReadyFile` and `stopping` replace the file and signal lines (`:198-199,257-263`, `:202-203,250-251`); the drain constant and `_run_until` do not change, so the built-in workers stay fail-fast; `dsy-servicekit` is added to `packages/workflow/pyproject.toml` under `[project] dependencies` and `[tool.uv.sources]`.
+- Scope: `@cache` on `contract.py:106,110`; `MissingEnv` aliases the kit's error and `require` replaces the check (`:118`); `ReadyFile` and `stopping` replace the file and signal lines (`:198-199,257-263`, `:202-203,250-251`); the drain constant and the supervision and fail-fast logic of `_run_until` (`FIRST_COMPLETED` wait, shutdown, gather) do not change, so the built-in workers stay fail-fast, while its ready-file touch and unlink lines and the `ready_file` parameter type move to `ReadyFile`; `dsy-servicekit` is added to `packages/workflow/pyproject.toml` under `[project] dependencies` and `[tool.uv.sources]`.
 - Criteria: a new test shows two calls to `naming()` return the same object and read the file once (monkeypatch `_read`); the existing suites pass (`scripts/test.sh packages/workflow`, `scripts/itest.sh workflow`), and the tests that rewrite `naming.yaml` are listed in the pull request with what each does about the cache (scout: check first); `tests/service/test_contract.py` passes; `uv export --frozen --no-dev --package dsy-workflow | grep servicekit` prints a line.
 - Verifier: the commands above.
 - Consumes / produces: consumes `dsy_servicekit.config` and `dsy_servicekit.lifecycle`; produces `packages/workflow/tests/service/test_contract.py` and the cached loaders.
@@ -968,7 +969,7 @@ WFL has no H2 item, because the workflow service already uses `dsy_obs.metrics.r
 ### Lane MOD: the module seam
 
 **MOD-1 `dsy_workflow.modules` and the loop in `serve`** - S, judge
-- Scope: section 5.2; the three built-in workers unchanged.
+- Scope: section 5.2; the three built-in workers and the supervision logic of `_run_until` unchanged (its ready-file lines moved to `ReadyFile` in WFL-1).
 - Criteria: `packages/workflow/tests/test_modules.py` has a duplicate-name unit test over faked entry points, a test that a module raising on import or in construction is skipped and logged at error level while `JobWorkflow` still runs, a test that a module worker dying later is logged at error level by its supervisor and does not end the host while the built-in workers still serve, a test with a module function defined in the test and fed through a faked `load` that an activity in flight at SIGTERM finishes inside `DRAIN` because the supervised module worker is shut down with the others, and a no-module path test that hides the entry-point group and runs the existing `serve` service tests; `scripts/test.sh packages/workflow` and `scripts/itest.sh workflow` pass.
 - Verifier: that file.
 - Consumes / produces: consumes WFL-2's builders; produces `dsy_workflow.modules` (`Context`, `load`) and the loop in `serve`.
@@ -1137,7 +1138,7 @@ Estimates are marked as estimates, because there is no timing data for any of th
 | 4 | MOD, EXIT | 2 | MOD-1 to 3, EXIT-1 | 3 of 4 | MOD-1 touches the file WFL owned |
 
 Totals: 41 issues, 26 mechanical with no per-site judgement and 15 carrying judgement, 8 issues carrying a Q4 behaviour change (ADM-3, ADM-4, DIS-3, DIS-4, WFL-3, WRK-2, OBS-2, TOOL-4) for the seven items H1 to H7, over 17 lanes.
-By size: 2 XS, 29 S, 9 M, 1 L (TS-3).
+By size: 3 XS, 28 S, 9 M, 1 L (TS-3).
 Estimate: phase 1 can start now and then waits for the e2e gate, whose date is not in this epic's hands.
 After the gate, a phase is about one to three working days for the lanes in it, and the epic is about eight to twelve working days of wall time at four workers, mostly waiting on the T1 lock and the two checkpoints.
 
