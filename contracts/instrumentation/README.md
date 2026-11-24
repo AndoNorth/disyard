@@ -1,7 +1,7 @@
 # Instrumentation contract
 
 Owner epic: #13 (observability), which took the contract over from #4 (job event envelope and state propagation).
-Version: 8
+Version: 9
 Consumers: every component that emits a metric, a log line or a span, and #14, #15, #16 and #17.
 
 This contract pins the rules for metrics, labels, log fields and traces, and the platform catalogue in `metrics.yaml`.
