@@ -99,7 +99,7 @@ async def run_task(task: TaskInput) -> TaskResult:
 
 async def _run(task: TaskInput) -> TaskResult:
     served, tmp, metrics = _SERVING.get()
-    context = replace(served, beat=None)
+    context = replace(served, beat=None, metrics=metrics)
     started_at = format_time(activity.info().started_time)
     context.scratch.mkdir(parents=True, exist_ok=True)
     _empty(tmp)

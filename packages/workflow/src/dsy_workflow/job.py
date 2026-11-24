@@ -37,6 +37,9 @@ with workflow.unsafe.imports_passed_through():
 SOURCE = "/dsy/workflow"
 # The time format of dsy_events.models.TIME_PATTERN, in which a worker reports its start.
 TIME_FORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
+# The help of the job-end counter, which the service also creates to start every series at zero, so
+# both ends register one instrument.
+JOBS_TOTAL_HELP = "Jobs ended, by job class and terminal status."
 # The control requests that end a job, each overriding the ones before it.
 ENDING = ("cancel", "terminate")
 RANK: dict[Stop | None, int] = {None: 0, "pause": 1, "cancel": 2, "terminate": 3}
@@ -144,9 +147,7 @@ class JobWorkflow:
             " status.",
             "s",
         )
-        self.jobs = meter.create_counter(
-            "dsy_workflow_jobs_total", "Jobs ended, by job class and terminal status."
-        )
+        self.jobs = meter.create_counter("dsy_workflow_jobs_total", JOBS_TOTAL_HELP)
 
     @workflow.run
     async def run(self, accepted: Event, params: JobParams) -> str:

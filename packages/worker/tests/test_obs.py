@@ -14,17 +14,22 @@ from pathlib import Path
 
 import pytest
 import yaml
+from dsy_aggregate.run import files
 from dsy_artifactclient.errors import StoreUnavailable
 from dsy_obs.logs import JsonFormatter
 from dsy_worker import metrics
 from dsy_worker.activity import run_task, serving
 from dsy_worker.metrics import ADDRESS_ENV, BUCKETS, Metrics, classes_of, runtime_of
-from dsy_worker.pools import Context
+from dsy_worker.pools import Context, aggregate
 from dsy_workflow.models import TaskInput
+from dsy_workloads import main
 from temporalio.exceptions import ApplicationError
 from temporalio.testing import ActivityEnvironment
 
 ROOT = Path(__file__).resolve().parents[3]
+ECHO = ROOT / "contracts/workload/vectors/level0/echo/input.json"
+# The rows of one level 0 echo result.
+ECHO_ROWS = 4
 VECTORS = ROOT / "contracts/activity/vectors/task-input/valid"
 CATALOGUE = yaml.safe_load((ROOT / "contracts/instrumentation/metrics.yaml").read_text())["metrics"]
 POOLS = ("compile", "simulate", "aggregate")
@@ -145,6 +150,39 @@ def test_every_series_of_a_pool_is_served_before_its_first_task(served, pool):
         assert samples["dsy_worker_tasks_total", pool_labels(pool, exit_class)] == 0
     assert samples["dsy_worker_aggregate_inputs_total", frozenset()] == 0
     assert samples["dsy_worker_aggregate_rows_total", frozenset()] == 0
+
+
+def test_an_aggregate_counts_the_result_files_it_read_and_their_rows(tmp_path):
+    address = free_address()
+    runtime = runtime_of({ADDRESS_ENV: address})
+    counted = Metrics(runtime.metric_meter, "aggregate")
+    results = {}
+    for name in ("sim-0", "sim-1"):
+        (tmp_path / name).mkdir()
+        (tmp_path / name / "input.json").write_bytes(ECHO.read_bytes())
+        assert main.execute(tmp_path / name / "input.json", tmp_path / name) == 0
+        results[name] = tmp_path / name / "results.xml"
+    out = tmp_path / "output"
+    files("digest_list", {}, out, results, missing=["sim-2"])
+    context = Context(store=None, scratch=tmp_path, slot_memory_mib=1024, metrics=counted)
+
+    aggregate.count_summary(context, out)
+
+    samples = scrape(address)
+    assert samples["dsy_worker_aggregate_inputs_total", frozenset()] == 2
+    assert samples["dsy_worker_aggregate_rows_total", frozenset()] == 2 * ECHO_ROWS
+
+
+def test_the_task_path_runs_with_the_metrics_of_its_pool(monkeypatch, served):
+    served("aggregate")
+    seen = []
+
+    async def run_path(task, context):
+        seen.append(context.metrics)
+
+    monkeypatch.setattr(aggregate, "run", run_path)
+    run(task_of("aggregate"))
+    assert [type(metrics) for metrics in seen] == [Metrics]
 
 
 @pytest.mark.parametrize(

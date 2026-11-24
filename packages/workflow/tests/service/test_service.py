@@ -170,6 +170,26 @@ def test_metrics_endpoint(temporal, config, running, start_job):
     [count] = [line for line in lines if line.startswith("dsy_workflow_history_events_count")]
     assert 'workflow_type="JobWorkflow"' in count
     assert float(count.rsplit(" ", 1)[1]) > 0
+    # A job end that has not happened is served from the start at zero, and the one that has is the
+    # same series, which began at zero and so counts its first job.
+    ended = [
+        line
+        for line in lines
+        if line.startswith("dsy_workflow_jobs_total")
+        and 'job_class="short"' in line
+        and 'outcome="succeeded"' in line
+    ]
+    assert len(ended) == 1
+    assert ended[0].endswith(" 1")
+    assert 'workflow_type="JobWorkflow"' in ended[0]
+    [never] = [
+        line
+        for line in lines
+        if line.startswith("dsy_workflow_jobs_total")
+        and 'job_class="long"' in line
+        and 'outcome="terminated"' in line
+    ]
+    assert never.endswith(" 0")
     for line in lines:
         if line.startswith("dsy_"):
             assert not any(f"{label}=" in line for label in ("job_id", "jobid", "taskid"))

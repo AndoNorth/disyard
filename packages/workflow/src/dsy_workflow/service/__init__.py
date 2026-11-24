@@ -23,14 +23,18 @@ from pathlib import Path
 
 from dsy_artifactreaper import schedule
 from dsy_artifactreaper.schedule import RunPass
+from dsy_jobstate import status_vocabulary
 from dsy_obs import metrics
 from dsy_temporal import event_data_converter, tracing_interceptor
 from temporalio.api.workflowservice.v1 import DescribeNamespaceRequest
 from temporalio.client import Client
+from temporalio.common import MetricMeter
 from temporalio.runtime import Runtime
 from temporalio.worker import Worker
 
+from ..activities.plan import limits
 from ..contract import naming
+from ..job import JOBS_TOTAL_HELP, JobWorkflow
 from ..placement import Placer, ServicePlacer, StaticPlacer
 from ..worker import THREADS, workflow_worker
 
@@ -153,6 +157,25 @@ def prometheus(address: str) -> Runtime:
     return metrics.runtime(address, BUCKETS)
 
 
+def start_job_counters(meter: MetricMeter, namespace: str) -> None:
+    """Creates the job-end counter at 0 for each job class and terminal status, since a counter
+    with no increment is not exported and `increase` over the series of the first job to end is
+    empty. The workflow's meter adds the namespace, task queue and workflow type to every series,
+    so the zero series carry them too and are the series the first job then increments."""
+    meter = meter.with_additional_attributes(
+        {
+            "namespace": namespace,
+            "task_queue": naming().workflow.queue,
+            "workflow_type": JobWorkflow.__name__,
+        }
+    )
+    counter = meter.create_counter("dsy_workflow_jobs_total", JOBS_TOTAL_HELP)
+    classes = {c for profile in limits().profiles.values() for c in profile.classes}
+    for job_class in sorted(classes):
+        for outcome in sorted(status_vocabulary().terminal):
+            counter.add(0, {"job_class": job_class, "outcome": outcome})
+
+
 async def serve(
     config: Config,
     control_activities: list[Callable],
@@ -180,6 +203,7 @@ async def serve(
         loop.add_signal_handler(signum, stop.set)
     runtime = runtime or prometheus(config.metrics_address)
     metrics.export_registry(runtime.metric_meter, "workflow")
+    start_job_counters(runtime.metric_meter, config.namespace)
     try:
         client = await Client.connect(
             config.temporal_address,
