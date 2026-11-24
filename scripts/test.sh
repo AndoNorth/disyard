@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Usage: test.sh [pytest-args...]
-# Unit tests: everything not marked integration or slow, optionally limited by pytest arguments.
+# Unit tests: everything not marked integration, slow or e2e, optionally limited by pytest arguments.
 # pytest exit 5 (nothing collected) is success.
 set -euo pipefail
 cd "$(dirname "$0")/.."
@@ -11,6 +11,6 @@ pytest=(uv run --frozen pytest)
 
 # One worker per core, whole files per worker so module-scoped fixtures run once. Pass -n0 to run serial.
 rc=0
-"${pytest[@]}" -n auto --dist loadfile -m "not integration and not slow" "$@" || rc=$?
+"${pytest[@]}" -n auto --dist loadfile -m "not integration and not slow and not e2e" "$@" || rc=$?
 if [ "$rc" -eq 5 ]; then echo "notice: no tests collected"; exit 0; fi
 exit "$rc"

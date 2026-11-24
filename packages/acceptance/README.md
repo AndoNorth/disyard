@@ -36,9 +36,13 @@ The clients and the gate are delivered, each under `src/dsy_acceptance/`:
 - `bundles.variant(name)` and `bundles.missing_entry()`: the workload library bundle of a variant, and a bundle whose entry module `MISSING_ENTRY` has no `Run` class, which the compile task refuses as `compile_failed`.
 - `jobs.two_chains`, `jobs.failing_second_chain` and `jobs.two_seed_summary`: two compile then simulate chains under one `digest_list` aggregate, the same with chain `b` failing its compile, and the summary a host expects over two seeds.
 
-Not written yet, which the e2e suite of the [test ladder](../../docs/acceptance-ladder.md) builds over the same clients:
+`dsy_acceptance.e2e` is the harness of the e2e suite of the [test ladder](../../docs/acceptance-ladder.md), and the scenarios are not written yet:
 
-- `scripts/e2e.sh`, which is a stub that exits 3, and the suite under `e2e/`.
+- `e2e`: `TENANT`, `ORDER` (the run order of the scenario ids), `batch_key()` (`e2e-<12 hex>`) and `wait(check, timeout_s, what)`, which polls until a truthy value and never sleeps a fixed time.
+- `e2e.baseline.Baseline`: a counter read before a scenario and the change after it, asserted from a quiet baseline.
+- `e2e.summary.Summary`: one `ok|FAIL|skip <scenario> <detail>` line per scenario and a count line, in the smoke row format.
+- `tests/e2e/conftest.py`: the `@pytest.mark.scenario("<id>")` marker, the run order, and the fixtures `client`, `batches` (a fresh batch key per call, cancelled when the test fails), `prometheus` and `baseline`.
+  Its tests are marked `e2e` and `scripts/test.sh` leaves them out.
 - Every direct read the suite makes is listed in the ladder's [direct reads](../../docs/acceptance-ladder.md#direct-reads).
 
 ## The smoke recipe
@@ -54,6 +58,12 @@ Not written yet, which the e2e suite of the [test ladder](../../docs/acceptance-
 
 When the timer runs out, the driver gets SIGINT, prints `FAIL budget 300 s ran out in <row>` and its count line, and the wrapper exits 1.
 A driver still running 10 s later is killed, and the wrapper prints `FAIL budget` and `smoke ci: budget ran out after 300 s` itself.
+
+## The e2e recipe
+
+`just e2e` runs `scripts/e2e.sh`, which needs preset `ci` with the observability stack on, takes the cluster lock as the smoke recipe does, checks that the kind cluster `dsy` exists, runs `scripts/smoke.sh` under the held lock, and then the suite under a 600 s timer.
+Its exit codes are those of the smoke recipe, with exit 4 also meaning the stack is off.
+A failed smoke ends the run with its exit, so the scenarios only run on a green gate.
 
 ## Commands
 
