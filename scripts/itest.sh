@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Usage: itest.sh [domain | -- pytest-args...]
 # Integration tests, optionally limited to packages/<domain> or by pytest arguments.
-# pytest exit 5 (nothing collected) is success.
+# pytest exit 5 (nothing collected) is success, and exit 4 is a refusal: the T1 lock wait ran out.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 

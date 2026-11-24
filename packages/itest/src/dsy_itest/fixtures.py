@@ -5,7 +5,7 @@ import re
 
 import pytest
 
-from .session import Session
+from .session import REFUSED_EXIT, LockTimeout, Session
 
 ISOLATED = "isolated"
 
@@ -47,7 +47,15 @@ def t1(request):
     """A T1 session. A missing Docker fails the test and is never a skip.
 
     It holds two containers when any collected test carries the marker `pair`, and one otherwise.
+    A lock wait that runs out ends the run with exit 4 and a `refused:` message, not a test failure.
     """
     paired = any(item.get_closest_marker("pair") for item in request.session.items)
-    with Session(containers=2 if paired else 1) as session:
+    session = Session(containers=2 if paired else 1)
+    try:
+        session.__enter__()
+    except LockTimeout as exc:
+        pytest.exit(str(exc), returncode=REFUSED_EXIT)
+    try:
         yield session
+    finally:
+        session.close()

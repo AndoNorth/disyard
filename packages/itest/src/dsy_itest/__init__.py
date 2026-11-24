@@ -11,6 +11,9 @@ Environment:
   DSY_RUN_ID            run id, default <UTC timestamp>-<slot>-<pid>
   DSY_T1_LOCK_DIR       directory of the two lock files, default /tmp
   DSY_T1_LOCK_TIMEOUT   seconds to wait for a free lock file, default 1800
+
+A wait that runs out is a refusal: a message beginning `refused:` that names the holders, and
+exit 4, from pytest and from the tools that wrap their session in `refusing_on_wait`.
 """
 
 from .session import (
@@ -19,6 +22,14 @@ from .session import (
     Session,
     image_ref,
     lock_paths,
+    refusing_on_wait,
 )
 
-__all__ = ["DockerUnavailable", "LockTimeout", "Session", "image_ref", "lock_paths"]
+__all__ = [
+    "DockerUnavailable",
+    "LockTimeout",
+    "Session",
+    "image_ref",
+    "lock_paths",
+    "refusing_on_wait",
+]

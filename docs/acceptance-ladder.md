@@ -53,8 +53,8 @@ A time here is a budget or a proposal, and a measured one lives in the [validati
 | Recipe | Does | Needs | Exit codes |
 | --- | --- | --- | --- |
 | `just test` | Unit tests of the whole tree, or `scripts/test.sh <path>` for one package | the flake | 0 or the failing test run's code |
-| `just itest [domain]` | Integration tests against containers started by `dsy_itest` | Docker | as above |
-| `just ci` | Everything CI's `check` job runs | Docker | as above |
+| `just itest [domain]` | Integration tests against containers started by `dsy_itest` | Docker | as above, 4 refused: the T1 lock wait ran out |
+| `just ci` | Everything CI's `check` job runs | Docker | as above, 4 refused: the T1 lock wait ran out |
 | `just smoke` | The smoke gate, see [the rows](runbooks/validation-matrix.md#the-smoke-rows) | a running `ci` cluster | 0 ok, 1 a row failed or the budget ran out, 2 usage, 4 refused |
 | `just e2e` | Level 4, not delivered | a running `ci` cluster with the observability stack on | will follow the smoke exit codes, today 3 |
 
@@ -64,6 +64,9 @@ Every cluster recipe takes `/tmp/dsy-cluster.lock` and waits up to 900 s for it,
 A wait that runs out is a refusal (exit 4) and not a failure, so a queued gate is not mistaken for a failed one.
 `just e2e` will take the lock once, export `DSY_CLUSTER_LOCK_HELD`, and run smoke as its first step under that hold.
 A run of about 10 minutes is under the 900 s wait of a queued lane, and a slow run can exceed it, which that lane sees as a refusal.
+
+The integration tests of `just itest` and `just ci` queue the same way for the two T1 lock files of `dsy_itest` and wait up to 1800 s.
+A wait that runs out is also a refusal (exit 4, a message beginning `refused:`), see [T1 lock](dev-setup.md#t1-lock).
 
 The gate order is: `just ci` on the change, a cluster from `just up` and the module deploy, `just cluster-verify`, `just smoke`, then `just e2e`.
 Load, performance and soak need a green smoke on the same deploy.

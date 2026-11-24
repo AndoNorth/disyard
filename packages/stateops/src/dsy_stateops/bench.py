@@ -253,11 +253,12 @@ def database(dsn: str | None):
     if dsn:
         yield dsn
         return
-    from dsy_itest import Session
+    from dsy_itest import Session, refusing_on_wait
     from dsy_migrate import apply, discover
     from dsy_migrate.fixtures import IMAGE, PASSWORD, TELEMETRY_OFF, _connect
 
     with (
+        refusing_on_wait(),
         Session() as session,
         session.container(
             IMAGE, ports={0: 5432}, command=TELEMETRY_OFF, env={"POSTGRES_PASSWORD": PASSWORD}
