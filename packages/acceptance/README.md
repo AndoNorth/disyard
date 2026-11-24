@@ -9,7 +9,7 @@ The dev group of the workspace installs it.
 
 ## Dependencies
 
-`pyproject.toml` declares every dependency the clients and the gate import: `temporalio`, `dsy-broker`, `dsy-clusterkit`, `dsy-kernel`, `dsy-obs`, `dsy-workflow` and `dsy-workloads`.
+`pyproject.toml` declares every dependency the clients and the gate import: `psycopg[binary]`, `temporalio`, `dsy-broker`, `dsy-clusterkit`, `dsy-eventstore`, `dsy-jobstate`, `dsy-kernel`, `dsy-keys`, `dsy-obs`, `dsy-storecheck`, `dsy-temporal`, `dsy-workflow` and `dsy-workloads`.
 `tests/test_wheel.py` builds the wheel, installs it with only those dependencies into a clean virtual environment and imports every module of the package, so a module that imports an undeclared dependency fails there.
 
 ## State
@@ -24,13 +24,15 @@ The clients and the gate are delivered, each under `src/dsy_acceptance/`:
 
 - `clients.api`: `request`, `stream`, `template`, `batch`, `batch_key`, and `Api(dispatch, control, tenant)` with `upload_source`, `submit_one`, `status` and `cancel_batch`.
 - `clients.store`: `fetch(uri, identity, endpoint) -> bytes`, signed as the store role the caller names.
-- `clients.temporal`: `connect(address) -> Client`.
+- `clients.temporal`: `connect(address) -> Client`, and `describe`, `history` and `executions` of a job's workflow by workflow id.
+- `clients.postgres`: `connect(address)` a read-only session, `job(conn, job_id)` and `events(conn, job_id)`.
+- `clients.observability`: the `dsy_obs.query` reads `prom`, `targets`, `loki`, `trace` and `profiled`.
+- `clients.pod`: `exec_in(context, namespace, pod, *argv)` and `process_names(context, namespace, pod)`.
 - `clients.broker`: `dead_letters(address) -> int`.
 - `smoke`: `python -m dsy_acceptance.smoke`, the ordered driver of the gate run by `scripts/smoke.sh`, with `smoke.telemetry` for the observability row and `smoke.results` for the push of the verdicts to the smoke dashboard.
 
 Not written yet, which the e2e suite of the [test ladder](../../docs/acceptance-ladder.md) builds over the same clients:
 
-- Clients for the Postgres job row and its events, Temporal history, the observability read APIs and pod exec.
 - The fixtures of the two-chain job, the failing compile and the malformed result block.
 - `scripts/e2e.sh`, which is a stub that exits 3, and the suite under `e2e/`.
 - Every direct read the suite makes is listed in the ladder's [direct reads](../../docs/acceptance-ladder.md#direct-reads).

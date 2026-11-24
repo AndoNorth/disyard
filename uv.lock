@@ -195,6 +195,862 @@ wheels = [
 ]
 
 [[package]]
+name = "disyard"
+version = "0.0.0"
+source = { virtual = "." }
+
+[package.dev-dependencies]
+dev = [
+    { name = "dsy-acceptance" },
+    { name = "dsy-admission" },
+    { name = "dsy-aggregate" },
+    { name = "dsy-artifactclient" },
+    { name = "dsy-artifactindex" },
+    { name = "dsy-artifactreaper" },
+    { name = "dsy-broker" },
+    { name = "dsy-clusterkit" },
+    { name = "dsy-compat" },
+    { name = "dsy-compile" },
+    { name = "dsy-dispatchapi" },
+    { name = "dsy-events" },
+    { name = "dsy-eventstore" },
+    { name = "dsy-itest" },
+    { name = "dsy-jobcheck" },
+    { name = "dsy-jobdoc" },
+    { name = "dsy-jobexamples" },
+    { name = "dsy-jobpatch" },
+    { name = "dsy-jobstate" },
+    { name = "dsy-jobtools" },
+    { name = "dsy-kernel" },
+    { name = "dsy-keys" },
+    { name = "dsy-migrate" },
+    { name = "dsy-obs" },
+    { name = "dsy-placement" },
+    { name = "dsy-plan" },
+    { name = "dsy-runtime" },
+    { name = "dsy-stages" },
+    { name = "dsy-stateops" },
+    { name = "dsy-storecheck" },
+    { name = "dsy-temporal" },
+    { name = "dsy-worker" },
+    { name = "dsy-workflow" },
+    { name = "dsy-workloads" },
+    { name = "hypothesis" },
+    { name = "pytest" },
+]
+
+[package.metadata]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "dsy-acceptance", editable = "packages/acceptance" },
+    { name = "dsy-admission", editable = "packages/admission" },
+    { name = "dsy-aggregate", editable = "packages/aggregate" },
+    { name = "dsy-artifactclient", editable = "packages/artifactclient" },
+    { name = "dsy-artifactindex", editable = "packages/artifactindex" },
+    { name = "dsy-artifactreaper", editable = "packages/artifactreaper" },
+    { name = "dsy-broker", editable = "packages/broker" },
+    { name = "dsy-clusterkit", editable = "packages/clusterkit" },
+    { name = "dsy-compat", editable = "packages/compat" },
+    { name = "dsy-compile", editable = "packages/compile" },
+    { name = "dsy-dispatchapi", editable = "packages/dispatchapi" },
+    { name = "dsy-events", editable = "packages/events" },
+    { name = "dsy-eventstore", editable = "packages/eventstore" },
+    { name = "dsy-itest", editable = "packages/itest" },
+    { name = "dsy-jobcheck", editable = "packages/jobcheck" },
+    { name = "dsy-jobdoc", editable = "packages/jobdoc" },
+    { name = "dsy-jobexamples", editable = "packages/jobexamples" },
+    { name = "dsy-jobpatch", editable = "packages/jobpatch" },
+    { name = "dsy-jobstate", editable = "packages/jobstate" },
+    { name = "dsy-jobtools", editable = "packages/jobtools" },
+    { name = "dsy-kernel", editable = "packages/kernel" },
+    { name = "dsy-keys", editable = "packages/keys" },
+    { name = "dsy-migrate", editable = "packages/migrate" },
+    { name = "dsy-obs", editable = "packages/obs" },
+    { name = "dsy-placement", editable = "packages/placement" },
+    { name = "dsy-plan", editable = "packages/plan" },
+    { name = "dsy-runtime", editable = "packages/runtime" },
+    { name = "dsy-stages", editable = "packages/stages" },
+    { name = "dsy-stateops", editable = "packages/stateops" },
+    { name = "dsy-storecheck", editable = "packages/storecheck" },
+    { name = "dsy-temporal", editable = "packages/temporal" },
+    { name = "dsy-worker", editable = "packages/worker" },
+    { name = "dsy-workflow", editable = "packages/workflow" },
+    { name = "dsy-workloads", editable = "packages/workloads" },
+    { name = "hypothesis" },
+    { name = "pytest" },
+]
+
+[[package]]
+name = "dsy-acceptance"
+version = "0.0.0"
+source = { editable = "packages/acceptance" }
+dependencies = [
+    { name = "dsy-broker" },
+    { name = "dsy-clusterkit" },
+    { name = "dsy-eventstore" },
+    { name = "dsy-jobstate" },
+    { name = "dsy-kernel" },
+    { name = "dsy-keys" },
+    { name = "dsy-obs" },
+    { name = "dsy-storecheck" },
+    { name = "dsy-temporal" },
+    { name = "dsy-workflow" },
+    { name = "dsy-workloads" },
+    { name = "psycopg", extra = ["binary"] },
+    { name = "temporalio" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "dsy-broker", editable = "packages/broker" },
+    { name = "dsy-clusterkit", editable = "packages/clusterkit" },
+    { name = "dsy-eventstore", editable = "packages/eventstore" },
+    { name = "dsy-jobstate", editable = "packages/jobstate" },
+    { name = "dsy-kernel", editable = "packages/kernel" },
+    { name = "dsy-keys", editable = "packages/keys" },
+    { name = "dsy-obs", editable = "packages/obs" },
+    { name = "dsy-storecheck", editable = "packages/storecheck" },
+    { name = "dsy-temporal", editable = "packages/temporal" },
+    { name = "dsy-workflow", editable = "packages/workflow" },
+    { name = "dsy-workloads", editable = "packages/workloads" },
+    { name = "psycopg", extras = ["binary"] },
+    { name = "temporalio" },
+]
+
+[[package]]
+name = "dsy-admission"
+version = "0.0.0"
+source = { editable = "packages/admission" }
+dependencies = [
+    { name = "dsy-broker" },
+    { name = "dsy-compat" },
+    { name = "dsy-events" },
+    { name = "dsy-eventstore" },
+    { name = "dsy-jobstate" },
+    { name = "dsy-keys" },
+    { name = "dsy-obs" },
+    { name = "dsy-stages" },
+    { name = "dsy-temporal" },
+    { name = "dsy-workflow" },
+    { name = "psycopg", extra = ["binary"] },
+    { name = "pydantic" },
+    { name = "temporalio" },
+]
+
+[package.optional-dependencies]
+cluster = [
+    { name = "dsy-clusterkit" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "dsy-broker", editable = "packages/broker" },
+    { name = "dsy-clusterkit", marker = "extra == 'cluster'", editable = "packages/clusterkit" },
+    { name = "dsy-compat", editable = "packages/compat" },
+    { name = "dsy-events", editable = "packages/events" },
+    { name = "dsy-eventstore", editable = "packages/eventstore" },
+    { name = "dsy-jobstate", editable = "packages/jobstate" },
+    { name = "dsy-keys", editable = "packages/keys" },
+    { name = "dsy-obs", editable = "packages/obs" },
+    { name = "dsy-stages", editable = "packages/stages" },
+    { name = "dsy-temporal", editable = "packages/temporal" },
+    { name = "dsy-workflow", editable = "packages/workflow" },
+    { name = "psycopg", extras = ["binary"] },
+    { name = "pydantic" },
+    { name = "temporalio" },
+]
+provides-extras = ["cluster"]
+
+[[package]]
+name = "dsy-aggregate"
+version = "0.0.0"
+source = { editable = "packages/aggregate" }
+dependencies = [
+    { name = "dsy-artifactclient" },
+    { name = "dsy-kernel" },
+    { name = "dsy-storecheck" },
+    { name = "numpy" },
+    { name = "pandas" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "dsy-artifactclient", editable = "packages/artifactclient" },
+    { name = "dsy-kernel", editable = "packages/kernel" },
+    { name = "dsy-storecheck", editable = "packages/storecheck" },
+    { name = "numpy", specifier = ">=2.5.4" },
+    { name = "pandas", specifier = ">=3.1.1" },
+]
+
+[[package]]
+name = "dsy-artifactclient"
+version = "0.0.0"
+source = { editable = "packages/artifactclient" }
+dependencies = [
+    { name = "boto3" },
+    { name = "dsy-artifactindex" },
+    { name = "dsy-compat" },
+    { name = "dsy-events" },
+    { name = "dsy-storecheck" },
+    { name = "pydantic" },
+    { name = "pytest" },
+    { name = "pyyaml" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "boto3" },
+    { name = "dsy-artifactindex", editable = "packages/artifactindex" },
+    { name = "dsy-compat", editable = "packages/compat" },
+    { name = "dsy-events", editable = "packages/events" },
+    { name = "dsy-storecheck", editable = "packages/storecheck" },
+    { name = "pydantic" },
+    { name = "pytest" },
+    { name = "pyyaml" },
+]
+
+[[package]]
+name = "dsy-artifactindex"
+version = "0.0.0"
+source = { editable = "packages/artifactindex" }
+dependencies = [
+    { name = "dsy-events" },
+    { name = "psycopg", extra = ["binary"] },
+    { name = "pydantic" },
+    { name = "pyyaml" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "dsy-events", editable = "packages/events" },
+    { name = "psycopg", extras = ["binary"] },
+    { name = "pydantic" },
+    { name = "pyyaml" },
+]
+
+[[package]]
+name = "dsy-artifactreaper"
+version = "0.0.0"
+source = { editable = "packages/artifactreaper" }
+dependencies = [
+    { name = "dsy-artifactclient" },
+    { name = "dsy-artifactindex" },
+    { name = "dsy-storecheck" },
+    { name = "psycopg", extra = ["binary"] },
+    { name = "pyyaml" },
+    { name = "temporalio" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "dsy-artifactclient", editable = "packages/artifactclient" },
+    { name = "dsy-artifactindex", editable = "packages/artifactindex" },
+    { name = "dsy-storecheck", editable = "packages/storecheck" },
+    { name = "psycopg", extras = ["binary"] },
+    { name = "pyyaml" },
+    { name = "temporalio" },
+]
+
+[[package]]
+name = "dsy-broker"
+version = "0.0.0"
+source = { editable = "packages/broker" }
+dependencies = [
+    { name = "dsy-compat" },
+    { name = "dsy-events" },
+    { name = "dsy-itest" },
+    { name = "dsy-jobdoc" },
+    { name = "pydantic" },
+    { name = "python-qpid-proton" },
+    { name = "pyyaml" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "dsy-compat", editable = "packages/compat" },
+    { name = "dsy-events", editable = "packages/events" },
+    { name = "dsy-itest", editable = "packages/itest" },
+    { name = "dsy-jobdoc", editable = "packages/jobdoc" },
+    { name = "pydantic" },
+    { name = "python-qpid-proton", specifier = "==0.40.0" },
+    { name = "pyyaml" },
+]
+
+[[package]]
+name = "dsy-clusterkit"
+version = "0.0.0"
+source = { editable = "packages/clusterkit" }
+dependencies = [
+    { name = "dsy-storecheck" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "dsy-storecheck", editable = "packages/storecheck" }]
+
+[[package]]
+name = "dsy-compat"
+version = "0.0.0"
+source = { editable = "packages/compat" }
+dependencies = [
+    { name = "dsy-events" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "dsy-events", editable = "packages/events" }]
+
+[[package]]
+name = "dsy-compile"
+version = "0.0.0"
+source = { editable = "packages/compile" }
+dependencies = [
+    { name = "componentize-py" },
+    { name = "dsy-jobcheck" },
+    { name = "dsy-keys" },
+    { name = "dsy-runtime" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "componentize-py", specifier = "==0.25.1" },
+    { name = "dsy-jobcheck", editable = "packages/jobcheck" },
+    { name = "dsy-keys", editable = "packages/keys" },
+    { name = "dsy-runtime", editable = "packages/runtime" },
+]
+
+[[package]]
+name = "dsy-dispatchapi"
+version = "0.0.0"
+source = { editable = "packages/dispatchapi" }
+dependencies = [
+    { name = "boto3" },
+    { name = "dsy-artifactclient" },
+    { name = "dsy-artifactindex" },
+    { name = "dsy-broker" },
+    { name = "dsy-compile" },
+    { name = "dsy-events" },
+    { name = "dsy-eventstore" },
+    { name = "dsy-itest" },
+    { name = "dsy-jobcheck" },
+    { name = "dsy-jobpatch" },
+    { name = "dsy-jobstate" },
+    { name = "dsy-keys" },
+    { name = "dsy-obs" },
+    { name = "dsy-plan" },
+    { name = "dsy-stages" },
+    { name = "dsy-temporal" },
+    { name = "dsy-workflow" },
+    { name = "psycopg", extra = ["binary"] },
+    { name = "pydantic" },
+    { name = "pyyaml" },
+    { name = "temporalio" },
+]
+
+[package.optional-dependencies]
+cluster = [
+    { name = "dsy-acceptance" },
+    { name = "dsy-clusterkit" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "boto3" },
+    { name = "dsy-acceptance", marker = "extra == 'cluster'", editable = "packages/acceptance" },
+    { name = "dsy-artifactclient", editable = "packages/artifactclient" },
+    { name = "dsy-artifactindex", editable = "packages/artifactindex" },
+    { name = "dsy-broker", editable = "packages/broker" },
+    { name = "dsy-clusterkit", marker = "extra == 'cluster'", editable = "packages/clusterkit" },
+    { name = "dsy-compile", editable = "packages/compile" },
+    { name = "dsy-events", editable = "packages/events" },
+    { name = "dsy-eventstore", editable = "packages/eventstore" },
+    { name = "dsy-itest", editable = "packages/itest" },
+    { name = "dsy-jobcheck", editable = "packages/jobcheck" },
+    { name = "dsy-jobpatch", editable = "packages/jobpatch" },
+    { name = "dsy-jobstate", editable = "packages/jobstate" },
+    { name = "dsy-keys", editable = "packages/keys" },
+    { name = "dsy-obs", editable = "packages/obs" },
+    { name = "dsy-plan", editable = "packages/plan" },
+    { name = "dsy-stages", editable = "packages/stages" },
+    { name = "dsy-temporal", editable = "packages/temporal" },
+    { name = "dsy-workflow", editable = "packages/workflow" },
+    { name = "psycopg", extras = ["binary"] },
+    { name = "pydantic" },
+    { name = "pyyaml" },
+    { name = "temporalio" },
+]
+provides-extras = ["cluster"]
+
+[[package]]
+name = "dsy-events"
+version = "0.0.0"
+source = { editable = "packages/events" }
+dependencies = [
+    { name = "dsy-keys" },
+    { name = "jsonschema" },
+    { name = "psycopg", extra = ["binary"] },
+    { name = "pydantic" },
+    { name = "pyyaml" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "dsy-keys", editable = "packages/keys" },
+    { name = "jsonschema" },
+    { name = "psycopg", extras = ["binary"] },
+    { name = "pydantic" },
+    { name = "pyyaml" },
+]
+
+[[package]]
+name = "dsy-eventstore"
+version = "0.0.0"
+source = { editable = "packages/eventstore" }
+dependencies = [
+    { name = "dsy-compat" },
+    { name = "dsy-events" },
+    { name = "pydantic" },
+    { name = "pyyaml" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "dsy-compat", editable = "packages/compat" },
+    { name = "dsy-events", editable = "packages/events" },
+    { name = "pydantic" },
+    { name = "pyyaml" },
+]
+
+[[package]]
+name = "dsy-itest"
+version = "0.0.0"
+source = { editable = "packages/itest" }
+dependencies = [
+    { name = "pytest" },
+    { name = "pyyaml" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "pytest" },
+    { name = "pyyaml" },
+]
+
+[[package]]
+name = "dsy-jobcheck"
+version = "0.0.0"
+source = { editable = "packages/jobcheck" }
+dependencies = [
+    { name = "dsy-jobdoc" },
+    { name = "dsy-plan" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "dsy-jobdoc", editable = "packages/jobdoc" },
+    { name = "dsy-plan", editable = "packages/plan" },
+]
+
+[[package]]
+name = "dsy-jobdoc"
+version = "0.0.0"
+source = { editable = "packages/jobdoc" }
+dependencies = [
+    { name = "jsonschema" },
+    { name = "pydantic" },
+    { name = "pyyaml" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "jsonschema" },
+    { name = "pydantic" },
+    { name = "pyyaml" },
+]
+
+[[package]]
+name = "dsy-jobexamples"
+version = "0.0.0"
+source = { editable = "packages/jobexamples" }
+dependencies = [
+    { name = "dsy-jobcheck" },
+    { name = "dsy-jobdoc" },
+    { name = "dsy-plan" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "dsy-jobcheck", editable = "packages/jobcheck" },
+    { name = "dsy-jobdoc", editable = "packages/jobdoc" },
+    { name = "dsy-plan", editable = "packages/plan" },
+]
+
+[[package]]
+name = "dsy-jobpatch"
+version = "0.0.0"
+source = { editable = "packages/jobpatch" }
+dependencies = [
+    { name = "dsy-jobdoc" },
+    { name = "dsy-plan" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "dsy-jobdoc", editable = "packages/jobdoc" },
+    { name = "dsy-plan", editable = "packages/plan" },
+]
+
+[[package]]
+name = "dsy-jobstate"
+version = "0.0.0"
+source = { editable = "packages/jobstate" }
+dependencies = [
+    { name = "dsy-events" },
+    { name = "psycopg", extra = ["binary"] },
+    { name = "pydantic" },
+    { name = "pyyaml" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "dsy-events", editable = "packages/events" },
+    { name = "psycopg", extras = ["binary"] },
+    { name = "pydantic" },
+    { name = "pyyaml" },
+]
+
+[[package]]
+name = "dsy-jobtools"
+version = "0.0.0"
+source = { editable = "packages/jobtools" }
+dependencies = [
+    { name = "dsy-jobcheck" },
+    { name = "dsy-jobdoc" },
+    { name = "dsy-jobexamples" },
+    { name = "dsy-jobpatch" },
+    { name = "dsy-plan" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "dsy-jobcheck", editable = "packages/jobcheck" },
+    { name = "dsy-jobdoc", editable = "packages/jobdoc" },
+    { name = "dsy-jobexamples", editable = "packages/jobexamples" },
+    { name = "dsy-jobpatch", editable = "packages/jobpatch" },
+    { name = "dsy-plan", editable = "packages/plan" },
+]
+
+[[package]]
+name = "dsy-kernel"
+version = "0.0.0"
+source = { editable = "packages/kernel" }
+
+[[package]]
+name = "dsy-keys"
+version = "0.0.0"
+source = { editable = "packages/keys" }
+
+[[package]]
+name = "dsy-migrate"
+version = "0.0.0"
+source = { editable = "packages/migrate" }
+dependencies = [
+    { name = "dsy-itest" },
+    { name = "psycopg", extra = ["binary"] },
+    { name = "pytest" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "dsy-itest", editable = "packages/itest" },
+    { name = "psycopg", extras = ["binary"] },
+    { name = "pytest" },
+]
+
+[[package]]
+name = "dsy-obs"
+version = "0.0.0"
+source = { editable = "packages/obs" }
+dependencies = [
+    { name = "dsy-events" },
+    { name = "opentelemetry-exporter-otlp-proto-http" },
+    { name = "opentelemetry-sdk" },
+    { name = "pyroscope-io" },
+    { name = "pyyaml" },
+    { name = "temporalio" },
+]
+
+[package.optional-dependencies]
+stateops = [
+    { name = "dsy-stateops" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "dsy-events", editable = "packages/events" },
+    { name = "dsy-stateops", marker = "extra == 'stateops'", editable = "packages/stateops" },
+    { name = "opentelemetry-exporter-otlp-proto-http" },
+    { name = "opentelemetry-sdk" },
+    { name = "pyroscope-io" },
+    { name = "pyyaml" },
+    { name = "temporalio" },
+]
+provides-extras = ["stateops"]
+
+[[package]]
+name = "dsy-placement"
+version = "0.0.0"
+source = { editable = "packages/placement" }
+dependencies = [
+    { name = "dsy-obs" },
+    { name = "dsy-workflow" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "dsy-obs", editable = "packages/obs" },
+    { name = "dsy-workflow", editable = "packages/workflow" },
+]
+
+[[package]]
+name = "dsy-plan"
+version = "0.0.0"
+source = { editable = "packages/plan" }
+dependencies = [
+    { name = "dsy-jobdoc" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "dsy-jobdoc", editable = "packages/jobdoc" }]
+
+[[package]]
+name = "dsy-runtime"
+version = "0.0.0"
+source = { editable = "packages/runtime" }
+dependencies = [
+    { name = "dsy-jobdoc" },
+    { name = "dsy-kernel" },
+    { name = "dsy-keys" },
+    { name = "pydantic" },
+    { name = "pyyaml" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "dsy-jobdoc", editable = "packages/jobdoc" },
+    { name = "dsy-kernel", editable = "packages/kernel" },
+    { name = "dsy-keys", editable = "packages/keys" },
+    { name = "pydantic" },
+    { name = "pyyaml" },
+]
+
+[[package]]
+name = "dsy-stages"
+version = "0.0.0"
+source = { editable = "packages/stages" }
+dependencies = [
+    { name = "dsy-events" },
+    { name = "dsy-keys" },
+    { name = "jsonschema" },
+    { name = "pyyaml" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "dsy-events", editable = "packages/events" },
+    { name = "dsy-keys", editable = "packages/keys" },
+    { name = "jsonschema" },
+    { name = "pyyaml" },
+]
+
+[[package]]
+name = "dsy-stateops"
+version = "0.0.0"
+source = { editable = "packages/stateops" }
+dependencies = [
+    { name = "dsy-events" },
+    { name = "dsy-eventstore" },
+    { name = "dsy-jobstate" },
+    { name = "dsy-keys" },
+    { name = "dsy-migrate" },
+    { name = "dsy-storecheck" },
+    { name = "psycopg", extra = ["binary"] },
+    { name = "pydantic" },
+    { name = "pyyaml" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "dsy-events", editable = "packages/events" },
+    { name = "dsy-eventstore", editable = "packages/eventstore" },
+    { name = "dsy-jobstate", editable = "packages/jobstate" },
+    { name = "dsy-keys", editable = "packages/keys" },
+    { name = "dsy-migrate", editable = "packages/migrate" },
+    { name = "dsy-storecheck", editable = "packages/storecheck" },
+    { name = "psycopg", extras = ["binary"] },
+    { name = "pydantic" },
+    { name = "pyyaml" },
+]
+
+[[package]]
+name = "dsy-storecheck"
+version = "0.0.0"
+source = { editable = "packages/storecheck" }
+dependencies = [
+    { name = "boto3" },
+    { name = "pydantic" },
+    { name = "pytest" },
+    { name = "pyyaml" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "boto3" },
+    { name = "pydantic" },
+    { name = "pytest" },
+    { name = "pyyaml" },
+]
+
+[[package]]
+name = "dsy-temporal"
+version = "0.0.0"
+source = { editable = "packages/temporal" }
+dependencies = [
+    { name = "dsy-events" },
+    { name = "dsy-itest" },
+    { name = "dsy-keys" },
+    { name = "opentelemetry-api" },
+    { name = "opentelemetry-sdk" },
+    { name = "pyyaml" },
+    { name = "temporalio" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "dsy-events", editable = "packages/events" },
+    { name = "dsy-itest", editable = "packages/itest" },
+    { name = "dsy-keys", editable = "packages/keys" },
+    { name = "opentelemetry-api" },
+    { name = "opentelemetry-sdk" },
+    { name = "pyyaml" },
+    { name = "temporalio" },
+]
+
+[[package]]
+name = "dsy-worker"
+version = "0.0.0"
+source = { editable = "packages/worker" }
+dependencies = [
+    { name = "dsy-artifactclient" },
+    { name = "dsy-events" },
+    { name = "dsy-keys" },
+    { name = "dsy-obs" },
+    { name = "dsy-stages" },
+    { name = "dsy-temporal" },
+    { name = "dsy-workflow" },
+    { name = "temporalio" },
+]
+
+[package.optional-dependencies]
+aggregate = [
+    { name = "dsy-aggregate" },
+]
+compile = [
+    { name = "dsy-compile" },
+    { name = "uv" },
+]
+simulate = [
+    { name = "dsy-runtime" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "dsy-aggregate", marker = "extra == 'aggregate'", editable = "packages/aggregate" },
+    { name = "dsy-artifactclient", editable = "packages/artifactclient" },
+    { name = "dsy-compile", marker = "extra == 'compile'", editable = "packages/compile" },
+    { name = "dsy-events", editable = "packages/events" },
+    { name = "dsy-keys", editable = "packages/keys" },
+    { name = "dsy-obs", editable = "packages/obs" },
+    { name = "dsy-runtime", marker = "extra == 'simulate'", editable = "packages/runtime" },
+    { name = "dsy-stages", editable = "packages/stages" },
+    { name = "dsy-temporal", editable = "packages/temporal" },
+    { name = "dsy-workflow", editable = "packages/workflow" },
+    { name = "temporalio" },
+    { name = "uv", marker = "extra == 'compile'", specifier = "==0.11.21" },
+]
+provides-extras = ["compile", "simulate", "aggregate"]
+
+[[package]]
+name = "dsy-workflow"
+version = "0.0.0"
+source = { editable = "packages/workflow" }
+dependencies = [
+    { name = "dsy-artifactclient" },
+    { name = "dsy-artifactindex" },
+    { name = "dsy-artifactreaper" },
+    { name = "dsy-compat" },
+    { name = "dsy-compile" },
+    { name = "dsy-events" },
+    { name = "dsy-eventstore" },
+    { name = "dsy-itest" },
+    { name = "dsy-jobdoc" },
+    { name = "dsy-jobpatch" },
+    { name = "dsy-jobstate" },
+    { name = "dsy-keys" },
+    { name = "dsy-obs" },
+    { name = "dsy-plan" },
+    { name = "dsy-runtime" },
+    { name = "dsy-stages" },
+    { name = "dsy-temporal" },
+    { name = "psycopg", extra = ["binary"] },
+    { name = "pydantic" },
+    { name = "pyyaml" },
+    { name = "temporalio" },
+]
+
+[package.optional-dependencies]
+cluster = [
+    { name = "dsy-clusterkit" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "dsy-artifactclient", editable = "packages/artifactclient" },
+    { name = "dsy-artifactindex", editable = "packages/artifactindex" },
+    { name = "dsy-artifactreaper", editable = "packages/artifactreaper" },
+    { name = "dsy-clusterkit", marker = "extra == 'cluster'", editable = "packages/clusterkit" },
+    { name = "dsy-compat", editable = "packages/compat" },
+    { name = "dsy-compile", editable = "packages/compile" },
+    { name = "dsy-events", editable = "packages/events" },
+    { name = "dsy-eventstore", editable = "packages/eventstore" },
+    { name = "dsy-itest", editable = "packages/itest" },
+    { name = "dsy-jobdoc", editable = "packages/jobdoc" },
+    { name = "dsy-jobpatch", editable = "packages/jobpatch" },
+    { name = "dsy-jobstate", editable = "packages/jobstate" },
+    { name = "dsy-keys", editable = "packages/keys" },
+    { name = "dsy-obs", editable = "packages/obs" },
+    { name = "dsy-plan", editable = "packages/plan" },
+    { name = "dsy-runtime", editable = "packages/runtime" },
+    { name = "dsy-stages", editable = "packages/stages" },
+    { name = "dsy-temporal", editable = "packages/temporal" },
+    { name = "psycopg", extras = ["binary"] },
+    { name = "pydantic" },
+    { name = "pyyaml" },
+    { name = "temporalio" },
+]
+provides-extras = ["cluster"]
+
+[[package]]
+name = "dsy-workloads"
+version = "0.0.0"
+source = { editable = "packages/workloads" }
+dependencies = [
+    { name = "dsy-kernel" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "dsy-kernel", editable = "packages/kernel" }]
+
+[[package]]
 name = "googleapis-common-protos"
 version = "1.76.0"
 source = { registry = "https://pypi.org/simple" }
@@ -852,847 +1708,3 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/3d/51/e682e060813424467f14ae964dd7022f8fc537fea5803b5aab0ba1eca9cc/uv-0.11.21-py3-none-win_amd64.whl", hash = "sha256:d956ba9470d5267cc0ea3d7572cac3bf045bc78adad5b031b5558c6df13d2e19", size = 25291878, upload-time = "2026-06-11T18:18:23.832Z" },
     { url = "https://files.pythonhosted.org/packages/5a/ef/8b1d92f9501963ef8694bb17ad80ba9926d049240d2da0a4f879aa37f3e2/uv-0.11.21-py3-none-win_arm64.whl", hash = "sha256:f64a851e429e6afb96f3a0b688995757ed3697bf1078509e2da8220ffc9805cd", size = 23715885, upload-time = "2026-06-11T18:18:48.596Z" },
 ]
-
-[[package]]
-name = "disyard"
-version = "0.0.0"
-source = { virtual = "." }
-
-[package.dev-dependencies]
-dev = [
-    { name = "hypothesis" },
-    { name = "pytest" },
-    { name = "dsy-acceptance" },
-    { name = "dsy-admission" },
-    { name = "dsy-aggregate" },
-    { name = "dsy-artifactclient" },
-    { name = "dsy-artifactindex" },
-    { name = "dsy-artifactreaper" },
-    { name = "dsy-broker" },
-    { name = "dsy-clusterkit" },
-    { name = "dsy-compat" },
-    { name = "dsy-compile" },
-    { name = "dsy-dispatchapi" },
-    { name = "dsy-events" },
-    { name = "dsy-eventstore" },
-    { name = "dsy-itest" },
-    { name = "dsy-jobcheck" },
-    { name = "dsy-jobdoc" },
-    { name = "dsy-jobexamples" },
-    { name = "dsy-jobpatch" },
-    { name = "dsy-jobstate" },
-    { name = "dsy-jobtools" },
-    { name = "dsy-kernel" },
-    { name = "dsy-keys" },
-    { name = "dsy-migrate" },
-    { name = "dsy-obs" },
-    { name = "dsy-placement" },
-    { name = "dsy-plan" },
-    { name = "dsy-runtime" },
-    { name = "dsy-stages" },
-    { name = "dsy-stateops" },
-    { name = "dsy-storecheck" },
-    { name = "dsy-temporal" },
-    { name = "dsy-worker" },
-    { name = "dsy-workflow" },
-    { name = "dsy-workloads" },
-]
-
-[package.metadata]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "hypothesis" },
-    { name = "pytest" },
-    { name = "dsy-acceptance", editable = "packages/acceptance" },
-    { name = "dsy-admission", editable = "packages/admission" },
-    { name = "dsy-aggregate", editable = "packages/aggregate" },
-    { name = "dsy-artifactclient", editable = "packages/artifactclient" },
-    { name = "dsy-artifactindex", editable = "packages/artifactindex" },
-    { name = "dsy-artifactreaper", editable = "packages/artifactreaper" },
-    { name = "dsy-broker", editable = "packages/broker" },
-    { name = "dsy-clusterkit", editable = "packages/clusterkit" },
-    { name = "dsy-compat", editable = "packages/compat" },
-    { name = "dsy-compile", editable = "packages/compile" },
-    { name = "dsy-dispatchapi", editable = "packages/dispatchapi" },
-    { name = "dsy-events", editable = "packages/events" },
-    { name = "dsy-eventstore", editable = "packages/eventstore" },
-    { name = "dsy-itest", editable = "packages/itest" },
-    { name = "dsy-jobcheck", editable = "packages/jobcheck" },
-    { name = "dsy-jobdoc", editable = "packages/jobdoc" },
-    { name = "dsy-jobexamples", editable = "packages/jobexamples" },
-    { name = "dsy-jobpatch", editable = "packages/jobpatch" },
-    { name = "dsy-jobstate", editable = "packages/jobstate" },
-    { name = "dsy-jobtools", editable = "packages/jobtools" },
-    { name = "dsy-kernel", editable = "packages/kernel" },
-    { name = "dsy-keys", editable = "packages/keys" },
-    { name = "dsy-migrate", editable = "packages/migrate" },
-    { name = "dsy-obs", editable = "packages/obs" },
-    { name = "dsy-placement", editable = "packages/placement" },
-    { name = "dsy-plan", editable = "packages/plan" },
-    { name = "dsy-runtime", editable = "packages/runtime" },
-    { name = "dsy-stages", editable = "packages/stages" },
-    { name = "dsy-stateops", editable = "packages/stateops" },
-    { name = "dsy-storecheck", editable = "packages/storecheck" },
-    { name = "dsy-temporal", editable = "packages/temporal" },
-    { name = "dsy-worker", editable = "packages/worker" },
-    { name = "dsy-workflow", editable = "packages/workflow" },
-    { name = "dsy-workloads", editable = "packages/workloads" },
-]
-
-[[package]]
-name = "dsy-acceptance"
-version = "0.0.0"
-source = { editable = "packages/acceptance" }
-dependencies = [
-    { name = "temporalio" },
-    { name = "dsy-broker" },
-    { name = "dsy-clusterkit" },
-    { name = "dsy-kernel" },
-    { name = "dsy-obs" },
-    { name = "dsy-workflow" },
-    { name = "dsy-workloads" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "temporalio" },
-    { name = "dsy-broker", editable = "packages/broker" },
-    { name = "dsy-clusterkit", editable = "packages/clusterkit" },
-    { name = "dsy-kernel", editable = "packages/kernel" },
-    { name = "dsy-obs", editable = "packages/obs" },
-    { name = "dsy-workflow", editable = "packages/workflow" },
-    { name = "dsy-workloads", editable = "packages/workloads" },
-]
-
-[[package]]
-name = "dsy-admission"
-version = "0.0.0"
-source = { editable = "packages/admission" }
-dependencies = [
-    { name = "psycopg", extra = ["binary"] },
-    { name = "pydantic" },
-    { name = "temporalio" },
-    { name = "dsy-broker" },
-    { name = "dsy-compat" },
-    { name = "dsy-events" },
-    { name = "dsy-eventstore" },
-    { name = "dsy-jobstate" },
-    { name = "dsy-keys" },
-    { name = "dsy-obs" },
-    { name = "dsy-stages" },
-    { name = "dsy-temporal" },
-    { name = "dsy-workflow" },
-]
-
-[package.optional-dependencies]
-cluster = [
-    { name = "dsy-clusterkit" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "psycopg", extras = ["binary"] },
-    { name = "pydantic" },
-    { name = "temporalio" },
-    { name = "dsy-broker", editable = "packages/broker" },
-    { name = "dsy-clusterkit", marker = "extra == 'cluster'", editable = "packages/clusterkit" },
-    { name = "dsy-compat", editable = "packages/compat" },
-    { name = "dsy-events", editable = "packages/events" },
-    { name = "dsy-eventstore", editable = "packages/eventstore" },
-    { name = "dsy-jobstate", editable = "packages/jobstate" },
-    { name = "dsy-keys", editable = "packages/keys" },
-    { name = "dsy-obs", editable = "packages/obs" },
-    { name = "dsy-stages", editable = "packages/stages" },
-    { name = "dsy-temporal", editable = "packages/temporal" },
-    { name = "dsy-workflow", editable = "packages/workflow" },
-]
-provides-extras = ["cluster"]
-
-[[package]]
-name = "dsy-aggregate"
-version = "0.0.0"
-source = { editable = "packages/aggregate" }
-dependencies = [
-    { name = "numpy" },
-    { name = "pandas" },
-    { name = "dsy-artifactclient" },
-    { name = "dsy-kernel" },
-    { name = "dsy-storecheck" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "numpy", specifier = ">=2.5.4" },
-    { name = "pandas", specifier = ">=3.1.1" },
-    { name = "dsy-artifactclient", editable = "packages/artifactclient" },
-    { name = "dsy-kernel", editable = "packages/kernel" },
-    { name = "dsy-storecheck", editable = "packages/storecheck" },
-]
-
-[[package]]
-name = "dsy-artifactclient"
-version = "0.0.0"
-source = { editable = "packages/artifactclient" }
-dependencies = [
-    { name = "boto3" },
-    { name = "pydantic" },
-    { name = "pytest" },
-    { name = "pyyaml" },
-    { name = "dsy-artifactindex" },
-    { name = "dsy-compat" },
-    { name = "dsy-events" },
-    { name = "dsy-storecheck" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "boto3" },
-    { name = "pydantic" },
-    { name = "pytest" },
-    { name = "pyyaml" },
-    { name = "dsy-artifactindex", editable = "packages/artifactindex" },
-    { name = "dsy-compat", editable = "packages/compat" },
-    { name = "dsy-events", editable = "packages/events" },
-    { name = "dsy-storecheck", editable = "packages/storecheck" },
-]
-
-[[package]]
-name = "dsy-artifactindex"
-version = "0.0.0"
-source = { editable = "packages/artifactindex" }
-dependencies = [
-    { name = "psycopg", extra = ["binary"] },
-    { name = "pydantic" },
-    { name = "pyyaml" },
-    { name = "dsy-events" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "psycopg", extras = ["binary"] },
-    { name = "pydantic" },
-    { name = "pyyaml" },
-    { name = "dsy-events", editable = "packages/events" },
-]
-
-[[package]]
-name = "dsy-artifactreaper"
-version = "0.0.0"
-source = { editable = "packages/artifactreaper" }
-dependencies = [
-    { name = "psycopg", extra = ["binary"] },
-    { name = "pyyaml" },
-    { name = "temporalio" },
-    { name = "dsy-artifactclient" },
-    { name = "dsy-artifactindex" },
-    { name = "dsy-storecheck" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "psycopg", extras = ["binary"] },
-    { name = "pyyaml" },
-    { name = "temporalio" },
-    { name = "dsy-artifactclient", editable = "packages/artifactclient" },
-    { name = "dsy-artifactindex", editable = "packages/artifactindex" },
-    { name = "dsy-storecheck", editable = "packages/storecheck" },
-]
-
-[[package]]
-name = "dsy-broker"
-version = "0.0.0"
-source = { editable = "packages/broker" }
-dependencies = [
-    { name = "pydantic" },
-    { name = "python-qpid-proton" },
-    { name = "pyyaml" },
-    { name = "dsy-compat" },
-    { name = "dsy-events" },
-    { name = "dsy-itest" },
-    { name = "dsy-jobdoc" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "pydantic" },
-    { name = "python-qpid-proton", specifier = "==0.40.0" },
-    { name = "pyyaml" },
-    { name = "dsy-compat", editable = "packages/compat" },
-    { name = "dsy-events", editable = "packages/events" },
-    { name = "dsy-itest", editable = "packages/itest" },
-    { name = "dsy-jobdoc", editable = "packages/jobdoc" },
-]
-
-[[package]]
-name = "dsy-clusterkit"
-version = "0.0.0"
-source = { editable = "packages/clusterkit" }
-dependencies = [
-    { name = "dsy-storecheck" },
-]
-
-[package.metadata]
-requires-dist = [{ name = "dsy-storecheck", editable = "packages/storecheck" }]
-
-[[package]]
-name = "dsy-compat"
-version = "0.0.0"
-source = { editable = "packages/compat" }
-dependencies = [
-    { name = "dsy-events" },
-]
-
-[package.metadata]
-requires-dist = [{ name = "dsy-events", editable = "packages/events" }]
-
-[[package]]
-name = "dsy-compile"
-version = "0.0.0"
-source = { editable = "packages/compile" }
-dependencies = [
-    { name = "componentize-py" },
-    { name = "dsy-jobcheck" },
-    { name = "dsy-keys" },
-    { name = "dsy-runtime" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "componentize-py", specifier = "==0.25.1" },
-    { name = "dsy-jobcheck", editable = "packages/jobcheck" },
-    { name = "dsy-keys", editable = "packages/keys" },
-    { name = "dsy-runtime", editable = "packages/runtime" },
-]
-
-[[package]]
-name = "dsy-dispatchapi"
-version = "0.0.0"
-source = { editable = "packages/dispatchapi" }
-dependencies = [
-    { name = "boto3" },
-    { name = "psycopg", extra = ["binary"] },
-    { name = "pydantic" },
-    { name = "pyyaml" },
-    { name = "temporalio" },
-    { name = "dsy-artifactclient" },
-    { name = "dsy-artifactindex" },
-    { name = "dsy-broker" },
-    { name = "dsy-compile" },
-    { name = "dsy-events" },
-    { name = "dsy-eventstore" },
-    { name = "dsy-itest" },
-    { name = "dsy-jobcheck" },
-    { name = "dsy-jobpatch" },
-    { name = "dsy-jobstate" },
-    { name = "dsy-keys" },
-    { name = "dsy-obs" },
-    { name = "dsy-plan" },
-    { name = "dsy-stages" },
-    { name = "dsy-temporal" },
-    { name = "dsy-workflow" },
-]
-
-[package.optional-dependencies]
-cluster = [
-    { name = "dsy-acceptance" },
-    { name = "dsy-clusterkit" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "boto3" },
-    { name = "psycopg", extras = ["binary"] },
-    { name = "pydantic" },
-    { name = "pyyaml" },
-    { name = "temporalio" },
-    { name = "dsy-acceptance", marker = "extra == 'cluster'", editable = "packages/acceptance" },
-    { name = "dsy-artifactclient", editable = "packages/artifactclient" },
-    { name = "dsy-artifactindex", editable = "packages/artifactindex" },
-    { name = "dsy-broker", editable = "packages/broker" },
-    { name = "dsy-clusterkit", marker = "extra == 'cluster'", editable = "packages/clusterkit" },
-    { name = "dsy-compile", editable = "packages/compile" },
-    { name = "dsy-events", editable = "packages/events" },
-    { name = "dsy-eventstore", editable = "packages/eventstore" },
-    { name = "dsy-itest", editable = "packages/itest" },
-    { name = "dsy-jobcheck", editable = "packages/jobcheck" },
-    { name = "dsy-jobpatch", editable = "packages/jobpatch" },
-    { name = "dsy-jobstate", editable = "packages/jobstate" },
-    { name = "dsy-keys", editable = "packages/keys" },
-    { name = "dsy-obs", editable = "packages/obs" },
-    { name = "dsy-plan", editable = "packages/plan" },
-    { name = "dsy-stages", editable = "packages/stages" },
-    { name = "dsy-temporal", editable = "packages/temporal" },
-    { name = "dsy-workflow", editable = "packages/workflow" },
-]
-provides-extras = ["cluster"]
-
-[[package]]
-name = "dsy-events"
-version = "0.0.0"
-source = { editable = "packages/events" }
-dependencies = [
-    { name = "jsonschema" },
-    { name = "psycopg", extra = ["binary"] },
-    { name = "pydantic" },
-    { name = "pyyaml" },
-    { name = "dsy-keys" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "jsonschema" },
-    { name = "psycopg", extras = ["binary"] },
-    { name = "pydantic" },
-    { name = "pyyaml" },
-    { name = "dsy-keys", editable = "packages/keys" },
-]
-
-[[package]]
-name = "dsy-eventstore"
-version = "0.0.0"
-source = { editable = "packages/eventstore" }
-dependencies = [
-    { name = "pydantic" },
-    { name = "pyyaml" },
-    { name = "dsy-compat" },
-    { name = "dsy-events" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "pydantic" },
-    { name = "pyyaml" },
-    { name = "dsy-compat", editable = "packages/compat" },
-    { name = "dsy-events", editable = "packages/events" },
-]
-
-[[package]]
-name = "dsy-itest"
-version = "0.0.0"
-source = { editable = "packages/itest" }
-dependencies = [
-    { name = "pytest" },
-    { name = "pyyaml" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "pytest" },
-    { name = "pyyaml" },
-]
-
-[[package]]
-name = "dsy-jobcheck"
-version = "0.0.0"
-source = { editable = "packages/jobcheck" }
-dependencies = [
-    { name = "dsy-jobdoc" },
-    { name = "dsy-plan" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "dsy-jobdoc", editable = "packages/jobdoc" },
-    { name = "dsy-plan", editable = "packages/plan" },
-]
-
-[[package]]
-name = "dsy-jobdoc"
-version = "0.0.0"
-source = { editable = "packages/jobdoc" }
-dependencies = [
-    { name = "jsonschema" },
-    { name = "pydantic" },
-    { name = "pyyaml" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "jsonschema" },
-    { name = "pydantic" },
-    { name = "pyyaml" },
-]
-
-[[package]]
-name = "dsy-jobexamples"
-version = "0.0.0"
-source = { editable = "packages/jobexamples" }
-dependencies = [
-    { name = "dsy-jobcheck" },
-    { name = "dsy-jobdoc" },
-    { name = "dsy-plan" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "dsy-jobcheck", editable = "packages/jobcheck" },
-    { name = "dsy-jobdoc", editable = "packages/jobdoc" },
-    { name = "dsy-plan", editable = "packages/plan" },
-]
-
-[[package]]
-name = "dsy-jobpatch"
-version = "0.0.0"
-source = { editable = "packages/jobpatch" }
-dependencies = [
-    { name = "dsy-jobdoc" },
-    { name = "dsy-plan" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "dsy-jobdoc", editable = "packages/jobdoc" },
-    { name = "dsy-plan", editable = "packages/plan" },
-]
-
-[[package]]
-name = "dsy-jobstate"
-version = "0.0.0"
-source = { editable = "packages/jobstate" }
-dependencies = [
-    { name = "psycopg", extra = ["binary"] },
-    { name = "pydantic" },
-    { name = "pyyaml" },
-    { name = "dsy-events" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "psycopg", extras = ["binary"] },
-    { name = "pydantic" },
-    { name = "pyyaml" },
-    { name = "dsy-events", editable = "packages/events" },
-]
-
-[[package]]
-name = "dsy-jobtools"
-version = "0.0.0"
-source = { editable = "packages/jobtools" }
-dependencies = [
-    { name = "dsy-jobcheck" },
-    { name = "dsy-jobdoc" },
-    { name = "dsy-jobexamples" },
-    { name = "dsy-jobpatch" },
-    { name = "dsy-plan" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "dsy-jobcheck", editable = "packages/jobcheck" },
-    { name = "dsy-jobdoc", editable = "packages/jobdoc" },
-    { name = "dsy-jobexamples", editable = "packages/jobexamples" },
-    { name = "dsy-jobpatch", editable = "packages/jobpatch" },
-    { name = "dsy-plan", editable = "packages/plan" },
-]
-
-[[package]]
-name = "dsy-kernel"
-version = "0.0.0"
-source = { editable = "packages/kernel" }
-
-[[package]]
-name = "dsy-keys"
-version = "0.0.0"
-source = { editable = "packages/keys" }
-
-[[package]]
-name = "dsy-migrate"
-version = "0.0.0"
-source = { editable = "packages/migrate" }
-dependencies = [
-    { name = "psycopg", extra = ["binary"] },
-    { name = "pytest" },
-    { name = "dsy-itest" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "psycopg", extras = ["binary"] },
-    { name = "pytest" },
-    { name = "dsy-itest", editable = "packages/itest" },
-]
-
-[[package]]
-name = "dsy-obs"
-version = "0.0.0"
-source = { editable = "packages/obs" }
-dependencies = [
-    { name = "opentelemetry-exporter-otlp-proto-http" },
-    { name = "opentelemetry-sdk" },
-    { name = "pyroscope-io" },
-    { name = "pyyaml" },
-    { name = "temporalio" },
-    { name = "dsy-events" },
-]
-
-[package.optional-dependencies]
-stateops = [
-    { name = "dsy-stateops" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "opentelemetry-exporter-otlp-proto-http" },
-    { name = "opentelemetry-sdk" },
-    { name = "pyroscope-io" },
-    { name = "pyyaml" },
-    { name = "temporalio" },
-    { name = "dsy-events", editable = "packages/events" },
-    { name = "dsy-stateops", marker = "extra == 'stateops'", editable = "packages/stateops" },
-]
-provides-extras = ["stateops"]
-
-[[package]]
-name = "dsy-placement"
-version = "0.0.0"
-source = { editable = "packages/placement" }
-dependencies = [
-    { name = "dsy-obs" },
-    { name = "dsy-workflow" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "dsy-obs", editable = "packages/obs" },
-    { name = "dsy-workflow", editable = "packages/workflow" },
-]
-
-[[package]]
-name = "dsy-plan"
-version = "0.0.0"
-source = { editable = "packages/plan" }
-dependencies = [
-    { name = "dsy-jobdoc" },
-]
-
-[package.metadata]
-requires-dist = [{ name = "dsy-jobdoc", editable = "packages/jobdoc" }]
-
-[[package]]
-name = "dsy-runtime"
-version = "0.0.0"
-source = { editable = "packages/runtime" }
-dependencies = [
-    { name = "pydantic" },
-    { name = "pyyaml" },
-    { name = "dsy-jobdoc" },
-    { name = "dsy-kernel" },
-    { name = "dsy-keys" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "pydantic" },
-    { name = "pyyaml" },
-    { name = "dsy-jobdoc", editable = "packages/jobdoc" },
-    { name = "dsy-kernel", editable = "packages/kernel" },
-    { name = "dsy-keys", editable = "packages/keys" },
-]
-
-[[package]]
-name = "dsy-stages"
-version = "0.0.0"
-source = { editable = "packages/stages" }
-dependencies = [
-    { name = "jsonschema" },
-    { name = "pyyaml" },
-    { name = "dsy-events" },
-    { name = "dsy-keys" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "jsonschema" },
-    { name = "pyyaml" },
-    { name = "dsy-events", editable = "packages/events" },
-    { name = "dsy-keys", editable = "packages/keys" },
-]
-
-[[package]]
-name = "dsy-stateops"
-version = "0.0.0"
-source = { editable = "packages/stateops" }
-dependencies = [
-    { name = "psycopg", extra = ["binary"] },
-    { name = "pydantic" },
-    { name = "pyyaml" },
-    { name = "dsy-events" },
-    { name = "dsy-eventstore" },
-    { name = "dsy-jobstate" },
-    { name = "dsy-keys" },
-    { name = "dsy-migrate" },
-    { name = "dsy-storecheck" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "psycopg", extras = ["binary"] },
-    { name = "pydantic" },
-    { name = "pyyaml" },
-    { name = "dsy-events", editable = "packages/events" },
-    { name = "dsy-eventstore", editable = "packages/eventstore" },
-    { name = "dsy-jobstate", editable = "packages/jobstate" },
-    { name = "dsy-keys", editable = "packages/keys" },
-    { name = "dsy-migrate", editable = "packages/migrate" },
-    { name = "dsy-storecheck", editable = "packages/storecheck" },
-]
-
-[[package]]
-name = "dsy-storecheck"
-version = "0.0.0"
-source = { editable = "packages/storecheck" }
-dependencies = [
-    { name = "boto3" },
-    { name = "pydantic" },
-    { name = "pytest" },
-    { name = "pyyaml" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "boto3" },
-    { name = "pydantic" },
-    { name = "pytest" },
-    { name = "pyyaml" },
-]
-
-[[package]]
-name = "dsy-temporal"
-version = "0.0.0"
-source = { editable = "packages/temporal" }
-dependencies = [
-    { name = "opentelemetry-api" },
-    { name = "opentelemetry-sdk" },
-    { name = "pyyaml" },
-    { name = "temporalio" },
-    { name = "dsy-events" },
-    { name = "dsy-itest" },
-    { name = "dsy-keys" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "opentelemetry-api" },
-    { name = "opentelemetry-sdk" },
-    { name = "pyyaml" },
-    { name = "temporalio" },
-    { name = "dsy-events", editable = "packages/events" },
-    { name = "dsy-itest", editable = "packages/itest" },
-    { name = "dsy-keys", editable = "packages/keys" },
-]
-
-[[package]]
-name = "dsy-worker"
-version = "0.0.0"
-source = { editable = "packages/worker" }
-dependencies = [
-    { name = "temporalio" },
-    { name = "dsy-artifactclient" },
-    { name = "dsy-events" },
-    { name = "dsy-keys" },
-    { name = "dsy-obs" },
-    { name = "dsy-stages" },
-    { name = "dsy-temporal" },
-    { name = "dsy-workflow" },
-]
-
-[package.optional-dependencies]
-aggregate = [
-    { name = "dsy-aggregate" },
-]
-compile = [
-    { name = "uv" },
-    { name = "dsy-compile" },
-]
-simulate = [
-    { name = "dsy-runtime" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "temporalio" },
-    { name = "uv", marker = "extra == 'compile'", specifier = "==0.11.21" },
-    { name = "dsy-aggregate", marker = "extra == 'aggregate'", editable = "packages/aggregate" },
-    { name = "dsy-artifactclient", editable = "packages/artifactclient" },
-    { name = "dsy-compile", marker = "extra == 'compile'", editable = "packages/compile" },
-    { name = "dsy-events", editable = "packages/events" },
-    { name = "dsy-keys", editable = "packages/keys" },
-    { name = "dsy-obs", editable = "packages/obs" },
-    { name = "dsy-runtime", marker = "extra == 'simulate'", editable = "packages/runtime" },
-    { name = "dsy-stages", editable = "packages/stages" },
-    { name = "dsy-temporal", editable = "packages/temporal" },
-    { name = "dsy-workflow", editable = "packages/workflow" },
-]
-provides-extras = ["compile", "simulate", "aggregate"]
-
-[[package]]
-name = "dsy-workflow"
-version = "0.0.0"
-source = { editable = "packages/workflow" }
-dependencies = [
-    { name = "psycopg", extra = ["binary"] },
-    { name = "pydantic" },
-    { name = "pyyaml" },
-    { name = "temporalio" },
-    { name = "dsy-artifactclient" },
-    { name = "dsy-artifactindex" },
-    { name = "dsy-artifactreaper" },
-    { name = "dsy-compat" },
-    { name = "dsy-compile" },
-    { name = "dsy-events" },
-    { name = "dsy-eventstore" },
-    { name = "dsy-itest" },
-    { name = "dsy-jobdoc" },
-    { name = "dsy-jobpatch" },
-    { name = "dsy-jobstate" },
-    { name = "dsy-keys" },
-    { name = "dsy-obs" },
-    { name = "dsy-plan" },
-    { name = "dsy-runtime" },
-    { name = "dsy-stages" },
-    { name = "dsy-temporal" },
-]
-
-[package.optional-dependencies]
-cluster = [
-    { name = "dsy-clusterkit" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "psycopg", extras = ["binary"] },
-    { name = "pydantic" },
-    { name = "pyyaml" },
-    { name = "temporalio" },
-    { name = "dsy-artifactclient", editable = "packages/artifactclient" },
-    { name = "dsy-artifactindex", editable = "packages/artifactindex" },
-    { name = "dsy-artifactreaper", editable = "packages/artifactreaper" },
-    { name = "dsy-clusterkit", marker = "extra == 'cluster'", editable = "packages/clusterkit" },
-    { name = "dsy-compat", editable = "packages/compat" },
-    { name = "dsy-compile", editable = "packages/compile" },
-    { name = "dsy-events", editable = "packages/events" },
-    { name = "dsy-eventstore", editable = "packages/eventstore" },
-    { name = "dsy-itest", editable = "packages/itest" },
-    { name = "dsy-jobdoc", editable = "packages/jobdoc" },
-    { name = "dsy-jobpatch", editable = "packages/jobpatch" },
-    { name = "dsy-jobstate", editable = "packages/jobstate" },
-    { name = "dsy-keys", editable = "packages/keys" },
-    { name = "dsy-obs", editable = "packages/obs" },
-    { name = "dsy-plan", editable = "packages/plan" },
-    { name = "dsy-runtime", editable = "packages/runtime" },
-    { name = "dsy-stages", editable = "packages/stages" },
-    { name = "dsy-temporal", editable = "packages/temporal" },
-]
-provides-extras = ["cluster"]
-
-[[package]]
-name = "dsy-workloads"
-version = "0.0.0"
-source = { editable = "packages/workloads" }
-dependencies = [
-    { name = "dsy-kernel" },
-]
-
-[package.metadata]
-requires-dist = [{ name = "dsy-kernel", editable = "packages/kernel" }]

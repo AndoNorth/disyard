@@ -5,11 +5,17 @@ license = "Apache-2.0"
 requires-python = ">=3.13,<3.14"
 # Every dependency the clients and the gate import, declared here so the wheel test catches an undeclared one.
 dependencies = [
+    "psycopg[binary]",
     "temporalio",
     "dsy-broker",
     "dsy-clusterkit",
+    "dsy-eventstore",
+    "dsy-jobstate",
     "dsy-kernel",
+    "dsy-keys",
     "dsy-obs",
+    "dsy-storecheck",
+    "dsy-temporal",
     "dsy-workflow",
     "dsy-workloads",
 ]
@@ -17,7 +23,12 @@ dependencies = [
 [tool.uv.sources]
 dsy-broker = { workspace = true }
 dsy-clusterkit = { workspace = true }
+dsy-eventstore = { workspace = true }
+dsy-jobstate = { workspace = true }
 dsy-kernel = { workspace = true }
+dsy-keys = { workspace = true }
+dsy-storecheck = { workspace = true }
+dsy-temporal = { workspace = true }
 dsy-obs = { workspace = true }
 dsy-workflow = { workspace = true }
 dsy-workloads = { workspace = true }
