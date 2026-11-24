@@ -46,7 +46,7 @@ A time here is a budget or a proposal, and a measured one lives in the [validati
 11. Counters are asserted as a change from a quiet baseline.
     The cluster lock is what makes the baseline quiet, because a job counter has no tenant label.
 12. Every run uses unique ids, a batch key of the form `e2e-<12 hex>`, under a tenant of its own, so runs cannot affect each other.
-    Preset `ci` has only the tenant `acme` today, so the `e2e` tenant is added to the tenancy profile through a separate contract-change PR with a version bump, and until it lands the batch key alone separates runs.
+    The tenancy profile of preset `ci` has the tenant `e2e` for the acceptance run, next to `acme`.
 
 ## Recipes, gates and the lock
 

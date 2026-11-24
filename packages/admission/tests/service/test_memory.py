@@ -12,11 +12,10 @@ import time
 from pathlib import Path
 
 import pytest
+from dsy_broker import suite
 from dsy_broker.client import Credentials, connect
 from dsy_broker.models import Outcome
-from dsy_broker.tenancy import load
 from dsy_broker.testing.container import broker_container
-from dsy_broker.topology import intake_queues
 from dsy_workflow.contract import naming
 
 pytestmark = [pytest.mark.integration, pytest.mark.pair]
@@ -28,7 +27,7 @@ JOBS = 2000
 PEAK_LIMIT_MIB = 116
 LIMIT_S = 600
 HELPER = Path(__file__).with_name("recording_service.py")
-[QUEUE] = intake_queues(load("ci"))
+QUEUE = suite.intake_queue()
 
 
 @pytest.fixture(scope="module")

@@ -16,5 +16,7 @@ profiles:
     tenants:
       acme:
         quota: {value: 1000, estimate: true}
+      e2e:
+        quota: {value: 1000, estimate: true}
   dev: *figures
   soak: *figures
