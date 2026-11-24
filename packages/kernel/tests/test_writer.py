@@ -5,10 +5,10 @@ import json
 from pathlib import Path
 
 import pytest
-from wft_kernel.format import FormatError, check_document
-from wft_kernel.reader import read, same_blocks
-from wft_kernel.writer import KINDS, write
-from wft_runtime.contract import kinds
+from dsy_kernel.format import FormatError, check_document
+from dsy_kernel.reader import read, same_blocks
+from dsy_kernel.writer import KINDS, write
+from dsy_runtime.contract import kinds
 
 LEVEL0 = Path(__file__).resolve().parents[3] / "contracts/workload/vectors/level0"
 

@@ -1,5 +1,5 @@
 ﻿{
-  "schema": "urn:wft:schema:job:1.0",
+  "schema": "urn:dsy:schema:job:1.0",
   "parameters": {
     "seed": "seed"
   },
@@ -8,7 +8,7 @@
       "type": "compile",
       "params": {
         "source": {
-          "uri": "s3://wft-sources/sha256/aa/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "uri": "s3://dsy-sources/sha256/aa/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
           "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
           "size": 2048,
           "name": "bundle.tar.gz",

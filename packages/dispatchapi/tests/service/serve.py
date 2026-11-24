@@ -1,5 +1,5 @@
-"""The service in a process of its own, as `python -m wft_dispatchapi.service` runs it, but over a
-store kept in a directory and wft_broker's FakeBroker, so a test holds only Postgres and the
+"""The service in a process of its own, as `python -m dsy_dispatchapi.service` runs it, but over a
+store kept in a directory and dsy_broker's FakeBroker, so a test holds only Postgres and the
 Temporal dev server.
 
 Run as a script, it reads the configuration of the module from the environment and the store's
@@ -12,12 +12,12 @@ import shutil
 import tempfile
 from pathlib import Path
 
-from wft_artifactclient.client import Head, as_reference
-from wft_artifactclient.errors import ArtifactError, ArtifactNotFound
-from wft_artifactclient.keys import content_key, uri_of
-from wft_events.models import ContentReference
+from dsy_artifactclient.client import Head, as_reference
+from dsy_artifactclient.errors import ArtifactError, ArtifactNotFound
+from dsy_artifactclient.keys import content_key, uri_of
+from dsy_events.models import ContentReference
 
-STORE_ENV = "WFT_TEST_STORE_DIR"
+STORE_ENV = "DSY_TEST_STORE_DIR"
 
 
 class StoreDown(ArtifactError):
@@ -82,10 +82,10 @@ class DirStore:
 def main() -> None:
     import logging
 
-    from wft_broker.tenancy import load
-    from wft_broker.testing import FakeBroker
-    from wft_dispatchapi.gateway import TemporalGateway
-    from wft_dispatchapi.service import Config, Service, run
+    from dsy_broker.tenancy import load
+    from dsy_broker.testing import FakeBroker
+    from dsy_dispatchapi.gateway import TemporalGateway
+    from dsy_dispatchapi.service import Config, Service, run
 
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
     config = Config.from_env(os.environ)

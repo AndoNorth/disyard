@@ -1,5 +1,5 @@
 """The compile cache activities against a real store and database, as plain functions under a
-`wft_artifacts` login with the `workflow` store identity."""
+`dsy_artifacts` login with the `workflow` store identity."""
 
 import asyncio
 import json
@@ -9,12 +9,10 @@ import uuid
 
 import psycopg
 import pytest
-from psycopg.conninfo import conninfo_to_dict
-from temporalio.exceptions import ApplicationError
-from wft_compile import bundle
-from wft_workflow.activities import Committer, CompileCache
-from wft_workflow.activities import cache as cache_module
-from wft_workflow.testing.control import (
+from dsy_compile import bundle
+from dsy_workflow.activities import Committer, CompileCache
+from dsy_workflow.activities import cache as cache_module
+from dsy_workflow.testing.control import (
     CacheInvalidate,
     CacheLookup,
     CacheRecord,
@@ -22,6 +20,8 @@ from wft_workflow.testing.control import (
     ControlCase,
     control_activity_contract,
 )
+from psycopg.conninfo import conninfo_to_dict
+from temporalio.exceptions import ApplicationError
 
 pytestmark = [pytest.mark.integration, pytest.mark.pair]
 
@@ -32,7 +32,7 @@ LOCK_WAIT_S = 5
 
 @pytest.fixture
 def cache(login, workflow_store):
-    return CompileCache(login("wft_artifacts"), workflow_store)
+    return CompileCache(login("dsy_artifacts"), workflow_store)
 
 
 @pytest.fixture
@@ -57,7 +57,7 @@ def built(root, role, login, workflow_store):
     """The committed component and build-info of a compile of a key, as a compile worker writes
     them and the workflow commits them, with `component_of` the tag of its distinct bytes."""
     vector = json.loads((root / BUILD_INFO).read_text())
-    committer = Committer(login("wft_artifacts"), workflow_store)
+    committer = Committer(login("dsy_artifacts"), workflow_store)
 
     def compile_(key: str, component_of: str, job_id: str):
         compile_role = role("compile")
@@ -136,7 +136,7 @@ def test_cache_error_not_miss(cache, source, built, login, workflow_store, dead_
     assert (error.type, error.non_retryable) == ("STORE_UNAVAILABLE", False)
 
     # The store fails the read of the bundle.
-    fresh = CompileCache(login("wft_artifacts"), dead_store)
+    fresh = CompileCache(login("dsy_artifacts"), dead_store)
     error = raised(fresh.cache_lookup, CacheLookup(source=src, entry="app", job_id=job_id))
     assert (error.type, error.non_retryable) == ("STORE_UNAVAILABLE", False)
 
@@ -228,7 +228,7 @@ def test_cache_invalidate_races_fresh_record(
     fresh = built(key, "race-fresh", job_id)
     record(cache, key, old, job_id)
 
-    rival_dsn = login("wft_artifacts")
+    rival_dsn = login("dsy_artifacts")
     rival = CompileCache(rival_dsn, workflow_store)
     rival_user = conninfo_to_dict(rival_dsn)["user"]
     answers = {}

@@ -1,16 +1,16 @@
 """The build_index control activity against a real store and database, as a plain function under a
-`wft_artifacts` login with the `indexer` and `workflow` store identities."""
+`dsy_artifacts` login with the `indexer` and `workflow` store identities."""
 
 import asyncio
 import uuid
 
 import pytest
+from dsy_artifactclient.aggregate import read_index
+from dsy_artifactclient.models import IndexEntry
+from dsy_events.models import ProducerRef
+from dsy_workflow.activities import IndexBuilder
+from dsy_workflow.testing.control import BuildIndex, ControlCase, control_activity_contract
 from temporalio.exceptions import ApplicationError
-from wft_artifactclient.aggregate import read_index
-from wft_artifactclient.models import IndexEntry
-from wft_events.models import ProducerRef
-from wft_workflow.activities import IndexBuilder
-from wft_workflow.testing.control import BuildIndex, ControlCase, control_activity_contract
 
 pytestmark = [pytest.mark.integration, pytest.mark.pair]
 
@@ -21,7 +21,7 @@ TASKS = ["sim-1", "sim-10", "sim-2", "sim-3"]
 
 @pytest.fixture
 def builder(login, workflow_store, role):
-    return IndexBuilder(login("wft_artifacts"), workflow_store, role("indexer"))
+    return IndexBuilder(login("dsy_artifacts"), workflow_store, role("indexer"))
 
 
 @pytest.fixture
@@ -100,8 +100,8 @@ def test_build_index_store_fault_is_typed(login, dead_store, role, results):
     job_id = str(uuid.uuid4())
     entries = results(job_id, TASKS)
     for builder in (
-        IndexBuilder(login("wft_artifacts"), role("workflow"), dead_store),
-        IndexBuilder(login("wft_artifacts"), dead_store, role("indexer")),
+        IndexBuilder(login("dsy_artifacts"), role("workflow"), dead_store),
+        IndexBuilder(login("dsy_artifacts"), dead_store, role("indexer")),
     ):
         with pytest.raises(ApplicationError) as raised:
             builder.build_index(request(job_id, entries))

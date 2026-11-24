@@ -1,5 +1,5 @@
 {
-  "$id": "urn:wft:schema:state.event-row:1",
+  "$id": "urn:dsy:schema:state.event-row:1",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
   "description": "One row per event. The fields are the columns of contracts/state/README.md in the same order.\n\nThe attempt and the task have no default, so a writer states what the event carries.",

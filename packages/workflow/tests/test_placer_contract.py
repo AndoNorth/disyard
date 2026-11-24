@@ -2,9 +2,8 @@
 `place` local activity answers with the placer's verdict."""
 
 import pytest
-from temporalio.testing import ActivityEnvironment
-from wft_workflow.contract import naming
-from wft_workflow.placement import (
+from dsy_workflow.contract import naming
+from dsy_workflow.placement import (
     ACTIVITY,
     Placement,
     PlacementRequest,
@@ -13,7 +12,8 @@ from wft_workflow.placement import (
     Unschedulable,
     place_activity,
 )
-from wft_workflow.testing import placer_contract
+from dsy_workflow.testing import placer_contract
+from temporalio.testing import ActivityEnvironment
 
 SIMULATE = PlacementRequest(task_type="simulate", cpu_milli=250, memory_mib=512, run_timeout_s=900)
 
@@ -24,7 +24,7 @@ def test_static_placer_passes_placer_contract():
 
 def test_static_placer_places_on_the_pool_queue_with_v0_timeouts():
     assert StaticPlacer().place(SIMULATE) == Placement(
-        queue="wft-simulate",
+        queue="dsy-simulate",
         memory_class="512Mi",
         escalated=False,
         schedule_to_start_s=1800,
@@ -60,7 +60,7 @@ class Wrong(StaticPlacer):
 
 
 def other_queue(answer):
-    return answer.model_copy(update={"queue": "wft-gpu"}) if answer.kind == "placement" else answer
+    return answer.model_copy(update={"queue": "dsy-gpu"}) if answer.kind == "placement" else answer
 
 
 def always_escalated(answer):
@@ -95,7 +95,7 @@ def test_placer_contract_refuses_an_escalation_to_a_smaller_class():
 @pytest.mark.parametrize(
     ("change", "message"),
     [
-        (other_queue, "queue wft-gpu is not"),
+        (other_queue, "queue dsy-gpu is not"),
         (always_escalated, "escalated without being asked"),
         (no_margin, "leaves no margin"),
         (wrong_class, "expected insufficient_memory"),

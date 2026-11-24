@@ -6,12 +6,12 @@ import time
 from pathlib import Path
 
 import pytest
-from wft_compile.build import build
-from wft_kernel.reader import read, same_blocks
-from wft_runtime.contract import canonical
-from wft_runtime.contract import check as check_contract
-from wft_runtime.run import run, warm
-from wft_workloads import bundle, level1, main
+from dsy_compile.build import build
+from dsy_kernel.reader import read, same_blocks
+from dsy_runtime.contract import canonical
+from dsy_runtime.contract import check as check_contract
+from dsy_runtime.run import run, warm
+from dsy_workloads import bundle, level1, main
 
 ROOT = Path(__file__).resolve().parents[3]
 LEVEL0 = sorted((ROOT / "contracts/workload/vectors/level0").iterdir())
@@ -23,7 +23,7 @@ GUEST_SECONDS = 1.0
 def component(tmp_path_factory) -> tuple[Path, Path]:
     """The workload component and a module cache it is already warm in, so a timed run is warm."""
     work = tmp_path_factory.mktemp("workloads")
-    built = build(bundle.write(work), "wft_workloads.main", work / "built").component
+    built = build(bundle.write(work), "dsy_workloads.main", work / "built").component
     warm(built, work / "cache")
     return built, work / "cache"
 

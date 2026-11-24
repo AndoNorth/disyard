@@ -1,5 +1,5 @@
 {
-  "schema": "urn:wft:schema:job:1.0",
+  "schema": "urn:dsy:schema:job:1.0",
   "tasks": {
     "agg": {
       "cpu": 1,
@@ -11,7 +11,7 @@
           "name": "bundle.tar.gz",
           "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
           "size": 2048,
-          "uri": "s3://wft-sources/sha256/bb/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          "uri": "s3://dsy-sources/sha256/bb/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
         }
       },
       "run_timeout_s": 600,

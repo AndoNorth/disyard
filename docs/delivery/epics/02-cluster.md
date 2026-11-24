@@ -1,7 +1,7 @@
 # Epic #2: Fixed-resource cluster and Tilt - breakdown
 
 Status: approved
-Epic: https://github.com/AndoNorth/weft/issues/2
+Epic: https://github.com/AndoNorth/disyard/issues/2
 Architecture note: docs/architecture/09-cluster-and-tilt.drawio
 Depends on (closed epics): Dev environment (#1, closed)
 
@@ -48,7 +48,7 @@ Non-goals for this pass:
 | Dev environment | `deploy/versions.yaml`: `kind_node_image` (v1.35.0 with digest), empty `charts` and `images` maps | schema v1 | none, exists [read] |
 | Dev environment | `just doctor`, reading top-level `memory_mib:` from `deploy/presets/<preset>.yaml` with a `sed` match on `^memory_mib:` | doctor contract v1 | none, exists [read: `scripts/doctor.sh` line 113] |
 | Dev environment | Recipe stubs `up`, `down`, `nuke` exiting 3 with `not implemented: owned by #2` | recipe table v1 | the stubs are what this epic replaces |
-| Dev environment | `revisit` child issue [#49](https://github.com/AndoNorth/weft/issues/49) for recipe table v2, the lint exclusion and the dev-setup count (decision 5) | recipe table v2 | none, blocks lane 0 |
+| Dev environment | `revisit` child issue [#49](https://github.com/AndoNorth/disyard/issues/49) for recipe table v2, the lint exclusion and the dev-setup count (decision 5) | recipe table v2 | none, blocks lane 0 |
 | Spike reports | Temporal and its Postgres sizes at 100,000 jobs, object store idle size | S3b section 7, S5 section 4.5 | numbers are carried into section 5 as inputs, not as contracts |
 
 Host facts checked [ran]: 7,942 MiB total memory with 4,953 MiB available while other work shares the Docker daemon, 6 CPUs, `fs.inotify.max_user_instances` 512 (from the dev environment spec).
@@ -62,25 +62,25 @@ Shapes below are proposals made concrete in lane 0, and a change after the pin i
 | --- | --- | --- | --- | --- |
 | all epics, doctor | Preset schema and the three presets `ci`, `dev`, `soak` | `contracts/preset/`, `deploy/presets/<name>.yaml` | Top-level scalars `name`, `fitted`, `memory_mib` (sum of node memory limits, checked by the loader test, read by doctor), `cpus`. A `nodes` list of `{role, count, cpus, memory_mib}` with `role` in `control-plane, infra, obs, compile, simulate, aggregate`. A `host` block with `ports` and `data_dir`. A `mirror` flag. The kubelet reservation is derived from the node limit by one rule written in the contract README, and is not stored per preset. | preset v1 |
 | module owners (state and storage, workflow engine, broker, observability) | Module contract | `contracts/module/`, `deploy/<component>/module.yaml` and `deploy/<component>/Tiltfile.module` | Manifest keys `name`, `group` (`infra`, `control`, `workers`, `obs`), `namespace`, `artifact` (chart or image, pinned in `deploy/versions.yaml`), `resources` (requests and limits per workload), `readiness` (command or resource condition), `profiles` (any of `minimal, dev, full, ci`). The Tilt side loads one `Tiltfile.module` per component and registers one resource group. An `obs` resource is never listed in another group's dependencies. | module v1 |
-| placement and workers, observability, load and chaos | Pool and namespace topology | `contracts/topology/` | Node label `wft.dev/pool=<compile\|simulate\|aggregate\|infra\|obs>` and taint `wft.dev/pool=<name>:NoSchedule` on pool nodes (the `wft.dev` prefix is a placeholder). Namespaces `wft-infra`, `wft-control`, `wft-workers`, `wft-obs`, each with a ResourceQuota and a LimitRange. `wft-workers` quota is set slightly above pool allocatable. Rule for consumers: detect an OOM by exit code 137 plus node events. | topology v1 |
-| all epics | Cluster recipes | `just/cluster.just`, `scripts/up.sh`, `down.sh`, `nuke.sh` | `up` is idempotent and takes `WFT_PRESET` (default `ci`) and exits 0 when the cluster is Ready. `down` stops nodes and keeps data. `nuke` destroys the cluster and the host data directory. Exit codes: 0 ok, 1 check failed, 2 usage, 4 refused (preset needs more memory than the host has, or a cluster this run did not start). | recipe table v2 |
-| load and chaos, acceptance | Host access endpoints | `deploy/host/ports.yaml` | Fixed table of `127.0.0.1:<port>` to NodePort, one row per exposed endpoint, usable without Tilt running. Rows exist for the dispatch and control API (one replica in `wft-control`) and the module endpoints that need host access. | ports v1 |
+| placement and workers, observability, load and chaos | Pool and namespace topology | `contracts/topology/` | Node label `dsy.dev/pool=<compile\|simulate\|aggregate\|infra\|obs>` and taint `dsy.dev/pool=<name>:NoSchedule` on pool nodes (the `dsy.dev` prefix is a placeholder). Namespaces `dsy-infra`, `dsy-control`, `dsy-workers`, `dsy-obs`, each with a ResourceQuota and a LimitRange. `dsy-workers` quota is set slightly above pool allocatable. Rule for consumers: detect an OOM by exit code 137 plus node events. | topology v1 |
+| all epics | Cluster recipes | `just/cluster.just`, `scripts/up.sh`, `down.sh`, `nuke.sh` | `up` is idempotent and takes `DSY_PRESET` (default `ci`) and exits 0 when the cluster is Ready. `down` stops nodes and keeps data. `nuke` destroys the cluster and the host data directory. Exit codes: 0 ok, 1 check failed, 2 usage, 4 refused (preset needs more memory than the host has, or a cluster this run did not start). | recipe table v2 |
+| load and chaos, acceptance | Host access endpoints | `deploy/host/ports.yaml` | Fixed table of `127.0.0.1:<port>` to NodePort, one row per exposed endpoint, usable without Tilt running. Rows exist for the dispatch and control API (one replica in `dsy-control`) and the module endpoints that need host access. | ports v1 |
 | characterization | Presets, host requirements and `tilt ci` start | `deploy/presets/`, `docs/cluster-host.md`, `just up` | Per-preset table of nodes, CPU, memory, data directory and the host requirement from S2. | preset v1 |
-| compile workloads | Package mirror | `deploy/mirror/` | A wheelhouse module in `wft-infra` serving hash-pinned wheels, on in `ci`. The consumer installs with `--no-index --find-links` and `--require-hashes`. Wheel contents are produced by the toolchain epic. | module v1 |
+| compile workloads | Package mirror | `deploy/mirror/` | A wheelhouse module in `dsy-infra` serving hash-pinned wheels, on in `ci`. The consumer installs with `--no-index --find-links` and `--require-hashes`. Wheel contents are produced by the toolchain epic. | module v1 |
 | acceptance | Kind smoke CI job | `.github/workflows/kind-smoke.yml` | One job `kind-smoke` running `just up` on `ci` and `just down`. | v1 |
 
 ## 3. Lanes (disjoint file ownership)
 
 | Lane | Workers | Owns (exclusive) | Issues | Needs |
 | --- | --- | --- | --- | --- |
-| 0 Contracts and skeleton | 1 | `contracts/preset/**`, `contracts/module/**`, `contracts/topology/**`, `deploy/dummy/**`, and until replaced the stub `Tiltfile` and `scripts/cluster/*.sh` | [#50](https://github.com/AndoNorth/weft/issues/50), [#51](https://github.com/AndoNorth/weft/issues/51) | the `revisit` child [#49](https://github.com/AndoNorth/weft/issues/49) on the dev environment epic merged (barrier) |
-| A Cluster | 1 | `deploy/presets/*.yaml`, `deploy/cluster/**`, `scripts/cluster/**`, `scripts/up.sh`, `just/cluster.just` | [#52](https://github.com/AndoNorth/weft/issues/52), [#55](https://github.com/AndoNorth/weft/issues/55), [#56](https://github.com/AndoNorth/weft/issues/56), [#58](https://github.com/AndoNorth/weft/issues/58), then [#64](https://github.com/AndoNorth/weft/issues/64) after S2 | lane 0 |
-| N Namespaces | 1 | `deploy/namespaces/**`, `scripts/cluster/namespaces.sh` | [#60](https://github.com/AndoNorth/weft/issues/60) | lane 0, and A.4 for presets to read |
-| T Tilt | 1 | `Tiltfile`, `deploy/tilt/**`, `scripts/tilt/**` | [#53](https://github.com/AndoNorth/weft/issues/53), [#62](https://github.com/AndoNorth/weft/issues/62) | lane 0 (T.1 needs no cluster) |
-| H Host | 1 | `deploy/host/**`, `scripts/down.sh`, `scripts/nuke.sh`, `docs/cluster-host.md` | [#57](https://github.com/AndoNorth/weft/issues/57), [#59](https://github.com/AndoNorth/weft/issues/59), [#54](https://github.com/AndoNorth/weft/issues/54) | lane 0, and A.2 for a cluster to exist |
-| W Mirror | 1 | `deploy/mirror/**` | [#61](https://github.com/AndoNorth/weft/issues/61) | lane 0, and A.4 for the compile pool |
-| F Footprint | 1 | `docs/delivery/spikes/S2/code/**`, `docs/delivery/spikes/S2/footprint.md` | [#63](https://github.com/AndoNorth/weft/issues/63) | lanes A to W merged, runs the cluster |
-| X Exit | 1 | `.github/workflows/kind-smoke.yml` | [#65](https://github.com/AndoNorth/weft/issues/65) | lanes A to W merged |
+| 0 Contracts and skeleton | 1 | `contracts/preset/**`, `contracts/module/**`, `contracts/topology/**`, `deploy/dummy/**`, and until replaced the stub `Tiltfile` and `scripts/cluster/*.sh` | [#50](https://github.com/AndoNorth/disyard/issues/50), [#51](https://github.com/AndoNorth/disyard/issues/51) | the `revisit` child [#49](https://github.com/AndoNorth/disyard/issues/49) on the dev environment epic merged (barrier) |
+| A Cluster | 1 | `deploy/presets/*.yaml`, `deploy/cluster/**`, `scripts/cluster/**`, `scripts/up.sh`, `just/cluster.just` | [#52](https://github.com/AndoNorth/disyard/issues/52), [#55](https://github.com/AndoNorth/disyard/issues/55), [#56](https://github.com/AndoNorth/disyard/issues/56), [#58](https://github.com/AndoNorth/disyard/issues/58), then [#64](https://github.com/AndoNorth/disyard/issues/64) after S2 | lane 0 |
+| N Namespaces | 1 | `deploy/namespaces/**`, `scripts/cluster/namespaces.sh` | [#60](https://github.com/AndoNorth/disyard/issues/60) | lane 0, and A.4 for presets to read |
+| T Tilt | 1 | `Tiltfile`, `deploy/tilt/**`, `scripts/tilt/**` | [#53](https://github.com/AndoNorth/disyard/issues/53), [#62](https://github.com/AndoNorth/disyard/issues/62) | lane 0 (T.1 needs no cluster) |
+| H Host | 1 | `deploy/host/**`, `scripts/down.sh`, `scripts/nuke.sh`, `docs/cluster-host.md` | [#57](https://github.com/AndoNorth/disyard/issues/57), [#59](https://github.com/AndoNorth/disyard/issues/59), [#54](https://github.com/AndoNorth/disyard/issues/54) | lane 0, and A.2 for a cluster to exist |
+| W Mirror | 1 | `deploy/mirror/**` | [#61](https://github.com/AndoNorth/disyard/issues/61) | lane 0, and A.4 for the compile pool |
+| F Footprint | 1 | `docs/delivery/spikes/S2/code/**`, `docs/delivery/spikes/S2/footprint.md` | [#63](https://github.com/AndoNorth/disyard/issues/63) | lanes A to W merged, runs the cluster |
+| X Exit | 1 | `.github/workflows/kind-smoke.yml` | [#65](https://github.com/AndoNorth/disyard/issues/65) | lanes A to W merged |
 
 Shared-file rules:
 
@@ -96,7 +96,7 @@ Shared-file rules:
 
 ## 4. Issues
 
-The `revisit` child on the dev environment epic is [#49](https://github.com/AndoNorth/weft/issues/49), and it blocks lane 0.
+The `revisit` child on the dev environment epic is [#49](https://github.com/AndoNorth/disyard/issues/49), and it blocks lane 0.
 Each lane issue below was filed on 2026-10-28 from the [lane issue template](../../../.github/ISSUE_TEMPLATE/lane-issue.md), as a sub-issue of #2, and its body holds the scope, owns, acceptance criteria and needs.
 Proposal numbering from the epic is in brackets.
 Every acceptance line is a command with an observable result.
@@ -120,30 +120,30 @@ Every acceptance line is a command with an observable result.
 | 13 Footprint measurement and sizing pass | F.1, A.5 |
 | 14 Package mirror and compile egress | W.1 |
 
-- [#50](https://github.com/AndoNorth/weft/issues/50) **0.1 Pinned contracts** [4, 7] Lane 0, tier T0.
-- [#51](https://github.com/AndoNorth/weft/issues/51) **0.2 Dummy modules and stubs** [7, 8, 12] Lane 0, T0.
-- [#52](https://github.com/AndoNorth/weft/issues/52) **A.1 Preset renderer** [1] Lane A, T0. Needs lane 0.
-- [#55](https://github.com/AndoNorth/weft/issues/55) **A.2 ctlptl cluster and registry** [3] Lane A, T2. Needs A.1.
-- [#56](https://github.com/AndoNorth/weft/issues/56) **A.3 Hard node limits and canaries** [2] Lane A, T2. Needs A.2.
-- [#58](https://github.com/AndoNorth/weft/issues/58) **A.4 Node pools and sizes** [4] Lane A, T2. Needs A.3.
-- [#64](https://github.com/AndoNorth/weft/issues/64) **A.5 Apply the sizing result** [13] Lane A, T0. Needs F.1 merged.
-- [#60](https://github.com/AndoNorth/weft/issues/60) **N.1 Namespaces, quotas and limit ranges** [5] Lane N, T2. Needs lane 0 and A.4.
-- [#53](https://github.com/AndoNorth/weft/issues/53) **T.1 Tiltfile skeleton and profiles** [6, 8] Lane T, T0. Needs lane 0.
-- [#62](https://github.com/AndoNorth/weft/issues/62) **T.2 Live-update convention and the immutable soak mode** [9] Lane T, T0. Needs T.1.
-- [#57](https://github.com/AndoNorth/weft/issues/57) **H.1 Host access map** [10] Lane H, T2. Needs A.2.
-- [#59](https://github.com/AndoNorth/weft/issues/59) **H.2 Persistence** [11] Lane H, T2. Needs H.1.
-- [#54](https://github.com/AndoNorth/weft/issues/54) **H.3 WSL2 host guide** [12] Lane H, T0. Needs lane 0.
-- [#61](https://github.com/AndoNorth/weft/issues/61) **W.1 Package mirror** [14] Lane W, T2. Needs lane 0 and A.4.
-- [#63](https://github.com/AndoNorth/weft/issues/63) **F.1 Footprint spike S2** [13] Lane F, T2. Needs lanes A, N, T, H and W merged.
-- [#65](https://github.com/AndoNorth/weft/issues/65) **X.1 Kind smoke CI job** Lane X, T2. Needs lanes A, N, T, H and W merged.
+- [#50](https://github.com/AndoNorth/disyard/issues/50) **0.1 Pinned contracts** [4, 7] Lane 0, tier T0.
+- [#51](https://github.com/AndoNorth/disyard/issues/51) **0.2 Dummy modules and stubs** [7, 8, 12] Lane 0, T0.
+- [#52](https://github.com/AndoNorth/disyard/issues/52) **A.1 Preset renderer** [1] Lane A, T0. Needs lane 0.
+- [#55](https://github.com/AndoNorth/disyard/issues/55) **A.2 ctlptl cluster and registry** [3] Lane A, T2. Needs A.1.
+- [#56](https://github.com/AndoNorth/disyard/issues/56) **A.3 Hard node limits and canaries** [2] Lane A, T2. Needs A.2.
+- [#58](https://github.com/AndoNorth/disyard/issues/58) **A.4 Node pools and sizes** [4] Lane A, T2. Needs A.3.
+- [#64](https://github.com/AndoNorth/disyard/issues/64) **A.5 Apply the sizing result** [13] Lane A, T0. Needs F.1 merged.
+- [#60](https://github.com/AndoNorth/disyard/issues/60) **N.1 Namespaces, quotas and limit ranges** [5] Lane N, T2. Needs lane 0 and A.4.
+- [#53](https://github.com/AndoNorth/disyard/issues/53) **T.1 Tiltfile skeleton and profiles** [6, 8] Lane T, T0. Needs lane 0.
+- [#62](https://github.com/AndoNorth/disyard/issues/62) **T.2 Live-update convention and the immutable soak mode** [9] Lane T, T0. Needs T.1.
+- [#57](https://github.com/AndoNorth/disyard/issues/57) **H.1 Host access map** [10] Lane H, T2. Needs A.2.
+- [#59](https://github.com/AndoNorth/disyard/issues/59) **H.2 Persistence** [11] Lane H, T2. Needs H.1.
+- [#54](https://github.com/AndoNorth/disyard/issues/54) **H.3 WSL2 host guide** [12] Lane H, T0. Needs lane 0.
+- [#61](https://github.com/AndoNorth/disyard/issues/61) **W.1 Package mirror** [14] Lane W, T2. Needs lane 0 and A.4.
+- [#63](https://github.com/AndoNorth/disyard/issues/63) **F.1 Footprint spike S2** [13] Lane F, T2. Needs lanes A, N, T, H and W merged.
+- [#65](https://github.com/AndoNorth/disyard/issues/65) **X.1 Kind smoke CI job** Lane X, T2. Needs lanes A, N, T, H and W merged.
 
 ## 5. Order, stubs and spikes
 
-- Barrier: the `revisit` child issue [#49](https://github.com/AndoNorth/weft/issues/49) on the dev environment epic (decision 5), then lane 0 (0.1, then 0.2, one worker, merged alone).
+- Barrier: the `revisit` child issue [#49](https://github.com/AndoNorth/disyard/issues/49) on the dev environment epic (decision 5), then lane 0 (0.1, then 0.2, one worker, merged alone).
   The estimate is one day and a half.
 - After lane 0: A.1, T.1 and H.3 start together, and none of them needs a cluster.
   A.2 gates every issue that runs a cluster (A.3, H.1, H.2).
-- Cluster-using lanes share one cluster, so they take `flock /tmp/wft-cluster.lock` and run one at a time on this host.
+- Cluster-using lanes share one cluster, so they take `flock /tmp/dsy-cluster.lock` and run one at a time on this host.
   Each recipe that touches the cluster takes the lock and `just up` refuses a cluster this run did not start.
 - Then lanes N, W and the rest of H, then F.1, then A.5, then X.1, then the exit test.
 - DAG: lane 0, then (A.1 ‖ T.1 ‖ H.3), then A.2, then (A.3 ‖ H.1), then A.4 and H.2, then (N.1 ‖ W.1 ‖ T.2), then F.1, then A.5 and X.1, then exit.
@@ -180,7 +180,7 @@ Each command runs as written, and its real output is pasted in the PR that recor
 | 2 | `nix develop -c scripts/cluster/render.sh ci`, `dev` and `soak`, each run twice | all three render without starting anything, the two runs of each differ by nothing under `diff` |
 | 3 | `nix develop -c just up` on `ci`, then again | Ready, then no change on the second run |
 | 4 | `nix develop -c scripts/cluster/allocatable.sh "$(scripts/cluster/render.sh ci)/limits.yaml"` and `nix develop -c scripts/cluster/canary.sh all` | allocatable equals preset minus reservation per node, exit 137 and `oom_kill` above zero for the memory canary, `Insufficient memory` for the over-request, throttle above zero |
-| 5 | `kubectl get nodes -L wft.dev/pool`, `kubectl get resourcequota,limitrange -A` and a pod that exceeds its namespace quota | pool labels and taints as the preset says, four namespaces with quota and limit range, defaults admitted, over-quota rejected |
+| 5 | `kubectl get nodes -L dsy.dev/pool`, `kubectl get resourcequota,limitrange -A` and a pod that exceeds its namespace quota | pool labels and taints as the preset says, four namespaces with quota and limit range, defaults admitted, over-quota rejected |
 | 6 | `tilt alpha tiltfile-result` for each of the four profiles, then again with a second `kind-*` context present | each profile lists the groups in the lane T table, the context guard refuses the second context, soak mode has no live update |
 | 7 | `ss -ltn` and a `curl` to the dummy endpoint with Tilt stopped | mapped ports bound to 127.0.0.1 only, the endpoint answers |
 | 8 | write a marker, `just down`, `just up`, read the marker, then `just nuke` twice | marker survives, `just nuke` leaves nothing and repeats cleanly |
@@ -196,7 +196,7 @@ Not provable by this epic: the `dev` and `soak` presets starting on this host, r
 ## 7. Parallelism and cost
 
 - Maximum parallel workers: 3 after the barrier (A.1, T.1 and H.3), then up to 4 on work that needs no cluster, with cluster work one at a time.
-  The cluster is single-owner on this host, so every cluster-using issue takes `/tmp/wft-cluster.lock` and runs one at a time, which caps real parallelism for lanes A, N, H, W, F and X.
+  The cluster is single-owner on this host, so every cluster-using issue takes `/tmp/dsy-cluster.lock` and runs one at a time, which caps real parallelism for lanes A, N, H, W, F and X.
 - Host constraints: the `ci` cluster of six nodes on a 7.8 GiB host that already runs other work (4.9 GiB available when checked [ran]), so cluster runs wait for a quiet host, and a worker never starts `dev` or `soak`.
 - Estimates, not measurements: lane 0 (1.5 d), lane A (3 d, the longest, A.3 canaries), lanes T, N, H and W (1 to 2 d each, mostly parallel), S2 (1 d timebox), exit lane X and the exit test (1 d).
   That is about 8 days elapsed and 14 worker-days of effort, with the cluster lock as the main source of slip.
@@ -205,7 +205,7 @@ Not provable by this epic: the `dev` and `soak` presets starting on this host, r
 
 Run on 2026-10-30 by a worker who did not write the lanes, on a clean `git archive` export of `main` at `0b8b522`, the merge of the sizing issue.
 Host: WSL2 with 20,002 MiB `MemTotal`, 8 CPUs and `fs.inotify.max_user_instances` 512, shared with 13 containers and a plain kind cluster of the captain that stayed running and untouched.
-Every cluster command ran under `flock /tmp/wft-cluster.lock`, a watchdog sampled host `MemAvailable` every 5 s and would have removed only the cluster wft below 1 GiB, and the lowest value sampled over the whole session was 13,769 MiB.
+Every cluster command ran under `flock /tmp/dsy-cluster.lock`, a watchdog sampled host `MemAvailable` every 5 s and would have removed only the cluster dsy below 1 GiB, and the lowest value sampled over the whole session was 13,769 MiB.
 Real command output is in the pull request that records the run.
 
 The row commands ran as written.
@@ -217,7 +217,7 @@ The `dev` and `soak` presets, which the spec could not start on the 7.8 GiB host
 | --- | --- | --- |
 | 1 | pass | `just doctor` exit 0, `memory-vs-preset` reads `ok` (host 20,002 MiB, preset `ci` 8,832 MiB) |
 | 2 | pass | `ci`, `dev` and `soak` render with nothing started, and two runs into one directory differ by nothing under `diff -r` |
-| 3 | pass | from no wft container, network or cluster, `just up` took 40 s and the second run 4 s with the same container ids and creation times |
+| 3 | pass | from no dsy container, network or cluster, `just up` took 40 s and the second run 4 s with the same container ids and creation times |
 | 4 | pass | `allocatable.sh` reports expected equal to actual on every node, and `canary.sh all` shows exit 137 with `oom_kill` raised, `Insufficient memory` for the over-request and `nr_throttled` raised |
 | 5 | pass | pool labels and taints as the preset says, four namespaces each with a quota and a limit range, defaults admitted, over-quota rejected |
 | 6 | pass | five profiles listed as the profile table says, the guard refuses the active context `kind-kind`, soak has no live-update step |
@@ -263,9 +263,9 @@ Not proven:
 Closure addenda, one dated line each, are added after close when a `revisit` child issue is filed against this epic (see [docs/delivery/method.md](../method.md#revisiting-a-closed-epic)).
 
 - 2026-10-31: the slots files of `ci`, `dev` and `soak` gained a `simulate` pool entry at 250m and 384Mi, still marked `estimate: true`, as a `revisit` child of this epic.
-- 2026-11-01: the infra node of `ci` and `dev` grew to 5,120 MiB, which makes the `wft-infra` quota 4,772 MiB, and `just up` applies the namespaces and quotas, as a `revisit` child of this epic.
-- 2026-11-10: the infra node of `ci` grew to 3 CPUs, which makes the `wft-infra` CPU quota 3,045m and the preset 8 CPUs, so Temporal's 1 CPU fits beside the state modules, as a `revisit` child of this epic.
-- 2026-11-15: the infra node of `ci` and `dev` grew to 6,144 MiB, which makes the `wft-infra` and `wft-control` quotas 5,780 MiB, the quotas dropped `limits.cpu`, `scripts/cluster/budget.sh` checks the worst-case infra node budget in `just ci`, `just cluster-verify` is real, and `verify` and `verify-clean` are gone, so RabbitMQ, admission and dispatch fit beside the modules through a rollout, see https://github.com/AndoNorth/weft/issues/366.
-- 2026-11-15: the `ci` simulate slot grew from 384 MiB to 512 MiB and its node from 768 MiB to 896 MiB, which makes the preset 12,032 MiB and the `wft-workers` quota 3,100 MiB, with the simulate row of `contracts/temporal/pools.yaml` at version 2, because spike S11 of the workers epic found the pool worker and the first-run warm-up do not fit 384 MiB, see https://github.com/AndoNorth/weft/issues/380.
-- 2026-11-21: the observability switch `WFT_OBS` at `just up` sizes each `obs` node of `ci` and `soak` at the new preset key `obs_stack` (2,304 MiB and 1.5 CPU, so the presets need 13,696 and 15,872 MiB with it on), is recorded as `cluster.obs` beside `cluster.owner`, and enables the new `opt_in: [obs]` of `deploy/tilt/profiles.yaml`; `render.sh`, `namespaces.sh`, `budget.sh`, `doctor.sh`, `scripts/tilt/run.sh` and `cluster-verify.sh` apply it, as a `revisit` child of this epic, see https://github.com/AndoNorth/weft/issues/549.
-- 2026-11-21: the `obs_stack` size of `ci` and `soak` is 4,096 MiB and 1.5 CPU after the footprint spike S13 found the stack does not fit 2,304 MiB (so the presets need 15,488 and 17,664 MiB with the switch on), and `deploy/host/ports.yaml` gains the `grafana` row (host port 13000, NodePort 30300) and the `temporal-ui` row (host port 18233, NodePort 30233), so every `ci` cluster needs `just nuke` once for the port rows, as a `revisit` child of this epic, see https://github.com/AndoNorth/weft/issues/552.
+- 2026-11-01: the infra node of `ci` and `dev` grew to 5,120 MiB, which makes the `dsy-infra` quota 4,772 MiB, and `just up` applies the namespaces and quotas, as a `revisit` child of this epic.
+- 2026-11-10: the infra node of `ci` grew to 3 CPUs, which makes the `dsy-infra` CPU quota 3,045m and the preset 8 CPUs, so Temporal's 1 CPU fits beside the state modules, as a `revisit` child of this epic.
+- 2026-11-15: the infra node of `ci` and `dev` grew to 6,144 MiB, which makes the `dsy-infra` and `dsy-control` quotas 5,780 MiB, the quotas dropped `limits.cpu`, `scripts/cluster/budget.sh` checks the worst-case infra node budget in `just ci`, `just cluster-verify` is real, and `verify` and `verify-clean` are gone, so RabbitMQ, admission and dispatch fit beside the modules through a rollout, see https://github.com/AndoNorth/disyard/issues/366.
+- 2026-11-15: the `ci` simulate slot grew from 384 MiB to 512 MiB and its node from 768 MiB to 896 MiB, which makes the preset 12,032 MiB and the `dsy-workers` quota 3,100 MiB, with the simulate row of `contracts/temporal/pools.yaml` at version 2, because spike S11 of the workers epic found the pool worker and the first-run warm-up do not fit 384 MiB, see https://github.com/AndoNorth/disyard/issues/380.
+- 2026-11-21: the observability switch `DSY_OBS` at `just up` sizes each `obs` node of `ci` and `soak` at the new preset key `obs_stack` (2,304 MiB and 1.5 CPU, so the presets need 13,696 and 15,872 MiB with it on), is recorded as `cluster.obs` beside `cluster.owner`, and enables the new `opt_in: [obs]` of `deploy/tilt/profiles.yaml`; `render.sh`, `namespaces.sh`, `budget.sh`, `doctor.sh`, `scripts/tilt/run.sh` and `cluster-verify.sh` apply it, as a `revisit` child of this epic, see https://github.com/AndoNorth/disyard/issues/549.
+- 2026-11-21: the `obs_stack` size of `ci` and `soak` is 4,096 MiB and 1.5 CPU after the footprint spike S13 found the stack does not fit 2,304 MiB (so the presets need 15,488 and 17,664 MiB with the switch on), and `deploy/host/ports.yaml` gains the `grafana` row (host port 13000, NodePort 30300) and the `temporal-ui` row (host port 18233, NodePort 30233), so every `ci` cluster needs `just nuke` once for the port rows, as a `revisit` child of this epic, see https://github.com/AndoNorth/disyard/issues/552.

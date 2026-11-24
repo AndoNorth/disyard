@@ -5,7 +5,7 @@ import ast
 from pathlib import Path
 
 PACKAGES = Path(__file__).resolve().parents[2]
-SOURCES = [PACKAGES / "kernel/src/wft_kernel", PACKAGES / "workloads/src/wft_workloads"]
+SOURCES = [PACKAGES / "kernel/src/dsy_kernel", PACKAGES / "workloads/src/dsy_workloads"]
 FUNCTIONS = (ast.FunctionDef, ast.AsyncFunctionDef, ast.Lambda)
 
 

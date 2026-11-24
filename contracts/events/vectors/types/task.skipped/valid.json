@@ -4,17 +4,17 @@
     "reason": "compile-cache-hit"
   },
   "datacontenttype": "application/json",
-  "dataschema": "urn:wft:schema:task.skipped:1.0",
+  "dataschema": "urn:dsy:schema:task.skipped:1.0",
   "id": "53f3fa7c-21bc-554d-b15c-52c764af76a2",
   "jobclass": "short",
   "jobid": "3a9617fa-df7c-5760-a644-42d559e0f433",
   "priorityclass": "standard",
-  "source": "/wft/workflow",
+  "source": "/dsy/workflow",
   "specversion": "1.0",
   "subject": "3a9617fa-df7c-5760-a644-42d559e0f433/sim",
   "taskid": "sim",
   "tenant": "acme",
   "time": "2026-10-30T12:00:00.123456Z",
   "traceparent": "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01",
-  "type": "dev.wft.task.skipped.v1"
+  "type": "dev.dsy.task.skipped.v1"
 }

@@ -6,28 +6,28 @@ from concurrent.futures import ThreadPoolExecutor
 
 import psycopg
 import pytest
+from dsy_dispatchapi import control
+from dsy_dispatchapi.control import ControlRefused, control_batch, control_job
+from dsy_dispatchapi.models import ControlAnswer, ControlRequest, EntryError, SummaryLine
+from dsy_events import from_bytes
+from dsy_eventstore import events_for_job
+from dsy_jobstate import JobRow, Lost, get_job, insert_accepted, transition
+from dsy_keys import batch_id, cloudevent_id, job_id
+from dsy_stages import Facts, run_stage_contract
+from dsy_temporal import new_traceparent
 from psycopg.types.json import Jsonb
-from wft_dispatchapi import control
-from wft_dispatchapi.control import ControlRefused, control_batch, control_job
-from wft_dispatchapi.models import ControlAnswer, ControlRequest, EntryError, SummaryLine
-from wft_events import from_bytes
-from wft_eventstore import events_for_job
-from wft_jobstate import JobRow, Lost, get_job, insert_accepted, transition
-from wft_keys import batch_id, cloudevent_id, job_id
-from wft_stages import Facts, run_stage_contract
-from wft_temporal import new_traceparent
 
 pytestmark = pytest.mark.integration
 
 SHA = "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08"
 MANIFEST = {
-    "uri": f"s3://wft-sources/sha256/9f/{SHA}",
+    "uri": f"s3://dsy-sources/sha256/9f/{SHA}",
     "sha256": SHA,
     "size": 2048,
     "name": "manifest.json",
     "kind": "manifest",
 }
-PATCH = {**MANIFEST, "sha256": "1" * 64, "uri": f"s3://wft-sources/sha256/11/{'1' * 64}"}
+PATCH = {**MANIFEST, "sha256": "1" * 64, "uri": f"s3://dsy-sources/sha256/11/{'1' * 64}"}
 PLAIN = ControlRequest()
 LOCK_WAIT_S = 10
 
@@ -53,7 +53,7 @@ def seed(db):
                 priority_class="standard",
                 job_class="short",
                 manifest_ref=MANIFEST,
-                schema_version="urn:wft:schema:job.accepted:1.0",
+                schema_version="urn:dsy:schema:job.accepted:1.0",
                 traceparent=new_traceparent(),
                 seed=index,
                 parameters={"n": index},
@@ -83,7 +83,7 @@ def refused(code: str):
 
 
 def name_of(event_type: str) -> str:
-    return event_type.removeprefix("dev.wft.").removesuffix(".v1")
+    return event_type.removeprefix("dev.dsy.").removesuffix(".v1")
 
 
 def history(db, row: JobRow) -> list[tuple[str, int]]:
@@ -91,7 +91,7 @@ def history(db, row: JobRow) -> list[tuple[str, int]]:
     found = []
     for stored in events_for_job(db, row.job_id):
         event = from_bytes(stored.body.encode())
-        assert event.source == "/wft/control"
+        assert event.source == "/dsy/control"
         name = name_of(event.type)
         [seq] = [s for s in range(64) if event.id == cloudevent_id(row.job_id, "", "", name, s)]
         found.append((name, seq))
@@ -282,7 +282,7 @@ def test_event_ids_follow_d5(conn, db, seed, gateway):
         (name, cloudevent_id(row.job_id, "", "", name, seq)) for name, seq in expected
     ]
     assert {(e.source, e.jobid, e.tenant, e.traceparent) for e in stored} == {
-        ("/wft/control", row.job_id, "acme", row.traceparent)
+        ("/dsy/control", row.job_id, "acme", row.traceparent)
     }
 
 

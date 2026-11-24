@@ -4,10 +4,10 @@ import re
 
 import pytest
 import yaml
-from wft_events import SchemaInvalid, from_bytes
-from wft_events.models import DATA_MODELS, INTRODUCED, JobParams
-from wft_events.profile import CONTRACT_DIR
-from wft_events.schemagen import main as schemagen
+from dsy_events import SchemaInvalid, from_bytes
+from dsy_events.models import DATA_MODELS, INTRODUCED, JobParams
+from dsy_events.profile import CONTRACT_DIR
+from dsy_events.schemagen import main as schemagen
 
 JOB_TYPES = {
     "accepted", "published", "admitted", "started", "paused", "pause.requested",
@@ -39,7 +39,7 @@ def test_a_type_has_one_valid_and_one_invalid_vector(name):
     directory = CONTRACT_DIR / "vectors/types" / name
     assert sorted(p.name for p in directory.iterdir()) == ["invalid.json", "valid.json"]
     event = from_bytes((directory / "valid.json").read_bytes())
-    assert event.type == f"dev.wft.{name}.v1"
+    assert event.type == f"dev.dsy.{name}.v1"
     with pytest.raises(SchemaInvalid) as raised:
         from_bytes((directory / "invalid.json").read_bytes())
     assert raised.value.reason == "bad-data"

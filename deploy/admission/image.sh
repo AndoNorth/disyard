@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Builds the image of the admission service from this tree: wheels of the workspace packages that wft-admission needs,
+# Builds the image of the admission service from this tree: wheels of the workspace packages that dsy-admission needs,
 # built on the host, over the third-party packages that uv.lock pins by hash, on the pinned Python base.
 # python-qpid-proton is pinned by the hash of its sdist, which the Dockerfile builds into a wheel in a stage of its own.
 # The third-party packages are read from the build cache first, as deploy/wheel-cache.sh says.
@@ -15,12 +15,12 @@ context=$(mktemp -d)
 pinned=$(mktemp)
 trap 'rm -rf "$context" "$pinned"' EXIT
 
-export=(uv export --frozen --quiet --no-dev --package wft-admission)
+export=(uv export --frozen --quiet --no-dev --package dsy-admission)
 "${export[@]}" --no-emit-workspace -o "$pinned"
 "${export[@]}" --no-emit-workspace --no-emit-package python-qpid-proton -o "$context/requirements.txt"
 # The requirement of python-qpid-proton with its hashes, the lines up to the first that does not continue.
 awk '/^python-qpid-proton==/ { found = 1 } found { print; if (!/\\$/) exit }' "$pinned" >"$context/proton.txt"
-[ -s "$context/proton.txt" ] || { echo "uv.lock pins no python-qpid-proton for wft-admission" >&2; exit 1; }
+[ -s "$context/proton.txt" ] || { echo "uv.lock pins no python-qpid-proton for dsy-admission" >&2; exit 1; }
 "${export[@]}" --only-emit-workspace --no-editable --no-hashes --no-annotate --no-header | while read -r package; do
     uv build --quiet --wheel --out-dir "$context/wheels" "$package"
 done

@@ -1,5 +1,5 @@
 # Host ports a dev or test run binds, read by scripts/check-dev-ports.sh and by what launches them.
-# Columns: name, first port, last port, and optionally the stride a WFT_SLOT shifts the range by.
+# Columns: name, first port, last port, and optionally the stride a DSY_SLOT shifts the range by.
 # The rows of deploy/host/ports.yaml are checked too and are not repeated here.
 registry 5001 5001
 t1 19000 19009 10

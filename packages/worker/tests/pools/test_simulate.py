@@ -12,16 +12,16 @@ import time
 from datetime import UTC, datetime, timedelta
 
 import pytest
+from dsy_artifactclient.client import ArtifactClient, RetryPolicy
+from dsy_runtime.command import GUEST_INPUT
+from dsy_worker.pools import Context, simulate
+from dsy_worker.runner import Child
+from dsy_worker.testing import contract_cases
+from dsy_workflow.contract import failure_classes
+from dsy_workflow.harness import matches_echo
+from dsy_workflow.models import FailureDetails, TaskInput, TaskResult
 from temporalio.exceptions import ApplicationError
 from temporalio.testing import ActivityEnvironment
-from wft_artifactclient.client import ArtifactClient, RetryPolicy
-from wft_runtime.command import GUEST_INPUT
-from wft_worker.pools import Context, simulate
-from wft_worker.runner import Child
-from wft_worker.testing import contract_cases
-from wft_workflow.contract import failure_classes
-from wft_workflow.harness import matches_echo
-from wft_workflow.models import FailureDetails, TaskInput, TaskResult
 
 pytestmark = pytest.mark.integration
 
@@ -52,7 +52,7 @@ def store(pool_store) -> ArtifactClient:
 
 @pytest.fixture(scope="module")
 def reader(pool_store) -> ArtifactClient:
-    """A role that reads what the simulate role puts in wft-results, which it cannot read back."""
+    """A role that reads what the simulate role puts in dsy-results, which it cannot read back."""
     return ArtifactClient(pool_store.endpoint, pool_store.credentials["aggregate"])
 
 

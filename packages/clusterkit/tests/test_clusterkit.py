@@ -6,9 +6,9 @@ import json
 import socket
 import time
 
+import dsy_clusterkit
 import pytest
-import wft_clusterkit
-from wft_clusterkit import (
+from dsy_clusterkit import (
     UP_S,
     Forward,
     appdb_password,
@@ -21,23 +21,23 @@ from wft_clusterkit import (
 )
 
 
-def test_state_dir_is_wft_state_dir_first(monkeypatch, tmp_path):
-    monkeypatch.setenv("WFT_STATE_DIR", str(tmp_path / "state"))
+def test_state_dir_is_dsy_state_dir_first(monkeypatch, tmp_path):
+    monkeypatch.setenv("DSY_STATE_DIR", str(tmp_path / "state"))
     monkeypatch.setenv("XDG_STATE_HOME", str(tmp_path / "xdg"))
     assert state_dir() == tmp_path / "state"
 
 
 def test_state_dir_falls_back_to_xdg_then_home(monkeypatch, tmp_path):
-    monkeypatch.delenv("WFT_STATE_DIR", raising=False)
+    monkeypatch.delenv("DSY_STATE_DIR", raising=False)
     monkeypatch.setenv("XDG_STATE_HOME", str(tmp_path / "xdg"))
-    assert state_dir() == tmp_path / "xdg/weft"
+    assert state_dir() == tmp_path / "xdg/disyard"
     monkeypatch.delenv("XDG_STATE_HOME")
     monkeypatch.setenv("HOME", str(tmp_path / "home"))
-    assert state_dir() == tmp_path / "home/.local/state/weft"
+    assert state_dir() == tmp_path / "home/.local/state/disyard"
 
 
 def test_credentials_are_read_from_the_state_dir(monkeypatch, tmp_path):
-    monkeypatch.setenv("WFT_STATE_DIR", str(tmp_path))
+    monkeypatch.setenv("DSY_STATE_DIR", str(tmp_path))
     (tmp_path / "appdb.credential").write_text("secret\n")
     (tmp_path / "objectstore.credentials.json").write_text(
         json.dumps({"submit": {"access_key": "a", "secret_key": "s"}})
@@ -87,18 +87,18 @@ class FakeProcess:
 def test_forward_binds_localhost_and_keeps_its_port_when_opened_again(monkeypatch):
     spawned = []
     monkeypatch.setattr(
-        wft_clusterkit.subprocess,
+        dsy_clusterkit.subprocess,
         "Popen",
         lambda argv, **kwargs: spawned.append(FakeProcess(argv)) or spawned[-1],
     )
-    monkeypatch.setattr(wft_clusterkit, "_listening", lambda port: True)
-    forward = Forward("kind-wft", "wft-infra", "svc/temporal-frontend", 7233)
+    monkeypatch.setattr(dsy_clusterkit, "_listening", lambda port: True)
+    forward = Forward("kind-dsy", "dsy-infra", "svc/temporal-frontend", 7233)
     forward.open()
     forward.open()
     expected = [
         "kubectl",
-        "--context=kind-wft",
-        "--namespace=wft-infra",
+        "--context=kind-dsy",
+        "--namespace=dsy-infra",
         "port-forward",
         "--address=127.0.0.1",
         "svc/temporal-frontend",
@@ -115,11 +115,11 @@ def kubectl_exits_at_once(monkeypatch, tmp_path):
     fake = tmp_path / "kubectl"
     fake.write_text("#!/bin/sh\nexit 1\n")
     fake.chmod(0o755)
-    monkeypatch.setenv("PATH", f"{tmp_path}:{wft_clusterkit.os.environ['PATH']}")
+    monkeypatch.setenv("PATH", f"{tmp_path}:{dsy_clusterkit.os.environ['PATH']}")
 
 
 def test_forward_open_deadline_ends_a_forward_that_never_listens(kubectl_exits_at_once):
-    forward = Forward("kind-wft", "wft-infra", "svc/temporal-frontend", 7233)
+    forward = Forward("kind-dsy", "dsy-infra", "svc/temporal-frontend", 7233)
     started = time.monotonic()
     with pytest.raises(TimeoutError, match="did not listen in 1 s"):
         forward.open(timeout_s=1)
@@ -131,10 +131,10 @@ def test_forward_open_deadline_defaults_to_up_s(kubectl_exits_at_once, monkeypat
     reads = []
     clock = itertools.count(step=60.0)
     monkeypatch.setattr(
-        wft_clusterkit.time, "monotonic", lambda: reads.append(next(clock)) or reads[-1]
+        dsy_clusterkit.time, "monotonic", lambda: reads.append(next(clock)) or reads[-1]
     )
-    monkeypatch.setattr(wft_clusterkit.time, "sleep", lambda s: None)
-    forward = Forward("kind-wft", "wft-infra", "svc/temporal-frontend", 7233)
+    monkeypatch.setattr(dsy_clusterkit.time, "sleep", lambda s: None)
+    forward = Forward("kind-dsy", "dsy-infra", "svc/temporal-frontend", 7233)
     with pytest.raises(TimeoutError, match=f"did not listen in {UP_S:.0f} s"):
         forward.open()
     # The clock moves 60 s a read, so the forward gives up on the first read past UP_S.

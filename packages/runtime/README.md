@@ -1,17 +1,17 @@
-# wft-runtime
+# dsy-runtime
 
 The models and the loader of the workload contract, the toolchain pins, and the runtime that runs a guest with `wasmtime`.
 The contract it loads is pinned in `contracts/workload/README.md`.
 
 ## State
 
-The models, the loader `python -m wft_runtime.contract --check FILE`, the schema generator `python -m wft_runtime.gen [--check]` and the pins are delivered.
-`command`, `classify`, `calibrate` and `python -m wft_runtime run` are delivered too.
+The models, the loader `python -m dsy_runtime.contract --check FILE`, the schema generator `python -m dsy_runtime.gen [--check]` and the pins are delivered.
+`command`, `classify`, `calibrate` and `python -m dsy_runtime run` are delivered too.
 No module has a stub, so every `STUBBED` is empty, and `tests/test_stubs.py` fails on a name that raises the stub error without being listed there.
 
 ## Pins
 
-`wft_runtime.pins` names the `componentize-py`, WIT and `wasmtime` versions of a cache key and a guest run, and the guest memory figures that the S6 spike measured.
+`dsy_runtime.pins` names the `componentize-py`, WIT and `wasmtime` versions of a cache key and a guest run, and the guest memory figures that the S6 spike measured.
 `GUEST_OVERHEAD_MIB` is what `wasmtime` holds beyond the guest's linear memory in a warm run, and `GUEST_MIN_PAGES` is the initial memory that the workload component declares.
 `tests/test_pins.py` holds each version equal to `uv.lock`, the installed packages and `nix/wasm-tools.nix`.
 
@@ -19,5 +19,5 @@ No module has a stub, so every `STUBBED` is empty, and `tests/test_stubs.py` fai
 
 ```sh
 nix develop -c uv run --frozen pytest packages/runtime -q -rs
-nix develop -c uv run --frozen python -m wft_runtime.contract --check FILE
+nix develop -c uv run --frozen python -m dsy_runtime.contract --check FILE
 ```

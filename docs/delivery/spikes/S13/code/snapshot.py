@@ -13,7 +13,7 @@ import subprocess
 import sys
 import time
 
-NAMESPACES = {"wft-obs", "wft-control", "wft-workers", "wft-infra"}
+NAMESPACES = {"dsy-obs", "dsy-control", "dsy-workers", "dsy-infra"}
 
 
 def run(*args: str) -> str:
@@ -29,7 +29,7 @@ def kv(text: str) -> dict[str, int]:
 
 
 def main(label: str) -> None:
-    pods = json.loads(run("kubectl", "--context", "kind-wft", "get", "pods", "-A", "-o", "json"))[
+    pods = json.loads(run("kubectl", "--context", "kind-dsy", "get", "pods", "-A", "-o", "json"))[
         "items"
     ]
     by_node: dict[str, list] = {}
@@ -91,7 +91,7 @@ def main(label: str) -> None:
             )
     volumes = {}
     for line in node_exec(
-        "wft-worker2", "du -sb /var/local-path-provisioner/pvc-* 2>/dev/null"
+        "dsy-worker2", "du -sb /var/local-path-provisioner/pvc-* 2>/dev/null"
     ).splitlines():
         size, path = line.split()
         volumes[path.rsplit("_", 1)[-1]] = int(size)

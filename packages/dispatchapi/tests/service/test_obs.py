@@ -10,21 +10,21 @@ from datetime import UTC, datetime
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from types import SimpleNamespace
 
+import dsy_obs.setup as obs_setup
 import pytest
-import wft_obs.setup as obs_setup
+from dsy_broker.client import Credentials
+from dsy_broker.testing import FakeBroker
+from dsy_dispatchapi import service as service_module
+from dsy_dispatchapi.publish import Publisher, published_event
+from dsy_dispatchapi.service import routes
+from dsy_events import build_event
+from dsy_obs import logs, traces
+from dsy_obs.setup import setup
+from dsy_temporal import new_traceparent, trace_id_of
 from opentelemetry import trace
 from opentelemetry.proto.collector.trace.v1.trace_service_pb2 import ExportTraceServiceRequest
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.util._once import Once
-from wft_broker.client import Credentials
-from wft_broker.testing import FakeBroker
-from wft_dispatchapi import service as service_module
-from wft_dispatchapi.publish import Publisher, published_event
-from wft_dispatchapi.service import routes
-from wft_events import build_event
-from wft_obs import logs, traces
-from wft_obs.setup import setup
-from wft_temporal import new_traceparent, trace_id_of
 
 pytestmark = pytest.mark.integration
 
@@ -107,7 +107,7 @@ def test_an_accepted_line_and_a_span_for_each_accepted_job(
 ):
     monkeypatch.setenv(traces.ENDPOINT, receiver.url)
     setup("dispatch")
-    monkeypatch.setattr(routes, "tracer", trace.get_tracer("wft"))
+    monkeypatch.setattr(routes, "tracer", trace.get_tracer("dsy"))
     service = start(logins, gateway)
     dispatch = service.url("dispatch-api")
     source = kit.upload_bundle(dispatch, tmp_path)

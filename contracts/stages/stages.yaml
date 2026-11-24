@@ -1,72 +1,72 @@
 ---
 # Stage contract. Schema: stages.schema.json.
-# Event types are named without the dev.wft prefix and the major, as the schema directories are.
+# Event types are named without the dev.dsy prefix and the major, as the schema directories are.
 # A type that two stages emit says in a when condition which case each one covers.
 stages:
   dispatch:
-    source: /wft/dispatch
+    source: /dsy/dispatch
     reads: {attributes: [], data: {}}
     emits:
-      - {type: job.accepted, source: /wft/dispatch}
+      - {type: job.accepted, source: /dsy/dispatch}
       - type: job.published
-        source: /wft/dispatch
+        source: /dsy/dispatch
         when: the dispatch stage set the receipt after the broker accepted its publish
 
   control:
-    source: /wft/control
+    source: /dsy/control
     reads: {attributes: [], data: {}}
     emits:
-      - {type: job.pause.requested, source: /wft/control}
-      - {type: job.resume.requested, source: /wft/control}
-      - {type: job.cancel.requested, source: /wft/control}
-      - {type: job.terminate.requested, source: /wft/control}
+      - {type: job.pause.requested, source: /dsy/control}
+      - {type: job.resume.requested, source: /dsy/control}
+      - {type: job.cancel.requested, source: /dsy/control}
+      - {type: job.terminate.requested, source: /dsy/control}
       # A job that never started has no workflow, so the control stage records these moves itself.
-      - {type: job.paused, source: /wft/control, when: the job has no workflow because it never started}
-      - {type: job.resumed, source: /wft/control, when: the job has no workflow because it never started}
-      - {type: job.cancelled, source: /wft/control, when: the job has no workflow because it never started}
-      - {type: job.terminated, source: /wft/control, when: the job has no workflow because it never started}
+      - {type: job.paused, source: /dsy/control, when: the job has no workflow because it never started}
+      - {type: job.resumed, source: /dsy/control, when: the job has no workflow because it never started}
+      - {type: job.cancelled, source: /dsy/control, when: the job has no workflow because it never started}
+      - {type: job.terminated, source: /dsy/control, when: the job has no workflow because it never started}
 
   admission:
-    source: /wft/admission
+    source: /dsy/admission
     reads:
       attributes: [id, tenant, jobid, priorityclass, jobclass, traceparent]
       data:
         job.accepted: [manifest, batch_id, submission_key]
     emits:
-      - {type: job.admitted, source: /wft/admission}
+      - {type: job.admitted, source: /dsy/admission}
       # Nothing is emitted for a message that does not parse far enough to name a job.
-      - {type: job.dead.lettered, source: /wft/admission, when: the rejected message names a job}
-      - {type: job.published, source: /wft/admission, when: the claim set a missing receipt from a delivered message}
+      - {type: job.dead.lettered, source: /dsy/admission, when: the rejected message names a job}
+      - {type: job.published, source: /dsy/admission, when: the claim set a missing receipt from a delivered message}
 
   workflow:
-    source: /wft/workflow
+    source: /dsy/workflow
     reads:
       attributes: [tenant, jobid, priorityclass, jobclass, traceparent]
       data:
         job.accepted: [manifest, batch_id, submission_key]
     emits:
-      - {type: job.started, source: /wft/workflow}
-      - {type: job.paused, source: /wft/workflow, when: the job has a workflow}
-      - {type: job.resumed, source: /wft/workflow, when: the job has a workflow}
-      - {type: job.succeeded, source: /wft/workflow}
-      - {type: job.partial, source: /wft/workflow}
-      - {type: job.failed, source: /wft/workflow}
-      - {type: job.cancelled, source: /wft/workflow, when: the job has a workflow}
-      - {type: job.terminated, source: /wft/workflow, when: the job has a workflow}
-      - {type: task.placed, source: /wft/workflow}
-      - {type: task.started, source: /wft/workflow}
-      - {type: task.checkpoint.committed, source: /wft/workflow}
-      - {type: task.attempt.failed, source: /wft/workflow}
-      - {type: task.retries.exhausted, source: /wft/workflow}
-      - {type: task.succeeded, source: /wft/workflow}
-      - {type: task.failed, source: /wft/workflow}
-      - {type: task.skipped, source: /wft/workflow}
-      - {type: task.result.ready, source: /wft/workflow}
+      - {type: job.started, source: /dsy/workflow}
+      - {type: job.paused, source: /dsy/workflow, when: the job has a workflow}
+      - {type: job.resumed, source: /dsy/workflow, when: the job has a workflow}
+      - {type: job.succeeded, source: /dsy/workflow}
+      - {type: job.partial, source: /dsy/workflow}
+      - {type: job.failed, source: /dsy/workflow}
+      - {type: job.cancelled, source: /dsy/workflow, when: the job has a workflow}
+      - {type: job.terminated, source: /dsy/workflow, when: the job has a workflow}
+      - {type: task.placed, source: /dsy/workflow}
+      - {type: task.started, source: /dsy/workflow}
+      - {type: task.checkpoint.committed, source: /dsy/workflow}
+      - {type: task.attempt.failed, source: /dsy/workflow}
+      - {type: task.retries.exhausted, source: /dsy/workflow}
+      - {type: task.succeeded, source: /dsy/workflow}
+      - {type: task.failed, source: /dsy/workflow}
+      - {type: task.skipped, source: /dsy/workflow}
+      - {type: task.result.ready, source: /dsy/workflow}
     # The task request is handed to the activity and never written to the event history.
     builds: [task.requested]
 
   placement:
-    source: /wft/placement
+    source: /dsy/placement
     reads:
       attributes: []
       data:
@@ -74,7 +74,7 @@ stages:
     emits: []
 
   worker:
-    source: /wft/worker
+    source: /dsy/worker
     reads:
       attributes: [id, tenant, jobid, taskid, priorityclass, jobclass, traceparent]
       data:

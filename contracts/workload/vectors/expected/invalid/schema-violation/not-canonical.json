@@ -11,6 +11,6 @@
       ]
     }
   ],
-  "schema": "wft.sim.v1",
+  "schema": "dsy.sim.v1",
   "seed": 3
 }

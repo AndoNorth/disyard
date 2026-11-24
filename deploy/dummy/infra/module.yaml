@@ -1,6 +1,6 @@
 name: dummy-infra
 group: infra
-namespace: wft-infra
+namespace: dsy-infra
 artifact:
   kind: image
   pin: pause

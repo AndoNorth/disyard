@@ -5,9 +5,9 @@ from dataclasses import replace
 from pathlib import Path
 
 import pytest
-from wft_jobcheck import BundleInfo, BundleNotFound, StaticResolver, resolver_contract
-from wft_jobcheck.resolver import ResolverContractError, check_bundles
-from wft_jobdoc import parse_document
+from dsy_jobcheck import BundleInfo, BundleNotFound, StaticResolver, resolver_contract
+from dsy_jobcheck.resolver import ResolverContractError, check_bundles
+from dsy_jobdoc import parse_document
 
 VECTORS = Path(__file__).resolve().parents[3] / "contracts/job/vectors"
 TABLE = json.loads((VECTORS / "resolver.json").read_text())
@@ -94,5 +94,5 @@ def test_vectors_first_issue_has_the_code_of_its_directory(path):
 
 def test_a_bundle_with_another_hash_reports_no_further_issue(resolver, parse, good):
     good["tasks"]["build"]["params"]["source"]["sha256"] = "c" * 64
-    good["tasks"]["build"]["params"]["source"]["uri"] = f"s3://wft-sources/sha256/cc/{'c' * 64}"
+    good["tasks"]["build"]["params"]["source"]["uri"] = f"s3://dsy-sources/sha256/cc/{'c' * 64}"
     assert [i.code for i in check_bundles(parse(good), resolver)] == ["bundle-hash-mismatch"]

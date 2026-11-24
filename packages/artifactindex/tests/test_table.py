@@ -11,19 +11,19 @@ from typing import get_args
 import psycopg
 import pytest
 import yaml
+from dsy_artifactindex import Won, record_cache_entry
+from dsy_artifactindex.gen import KINDS_SQL, LAYOUT
+from dsy_artifactindex.models import LAYOUT as PACKAGE_LAYOUT
+from dsy_artifactindex.models import ArtifactRow
+from dsy_migrate import apply
+from dsy_migrate.runner import from_dirs
 from psycopg import errors
-from wft_artifactindex import Won, record_cache_entry
-from wft_artifactindex.gen import KINDS_SQL, LAYOUT
-from wft_artifactindex.models import LAYOUT as PACKAGE_LAYOUT
-from wft_artifactindex.models import ArtifactRow
-from wft_migrate import apply
-from wft_migrate.runner import from_dirs
 
 pytestmark = pytest.mark.integration
 
 ROOT = Path(__file__).resolve().parents[3]
 README = (ROOT / "contracts/state/README.md").read_text()
-MIGRATIONS = resources.files("wft_artifactindex.migrations")
+MIGRATIONS = resources.files("dsy_artifactindex.migrations")
 SHA = "a" * 64
 JOB = "3a9617fa-df7c-5760-a644-42d559e0f433"
 PRODUCER = ("producer_job", "producer_task", "producer_attempt")
@@ -35,8 +35,8 @@ ATTEMPT_SCOPED = [k for k, v in KINDS.items() if v["class"] == "attempt-scoped"]
 def reference_row(kind: str, n: int = 0, **override) -> dict:
     row = {
         "kind": kind,
-        "uri": f"s3://wft-test/{kind}/{n}",
-        "bucket": "wft-test",
+        "uri": f"s3://dsy-test/{kind}/{n}",
+        "bucket": "dsy-test",
         "key": f"{kind}/{n}",
         "sha256": SHA,
         "size": 1,
@@ -123,16 +123,16 @@ def test_attempt_columns_have_no_default(conn):
 
 
 def test_a_row_is_either_a_reference_or_a_cache_entry(conn):
-    insert(conn, reference_row("component", uri="s3://wft-test/wasm", key="wasm"))
-    insert(conn, cache_row("s3://wft-test/wasm"))
-    wasm = "s3://wft-test/wasm"
+    insert(conn, reference_row("component", uri="s3://dsy-test/wasm", key="wasm"))
+    insert(conn, cache_row("s3://dsy-test/wasm"))
+    wasm = "s3://dsy-test/wasm"
     for bad in (
         reference_row("source", cache_key=SHA),
         reference_row("source", wasm_uri=wasm),
         reference_row("source", last_used_at="2026-11-02T00:00:00Z"),
         {k: v for k, v in reference_row("source").items() if k != "uri"},
         {k: v for k, v in reference_row("source").items() if k != "sha256"},
-        cache_row(wasm, key="b" * 64, uri="s3://wft-test/cache"),
+        cache_row(wasm, key="b" * 64, uri="s3://dsy-test/cache"),
         cache_row(wasm, key="b" * 64, sha256=SHA),
         {k: v for k, v in cache_row(wasm, key="b" * 64).items() if k != "wasm_uri"},
         {k: v for k, v in cache_row(wasm, key="b" * 64).items() if k != "last_used_at"},
@@ -141,10 +141,10 @@ def test_a_row_is_either_a_reference_or_a_cache_entry(conn):
 
 
 def test_a_cache_row_has_null_producer_columns(conn):
-    insert(conn, reference_row("component", uri="s3://wft-test/wasm", key="wasm"))
+    insert(conn, reference_row("component", uri="s3://dsy-test/wasm", key="wasm"))
     for column, value in attempt_producer().items():
-        refused(conn, cache_row("s3://wft-test/wasm", key="c" * 64, **{column: value}))
-    entry = {k: v for k, v in cache_row("s3://wft-test/wasm", key="d" * 64).items() if k != "kind"}
+        refused(conn, cache_row("s3://dsy-test/wasm", key="c" * 64, **{column: value}))
+    entry = {k: v for k, v in cache_row("s3://dsy-test/wasm", key="d" * 64).items() if k != "kind"}
     assert isinstance(record_cache_entry(conn, entry), Won)
     assert conn.execute(
         "SELECT producer_job, producer_task, producer_attempt FROM artifact"
@@ -153,17 +153,17 @@ def test_a_cache_row_has_null_producer_columns(conn):
 
 
 def test_the_first_writer_of_a_cache_key_wins_at_the_index(conn):
-    insert(conn, reference_row("component", uri="s3://wft-test/wasm", key="wasm"))
-    insert(conn, cache_row("s3://wft-test/wasm"))
-    refused(conn, cache_row("s3://wft-test/wasm"), errors.UniqueViolation)
+    insert(conn, reference_row("component", uri="s3://dsy-test/wasm", key="wasm"))
+    insert(conn, cache_row("s3://dsy-test/wasm"))
+    refused(conn, cache_row("s3://dsy-test/wasm"), errors.UniqueViolation)
 
 
 def test_raw_delete_of_a_pinned_wasm_is_refused_by_the_foreign_key(conn):
-    insert(conn, reference_row("component", uri="s3://wft-test/wasm", key="wasm"))
-    insert(conn, cache_row("s3://wft-test/wasm"))
+    insert(conn, reference_row("component", uri="s3://dsy-test/wasm", key="wasm"))
+    insert(conn, cache_row("s3://dsy-test/wasm"))
     with pytest.raises(errors.ForeignKeyViolation):
         with conn.transaction():
-            conn.execute("DELETE FROM artifact WHERE uri = 's3://wft-test/wasm'")
+            conn.execute("DELETE FROM artifact WHERE uri = 's3://dsy-test/wasm'")
 
 
 def test_content_addressed_kinds_have_no_producer_and_attempt_scoped_kinds_have_one(conn):
@@ -185,12 +185,12 @@ def test_content_addressed_kinds_have_no_producer_and_attempt_scoped_kinds_have_
 def scratch_root(tmp_path: Path) -> Path:
     layout = yaml.safe_load((ROOT / LAYOUT).read_text())
     layout["kinds"]["scratch-blob"] = {
-        "bucket": "wft-sources",
+        "bucket": "dsy-sources",
         "class": "content-addressed",
         "key": "sha256/<hash2>/<hash>",
     }
     layout["kinds"]["scratch-run"] = {
-        "bucket": "wft-results",
+        "bucket": "dsy-results",
         "class": "attempt-scoped",
         "key": "<tenant>/<batch>/<job>/<seed>/<task>/<attempt>/<name>",
     }
@@ -202,7 +202,7 @@ def scratch_root(tmp_path: Path) -> Path:
 def test_a_kind_added_to_a_scratch_layout_is_accepted_by_the_table(tmp_path, empty_db):
     """Goes through the generator and the runner and never through the library."""
     root = scratch_root(tmp_path)
-    subprocess.run([sys.executable, "-m", "wft_artifactindex.gen", "--root", str(root)], check=True)
+    subprocess.run([sys.executable, "-m", "dsy_artifactindex.gen", "--root", str(root)], check=True)
     shutil.copy(MIGRATIONS / "0300_artifact_index.sql", root)
     shutil.copy(root / KINDS_SQL, root)
     apply(empty_db, from_dirs([root]))
@@ -240,8 +240,8 @@ def test_from_empty_and_from_previous_release(tmp_path, empty_db, appdb_server):
     assert "0301_artifact_use.sql" not in [m.name for m in previous]
     apply(empty_previous, previous)
     with psycopg.connect(empty_previous) as conn:
-        insert(conn, reference_row("component", uri="s3://wft-test/wasm", key="wasm"))
-        insert(conn, cache_row("s3://wft-test/wasm"))
+        insert(conn, reference_row("component", uri="s3://dsy-test/wasm", key="wasm"))
+        insert(conn, cache_row("s3://dsy-test/wasm"))
         insert(conn, reference_row("source", 1, deleted_at="2026-11-02T00:00:00Z"))
     assert apply(empty_previous, current) == ["0301_artifact_use.sql"]
     with psycopg.connect(empty_previous) as conn:
@@ -254,12 +254,12 @@ def test_from_empty_and_from_previous_release(tmp_path, empty_db, appdb_server):
             ("source", None, None),
         ]
         assert conn.execute("SELECT count(*) FROM artifact_use").fetchone() == (0,)
-        refused(conn, reference_row("source", 2, build_info_uri="s3://wft-test/wasm"))
+        refused(conn, reference_row("source", 2, build_info_uri="s3://dsy-test/wasm"))
         refused(conn, reference_row("source", 3, purged_at="2026-11-02T00:00:00Z"))
         refused(
             conn,
             cache_row(
-                "s3://wft-test/wasm",
+                "s3://dsy-test/wasm",
                 key="b" * 64,
                 deleted_at=None,
                 purged_at="2026-11-02T00:00:00Z",

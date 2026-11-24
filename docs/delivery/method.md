@@ -1,6 +1,6 @@
 # Delivery method
 
-How Weft epics are delivered one at a time.
+How Disyard epics are delivered one at a time.
 Every epic goes through four steps: prepare, build, verify, close.
 Prepare produces one file, the epic breakdown spec (`docs/delivery/epics/NN-<slug>.md`).
 The captain reviews that file once, and that review is the alignment step for the domain.
@@ -90,8 +90,8 @@ The lane issue template is a markdown template, not an issue form, because worke
 4. `main` stays green (`nix develop -c just ci`).
    There is no long-lived integration branch, and a lane that falls more than a day behind rebases.
    Within a lane, issues merge in order when the issue says `needs`, and across lanes any order works.
-5. Containers use a worker slot: project name `wft-<slot>`, host ports `127.0.0.1:<base+slot*10+k>`, label `wft.dev/verify-run=<run id>`.
-   The kind cluster is single-owner: every recipe that touches it takes `flock /tmp/wft-cluster.lock`, and a recipe refuses to drive a cluster it did not start.
+5. Containers use a worker slot: project name `dsy-<slot>`, host ports `127.0.0.1:<base+slot*10+k>`, label `dsy.dev/verify-run=<run id>`.
+   The kind cluster is single-owner: every recipe that touches it takes `flock /tmp/dsy-cluster.lock`, and a recipe refuses to drive a cluster it did not start.
 6. An out-of-lane edit is a review rejection, not a merge conflict to resolve.
    The worker comments on the issue and the spec author fixes the lane table.
 
@@ -151,7 +151,7 @@ The later epic's breakdown spec lists the child issue under Consumes.
 
 ## The verifier convention
 
-Retired on 2026-11-15 with the `verify` and `verify-clean` recipes (https://github.com/AndoNorth/weft/issues/366), because no epic built a verifier.
+Retired on 2026-11-15 with the `verify` and `verify-clean` recipes (https://github.com/AndoNorth/disyard/issues/366), because no epic built a verifier.
 Each issue names its tests or commands, and each epic's exit test is a command checklist, run by a worker who did not write the lanes.
 Before reporting done, a worker runs `nix develop -c just pre-pr`, `just doctor` and every test or command the issue names, and reports the commit sha, each result, and what was not run and why.
 `just pre-pr` runs lint and the other checks of `just ci`, the unit tests of the changed packages and of the packages that depend on them, and the integration tests of the changed packages.

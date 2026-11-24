@@ -13,8 +13,8 @@ source scripts/cluster/forward.sh
 mode=${1:-apply}
 case $mode in apply | check) ;; *) echo "usage: bootstrap.sh [apply|check]" >&2; exit 2 ;; esac
 
-context=kind-wft
-namespace=wft-infra
+context=kind-dsy
+namespace=dsy-infra
 s3_port=8333
 admin_port=12535
 k() { kubectl --context "$context" -n "$namespace" "$@"; }

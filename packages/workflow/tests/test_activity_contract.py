@@ -6,11 +6,9 @@ import asyncio
 import uuid
 
 import pytest
-from temporalio import activity
-from temporalio.worker import Worker
-from wft_workflow.contract import naming
-from wft_workflow.models import TaskInput
-from wft_workflow.testing import (
+from dsy_workflow.contract import naming
+from dsy_workflow.models import TaskInput
+from dsy_workflow.testing import (
     ContractCases,
     Die,
     Fail,
@@ -23,6 +21,8 @@ from wft_workflow.testing import (
     connect,
     run_task_once,
 )
+from temporalio import activity
+from temporalio.worker import Worker
 
 pytestmark = pytest.mark.integration
 
@@ -59,12 +59,12 @@ def test_fake_pool_passes_activity_contract(temporal, task_input, pool):
 
     calls = run(body())
     assert [task.task_attempt for task in calls] == ([1, 2, 3] if pool == "simulate" else [1, 2])
-    assert naming().pools[pool] == f"wft-{pool}"
+    assert naming().pools[pool] == f"dsy-{pool}"
 
 
 def contract_failure(temporal, task_input, script, worker=None) -> str:
     """The message of the activity contract run against a simulate worker on a queue of its own."""
-    queue = f"wft-simulate-{uuid.uuid4()}"
+    queue = f"dsy-simulate-{uuid.uuid4()}"
 
     async def body():
         client = await connect(temporal)
@@ -119,7 +119,7 @@ def test_activity_contract_refuses_a_cancel_without_operator_interrupt(temporal,
 def test_fake_pool_lost_worker_outcomes_time_out(temporal, task_input, outcome, timeouts, expected):
     async def body():
         client = await connect(temporal)
-        queue = f"wft-simulate-{uuid.uuid4()}"
+        queue = f"dsy-simulate-{uuid.uuid4()}"
         async with FakePool(client, "simulate", lambda task: outcome, queue=queue) as fake:
             task = TaskInput.model_validate(task_input("simulate"))
             answer = await run_task_once(client, queue, task, **timeouts)

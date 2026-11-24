@@ -4,10 +4,10 @@ import json
 from pathlib import Path
 
 import pytest
-from wft_compat import breaking_changes
-from wft_events.models import DATA_MODELS
-from wft_events.profile import CONTRACT_DIR, known_versions
-from wft_events.schemagen import render
+from dsy_compat import breaking_changes
+from dsy_events.models import DATA_MODELS
+from dsy_events.profile import CONTRACT_DIR, known_versions
+from dsy_events.schemagen import render
 
 FIXTURES = Path(__file__).parent / "fixtures/evolution"
 

@@ -20,23 +20,23 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 import psycopg
-from wft_artifactindex import index_reference, link_use
-from wft_events import build_event
-from wft_eventstore import insert_events
-from wft_eventstore.store import _columns
-from wft_jobdoc import parse_document
-from wft_jobdoc.profile_files import load_profile
-from wft_jobstate import JobRow, insert_accepted
-from wft_jobstate.jobs import _params
-from wft_keys import batch_id as derive_batch_id
-from wft_keys import job_id as derive_job_id
-from wft_plan import canonical_bytes, check_job_params, compile_plan, manifest_reference
+from dsy_artifactindex import index_reference, link_use
+from dsy_events import build_event
+from dsy_eventstore import insert_events
+from dsy_eventstore.store import _columns
+from dsy_jobdoc import parse_document
+from dsy_jobdoc.profile_files import load_profile
+from dsy_jobstate import JobRow, insert_accepted
+from dsy_jobstate.jobs import _params
+from dsy_keys import batch_id as derive_batch_id
+from dsy_keys import job_id as derive_job_id
+from dsy_plan import canonical_bytes, check_job_params, compile_plan, manifest_reference
 
 ROOT = Path(__file__).resolve().parents[5]
 TENANT = "acme"
 SOURCE_SHA = "a" * 64
 SOURCE = {
-    "uri": f"s3://wft-sources/sha256/aa/{SOURCE_SHA}",
+    "uri": f"s3://dsy-sources/sha256/aa/{SOURCE_SHA}",
     "sha256": SOURCE_SHA,
     "size": 2048,
     "name": "bundle.tar.gz",
@@ -44,7 +44,7 @@ SOURCE = {
 }
 # The three-task template of the plan tests, with a seed and one integer parameter per job.
 TEMPLATE = {
-    "schema": "urn:wft:schema:job:1.0",
+    "schema": "urn:dsy:schema:job:1.0",
     "parameters": {"seed": "seed", "n": "integer"},
     "tasks": {
         "build": {"type": "compile", "params": {"source": SOURCE, "entry": "sim"}},
@@ -165,7 +165,7 @@ def run_call(dispatch, artifacts, profile, jobs, chunk_size, objects, batch_key,
                     priority_class="standard",
                     job_class="short",
                     manifest_ref=call.manifest,
-                    schema_version="urn:wft:schema:job.accepted:1.0",
+                    schema_version="urn:dsy:schema:job.accepted:1.0",
                     traceparent=traceparent(),
                     seed=entry["seed"],
                     parameters=entry["parameters"],
@@ -193,7 +193,7 @@ def run_call(dispatch, artifacts, profile, jobs, chunk_size, objects, batch_key,
             events = [
                 build_event(
                     "job.accepted",
-                    source="/wft/dispatch",
+                    source="/dsy/dispatch",
                     tenant=row.tenant,
                     jobid=row.job_id,
                     priorityclass=row.priority_class,
@@ -254,7 +254,7 @@ def python_costs(dispatch, profile) -> dict:
             batch_id=call.batch_id,
             priority_class="standard",
             manifest_ref=call.manifest,
-            schema_version="urn:wft:schema:job.accepted:1.0",
+            schema_version="urn:dsy:schema:job.accepted:1.0",
             traceparent=traceparent(),
             seed=i,
             parameters={"n": i},
@@ -269,7 +269,7 @@ def python_costs(dispatch, profile) -> dict:
     events = [
         build_event(
             "job.accepted",
-            source="/wft/dispatch",
+            source="/dsy/dispatch",
             tenant=row.tenant,
             jobid=row.job_id,
             priorityclass=row.priority_class,

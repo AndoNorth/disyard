@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/AndoNorth/weft/contracts/versions.schema.json",
+  "$id": "https://github.com/AndoNorth/disyard/contracts/versions.schema.json",
   "title": "deploy/versions.yaml",
   "type": "object",
   "required": ["kind_node_image", "charts", "images"],

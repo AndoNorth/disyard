@@ -8,7 +8,7 @@ set -uo pipefail
 root=$(cd "$(dirname "${BASH_SOURCE[0]}")/../../../../.." && pwd)
 port=${1:-19025}
 weed="chrislusf/seaweedfs:4.51@$(yq '.images["chrislusf/seaweedfs"].digest' "$root/deploy/versions.yaml")"
-name=wft-s14-backend
+name=dsy-s14-backend
 trap 'docker rm -f "$name" >/dev/null 2>&1' EXIT
 
 start() {

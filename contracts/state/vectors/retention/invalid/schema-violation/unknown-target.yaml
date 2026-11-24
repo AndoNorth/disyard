@@ -1,5 +1,5 @@
 ---
 windows:
   event: {drop_after_days: 14}
-  wft-elsewhere: {expire_after_days: 28}
+  dsy-elsewhere: {expire_after_days: 28}
 housekeeping: {}

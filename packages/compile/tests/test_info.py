@@ -1,12 +1,12 @@
 """bundle.info is what the dispatch resolver is built on, so a resolver over it meets the contract
-the validator relies on, and `python -m wft_compile info` prints the same facts."""
+the validator relies on, and `python -m dsy_compile info` prints the same facts."""
 
 import json
 from dataclasses import dataclass
 
-from wft_compile import bundle
-from wft_compile.__main__ import main
-from wft_jobcheck import BundleNotFound, resolver_contract
+from dsy_compile import bundle
+from dsy_compile.__main__ import main
+from dsy_jobcheck import BundleNotFound, resolver_contract
 
 
 @dataclass(frozen=True)

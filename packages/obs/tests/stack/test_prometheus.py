@@ -12,7 +12,7 @@ from pathlib import Path
 
 import pytest
 import yaml
-from wft_obs.targets import JOBS
+from dsy_obs.targets import JOBS
 
 ROOT = Path(__file__).resolve().parents[4]
 OBS = ROOT / "deploy/obs"
@@ -73,8 +73,8 @@ def test_deployments_of_both_modules_recreate_their_pod(name):
 def test_pod_runs_on_the_obs_pool_inside_the_resources_of_its_manifest(name):
     config = MODULES[name]
     pod = deployment(config)["spec"]["template"]["spec"]
-    assert pod["nodeSelector"] == {"wft.dev/pool": "obs"}
-    assert pod["tolerations"][0]["key"] == "wft.dev/pool"
+    assert pod["nodeSelector"] == {"dsy.dev/pool": "obs"}
+    assert pod["tolerations"][0]["key"] == "dsy.dev/pool"
     [container] = pod["containers"]
     module = yaml.safe_load((OBS / name / "module.yaml").read_text())
     assert container["resources"] == module["resources"][name]
@@ -149,13 +149,13 @@ def test_pod_scrape_keeps_annotated_pods_and_named_metrics_ports():
 def test_kube_state_metrics_serves_the_state_the_rules_read():
     resources = {
         r
-        for rule in objects(kube_state_metrics)[("ClusterRole", "wft-kube-state-metrics")]["rules"]
+        for rule in objects(kube_state_metrics)[("ClusterRole", "dsy-kube-state-metrics")]["rules"]
         for r in rule["resources"]
     }
     assert {"nodes", "pods", "deployments"} <= resources
     assert all(
         rule["verbs"] == ["list", "watch"]
-        for rule in objects(kube_state_metrics)[("ClusterRole", "wft-kube-state-metrics")]["rules"]
+        for rule in objects(kube_state_metrics)[("ClusterRole", "dsy-kube-state-metrics")]["rules"]
     )
     [container] = deployment(kube_state_metrics)["spec"]["template"]["spec"]["containers"]
     [flag] = [a for a in container["args"] if a.startswith("--resources=")]
@@ -168,4 +168,4 @@ def test_every_object_is_in_the_obs_namespace_or_cluster_scoped():
             if obj["kind"].startswith("ClusterRole"):
                 assert "namespace" not in obj["metadata"]
             else:
-                assert obj["metadata"]["namespace"] == "wft-obs"
+                assert obj["metadata"]["namespace"] == "dsy-obs"

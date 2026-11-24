@@ -3,15 +3,15 @@
 # Requests equal limits, strategy Recreate, data on local-path volumes, as the epic's D9, D10 and D11 say.
 apiVersion: v1
 kind: ServiceAccount
-metadata: {name: prometheus, namespace: wft-obs}
+metadata: {name: prometheus, namespace: dsy-obs}
 ---
 apiVersion: v1
 kind: ServiceAccount
-metadata: {name: kube-state-metrics, namespace: wft-obs}
+metadata: {name: kube-state-metrics, namespace: dsy-obs}
 ---
 apiVersion: v1
 kind: ServiceAccount
-metadata: {name: collector, namespace: wft-obs}
+metadata: {name: collector, namespace: dsy-obs}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -27,7 +27,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata: {name: s13-prometheus}
 roleRef: {apiGroup: rbac.authorization.k8s.io, kind: ClusterRole, name: s13-prometheus}
-subjects: [{kind: ServiceAccount, name: prometheus, namespace: wft-obs}]
+subjects: [{kind: ServiceAccount, name: prometheus, namespace: dsy-obs}]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -47,7 +47,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata: {name: s13-kube-state-metrics}
 roleRef: {apiGroup: rbac.authorization.k8s.io, kind: ClusterRole, name: s13-kube-state-metrics}
-subjects: [{kind: ServiceAccount, name: kube-state-metrics, namespace: wft-obs}]
+subjects: [{kind: ServiceAccount, name: kube-state-metrics, namespace: dsy-obs}]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -64,11 +64,11 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata: {name: s13-collector}
 roleRef: {apiGroup: rbac.authorization.k8s.io, kind: ClusterRole, name: s13-collector}
-subjects: [{kind: ServiceAccount, name: collector, namespace: wft-obs}]
+subjects: [{kind: ServiceAccount, name: collector, namespace: dsy-obs}]
 ---
 apiVersion: v1
 kind: ConfigMap
-metadata: {name: prometheus, namespace: wft-obs}
+metadata: {name: prometheus, namespace: dsy-obs}
 data:
   prometheus.yml: |
     global:
@@ -90,7 +90,7 @@ data:
       - job_name: rabbitmq-detailed
         metrics_path: /metrics/detailed
         params: {family: [queue_coarse_metrics, queue_consumer_count]}
-        kubernetes_sd_configs: [{role: pod, namespaces: {names: [wft-infra]}}]
+        kubernetes_sd_configs: [{role: pod, namespaces: {names: [dsy-infra]}}]
         relabel_configs:
           - {source_labels: [__meta_kubernetes_pod_container_port_number], regex: '15692', action: keep}
       - job_name: kubelet
@@ -113,26 +113,26 @@ data:
       - job_name: prometheus
         static_configs: [{targets: ['localhost:9090']}]
       - job_name: kube-state-metrics
-        static_configs: [{targets: ['kube-state-metrics.wft-obs:8080']}]
+        static_configs: [{targets: ['kube-state-metrics.dsy-obs:8080']}]
       - job_name: loki
-        static_configs: [{targets: ['loki.wft-obs:3100']}]
+        static_configs: [{targets: ['loki.dsy-obs:3100']}]
       - job_name: tempo
-        static_configs: [{targets: ['tempo.wft-obs:3200']}]
+        static_configs: [{targets: ['tempo.dsy-obs:3200']}]
       - job_name: pyroscope
-        static_configs: [{targets: ['pyroscope.wft-obs:4040']}]
+        static_configs: [{targets: ['pyroscope.dsy-obs:4040']}]
       - job_name: grafana
-        static_configs: [{targets: ['grafana.wft-obs:3000']}]
+        static_configs: [{targets: ['grafana.dsy-obs:3000']}]
       - job_name: collector
-        static_configs: [{targets: ['collector.wft-obs:8888']}]
+        static_configs: [{targets: ['collector.dsy-obs:8888']}]
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
-metadata: {name: prometheus, namespace: wft-obs}
+metadata: {name: prometheus, namespace: dsy-obs}
 spec: {accessModes: [ReadWriteOnce], resources: {requests: {storage: 5Gi}}}
 ---
 apiVersion: apps/v1
 kind: Deployment
-metadata: {name: prometheus, namespace: wft-obs}
+metadata: {name: prometheus, namespace: dsy-obs}
 spec:
   replicas: 1
   strategy: {type: Recreate}
@@ -141,8 +141,8 @@ spec:
     metadata: {labels: {app: prometheus, app.kubernetes.io/name: prometheus}}
     spec:
       serviceAccountName: prometheus
-      nodeSelector: {wft.dev/pool: obs}
-      tolerations: [{key: wft.dev/pool, operator: Equal, value: obs, effect: NoSchedule}]
+      nodeSelector: {dsy.dev/pool: obs}
+      tolerations: [{key: dsy.dev/pool, operator: Equal, value: obs, effect: NoSchedule}]
       securityContext: {runAsUser: 65534, runAsGroup: 65534, fsGroup: 65534}
       containers:
         - name: prometheus
@@ -163,12 +163,12 @@ spec:
 ---
 apiVersion: v1
 kind: Service
-metadata: {name: prometheus, namespace: wft-obs}
+metadata: {name: prometheus, namespace: dsy-obs}
 spec: {selector: {app: prometheus}, ports: [{name: http, port: 9090}]}
 ---
 apiVersion: apps/v1
 kind: Deployment
-metadata: {name: kube-state-metrics, namespace: wft-obs}
+metadata: {name: kube-state-metrics, namespace: dsy-obs}
 spec:
   replicas: 1
   strategy: {type: Recreate}
@@ -177,8 +177,8 @@ spec:
     metadata: {labels: {app: kube-state-metrics}}
     spec:
       serviceAccountName: kube-state-metrics
-      nodeSelector: {wft.dev/pool: obs}
-      tolerations: [{key: wft.dev/pool, operator: Equal, value: obs, effect: NoSchedule}]
+      nodeSelector: {dsy.dev/pool: obs}
+      tolerations: [{key: dsy.dev/pool, operator: Equal, value: obs, effect: NoSchedule}]
       containers:
         - name: kube-state-metrics
           image: registry.k8s.io/kube-state-metrics/kube-state-metrics:v2.20.0
@@ -187,12 +187,12 @@ spec:
 ---
 apiVersion: v1
 kind: Service
-metadata: {name: kube-state-metrics, namespace: wft-obs}
+metadata: {name: kube-state-metrics, namespace: dsy-obs}
 spec: {selector: {app: kube-state-metrics}, ports: [{name: http, port: 8080}]}
 ---
 apiVersion: v1
 kind: ConfigMap
-metadata: {name: loki, namespace: wft-obs}
+metadata: {name: loki, namespace: dsy-obs}
 data:
   loki.yaml: |
     auth_enabled: false
@@ -222,12 +222,12 @@ data:
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
-metadata: {name: loki, namespace: wft-obs}
+metadata: {name: loki, namespace: dsy-obs}
 spec: {accessModes: [ReadWriteOnce], resources: {requests: {storage: 10Gi}}}
 ---
 apiVersion: apps/v1
 kind: Deployment
-metadata: {name: loki, namespace: wft-obs}
+metadata: {name: loki, namespace: dsy-obs}
 spec:
   replicas: 1
   strategy: {type: Recreate}
@@ -235,8 +235,8 @@ spec:
   template:
     metadata: {labels: {app: loki}}
     spec:
-      nodeSelector: {wft.dev/pool: obs}
-      tolerations: [{key: wft.dev/pool, operator: Equal, value: obs, effect: NoSchedule}]
+      nodeSelector: {dsy.dev/pool: obs}
+      tolerations: [{key: dsy.dev/pool, operator: Equal, value: obs, effect: NoSchedule}]
       securityContext: {runAsUser: 10001, runAsGroup: 10001, fsGroup: 10001}
       containers:
         - name: loki
@@ -251,12 +251,12 @@ spec:
 ---
 apiVersion: v1
 kind: Service
-metadata: {name: loki, namespace: wft-obs}
+metadata: {name: loki, namespace: dsy-obs}
 spec: {selector: {app: loki}, ports: [{name: http, port: 3100}]}
 ---
 apiVersion: v1
 kind: ConfigMap
-metadata: {name: tempo, namespace: wft-obs}
+metadata: {name: tempo, namespace: dsy-obs}
 data:
   tempo.yaml: |
     server: {http_listen_port: 3200}
@@ -277,12 +277,12 @@ data:
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
-metadata: {name: tempo, namespace: wft-obs}
+metadata: {name: tempo, namespace: dsy-obs}
 spec: {accessModes: [ReadWriteOnce], resources: {requests: {storage: 4Gi}}}
 ---
 apiVersion: apps/v1
 kind: Deployment
-metadata: {name: tempo, namespace: wft-obs}
+metadata: {name: tempo, namespace: dsy-obs}
 spec:
   replicas: 1
   strategy: {type: Recreate}
@@ -290,8 +290,8 @@ spec:
   template:
     metadata: {labels: {app: tempo}}
     spec:
-      nodeSelector: {wft.dev/pool: obs}
-      tolerations: [{key: wft.dev/pool, operator: Equal, value: obs, effect: NoSchedule}]
+      nodeSelector: {dsy.dev/pool: obs}
+      tolerations: [{key: dsy.dev/pool, operator: Equal, value: obs, effect: NoSchedule}]
       securityContext: {runAsUser: 10001, runAsGroup: 10001, fsGroup: 10001}
       containers:
         - name: tempo
@@ -306,17 +306,17 @@ spec:
 ---
 apiVersion: v1
 kind: Service
-metadata: {name: tempo, namespace: wft-obs}
+metadata: {name: tempo, namespace: dsy-obs}
 spec: {selector: {app: tempo}, ports: [{name: http, port: 3200}, {name: otlp-grpc, port: 4317}]}
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
-metadata: {name: pyroscope, namespace: wft-obs}
+metadata: {name: pyroscope, namespace: dsy-obs}
 spec: {accessModes: [ReadWriteOnce], resources: {requests: {storage: 4Gi}}}
 ---
 apiVersion: apps/v1
 kind: Deployment
-metadata: {name: pyroscope, namespace: wft-obs}
+metadata: {name: pyroscope, namespace: dsy-obs}
 spec:
   replicas: 1
   strategy: {type: Recreate}
@@ -324,8 +324,8 @@ spec:
   template:
     metadata: {labels: {app: pyroscope, app.kubernetes.io/name: pyroscope}}
     spec:
-      nodeSelector: {wft.dev/pool: obs}
-      tolerations: [{key: wft.dev/pool, operator: Equal, value: obs, effect: NoSchedule}]
+      nodeSelector: {dsy.dev/pool: obs}
+      tolerations: [{key: dsy.dev/pool, operator: Equal, value: obs, effect: NoSchedule}]
       securityContext: {runAsUser: 10001, runAsGroup: 10001, fsGroup: 10001}
       containers:
         - name: pyroscope
@@ -343,12 +343,12 @@ spec:
 ---
 apiVersion: v1
 kind: Service
-metadata: {name: pyroscope, namespace: wft-obs}
+metadata: {name: pyroscope, namespace: dsy-obs}
 spec: {selector: {app: pyroscope}, ports: [{name: http, port: 4040}]}
 ---
 apiVersion: v1
 kind: ConfigMap
-metadata: {name: collector, namespace: wft-obs}
+metadata: {name: collector, namespace: dsy-obs}
 data:
   collector.yaml: |
     receivers:
@@ -363,8 +363,8 @@ data:
       memory_limiter: {check_interval: 1s, limit_mib: 100, spike_limit_mib: 20}
       batch: {}
     exporters:
-      otlphttp/loki: {endpoint: "http://loki.wft-obs:3100/otlp"}
-      otlp/tempo: {endpoint: "tempo.wft-obs:4317", tls: {insecure: true}}
+      otlphttp/loki: {endpoint: "http://loki.dsy-obs:3100/otlp"}
+      otlp/tempo: {endpoint: "tempo.dsy-obs:4317", tls: {insecure: true}}
     service:
       telemetry:
         metrics: {readers: [{pull: {exporter: {prometheus: {host: 0.0.0.0, port: 8888}}}}]}
@@ -374,7 +374,7 @@ data:
 ---
 apiVersion: apps/v1
 kind: Deployment
-metadata: {name: collector, namespace: wft-obs}
+metadata: {name: collector, namespace: dsy-obs}
 spec:
   replicas: 1
   strategy: {type: Recreate}
@@ -383,8 +383,8 @@ spec:
     metadata: {labels: {app: collector, app.kubernetes.io/name: collector}}
     spec:
       serviceAccountName: collector
-      nodeSelector: {wft.dev/pool: obs}
-      tolerations: [{key: wft.dev/pool, operator: Equal, value: obs, effect: NoSchedule}]
+      nodeSelector: {dsy.dev/pool: obs}
+      tolerations: [{key: dsy.dev/pool, operator: Equal, value: obs, effect: NoSchedule}]
       containers:
         - name: collector
           image: otel/opentelemetry-collector-contrib:0.165.0
@@ -397,12 +397,12 @@ spec:
 ---
 apiVersion: v1
 kind: Service
-metadata: {name: collector, namespace: wft-obs}
+metadata: {name: collector, namespace: dsy-obs}
 spec: {selector: {app: collector}, ports: [{name: otlp-http, port: 4318}, {name: otlp-grpc, port: 4317}, {name: metrics, port: 8888}]}
 ---
 apiVersion: apps/v1
 kind: Deployment
-metadata: {name: state-inputs, namespace: wft-obs}
+metadata: {name: state-inputs, namespace: dsy-obs}
 spec:
   replicas: 1
   strategy: {type: Recreate}
@@ -410,8 +410,8 @@ spec:
   template:
     metadata: {labels: {app: state-inputs}}
     spec:
-      nodeSelector: {wft.dev/pool: obs}
-      tolerations: [{key: wft.dev/pool, operator: Equal, value: obs, effect: NoSchedule}]
+      nodeSelector: {dsy.dev/pool: obs}
+      tolerations: [{key: dsy.dev/pool, operator: Equal, value: obs, effect: NoSchedule}]
       containers:
         - name: state-inputs
           image: localhost:5001/s13-exporter:1

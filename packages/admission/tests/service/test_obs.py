@@ -10,11 +10,11 @@ import urllib.request
 from datetime import UTC, datetime
 from types import SimpleNamespace
 
-from wft_admission.policy import Caps
-from wft_admission.service import _timed
-from wft_admission.service.metrics import Metrics
-from wft_broker.tenancy import load
-from wft_obs import logs
+from dsy_admission.policy import Caps
+from dsy_admission.service import _timed
+from dsy_admission.service.metrics import Metrics
+from dsy_broker.tenancy import load
+from dsy_obs import logs
 
 TRACE_ID = "0af7651916cd43dd8448eb211c80319c"
 TRACEPARENT = f"00-{TRACE_ID}-b7ad6b7169203331-01"
@@ -54,5 +54,5 @@ def test_cap_gauge_by_scope(runtime, metrics_port):
     body = urllib.request.urlopen(f"http://127.0.0.1:{metrics_port}/metrics").read().decode()
     for scope, cap in (("global", caps.global_), ("open", caps.open)):
         assert re.search(
-            rf'wft_admission_cap_jobs\{{[^}}]*scope="{scope}"[^}}]*\}} {cap}\b', body
+            rf'dsy_admission_cap_jobs\{{[^}}]*scope="{scope}"[^}}]*\}} {cap}\b', body
         ), body

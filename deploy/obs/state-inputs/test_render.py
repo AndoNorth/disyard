@@ -14,7 +14,7 @@ from pathlib import Path
 
 import pytest
 import yaml
-from wft_obs.inputs.__main__ import ADDRESS_ENV, DSN_ENV, READY_ENV
+from dsy_obs.inputs.__main__ import ADDRESS_ENV, DSN_ENV, READY_ENV
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[2]
@@ -46,15 +46,15 @@ def tiltfile_result(root: Path, obs: str | None):
         + "load_dynamic('deploy/obs/state-inputs/Tiltfile.module')\n"
         + f"config.set_enabled_resources({DEPENDS + ['state-inputs']})\n"
     )
-    env = {k: v for k, v in os.environ.items() if k != "WFT_OBS"}
+    env = {k: v for k, v in os.environ.items() if k != "DSY_OBS"}
     env |= {
-        "KUBECONFIG": str(ROOT / "scripts/tilt/fixtures/kubeconfig-wft.yaml"),
-        "WFT_STATE_DIR": str(state),
+        "KUBECONFIG": str(ROOT / "scripts/tilt/fixtures/kubeconfig-dsy.yaml"),
+        "DSY_STATE_DIR": str(state),
         # logins.py runs in the environment of the tree, which the copy does not hold.
         "UV_PROJECT": str(ROOT),
     }
     if obs is not None:
-        env["WFT_OBS"] = obs
+        env["DSY_OBS"] = obs
     return subprocess.run(
         ["tilt", "alpha", "tiltfile-result", "-f", str(root / "Tiltfile")],
         cwd=root,
@@ -93,12 +93,12 @@ def env_of(objects) -> dict[str, str]:
 def test_one_replica_recreated_on_the_obs_pool(rendered):
     _, objects = rendered
     deployment = objects["Deployment", "state-inputs"]
-    assert deployment["metadata"]["namespace"] == "wft-obs"
+    assert deployment["metadata"]["namespace"] == "dsy-obs"
     assert deployment["spec"]["replicas"] == 1
     assert deployment["spec"]["strategy"] == {"type": "Recreate"}
     pod = deployment["spec"]["template"]["spec"]
-    assert pod["nodeSelector"] == {"wft.dev/pool": "obs"}
-    assert pod["tolerations"][0]["key"] == "wft.dev/pool"
+    assert pod["nodeSelector"] == {"dsy.dev/pool": "obs"}
+    assert pod["tolerations"][0]["key"] == "dsy.dev/pool"
 
 
 def test_resources_of_the_module_with_requests_equal_to_limits(rendered):
@@ -131,10 +131,10 @@ def test_the_dsn_comes_from_the_login_secret_only(rendered):
 def test_telemetry_environment_follows_the_switch(rendered, tmp_path):
     _, objects = rendered
     env = env_of(objects)
-    assert env["OTEL_EXPORTER_OTLP_ENDPOINT"] == "http://collector.wft-obs:4318"
-    assert env["WFT_PYROSCOPE_ADDRESS"] == "http://pyroscope.wft-obs:4040"
+    assert env["OTEL_EXPORTER_OTLP_ENDPOINT"] == "http://collector.dsy-obs:4318"
+    assert env["DSY_PYROSCOPE_ADDRESS"] == "http://pyroscope.dsy-obs:4040"
     _, off = rendered_objects(tiltfile_result(tmp_path, "off"))
-    assert not {"OTEL_EXPORTER_OTLP_ENDPOINT", "WFT_PYROSCOPE_ADDRESS"} & set(env_of(off))
+    assert not {"OTEL_EXPORTER_OTLP_ENDPOINT", "DSY_PYROSCOPE_ADDRESS"} & set(env_of(off))
 
 
 def test_waits_for_its_login_and_the_migrated_database(rendered):
@@ -159,7 +159,7 @@ def test_drops_every_capability_under_the_runtime_seccomp_profile(rendered):
 def test_dockerfile_installs_hash_pinned_packages_and_runs_the_exporter():
     dockerfile = (HERE / "Dockerfile").read_text()
     assert "--require-hashes" in dockerfile
-    assert dockerfile.rstrip().endswith('ENTRYPOINT ["python", "-m", "wft_obs.inputs"]')
+    assert dockerfile.rstrip().endswith('ENTRYPOINT ["python", "-m", "dsy_obs.inputs"]')
 
 
 def test_the_module_installs_the_stateops_extra():

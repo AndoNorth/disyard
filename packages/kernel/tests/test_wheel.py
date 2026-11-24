@@ -9,10 +9,10 @@ import pytest
 ROOT = Path(__file__).resolve().parents[3]
 
 PROBE = """
-import wft_kernel.check, wft_kernel.expected, wft_kernel.format
+import dsy_kernel.check, dsy_kernel.expected, dsy_kernel.format
 from importlib.metadata import requires
 
-assert not requires("wft-kernel")
+assert not requires("dsy-kernel")
 """
 
 
@@ -26,7 +26,7 @@ def run(*cmd, **kwargs) -> subprocess.CompletedProcess:
 def clean_python(tmp_path_factory) -> Path:
     work = tmp_path_factory.mktemp("wheel")
     wheels = work / "wheels"
-    run("uv", "build", "--wheel", "--package", "wft-kernel", "-o", str(wheels), cwd=ROOT)
+    run("uv", "build", "--wheel", "--package", "dsy-kernel", "-o", str(wheels), cwd=ROOT)
     venv = work / "venv"
     run("uv", "venv", "--python", sys.executable, str(venv))
     python = venv / "bin/python"

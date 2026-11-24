@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# Runs wft_migrate against the app database in the cluster through a port-forward bound to 127.0.0.1.
+# Runs dsy_migrate against the app database in the cluster through a port-forward bound to 127.0.0.1.
 # Waits for the database to be ready first, so it can run as a Tilt local_resource or by hand.
-# Usage: migrate.sh [apply|status|check] [wft_migrate args...]. Exit codes: wft_migrate's, 1 the database or the
+# Usage: migrate.sh [apply|status|check] [dsy_migrate args...]. Exit codes: dsy_migrate's, 1 the database or the
 # forward did not come up, 2 usage.
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/../../.."
@@ -12,8 +12,8 @@ command=${1:-apply}
 [ $# -gt 0 ] && shift
 case $command in apply | status | check) ;; *) echo "usage: migrate.sh [apply|status|check] [args...]" >&2; exit 2 ;; esac
 
-context=kind-wft
-namespace=wft-infra
+context=kind-dsy
+namespace=dsy-infra
 k() { kubectl --context "$context" -n "$namespace" "$@"; }
 
 k wait --for=condition=Ready pod/appdb-0 --timeout=300s >/dev/null
@@ -33,4 +33,4 @@ done
 [ -n "$port" ] || { echo "port-forward to appdb-0 did not come up" >&2; exit 1; }
 
 PGPASSWORD=$(scripts/storage/db/secrets.sh password) \
-    uv run --frozen python -m wft_migrate "$command" --dsn "postgresql://postgres@127.0.0.1:$port/postgres" "$@"
+    uv run --frozen python -m dsy_migrate "$command" --dsn "postgresql://postgres@127.0.0.1:$port/postgres" "$@"

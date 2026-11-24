@@ -2,8 +2,8 @@
 
 import pytest
 from botocore.exceptions import ClientError
-from wft_storecheck.checks import Report, run_lifecycle_edit
-from wft_storecheck.s3 import error_code
+from dsy_storecheck.checks import Report, run_lifecycle_edit
+from dsy_storecheck.s3 import error_code
 
 pytestmark = pytest.mark.integration
 
@@ -24,6 +24,6 @@ def test_writers_cannot_edit_lifecycle_on_either_product(store):
         f"ok access lifecycle-edit {role}" for role in WRITERS
     ]
     with pytest.raises(ClientError) as untouched:
-        target.admin.get_bucket_lifecycle_configuration(Bucket="wft-sources")
+        target.admin.get_bucket_lifecycle_configuration(Bucket="dsy-sources")
     assert error_code(untouched.value) == "NoSuchLifecycleConfiguration"
     target.sweep()

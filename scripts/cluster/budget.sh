@@ -7,8 +7,8 @@
 # A node line counts requests against the node allocatable, because the scheduler places pods on requests, and a quota
 # line counts what each line of namespaces.sh render limits. The worker pools are left to slots.sh, whose pod slots
 # own their room.
-# WFT_OBS=on adds the profile's opt_in groups and sizes the obs node at the preset's obs_stack.
-# WFT_MODULES_DIR names the directory searched for module.yaml, one or two levels down as the Tiltfile searches.
+# DSY_OBS=on adds the profile's opt_in groups and sizes the obs node at the preset's obs_stack.
+# DSY_MODULES_DIR names the directory searched for module.yaml, one or two levels down as the Tiltfile searches.
 # Usage: budget.sh <preset>. Exit 0 everything fits, 1 a node or a quota line is over, 2 usage.
 set -euo pipefail
 root=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
@@ -18,14 +18,14 @@ source scripts/verify/cluster/lib/tools.sh
 
 [ $# -eq 1 ] && [ -f "deploy/presets/$1.yaml" ] || { echo "usage: budget.sh <preset>" >&2; exit 2; }
 sized=$(scripts/cluster/obs.sh preset "$1") || exit $?
-modules_dir=${WFT_MODULES_DIR:-deploy}
+modules_dir=${DSY_MODULES_DIR:-deploy}
 profiles=deploy/tilt/profiles.yaml
 [ "$(yq ".profiles | has(\"$1\")" "$profiles")" = true ] || { echo "usage: budget.sh <preset>: no profile $1 in $profiles" >&2; exit 2; }
 groups=" $(scripts/cluster/obs.sh groups "$1") "
 module_profile=$(yq ".profiles.$1.modules // \"$1\"" "$profiles")
 
 # The infra node also runs the control pods, as namespaces.sh maps them.
-declare -A node_of=([wft-infra]=infra [wft-control]=infra [wft-obs]=obs)
+declare -A node_of=([dsy-infra]=infra [dsy-control]=infra [dsy-obs]=obs)
 cpu_reserved_milli=100
 # Requests of the daemon set pods on a worker node, as measured for slots.sh.
 DAEMON_CPU_MILLI=100
@@ -34,9 +34,9 @@ DAEMON_MEM_MIB=50
 # name group namespace cpu-request cpu-limit (millicores) memory-request memory-limit (MiB).
 # A row is dropped as soon as a module.yaml of that name exists, so the owner's real figures replace it.
 RESERVES=(
-    "rabbitmq infra wft-infra 100 500 320 320"
-    "dispatch control wft-control 100 500 256 256"
-    "admission control wft-control 50 250 128 128"
+    "rabbitmq infra dsy-infra 100 500 320 320"
+    "dispatch control dsy-control 100 500 256 256"
+    "admission control dsy-control 50 250 128 128"
 )
 
 milli() { case $1 in *m) echo "${1%m}" ;; *) awk -v c="$1" 'BEGIN { print c * 1000 }' ;; esac; }

@@ -1,6 +1,6 @@
 """The service login of the admission service, and the Secret of its DSN.
 
-The group role `wft_admission` cannot log in, so the service gets the login `admission` in it.
+The group role `dsy_admission` cannot log in, so the service gets the login `admission` in it.
 Its password is generated on first use into the state directory of the cluster scripts and never
 committed.
 Usage: logins.py render | apply DSN | check DSN
@@ -20,14 +20,14 @@ import psycopg
 from psycopg import sql
 
 # Each login and the one group role it is a member of, keyed by the environment variable of its DSN.
-LOGINS = {"WFT_ADMISSION_DSN": ("admission", "wft_admission")}
-NAMESPACE = "wft-control"
-DATABASE = "appdb.wft-infra.svc.cluster.local:5432/postgres"
+LOGINS = {"DSY_ADMISSION_DSN": ("admission", "dsy_admission")}
+NAMESPACE = "dsy-control"
+DATABASE = "appdb.dsy-infra.svc.cluster.local:5432/postgres"
 
 
 def state_file() -> Path:
-    state = os.environ.get("WFT_STATE_DIR") or str(
-        Path(os.environ.get("XDG_STATE_HOME") or Path.home() / ".local/state") / "weft"
+    state = os.environ.get("DSY_STATE_DIR") or str(
+        Path(os.environ.get("XDG_STATE_HOME") or Path.home() / ".local/state") / "disyard"
     )
     return Path(state) / "admission.logins.json"
 

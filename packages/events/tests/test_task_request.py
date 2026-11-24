@@ -5,8 +5,7 @@ import json
 from datetime import UTC, datetime
 
 import pytest
-from jsonschema import Draft202012Validator
-from wft_events import (
+from dsy_events import (
     EventTooLarge,
     SchemaInvalid,
     UnsupportedMajor,
@@ -14,7 +13,8 @@ from wft_events import (
     check_task_request,
     to_bytes,
 )
-from wft_events.profile import CONTRACT_DIR
+from dsy_events.profile import CONTRACT_DIR
+from jsonschema import Draft202012Validator
 
 VECTORS = CONTRACT_DIR / "vectors/types"
 VALID = json.loads((VECTORS / "task.requested/valid.json").read_text())
@@ -57,8 +57,8 @@ def test_the_invalid_vector_is_rejected():
 
 def test_a_wrong_major_is_unsupported():
     def edit(d):
-        d["type"] = "dev.wft.task.requested.v2"
-        d["dataschema"] = "urn:wft:schema:task.requested:2.0"
+        d["type"] = "dev.dsy.task.requested.v2"
+        d["dataschema"] = "urn:dsy:schema:task.requested:2.0"
 
     with pytest.raises(UnsupportedMajor):
         check_task_request(changed(edit))
@@ -104,7 +104,7 @@ def test_an_unknown_field_within_a_known_minor_is_rejected():
 
 def test_a_newer_minor_with_an_added_optional_field_passes_and_the_field_is_ignored():
     def edit(d):
-        d["dataschema"] = "urn:wft:schema:task.requested:1.4"
+        d["dataschema"] = "urn:dsy:schema:task.requested:1.4"
         d["data"]["priority_hint"] = 3
 
     request = check_task_request(changed(edit))
@@ -123,7 +123,7 @@ def test_a_request_that_lists_100000_references_is_too_large():
     data = {**VALID["data"], "inputs": [reference] * 100_000}
     event = build_event(
         "task.requested",
-        source="/wft/workflow",
+        source="/dsy/workflow",
         tenant="acme",
         jobid=VALID["jobid"],
         priorityclass="standard",

@@ -15,7 +15,7 @@ from pathlib import Path
 
 import pytest
 import yaml
-from wft_admission.service import ENV, GLOBAL_CAP_ENV, PREFIX_ENV, READY_ENV
+from dsy_admission.service import ENV, GLOBAL_CAP_ENV, PREFIX_ENV, READY_ENV
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
@@ -55,15 +55,15 @@ def tiltfile_result(root: Path, tilt_profile: str | None):
         + "load_dynamic('deploy/admission/Tiltfile.module')\n"
         + f"config.set_enabled_resources({DEPENDS + ['admission']})\n"
     )
-    env = {k: v for k, v in os.environ.items() if k != "WFT_TILT_PROFILE"}
+    env = {k: v for k, v in os.environ.items() if k != "DSY_TILT_PROFILE"}
     env |= {
-        "KUBECONFIG": str(ROOT / "scripts/tilt/fixtures/kubeconfig-wft.yaml"),
-        "WFT_STATE_DIR": str(state),
+        "KUBECONFIG": str(ROOT / "scripts/tilt/fixtures/kubeconfig-dsy.yaml"),
+        "DSY_STATE_DIR": str(state),
         # logins.py and config.py run in the environment of the tree, which the copy does not hold.
         "UV_PROJECT": str(ROOT),
     }
     if tilt_profile is not None:
-        env["WFT_TILT_PROFILE"] = tilt_profile
+        env["DSY_TILT_PROFILE"] = tilt_profile
     return subprocess.run(
         ["tilt", "alpha", "tiltfile-result", "-f", str(root / "Tiltfile")],
         cwd=root,
@@ -103,11 +103,11 @@ def env_of(objects) -> dict[str, str]:
 def test_one_replica_recreated_on_the_infra_pool(rendered):
     _, objects, _ = rendered
     deployment = objects["Deployment", "admission"]
-    assert deployment["metadata"]["namespace"] == "wft-control"
+    assert deployment["metadata"]["namespace"] == "dsy-control"
     assert deployment["spec"]["replicas"] == 1
     assert deployment["spec"]["strategy"] == {"type": "Recreate"}
     pod = deployment["spec"]["template"]["spec"]
-    assert pod["nodeSelector"] == {"wft.dev/pool": "infra"}
+    assert pod["nodeSelector"] == {"dsy.dev/pool": "infra"}
     assert pod["terminationGracePeriodSeconds"] == 30
 
 
@@ -131,30 +131,30 @@ def test_ready_probe_tests_the_ready_file(rendered):
 def test_service_configuration_from_env_and_secrets(rendered):
     _, objects, _ = rendered
     env = env_of(objects)
-    assert env["WFT_TEMPORAL_ADDRESS"] == "temporal-frontend.wft-infra.svc.cluster.local:7233"
-    assert env["WFT_TEMPORAL_NAMESPACE"] == "wft"
-    assert env["WFT_BROKER_ADDRESS"] == "rabbitmq.wft-infra.svc.cluster.local:5672"
-    assert env["WFT_TENANCY_PROFILE"] == "ci"
+    assert env["DSY_TEMPORAL_ADDRESS"] == "temporal-frontend.dsy-infra.svc.cluster.local:7233"
+    assert env["DSY_TEMPORAL_NAMESPACE"] == "dsy"
+    assert env["DSY_BROKER_ADDRESS"] == "rabbitmq.dsy-infra.svc.cluster.local:5672"
+    assert env["DSY_TENANCY_PROFILE"] == "ci"
     assert GLOBAL_CAP_ENV not in env
     assert PREFIX_ENV not in env
     assert container_of(objects)["envFrom"] == [{"secretRef": {"name": s}} for s in SECRETS]
     from_secrets = {key for s in SECRETS for key in objects["Secret", s]["stringData"]}
-    assert from_secrets == {"WFT_ADMISSION_DSN", "WFT_BROKER_PASSWORD"}
+    assert from_secrets == {"DSY_ADMISSION_DSN", "DSY_BROKER_PASSWORD"}
     assert not from_secrets & set(env)
     assert set(ENV.values()) <= set(env) | from_secrets
 
 
 def test_broker_secret_from_the_broker_helper(rendered, monkeypatch):
     _, objects, root = rendered
-    monkeypatch.setenv("WFT_STATE_DIR", str(root / "state"))
+    monkeypatch.setenv("DSY_STATE_DIR", str(root / "state"))
     assert objects["Secret", "admission-broker"]["stringData"] == {
-        "WFT_BROKER_PASSWORD": rabbitmq.password("admission")
+        "DSY_BROKER_PASSWORD": rabbitmq.password("admission")
     }
 
 
 def test_tenancy_profile_mapped_from_the_tilt_profile(tmp_path):
     _, objects = rendered_objects(tiltfile_result(tmp_path, "full"))
-    assert env_of(objects)["WFT_TENANCY_PROFILE"] == "dev"
+    assert env_of(objects)["DSY_TENANCY_PROFILE"] == "dev"
 
 
 def test_waits_for_logins_and_its_dependencies(rendered):
@@ -170,7 +170,7 @@ def test_waits_for_logins_and_its_dependencies(rendered):
 def test_no_tilt_profile_refused(tmp_path):
     run = tiltfile_result(tmp_path, None)
     assert run.returncode != 0
-    assert "WFT_TILT_PROFILE is unset" in run.stderr
+    assert "DSY_TILT_PROFILE is unset" in run.stderr
 
 
 def test_dockerfile_builds_proton_in_a_build_stage():
@@ -184,7 +184,7 @@ def test_dockerfile_builds_proton_in_a_build_stage():
     assert "gcc" not in runtime and "apt-get" not in runtime
     assert "COPY --from=proton /wheels" in runtime
     assert "--require-hashes" in runtime
-    assert runtime.rstrip().endswith('ENTRYPOINT ["python", "-m", "wft_admission.service"]')
+    assert runtime.rstrip().endswith('ENTRYPOINT ["python", "-m", "dsy_admission.service"]')
 
 
 def test_drops_every_capability_under_the_runtime_seccomp_profile(rendered):

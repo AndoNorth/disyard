@@ -1,12 +1,12 @@
 [project]
-name = "wft-plan"
+name = "dsy-plan"
 version = "0.0.0"
 license = "Apache-2.0"
 requires-python = ">=3.13,<3.14"
-dependencies = ["wft-jobdoc"]
+dependencies = ["dsy-jobdoc"]
 
 [tool.uv.sources]
-wft-jobdoc = { workspace = true }
+dsy-jobdoc = { workspace = true }
 
 [build-system]
 requires = ["hatchling"]

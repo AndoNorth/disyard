@@ -2,8 +2,8 @@ import json
 from pathlib import Path
 
 import pytest
-from wft_jobdoc import parse_document
-from wft_jobdoc.profile_files import load_profile
+from dsy_jobdoc import parse_document
+from dsy_jobdoc.profile_files import load_profile
 
 ROOT = Path(__file__).resolve().parents[3]
 CONTRACT = ROOT / "contracts/job"
@@ -23,6 +23,6 @@ def parse(profile_of):
 
 @pytest.fixture(scope="session")
 def resolver():
-    from wft_jobcheck import StaticResolver
+    from dsy_jobcheck import StaticResolver
 
     return StaticResolver(json.loads((VECTORS / "resolver.json").read_text()))

@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/AndoNorth/weft/contracts/instrumentation/metrics.schema.json",
+  "$id": "https://github.com/AndoNorth/disyard/contracts/instrumentation/metrics.schema.json",
   "title": "contracts/instrumentation/metrics.yaml",
   "type": "object",
   "required": ["metrics"],

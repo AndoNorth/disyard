@@ -1,7 +1,7 @@
 # Spike: cold start of the workload component in the `ci` simulate slot (S6)
 
 Run on 2026-11-08.
-Owner: the [workload toolchain epic](https://github.com/AndoNorth/weft/issues/11), lane S, filed as [spike issue 266](https://github.com/AndoNorth/weft/issues/266).
+Owner: the [workload toolchain epic](https://github.com/AndoNorth/disyard/issues/11), lane S, filed as [spike issue 266](https://github.com/AndoNorth/disyard/issues/266).
 Method: [docs/delivery/method.md](../../method.md).
 The epic breakdown spec is not merged yet, and this spike gates its `wasmtime` behaviour pin tests.
 Throwaway code: [code/](code/), run as `nix develop -c docs/delivery/spikes/S6/code/run.sh`.
@@ -35,9 +35,9 @@ The epic measured about 1.4 s and about 0.4 GiB in `wasmtime` for the first run 
 | --- | --- |
 | Host | WSL2, 20,002 MiB `MemTotal` (`host.mem_total_mib`), 8 CPUs (`host.cpus`), kernel 6.6.87.2 (`host.kernel`), Docker 29.1.3 (`host.docker`) |
 | Other work on the host | 1 other container running (`host.other_containers`), not touched, 16,275 MiB `MemAvailable` before (`host.mem_available_mib.before`) and 16,603 MiB after (`host.mem_available_mib.after`) |
-| Locks | one of the two `wft-t1` lock files for the whole run, no cluster |
-| Containers | one at a time, `--memory 384m --memory-swap 384m --cpus 0.25 --network none`, run as the invoking user, label `wft.dev/verify-run`, each removed after its run |
-| Left behind | none: `docker ps -a --filter label=wft.dev/verify-run` lists 0 after the run (`containers.left.label_all`) |
+| Locks | one of the two `dsy-t1` lock files for the whole run, no cluster |
+| Containers | one at a time, `--memory 384m --memory-swap 384m --cpus 0.25 --network none`, run as the invoking user, label `dsy.dev/verify-run`, each removed after its run |
+| Left behind | none: `docker ps -a --filter label=dsy.dev/verify-run` lists 0 after the run (`containers.left.label_all`) |
 | Image | `busybox:1.37.0@sha256:a7dbc319b1438115a207e11930dc4bb3e643dcb3ec0bdd694bb36cd8fad289ec`, only for `sh`, `cp` and `sleep` |
 | Runtime | `wasmtime` 48.0.7 (`tool.wasmtime`) from `nix/wasm-tools.nix`, with its Nix closure (glibc, libgcc) mounted read only |
 | Build | `componentize-py` 0.25.1 (`tool.componentize_py`) in a throwaway venv in the run directory, never in `uv.lock`, `wasm-tools` 1.262.0 (`tool.wasm_tools`) |
@@ -46,7 +46,7 @@ The epic measured about 1.4 s and about 0.4 GiB in `wasmtime` for the first run 
 
 The workload library does not exist yet, so the guest is a stand-in of the same size class.
 
-- World: `package wft:task@1.0.0; world task { include wasi:cli/command@0.2.9; }`, the world the breakdown proposes, with the WASI 0.2.9 WIT packages from the hash-checked `WebAssembly/WASI` v0.2.9 release.
+- World: `package dsy:task@1.0.0; world task { include wasi:cli/command@0.2.9; }`, the world the breakdown proposes, with the WASI 0.2.9 WIT packages from the hash-checked `WebAssembly/WASI` v0.2.9 release.
   `wasm-tools component targets` accepts the component against it.
 - Source: one module, [code/app.py](code/app.py), with a `Run` export class that reads `/in/input.json`, imports `hashlib`, `json`, `struct` and `xml.etree.ElementTree` at the top, and writes one digest block to `/out/results.xml`.
   The argument `hold_mib` makes it write that many MiB first, for the probe below.
@@ -56,7 +56,7 @@ The workload library does not exist yet, so the guest is a stand-in of the same 
 
 How it differs from the real workload component:
 
-- The real component is built from the `wft_workloads` and `wft_kernel` packages through the build library, so it holds more Python source than one module.
+- The real component is built from the `dsy_workloads` and `dsy_kernel` packages through the build library, so it holds more Python source than one module.
   The CPython runtime and the frozen standard library make up most of the 18 MB in both, so the size class holds, but the real component may be somewhat larger and take somewhat longer and more memory to compile.
 - The real entry module dispatches on `params.workload` across all the workloads, and its level 1 workloads emit `HEARTBEAT` lines and grow linear memory.
   The stand-in has only `noop` and the `hold_mib` probe.
@@ -126,7 +126,7 @@ The compile memory therefore stays with the process: the allocator keeps it, or 
 ## What the numbers change
 
 1. The pass line holds: a pod in the `ci` simulate slot survives the first run of a component of this size, so no slot resize and no precompiled `.cwasm` are needed for the cold start itself.
-2. `GUEST_OVERHEAD_MIB` in `wft_runtime.pins` depends on whether the guest can run in the process that compiled it.
+2. `GUEST_OVERHEAD_MIB` in `dsy_runtime.pins` depends on whether the guest can run in the process that compiled it.
    - From the warm figure: 57 MiB peak plus a quarter in whole 64 MiB steps, the sizing rule of the [state footprint spike](../S8/state-footprint.md), is **128 MiB**, which leaves a `ci` guest cap of 256 MiB, and the warm probe held 256 MiB (269 MiB of linear memory) in this slot.
    - From the cold figure: 313 MiB plus a quarter is 448 MiB, above the slot, so a `ci` guest would get no memory at all by that rule, and the probe shows a first run has room for only between 64 and 128 MiB of guest data.
 3. Proposal for the runtime library and the workers epic: the first run of a component on a pod is a separate warm-up process that runs the `noop` workload and fills the module cache, and the task's guest then runs warm in a new process, so the overhead is the warm figure of 128 MiB.

@@ -18,7 +18,7 @@ FILES = [
 
 def run(*args):
     return subprocess.run(
-        [sys.executable, "-m", "wft_artifactclient.gen", *args], capture_output=True, text=True
+        [sys.executable, "-m", "dsy_artifactclient.gen", *args], capture_output=True, text=True
     )
 
 

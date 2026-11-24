@@ -7,7 +7,7 @@ forward=
 forward_start() {
     local log=$1
     shift
-    kubectl --context "${context:-kind-wft}" -n "${namespace:-wft-infra}" port-forward --address 127.0.0.1 "$@" \
+    kubectl --context "${context:-kind-dsy}" -n "${namespace:-dsy-infra}" port-forward --address 127.0.0.1 "$@" \
         >"$log" 2>&1 9>&- &
     forward=$!
 }

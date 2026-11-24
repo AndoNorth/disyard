@@ -13,13 +13,13 @@
         <mxCell id="ctl" value="&lt;b&gt;Control API&lt;/b&gt; (#24)&lt;br&gt;writes appdb; a job that never started:&lt;br&gt;request and row-only move together,&lt;br&gt;resumed before start goes back to &lt;i&gt;accepted&lt;/i&gt;&lt;br&gt;a started job: cancel, terminate, pause by signal" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;align=left;spacingLeft=8;" vertex="1" parent="1">
           <mxGeometry x="20" y="190" width="280" height="90" as="geometry"/>
         </mxCell>
-        <mxCell id="mq" value="&lt;b&gt;RabbitMQ&lt;/b&gt; (#7)&lt;br&gt;quorum queues intake.&amp;lt;tenant&amp;gt;.&amp;lt;priority class&amp;gt;&lt;br&gt;delivery limit 5 by policy wft-intake&lt;br&gt;class &lt;i&gt;standard&lt;/i&gt; only&lt;br&gt;dead letters to intake.dlq" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;align=left;spacingLeft=8;" vertex="1" parent="1">
+        <mxCell id="mq" value="&lt;b&gt;RabbitMQ&lt;/b&gt; (#7)&lt;br&gt;quorum queues intake.&amp;lt;tenant&amp;gt;.&amp;lt;priority class&amp;gt;&lt;br&gt;delivery limit 5 by policy dsy-intake&lt;br&gt;class &lt;i&gt;standard&lt;/i&gt; only&lt;br&gt;dead letters to intake.dlq" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;align=left;spacingLeft=8;" vertex="1" parent="1">
           <mxGeometry x="20" y="330" width="280" height="100" as="geometry"/>
         </mxCell>
         <mxCell id="dlq" value="&lt;b&gt;intake.dlq&lt;/b&gt;&lt;br&gt;MALFORMED, UNSUPPORTED_VERSION&lt;br&gt;ADMISSION_FAILED on the last allowed delivery (Q1)&lt;br&gt;row stays &lt;i&gt;accepted&lt;/i&gt;, so a replay admits it" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;align=left;spacingLeft=8;" vertex="1" parent="1">
           <mxGeometry x="20" y="470" width="280" height="90" as="geometry"/>
         </mxCell>
-        <mxCell id="adm" value="admission, one replica in wft-control (Recreate, 128 MiB), login in wft_admission" style="swimlane;startSize=26;rounded=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;" vertex="1" parent="1">
+        <mxCell id="adm" value="admission, one replica in dsy-control (Recreate, 128 MiB), login in dsy_admission" style="swimlane;startSize=26;rounded=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;" vertex="1" parent="1">
           <mxGeometry x="360" y="60" width="560" height="560" as="geometry"/>
         </mxCell>
         <mxCell id="snap" value="&lt;b&gt;1 Snapshot from the rows&lt;/b&gt; (every cycle, one REPEATABLE READ transaction)&lt;br&gt;live = &lt;i&gt;admitted&lt;/i&gt; + &lt;i&gt;running&lt;/i&gt; + granted resumes; open adds &lt;i&gt;paused&lt;/i&gt; and &lt;i&gt;resume-pending&lt;/i&gt;&lt;br&gt;waiting resumes: &lt;i&gt;resume-pending&lt;/i&gt; with requested_action resume&lt;br&gt;every 10th cycle, the scans: &lt;i&gt;accepted&lt;/i&gt; with control_seq &amp;gt; 0 and no action,&lt;br&gt;and &lt;i&gt;admitted&lt;/i&gt; older than 60 s with no workflow (at most 50 describes)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#6c8ebf;align=left;spacingLeft=8;" vertex="1" parent="adm">
@@ -43,10 +43,10 @@
         <mxCell id="start" value="&lt;b&gt;5 Start, then settle&lt;/b&gt;&lt;br&gt;accepted event rebuilt from the row + JobParams, workflow_id(job_id), REJECT_DUPLICATE,&lt;br&gt;five search attributes; already started = duplicate; then ack the message" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;align=left;spacingLeft=8;" vertex="1" parent="adm">
           <mxGeometry x="20" y="480" width="520" height="60" as="geometry"/>
         </mxCell>
-        <mxCell id="pg" value="&lt;b&gt;appdb&lt;/b&gt; (Postgres)&lt;br&gt;accepted_job: status, requested_action, control_seq, pending_patch_ref&lt;br&gt;event: job.admitted, job.dead.lettered from /wft/admission" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;align=left;spacingLeft=8;" vertex="1" parent="1">
+        <mxCell id="pg" value="&lt;b&gt;appdb&lt;/b&gt; (Postgres)&lt;br&gt;accepted_job: status, requested_action, control_seq, pending_patch_ref&lt;br&gt;event: job.admitted, job.dead.lettered from /dsy/admission" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;align=left;spacingLeft=8;" vertex="1" parent="1">
           <mxGeometry x="980" y="90" width="300" height="100" as="geometry"/>
         </mxCell>
-        <mxCell id="tmp" value="&lt;b&gt;Temporal&lt;/b&gt;, namespace wft&lt;br&gt;JobWorkflow on wft-workflow&lt;br&gt;projects &lt;i&gt;running&lt;/i&gt;, &lt;i&gt;paused&lt;/i&gt; and the terminal statuses onto the row" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;align=left;spacingLeft=8;" vertex="1" parent="1">
+        <mxCell id="tmp" value="&lt;b&gt;Temporal&lt;/b&gt;, namespace dsy&lt;br&gt;JobWorkflow on dsy-workflow&lt;br&gt;projects &lt;i&gt;running&lt;/i&gt;, &lt;i&gt;paused&lt;/i&gt; and the terminal statuses onto the row" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;align=left;spacingLeft=8;" vertex="1" parent="1">
           <mxGeometry x="980" y="450" width="300" height="100" as="geometry"/>
         </mxCell>
         <mxCell id="brk" value="&lt;b&gt;Breaker&lt;/b&gt; per dependency (Temporal, database, broker) and for a repeated internal error&lt;br&gt;releases the message uncounted, stops pulling and probes with backoff; a row left &lt;i&gt;admitted&lt;/i&gt; is started by the scan" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;align=left;spacingLeft=8;fontSize=11;" vertex="1" parent="1">

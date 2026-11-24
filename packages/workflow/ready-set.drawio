@@ -2,7 +2,7 @@
   <root>
     <mxCell id="0"/>
     <mxCell id="1" parent="0"/>
-    <mxCell id="c1" value="Ready set and job result: a worked example from wft_workflow.ready and wft_workflow.result" style="text;html=1;fontSize=16;fontStyle=1;align=left;" vertex="1" parent="1"><mxGeometry x="20" y="10" width="1100" height="30" as="geometry"/></mxCell>
+    <mxCell id="c1" value="Ready set and job result: a worked example from dsy_workflow.ready and dsy_workflow.result" style="text;html=1;fontSize=16;fontStyle=1;align=left;" vertex="1" parent="1"><mxGeometry x="20" y="10" width="1100" height="30" as="geometry"/></mxCell>
     <mxCell id="c2" value="Plan, max_parallel 2" style="swimlane;startSize=30;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="20" y="60" width="300" height="420" as="geometry"/></mxCell>
     <mxCell id="c3" value="build (compile)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#666666;" vertex="1" parent="c2"><mxGeometry x="90" y="50" width="120" height="40" as="geometry"/></mxCell>
     <mxCell id="c4" value="sim-a" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#666666;" vertex="1" parent="c2"><mxGeometry x="10" y="140" width="80" height="40" as="geometry"/></mxCell>

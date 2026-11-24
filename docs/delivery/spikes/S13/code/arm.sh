@@ -8,16 +8,16 @@ root=$(cd "$here/../../../../.." && pwd)
 label=$1
 out=$2
 mkdir -p "$out"
-k="kubectl --context kind-wft"
+k="kubectl --context kind-dsy"
 cd "$root"
-export WFT_CLUSTER_LOCK_HELD=1
+export DSY_CLUSTER_LOCK_HELD=1
 
-for d in admission dispatch placement; do $k -n wft-control rollout restart deployment/$d; done
-$k -n wft-control rollout restart deployment/"$($k -n wft-control get deploy -o name | grep workflow-worker | cut -d/ -f2)"
-for d in compile-worker simulate-worker aggregate-worker; do $k -n wft-workers rollout restart deployment/$d; done
-for d in admission dispatch placement; do $k -n wft-control rollout status deployment/$d --timeout=300s; done
-$k -n wft-control rollout status deployment/"$($k -n wft-control get deploy -o name | grep workflow-worker | cut -d/ -f2)" --timeout=300s
-for d in compile-worker simulate-worker aggregate-worker; do $k -n wft-workers rollout status deployment/$d --timeout=600s; done
+for d in admission dispatch placement; do $k -n dsy-control rollout restart deployment/$d; done
+$k -n dsy-control rollout restart deployment/"$($k -n dsy-control get deploy -o name | grep workflow-worker | cut -d/ -f2)"
+for d in compile-worker simulate-worker aggregate-worker; do $k -n dsy-workers rollout restart deployment/$d; done
+for d in admission dispatch placement; do $k -n dsy-control rollout status deployment/$d --timeout=300s; done
+$k -n dsy-control rollout status deployment/"$($k -n dsy-control get deploy -o name | grep workflow-worker | cut -d/ -f2)" --timeout=300s
+for d in compile-worker simulate-worker aggregate-worker; do $k -n dsy-workers rollout status deployment/$d --timeout=600s; done
 sleep 60
 python3 "$here/snapshot.py" "$label-start" >>"$out/snapshots.jsonl"
 

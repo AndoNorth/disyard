@@ -1,6 +1,6 @@
 name: dummy-control
 group: control
-namespace: wft-control
+namespace: dsy-control
 artifact:
   kind: image
   pin: pause

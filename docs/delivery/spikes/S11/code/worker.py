@@ -20,23 +20,23 @@ from datetime import timedelta
 from pathlib import Path
 
 # The pool worker's core, imported whatever the pool, so their memory is counted.
-import wft_events  # noqa: F401
-import wft_keys  # noqa: F401
-import wft_stages  # noqa: F401
-from temporalio import activity
-from temporalio.client import Client
-from temporalio.worker import Worker
-from wft_artifactclient.client import ArtifactClient
-from wft_events.models import ProducerRef
-from wft_runtime.heartbeat import beats
-from wft_storecheck.s3 import load_credentials
-from wft_temporal import event_data_converter, tracing_interceptor
-from wft_workflow.models import (  # noqa: F401
+import dsy_events  # noqa: F401
+import dsy_keys  # noqa: F401
+import dsy_stages  # noqa: F401
+from dsy_artifactclient.client import ArtifactClient
+from dsy_events.models import ProducerRef
+from dsy_runtime.heartbeat import beats
+from dsy_storecheck.s3 import load_credentials
+from dsy_temporal import event_data_converter, tracing_interceptor
+from dsy_workflow.models import (  # noqa: F401
     FailureDetails,
     HeartbeatDetails,
     TaskInput,
     TaskResult,
 )
+from temporalio import activity
+from temporalio.client import Client
+from temporalio.worker import Worker
 
 TAIL_BYTES = 65536
 HEARTBEAT_S = 10
@@ -46,7 +46,7 @@ CFG: argparse.Namespace
 
 
 def child_env() -> dict[str, str]:
-    return {k: v for k, v in os.environ.items() if not k.startswith("WFT_")}
+    return {k: v for k, v in os.environ.items() if not k.startswith("DSY_")}
 
 
 async def run_child(argv: list[str], cwd: Path | None = None) -> dict:
@@ -112,7 +112,7 @@ async def step_stage(spec: dict) -> dict:
 
 
 async def step_warm_up(spec: dict) -> dict:
-    from wft_runtime.command import warm_up
+    from dsy_runtime.command import warm_up
 
     task = task_dir()
     component = task / "component.wasm"
@@ -127,9 +127,9 @@ async def step_warm_up(spec: dict) -> dict:
 
 
 async def step_simulate(spec: dict) -> dict:
-    from wft_runtime.classify import Facts, classify, read_error_file
-    from wft_runtime.command import OUTPUT, command
-    from wft_runtime.run import copy_input, input_digest
+    from dsy_runtime.classify import Facts, classify, read_error_file
+    from dsy_runtime.command import OUTPUT, command
+    from dsy_runtime.run import copy_input, input_digest
 
     task = task_dir()
     component = task / "component.wasm"
@@ -180,11 +180,11 @@ async def step_compile(spec: dict) -> dict:
     seconds = await staged(spec["reference"], bundle)
     wheels, out = task / "wheels", task / "out"
     fetch = await run_child(
-        ["python", "-m", "wft_compile.limits", "fetch", "--bundle", str(bundle),
-         "--find-links", "file:///var/wft/mirror", "--out", str(wheels), "--timeout", "600"],
+        ["python", "-m", "dsy_compile.limits", "fetch", "--bundle", str(bundle),
+         "--find-links", "file:///var/dsy/mirror", "--out", str(wheels), "--timeout", "600"],
     )  # fmt: skip
     build = await run_child(
-        ["python", "-m", "wft_compile", "build", "--bundle", str(bundle), "--entry", spec["entry"],
+        ["python", "-m", "dsy_compile", "build", "--bundle", str(bundle), "--entry", spec["entry"],
          "--out", str(out), "--find-links", str(wheels), "--timeout", "600"],
     )  # fmt: skip
     found = {"stage_s": seconds, "fetch": fetch, "child": build}
@@ -205,7 +205,7 @@ async def step_aggregate(spec: dict) -> dict:
     index, out = task / "index.json", task / "out"
     index.write_text(json.dumps(spec["reference"]))
     ran = await run_child(
-        ["python", "-m", "wft_aggregate", "run", "--index", str(index), "--tenant", TENANT,
+        ["python", "-m", "dsy_aggregate", "run", "--index", str(index), "--tenant", TENANT,
          "--aggregation", spec["aggregation"], "--args", "{}", "--out", str(out),
          "--endpoint", CFG.store, "--credentials", CFG.credentials, "--role", "aggregate"],
     )  # fmt: skip
@@ -254,15 +254,15 @@ async def main() -> None:
     parser = argparse.ArgumentParser()
     for flag in ("--pool", "--temporal", "--namespace", "--queue", "--store", "--credentials"):
         parser.add_argument(flag, required=True)
-    parser.add_argument("--scratch", default="/var/wft")
+    parser.add_argument("--scratch", default="/var/dsy")
     CFG = parser.parse_args()
     for name in ("HOME", "TMPDIR", "UV_CACHE_DIR", "XDG_CACHE_HOME"):
         Path(os.environ[name]).mkdir(parents=True, exist_ok=True)
     if CFG.pool == "simulate":
-        import wft_runtime.classify  # noqa: F401
-        import wft_runtime.command  # noqa: F401
+        import dsy_runtime.classify  # noqa: F401
+        import dsy_runtime.command  # noqa: F401
     elif CFG.pool == "compile":
-        import wft_compile.limits  # noqa: F401
+        import dsy_compile.limits  # noqa: F401
     CFG.client = ArtifactClient(CFG.store, load_credentials(CFG.credentials)[CFG.pool])
     client = await Client.connect(
         CFG.temporal,

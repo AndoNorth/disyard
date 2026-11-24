@@ -6,17 +6,17 @@ import os
 import time
 
 import pytest
-from wft_artifactclient.client import ArtifactClient
-from wft_artifactclient.errors import OutputMissing
-from wft_artifactclient.staging import (
+from dsy_artifactclient.client import ArtifactClient
+from dsy_artifactclient.errors import OutputMissing
+from dsy_artifactclient.staging import (
     capture_tail,
     collect_outputs,
     contract,
     stage_inputs,
     upload_tail,
 )
-from wft_artifactclient.testing import make_scratch
-from wft_events.models import ProducerRef
+from dsy_artifactclient.testing import make_scratch
+from dsy_events.models import ProducerRef
 
 pytestmark = pytest.mark.integration
 
@@ -101,7 +101,7 @@ def test_failed_compile_uploads_its_tail_under_the_compile_role(role, unique, sc
     assert (reference.kind, reference.name, reference.size) == ("log-tail", "tail.log", cap)
     stored = role("workflow").get_bytes(reference, cap)
     assert stored == log[-cap:]
-    assert "wft-results" in reference.uri and f"/{JOB}/0/t0/r0a1/tail.log" in reference.uri
+    assert "dsy-results" in reference.uri and f"/{JOB}/0/t0/r0a1/tail.log" in reference.uri
 
 
 def test_a_thousand_small_outputs(role, unique, scratch, runner, store):

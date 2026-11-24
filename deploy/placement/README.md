@@ -1,6 +1,6 @@
 # Placement
 
-The placement service, `python -m wft_placement`, deployed in `wft-control` on the infra pool.
+The placement service, `python -m dsy_placement`, deployed in `dsy-control` on the infra pool.
 It answers the `place` call of every workflow build with a pool queue, and reads a snapshot of the pools from the Kubernetes API, as [the package README](../../packages/placement/README.md) says.
 Module: `placement`.
 
@@ -23,12 +23,12 @@ deploy/placement/image.sh <ref>
 
 One replica with strategy `Recreate`, because the service is stateless and one pod serves every live workflow build.
 The service is unversioned: it carries no build id, and a change to its wire models is additive only, rolled out with this image first and the workflow build that uses it after.
-The workflow workers reach it at `http://placement.wft-control.svc:8080` through `WFT_PLACEMENT_URL`, and `place` retries across a restart.
+The workflow workers reach it at `http://placement.dsy-control.svc:8080` through `DSY_PLACEMENT_URL`, and `place` retries across a restart.
 
 ## Access to the Kubernetes API
 
 The pod runs as the service account `placement`, and of the service images built in this tree it is the only pod that mounts a token.
-The ClusterRole `wft-placement-read` allows `get` and `list` on `nodes` and `pods` and nothing else, and its binding is cluster wide, because nodes are cluster scoped and the daemon pods on pool nodes count against them.
+The ClusterRole `dsy-placement-read` allows `get` and `list` on `nodes` and `pods` and nothing else, and its binding is cluster wide, because nodes are cluster scoped and the daemon pods on pool nodes count against them.
 
 ## Configuration
 
@@ -36,17 +36,17 @@ The service reads only its environment.
 
 | Variable | From |
 | --- | --- |
-| `WFT_PLACEMENT_LISTEN` | `0.0.0.0:8080`, the port of the Service |
-| `WFT_READY_FILE` | `/tmp/wft-ready`, which the readiness probe tests |
+| `DSY_PLACEMENT_LISTEN` | `0.0.0.0:8080`, the port of the Service |
+| `DSY_READY_FILE` | `/tmp/dsy-ready`, which the readiness probe tests |
 | `KUBERNETES_SERVICE_HOST`, `KUBERNETES_SERVICE_PORT` | set by the kubelet |
 
-`WFT_SNAPSHOT_EVERY_S` stays unset, so the service reads the pools every 30 s.
+`DSY_SNAPSHOT_EVERY_S` stays unset, so the service reads the pools every 30 s.
 
 ## Looking at it
 
 ```sh
-kubectl --context kind-wft -n wft-control logs deploy/placement
-kubectl --context kind-wft -n wft-control exec deploy/placement -- python -m wft_placement.show
+kubectl --context kind-dsy -n dsy-control logs deploy/placement
+kubectl --context kind-dsy -n dsy-control exec deploy/placement -- python -m dsy_placement.show
 ```
 
 The log holds one line per answer, `placed ...` or `unschedulable ...`, and `show` prints each pool with its ready workers and free capacity.

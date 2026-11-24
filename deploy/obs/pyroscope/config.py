@@ -1,7 +1,7 @@
 """The manifests of the pyroscope module: Pyroscope in monolithic mode on a local volume.
 
 The Python services push profiles to port 4040, and Pyroscope serves the same port to Grafana and
-to `wft_obs.query`, and its own series to Prometheus.
+to `dsy_obs.query`, and its own series to Prometheus.
 Usage: config.py render | args
 `render` prints the objects of the module as a JSON list and `args` the container arguments.
 Exit 0 done, 2 usage.

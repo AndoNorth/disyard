@@ -1,4 +1,4 @@
-"""A built wheel of wft_events works from a clean virtual environment, away from the repository."""
+"""A built wheel of dsy_events works from a clean virtual environment, away from the repository."""
 
 import json
 import subprocess
@@ -6,7 +6,7 @@ import sys
 from pathlib import Path
 
 import pytest
-from wft_events.profile import CONTRACT_DIR
+from dsy_events.profile import CONTRACT_DIR
 
 ROOT = CONTRACT_DIR.parents[1]
 ACCEPTED = json.loads((CONTRACT_DIR / "vectors/accepted/valid/accepted.json").read_text())
@@ -16,13 +16,13 @@ CANONICAL = json.dumps(ACCEPTED, sort_keys=True, separators=(",", ":"), ensure_a
 # The reference models are built from the layout inside the wheel, so a working import proves it.
 PROBE = """
 import sys
-from wft_events import from_bytes, layout, to_bytes
-from wft_events.metrics import registry
-from wft_events.models import AttemptReference, ContentReference
+from dsy_events import from_bytes, layout, to_bytes
+from dsy_events.metrics import registry
+from dsy_events.models import AttemptReference, ContentReference
 
 data = sys.stdin.buffer.read()
 assert to_bytes(from_bytes(data)) == data
-assert registry.histograms["wft_event_bytes"].count == 1
+assert registry.histograms["dsy_event_bytes"].count == 1
 kinds = {*ContentReference.model_fields["kind"].annotation.__args__}
 kinds |= {*AttemptReference.model_fields["kind"].annotation.__args__}
 assert kinds == set(layout()["kinds"])
@@ -39,7 +39,7 @@ def run(*cmd, **kwargs) -> subprocess.CompletedProcess:
 def clean_python(tmp_path_factory) -> Path:
     work = tmp_path_factory.mktemp("wheel")
     wheels = work / "wheels"
-    for package in ("wft-events", "wft-keys"):
+    for package in ("dsy-events", "dsy-keys"):
         run("uv", "build", "--wheel", "--package", package, "-o", str(wheels), cwd=ROOT)
     venv = work / "venv"
     run("uv", "venv", "--python", sys.executable, str(venv))

@@ -10,7 +10,7 @@ The full-disk recovery has its own steps in [the object store runbook](../../../
 ## Break
 
 ```sh
-kubectl --context kind-wft -n wft-infra scale statefulset/objectstore --replicas=0
+kubectl --context kind-dsy -n dsy-infra scale statefulset/objectstore --replicas=0
 curl -s -w ' %{http_code}\n' http://127.0.0.1:18080/readyz
 ```
 
@@ -19,22 +19,22 @@ curl -s -w ' %{http_code}\n' http://127.0.0.1:18080/readyz
 | Signal | Where | Seen |
 | --- | --- | --- |
 | Readiness | `/readyz` on port 18080 | `{"status":"not-ready"} 503` within 8 s |
-| Pod | `kubectl --context kind-wft -n wft-control get pods` | `dispatch 0/1`, so its Service has no endpoint |
+| Pod | `kubectl --context kind-dsy -n dsy-control get pods` | `dispatch 0/1`, so its Service has no endpoint |
 | API | any call on ports 18080 and 18081, such as a submit or a status read | status `000`, a connection with no answer, and the smoke driver ends with `ConnectionResetError: [Errno 104] Connection reset by peer` |
-| Log | `kubectl --context kind-wft -n wft-control logs deploy/dispatch` | `not ready: EndpointConnectionError: Could not connect to the endpoint URL: "http://objectstore.wft-infra.svc.cluster.local:8333/wft-sources/..."` |
-| Alert | [WftTargetDown](../alerts.md#wfttargetdown) | `pending` at +18 s, gone at +78 s, never fired |
-| Alert | [WftStoreCapacityHigh](../alerts.md#wftstorecapacityhigh), [WftAggregateFailuresHigh](../alerts.md#wftaggregatefailureshigh) | not fired, with no job running to fail |
+| Log | `kubectl --context kind-dsy -n dsy-control logs deploy/dispatch` | `not ready: EndpointConnectionError: Could not connect to the endpoint URL: "http://objectstore.dsy-infra.svc.cluster.local:8333/dsy-sources/..."` |
+| Alert | [DsyTargetDown](../alerts.md#dsytargetdown) | `pending` at +18 s, gone at +78 s, never fired |
+| Alert | [DsyStoreCapacityHigh](../alerts.md#dsystorecapacityhigh), [DsyAggregateFailuresHigh](../alerts.md#dsyaggregatefailureshigh) | not fired, with no job running to fail |
 
 The store outage takes the whole API with it, status reads and cancels included, because both listeners share the readiness of the one `dispatch` pod, so an operator cannot even ask about a job until the store is back.
-`WftTargetDown` goes `pending` while the pod terminates and then clears, because a scaled-down pod has no scrape target left to be down.
+`DsyTargetDown` goes `pending` while the pod terminates and then clears, because a scaled-down pod has no scrape target left to be down.
 No alert named the store as the cause.
 The signals were the readiness status, the `dispatch` log and the pod list.
 
 ## Recover
 
 ```sh
-kubectl --context kind-wft -n wft-infra scale statefulset/objectstore --replicas=1
-kubectl --context kind-wft -n wft-infra rollout status statefulset/objectstore
+kubectl --context kind-dsy -n dsy-infra scale statefulset/objectstore --replicas=1
+kubectl --context kind-dsy -n dsy-infra rollout status statefulset/objectstore
 curl -s -w ' %{http_code}\n' http://127.0.0.1:18081/readyz
 ```
 

@@ -4,17 +4,17 @@
 # Sources and components have no age rule, because their keys are content-addressed and shared across jobs.
 detection_interval_minutes: 60
 buckets:
-  wft-sources:
+  dsy-sources:
     rules:
-      - {kind: abort-incomplete-multipart, window: housekeeping.wft-sources.abort_incomplete_multipart_after_days}
-  wft-components:
+      - {kind: abort-incomplete-multipart, window: housekeeping.dsy-sources.abort_incomplete_multipart_after_days}
+  dsy-components:
     rules:
-      - {kind: abort-incomplete-multipart, window: housekeeping.wft-components.abort_incomplete_multipart_after_days}
-  wft-results:
+      - {kind: abort-incomplete-multipart, window: housekeeping.dsy-components.abort_incomplete_multipart_after_days}
+  dsy-results:
     rules:
-      - {kind: abort-incomplete-multipart, window: housekeeping.wft-results.abort_incomplete_multipart_after_days}
-      - {kind: expire, window: windows.wft-results.expire_after_days}
-  wft-checkpoints:
+      - {kind: abort-incomplete-multipart, window: housekeeping.dsy-results.abort_incomplete_multipart_after_days}
+      - {kind: expire, window: windows.dsy-results.expire_after_days}
+  dsy-checkpoints:
     rules:
-      - {kind: abort-incomplete-multipart, window: housekeeping.wft-checkpoints.abort_incomplete_multipart_after_days}
-      - {kind: expire, window: windows.wft-checkpoints.expire_after_days}
+      - {kind: abort-incomplete-multipart, window: housekeeping.dsy-checkpoints.abort_incomplete_multipart_after_days}
+      - {kind: expire, window: windows.dsy-checkpoints.expire_after_days}

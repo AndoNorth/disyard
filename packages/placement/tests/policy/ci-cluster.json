@@ -6,12 +6,12 @@
             "apiVersion": "v1",
             "kind": "Node",
             "metadata": {
-                "name": "wft-control-plane",
+                "name": "dsy-control-plane",
                 "labels": {
                     "beta.kubernetes.io/arch": "amd64",
                     "beta.kubernetes.io/os": "linux",
                     "kubernetes.io/arch": "amd64",
-                    "kubernetes.io/hostname": "wft-control-plane",
+                    "kubernetes.io/hostname": "dsy-control-plane",
                     "kubernetes.io/os": "linux",
                     "node-role.kubernetes.io/control-plane": ""
                 }
@@ -47,14 +47,14 @@
             "apiVersion": "v1",
             "kind": "Node",
             "metadata": {
-                "name": "wft-worker",
+                "name": "dsy-worker",
                 "labels": {
                     "beta.kubernetes.io/arch": "amd64",
                     "beta.kubernetes.io/os": "linux",
                     "kubernetes.io/arch": "amd64",
-                    "kubernetes.io/hostname": "wft-worker",
+                    "kubernetes.io/hostname": "dsy-worker",
                     "kubernetes.io/os": "linux",
-                    "wft.dev/pool": "infra"
+                    "dsy.dev/pool": "infra"
                 }
             },
             "spec": {
@@ -62,7 +62,7 @@
                 "taints": [
                     {
                         "effect": "NoSchedule",
-                        "key": "wft.dev/pool",
+                        "key": "dsy.dev/pool",
                         "value": "infra"
                     }
                 ]
@@ -95,14 +95,14 @@
             "apiVersion": "v1",
             "kind": "Node",
             "metadata": {
-                "name": "wft-worker2",
+                "name": "dsy-worker2",
                 "labels": {
                     "beta.kubernetes.io/arch": "amd64",
                     "beta.kubernetes.io/os": "linux",
                     "kubernetes.io/arch": "amd64",
-                    "kubernetes.io/hostname": "wft-worker2",
+                    "kubernetes.io/hostname": "dsy-worker2",
                     "kubernetes.io/os": "linux",
-                    "wft.dev/pool": "obs"
+                    "dsy.dev/pool": "obs"
                 }
             },
             "spec": {
@@ -110,7 +110,7 @@
                 "taints": [
                     {
                         "effect": "NoSchedule",
-                        "key": "wft.dev/pool",
+                        "key": "dsy.dev/pool",
                         "value": "obs"
                     }
                 ]
@@ -143,14 +143,14 @@
             "apiVersion": "v1",
             "kind": "Node",
             "metadata": {
-                "name": "wft-worker3",
+                "name": "dsy-worker3",
                 "labels": {
                     "beta.kubernetes.io/arch": "amd64",
                     "beta.kubernetes.io/os": "linux",
                     "kubernetes.io/arch": "amd64",
-                    "kubernetes.io/hostname": "wft-worker3",
+                    "kubernetes.io/hostname": "dsy-worker3",
                     "kubernetes.io/os": "linux",
-                    "wft.dev/pool": "compile"
+                    "dsy.dev/pool": "compile"
                 }
             },
             "spec": {
@@ -158,7 +158,7 @@
                 "taints": [
                     {
                         "effect": "NoSchedule",
-                        "key": "wft.dev/pool",
+                        "key": "dsy.dev/pool",
                         "value": "compile"
                     }
                 ]
@@ -191,14 +191,14 @@
             "apiVersion": "v1",
             "kind": "Node",
             "metadata": {
-                "name": "wft-worker4",
+                "name": "dsy-worker4",
                 "labels": {
                     "beta.kubernetes.io/arch": "amd64",
                     "beta.kubernetes.io/os": "linux",
                     "kubernetes.io/arch": "amd64",
-                    "kubernetes.io/hostname": "wft-worker4",
+                    "kubernetes.io/hostname": "dsy-worker4",
                     "kubernetes.io/os": "linux",
-                    "wft.dev/pool": "simulate"
+                    "dsy.dev/pool": "simulate"
                 }
             },
             "spec": {
@@ -206,7 +206,7 @@
                 "taints": [
                     {
                         "effect": "NoSchedule",
-                        "key": "wft.dev/pool",
+                        "key": "dsy.dev/pool",
                         "value": "simulate"
                     }
                 ]
@@ -239,14 +239,14 @@
             "apiVersion": "v1",
             "kind": "Node",
             "metadata": {
-                "name": "wft-worker5",
+                "name": "dsy-worker5",
                 "labels": {
                     "beta.kubernetes.io/arch": "amd64",
                     "beta.kubernetes.io/os": "linux",
                     "kubernetes.io/arch": "amd64",
-                    "kubernetes.io/hostname": "wft-worker5",
+                    "kubernetes.io/hostname": "dsy-worker5",
                     "kubernetes.io/os": "linux",
-                    "wft.dev/pool": "aggregate"
+                    "dsy.dev/pool": "aggregate"
                 }
             },
             "spec": {
@@ -254,7 +254,7 @@
                 "taints": [
                     {
                         "effect": "NoSchedule",
-                        "key": "wft.dev/pool",
+                        "key": "dsy.dev/pool",
                         "value": "aggregate"
                     }
                 ]
@@ -287,12 +287,12 @@
             "apiVersion": "v1",
             "kind": "Pod",
             "metadata": {
-                "name": "etcd-wft-control-plane",
+                "name": "etcd-dsy-control-plane",
                 "namespace": "kube-system",
                 "labels": {}
             },
             "spec": {
-                "nodeName": "wft-control-plane",
+                "nodeName": "dsy-control-plane",
                 "containers": [
                     {
                         "name": "etcd",
@@ -324,12 +324,12 @@
             "apiVersion": "v1",
             "kind": "Pod",
             "metadata": {
-                "name": "kube-apiserver-wft-control-plane",
+                "name": "kube-apiserver-dsy-control-plane",
                 "namespace": "kube-system",
                 "labels": {}
             },
             "spec": {
-                "nodeName": "wft-control-plane",
+                "nodeName": "dsy-control-plane",
                 "containers": [
                     {
                         "name": "kube-apiserver",
@@ -367,7 +367,7 @@
                 }
             },
             "spec": {
-                "nodeName": "wft-control-plane",
+                "nodeName": "dsy-control-plane",
                 "containers": [
                     {
                         "name": "coredns",
@@ -409,7 +409,7 @@
                 }
             },
             "spec": {
-                "nodeName": "wft-control-plane",
+                "nodeName": "dsy-control-plane",
                 "containers": [
                     {
                         "name": "kindnet-cni",
@@ -452,7 +452,7 @@
                 }
             },
             "spec": {
-                "nodeName": "wft-control-plane",
+                "nodeName": "dsy-control-plane",
                 "containers": [
                     {
                         "name": "kube-proxy",
@@ -486,7 +486,7 @@
                 }
             },
             "spec": {
-                "nodeName": "wft-worker",
+                "nodeName": "dsy-worker",
                 "containers": [
                     {
                         "name": "kindnet-cni",
@@ -529,7 +529,7 @@
                 }
             },
             "spec": {
-                "nodeName": "wft-worker",
+                "nodeName": "dsy-worker",
                 "containers": [
                     {
                         "name": "kube-proxy",
@@ -563,7 +563,7 @@
                 }
             },
             "spec": {
-                "nodeName": "wft-worker2",
+                "nodeName": "dsy-worker2",
                 "containers": [
                     {
                         "name": "kindnet-cni",
@@ -606,7 +606,7 @@
                 }
             },
             "spec": {
-                "nodeName": "wft-worker2",
+                "nodeName": "dsy-worker2",
                 "containers": [
                     {
                         "name": "kube-proxy",
@@ -640,7 +640,7 @@
                 }
             },
             "spec": {
-                "nodeName": "wft-worker3",
+                "nodeName": "dsy-worker3",
                 "containers": [
                     {
                         "name": "kindnet-cni",
@@ -683,7 +683,7 @@
                 }
             },
             "spec": {
-                "nodeName": "wft-worker3",
+                "nodeName": "dsy-worker3",
                 "containers": [
                     {
                         "name": "kube-proxy",
@@ -717,7 +717,7 @@
                 }
             },
             "spec": {
-                "nodeName": "wft-worker4",
+                "nodeName": "dsy-worker4",
                 "containers": [
                     {
                         "name": "kindnet-cni",
@@ -760,7 +760,7 @@
                 }
             },
             "spec": {
-                "nodeName": "wft-worker4",
+                "nodeName": "dsy-worker4",
                 "containers": [
                     {
                         "name": "kube-proxy",
@@ -794,7 +794,7 @@
                 }
             },
             "spec": {
-                "nodeName": "wft-worker5",
+                "nodeName": "dsy-worker5",
                 "containers": [
                     {
                         "name": "kindnet-cni",
@@ -837,7 +837,7 @@
                 }
             },
             "spec": {
-                "nodeName": "wft-worker5",
+                "nodeName": "dsy-worker5",
                 "containers": [
                     {
                         "name": "kube-proxy",
@@ -865,13 +865,13 @@
             "kind": "Pod",
             "metadata": {
                 "name": "temporal-frontend-7d9c5b6f4-2kq8x",
-                "namespace": "wft-infra",
+                "namespace": "dsy-infra",
                 "labels": {
                     "app.kubernetes.io/name": "temporal-frontend"
                 }
             },
             "spec": {
-                "nodeName": "wft-worker",
+                "nodeName": "dsy-worker",
                 "containers": [
                     {
                         "name": "temporal-frontend",
@@ -908,13 +908,13 @@
             "kind": "Pod",
             "metadata": {
                 "name": "temporal-schema-6x2vp",
-                "namespace": "wft-infra",
+                "namespace": "dsy-infra",
                 "labels": {
                     "job-name": "temporal-schema"
                 }
             },
             "spec": {
-                "nodeName": "wft-worker",
+                "nodeName": "dsy-worker",
                 "containers": [
                     {
                         "name": "temporal-schema",
@@ -951,17 +951,17 @@
             "kind": "Pod",
             "metadata": {
                 "name": "admission-5f8b7c9d6-r4t7w",
-                "namespace": "wft-control",
+                "namespace": "dsy-control",
                 "labels": {
                     "app.kubernetes.io/name": "admission"
                 }
             },
             "spec": {
-                "nodeName": "wft-worker",
+                "nodeName": "dsy-worker",
                 "containers": [
                     {
                         "name": "admission",
-                        "image": "wft-admission:tilt-1b7e4c2a9d03f6e5",
+                        "image": "dsy-admission:tilt-1b7e4c2a9d03f6e5",
                         "resources": {
                             "limits": {
                                 "cpu": "250m",
@@ -994,18 +994,18 @@
             "kind": "Pod",
             "metadata": {
                 "name": "compile-worker-7b5d9c8f6d-h6t2r",
-                "namespace": "wft-workers",
+                "namespace": "dsy-workers",
                 "labels": {
                     "app.kubernetes.io/name": "compile-worker",
                     "pod-template-hash": "7b5d9c8f6d"
                 }
             },
             "spec": {
-                "nodeName": "wft-worker3",
+                "nodeName": "dsy-worker3",
                 "containers": [
                     {
                         "name": "compile-worker",
-                        "image": "wft-compile-worker:tilt-6c1f2b9e0a4d7e31",
+                        "image": "dsy-compile-worker:tilt-6c1f2b9e0a4d7e31",
                         "resources": {
                             "limits": {
                                 "cpu": "1",
@@ -1038,18 +1038,18 @@
             "kind": "Pod",
             "metadata": {
                 "name": "simulate-worker-7b5d9c8f6d-z9c3v",
-                "namespace": "wft-workers",
+                "namespace": "dsy-workers",
                 "labels": {
                     "app.kubernetes.io/name": "simulate-worker",
                     "pod-template-hash": "7b5d9c8f6d"
                 }
             },
             "spec": {
-                "nodeName": "wft-worker4",
+                "nodeName": "dsy-worker4",
                 "containers": [
                     {
                         "name": "simulate-worker",
-                        "image": "wft-simulate-worker:tilt-0d5a8e3c7b2f1946",
+                        "image": "dsy-simulate-worker:tilt-0d5a8e3c7b2f1946",
                         "resources": {
                             "limits": {
                                 "cpu": "250m",
@@ -1082,18 +1082,18 @@
             "kind": "Pod",
             "metadata": {
                 "name": "aggregate-worker-7b5d9c8f6d-m4p7s",
-                "namespace": "wft-workers",
+                "namespace": "dsy-workers",
                 "labels": {
                     "app.kubernetes.io/name": "aggregate-worker",
                     "pod-template-hash": "7b5d9c8f6d"
                 }
             },
             "spec": {
-                "nodeName": "wft-worker5",
+                "nodeName": "dsy-worker5",
                 "containers": [
                     {
                         "name": "aggregate-worker",
-                        "image": "wft-aggregate-worker:tilt-9e4b1c7f2a6d0853",
+                        "image": "dsy-aggregate-worker:tilt-9e4b1c7f2a6d0853",
                         "resources": {
                             "limits": {
                                 "cpu": "1",

@@ -7,15 +7,15 @@ import time
 from datetime import timedelta
 
 import pytest
+from dsy_admission import policy
+from dsy_admission.claim import Claimed, claim
+from dsy_admission.scan import Restarted, Scanner, readmit
+from dsy_admission.start import start
+from dsy_jobstate import insert_accepted, transition
+from dsy_keys import workflow_id
+from dsy_stateops import bench
 from temporalio.client import WorkflowExecutionStatus
 from temporalio.service import RPCError, RPCStatusCode
-from wft_admission import policy
-from wft_admission.claim import Claimed, claim
-from wft_admission.scan import Restarted, Scanner, readmit
-from wft_admission.start import start
-from wft_jobstate import insert_accepted, transition
-from wft_keys import workflow_id
-from wft_stateops import bench
 
 pytestmark = [pytest.mark.integration, pytest.mark.pair]
 

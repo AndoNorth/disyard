@@ -12,9 +12,7 @@ from pathlib import Path
 
 import psycopg
 import pytest
-from psycopg import errors, sql
-from psycopg.conninfo import make_conninfo
-from wft_artifactindex import (
+from dsy_artifactindex import (
     Deleted,
     Indexed,
     Invalidated,
@@ -33,9 +31,9 @@ from wft_artifactindex import (
     touch_cache_entry,
     uses_of,
 )
-from wft_events import build_event
-from wft_eventstore import insert_events
-from wft_jobstate import (
+from dsy_events import build_event
+from dsy_eventstore import insert_events
+from dsy_jobstate import (
     JobRow,
     Moved,
     insert_accepted,
@@ -44,12 +42,14 @@ from wft_jobstate import (
     request_action,
     transition,
 )
+from psycopg import errors, sql
+from psycopg.conninfo import make_conninfo
 
 pytestmark = pytest.mark.integration
 
 ROOT = Path(__file__).resolve().parents[3]
 README = (ROOT / "contracts/state/README.md").read_text()
-ROLES_SQL = (resources.files("wft_stateops.migrations") / "R__roles.sql").read_text()
+ROLES_SQL = (resources.files("dsy_stateops.migrations") / "R__roles.sql").read_text()
 TABLES = (
     "accepted_job",
     "job_status",
@@ -79,13 +79,13 @@ def job_row() -> JobRow:
         batch_id=str(uuid.uuid4()),
         priority_class="standard",
         manifest_ref={
-            "uri": f"s3://wft-sources/sha256/aa/{SHA}",
+            "uri": f"s3://dsy-sources/sha256/aa/{SHA}",
             "sha256": SHA,
             "size": 7,
             "name": "m",
             "kind": "manifest",
         },
-        schema_version="wft.job.accepted/3",
+        schema_version="dsy.job.accepted/3",
         traceparent="00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01",
         seed=3,
         parameters={"a": 1},
@@ -96,7 +96,7 @@ def job_row() -> JobRow:
 def some_event():
     return build_event(
         "job.started",
-        source="/wft/workflow",
+        source="/dsy/workflow",
         tenant="acme",
         jobid=str(uuid.uuid4()),
         priorityclass="standard",
@@ -110,7 +110,7 @@ def some_event():
 
 def reference(n: int) -> dict:
     return {
-        "uri": f"s3://wft-components/sha256/00/{n:064x}",
+        "uri": f"s3://dsy-components/sha256/00/{n:064x}",
         "sha256": f"{n:064x}",
         "size": 1,
         "name": "c.wasm",
@@ -147,7 +147,7 @@ def login(appdb):
 def seeded(login):
     """One accepted job inserted through the dispatch role, as its id."""
     row = job_row()
-    assert insert_accepted(login("wft_dispatch"), [row]).inserted == [row.job_id]
+    assert insert_accepted(login("dsy_dispatch"), [row]).inserted == [row.job_id]
     return row.job_id
 
 
@@ -165,16 +165,16 @@ def writes_granted(conn, role: str, table: str, privilege: str) -> bool:
 
 
 def test_the_roles_cannot_log_in_and_are_those_of_the_writers_table(appdb):
-    stated = set(re.findall(r"role `(wft_\w+)`", README))
+    stated = set(re.findall(r"role `(dsy_\w+)`", README))
     with psycopg.connect(appdb) as conn:
         found = dict(
-            conn.execute("SELECT rolname, rolcanlogin FROM pg_roles WHERE rolname LIKE 'wft\\_%'")
+            conn.execute("SELECT rolname, rolcanlogin FROM pg_roles WHERE rolname LIKE 'dsy\\_%'")
         )
-    assert stated == {"wft_dispatch", "wft_control", "wft_admission", "wft_workflow"} | {
-        "wft_artifacts",
-        "wft_reaper",
+    assert stated == {"dsy_dispatch", "dsy_control", "dsy_admission", "dsy_workflow"} | {
+        "dsy_artifacts",
+        "dsy_reaper",
     }
-    assert set(found) == stated | {"wft_reader"}
+    assert set(found) == stated | {"dsy_reader"}
     assert not any(found.values())
 
 
@@ -183,9 +183,9 @@ def test_every_table_of_the_three_families_has_a_writer(appdb):
     with psycopg.connect(appdb) as conn:
         writers = conn.execute(
             "SELECT table_name, grantee FROM information_schema.role_table_grants"
-            " WHERE privilege_type = 'INSERT' AND grantee LIKE 'wft\\_%'"
+            " WHERE privilege_type = 'INSERT' AND grantee LIKE 'dsy\\_%'"
             " UNION SELECT table_name, grantee FROM information_schema.column_privileges"
-            " WHERE privilege_type = 'INSERT' AND grantee LIKE 'wft\\_%'"
+            " WHERE privilege_type = 'INSERT' AND grantee LIKE 'dsy\\_%'"
         ).fetchall()
     for table in (
         "accepted_job",
@@ -199,13 +199,13 @@ def test_every_table_of_the_three_families_has_a_writer(appdb):
 
 
 def test_workflow_role_cannot_insert_an_accepted_job(login):
-    workflow = login("wft_workflow")
+    workflow = login("dsy_workflow")
     with pytest.raises(errors.InsufficientPrivilege):
         insert_accepted(workflow, [job_row()])
 
 
 def test_dispatch_role_cannot_update_status(login, seeded):
-    dispatch = login("wft_dispatch")
+    dispatch = login("dsy_dispatch")
     mark_published(dispatch, seeded)
     with pytest.raises(errors.InsufficientPrivilege):
         transition(dispatch, seeded, "accepted", "admitted")
@@ -216,7 +216,7 @@ def test_dispatch_role_cannot_update_status(login, seeded):
 
 
 def test_control_role_writes_only_the_control_columns_and_row_only_moves(login, seeded):
-    control = login("wft_control")
+    control = login("dsy_control")
     asked = request_action(control, seeded, "pause")
     mark_delivered(control, seeded, asked.control_seq)
     control.execute(
@@ -231,7 +231,7 @@ def test_control_role_writes_only_the_control_columns_and_row_only_moves(login, 
 
 
 def test_admission_role_inserts_events_moves_to_admitted_and_sets_the_receipt(login, seeded, appdb):
-    admission = login("wft_admission")
+    admission = login("dsy_admission")
     assert insert_events(admission, [some_event()]).inserted == 1
     mark_published(admission, seeded)
     assert transition(admission, seeded, "accepted", "admitted") == Moved("admitted")
@@ -246,8 +246,8 @@ def test_admission_role_inserts_events_moves_to_admitted_and_sets_the_receipt(lo
 
 
 def test_workflow_role_moves_the_row_and_inserts_events(login, seeded):
-    workflow = login("wft_workflow")
-    transition(login("wft_admission"), seeded, "accepted", "admitted")
+    workflow = login("dsy_workflow")
+    transition(login("dsy_admission"), seeded, "accepted", "admitted")
     assert transition(workflow, seeded, "admitted", "running") == Moved("running")
     assert insert_events(workflow, [some_event()]).inserted == 1
     refused(workflow, "UPDATE accepted_job SET published_at = now()")
@@ -265,7 +265,7 @@ def columns(conn, table: str) -> list[str]:
 
 
 def test_artifacts_role_indexes_references_and_cache_entries(login):
-    artifacts = login("wft_artifacts")
+    artifacts = login("dsy_artifacts")
     assert isinstance(index_reference(artifacts, reference(1)), Indexed)
     entry = {
         "cache_key": "c" * 64,
@@ -279,7 +279,7 @@ def test_artifacts_role_indexes_references_and_cache_entries(login):
 
 
 def test_artifacts_role_cannot_soft_delete_outside_its_columns(login, appdb):
-    artifacts = login("wft_artifacts")
+    artifacts = login("dsy_artifacts")
     index_reference(artifacts, reference(4))
     with psycopg.connect(appdb) as admin:
         names = columns(admin, "artifact")
@@ -296,8 +296,8 @@ def test_artifacts_role_cannot_soft_delete_outside_its_columns(login, appdb):
 
 
 def test_reaper_reads_what_it_needs_and_cannot_update_a_job_row(login, seeded, appdb):
-    reaper = login("wft_reaper")
-    index_reference(login("wft_artifacts"), reference(2))
+    reaper = login("dsy_reaper")
+    index_reference(login("dsy_artifacts"), reference(2))
     assert reaper.execute(f"SELECT {REAPER_READS} FROM accepted_job").fetchall()
     for table in ("job_status", "artifact", "artifact_use", "reaper_job", "reaper_cursor"):
         reaper.execute(sql.SQL("SELECT count(*) FROM {}").format(sql.Identifier(table)))
@@ -315,8 +315,8 @@ def test_reaper_reads_what_it_needs_and_cannot_update_a_job_row(login, seeded, a
 
 
 def test_reaper_role_updates_only_its_columns(login):
-    index_reference(login("wft_artifacts"), reference(2))
-    reaper = login("wft_reaper")
+    index_reference(login("dsy_artifacts"), reference(2))
+    reaper = login("dsy_reaper")
     assert isinstance(mark_deleted(reaper, reference(2)["uri"], NOW), Deleted)
     refused(reaper, "UPDATE artifact SET last_used_at = now()")
     refused(reaper, "UPDATE artifact SET uri = uri")
@@ -327,7 +327,7 @@ def test_reaper_role_updates_only_its_columns(login):
 
 
 def test_only_the_reaper_role_writes_the_progress_tables(login, seeded, appdb):
-    reaper = login("wft_reaper")
+    reaper = login("dsy_reaper")
     reaper.execute("INSERT INTO reaper_job (job_id) VALUES (%s)", (seeded,))
     reaper.execute("UPDATE reaper_job SET results_done_at = %s WHERE job_id = %s", (NOW, seeded))
     reaper.execute("INSERT INTO reaper_cursor (name, position) VALUES ('orphans', 'sources/ab')")
@@ -339,7 +339,7 @@ def test_only_the_reaper_role_writes_the_progress_tables(login, seeded, appdb):
             r
             for (r,) in admin.execute(
                 "SELECT rolname FROM pg_roles"
-                " WHERE rolname LIKE 'wft\\_%' AND rolname <> 'wft_reaper'"
+                " WHERE rolname LIKE 'dsy\\_%' AND rolname <> 'dsy_reaper'"
             )
         ]
         for role, table in itertools.product(roles, ("reaper_job", "reaper_cursor")):
@@ -347,8 +347,8 @@ def test_only_the_reaper_role_writes_the_progress_tables(login, seeded, appdb):
                 assert not writes_granted(admin, role, table, privilege), (role, table, privilege)
 
 
-def test_record_cache_entry_works_under_the_real_wft_artifacts_login(login):
-    artifacts = login("wft_artifacts")
+def test_record_cache_entry_works_under_the_real_dsy_artifacts_login(login):
+    artifacts = login("dsy_artifacts")
     wasm, info = reference(10), {**reference(11), "kind": "build-info", "name": "build-info.json"}
     for ref in (wasm, info):
         assert isinstance(index_reference(artifacts, ref), Indexed)
@@ -365,7 +365,7 @@ def test_record_cache_entry_works_under_the_real_wft_artifacts_login(login):
 
 
 def test_reaper_login_can_expire_an_entry_and_retire_its_key(login):
-    artifacts, reaper = login("wft_artifacts"), login("wft_reaper")
+    artifacts, reaper = login("dsy_artifacts"), login("dsy_reaper")
     index_reference(artifacts, reference(12))
     entry = {
         "cache_key": "e" * 64,
@@ -386,9 +386,9 @@ def test_now_follows_the_database_clock(appdb):
     assert abs(database_now - NOW) < timedelta(hours=1)
 
 
-def test_put_content_flow_works_under_the_wft_artifacts_login(login):
+def test_put_content_flow_works_under_the_dsy_artifacts_login(login):
     """Index, revive and link, as the connection of the dispatch API does."""
-    artifacts, reaper = login("wft_artifacts"), login("wft_reaper")
+    artifacts, reaper = login("dsy_artifacts"), login("dsy_reaper")
     job, uri = str(uuid.uuid4()), reference(13)["uri"]
     assert isinstance(index_reference(artifacts, reference(13)), Indexed)
     assert isinstance(link_use(artifacts, job, uri, NOW), Linked)
@@ -407,8 +407,8 @@ def test_put_content_flow_works_under_the_wft_artifacts_login(login):
     assert isinstance(link_use(artifacts, job, third["uri"], LATER), Linked)
 
 
-def test_retried_link_renews_under_the_wft_artifacts_login(login):
-    artifacts = login("wft_artifacts")
+def test_retried_link_renews_under_the_dsy_artifacts_login(login):
+    artifacts = login("dsy_artifacts")
     job, uri = str(uuid.uuid4()), reference(16)["uri"]
     index_reference(artifacts, reference(16))
     assert isinstance(link_use(artifacts, job, uri, NOW), Linked)
@@ -418,11 +418,11 @@ def test_retried_link_renews_under_the_wft_artifacts_login(login):
 
 
 def test_reader_role_cannot_write_any_table(login, seeded):
-    reader = login("wft_reader")
+    reader = login("dsy_reader")
     for table in TABLES:
         reader.execute(sql.SQL("SELECT count(*) FROM {}").format(sql.Identifier(table)))
         for privilege in ("INSERT", "UPDATE", "DELETE", "TRUNCATE"):
-            assert not writes_granted(reader, "wft_reader", table, privilege), (table, privilege)
+            assert not writes_granted(reader, "dsy_reader", table, privilege), (table, privilege)
     refused(reader, "UPDATE accepted_job SET status = status")
     refused(reader, "DELETE FROM event")
     with pytest.raises(errors.InsufficientPrivilege):
@@ -432,7 +432,7 @@ def test_reader_role_cannot_write_any_table(login, seeded):
 def test_no_role_can_delete_truncate_or_rewrite_what_is_append_only(appdb):
     with psycopg.connect(appdb) as conn:
         roles = [
-            r for (r,) in conn.execute("SELECT rolname FROM pg_roles WHERE rolname LIKE 'wft\\_%'")
+            r for (r,) in conn.execute("SELECT rolname FROM pg_roles WHERE rolname LIKE 'dsy\\_%'")
         ]
         for role, table in itertools.product(roles, TABLES):
             for privilege in ("DELETE", "TRUNCATE"):
@@ -444,11 +444,11 @@ def test_no_role_can_delete_truncate_or_rewrite_what_is_append_only(appdb):
 
 def test_status_value_is_not_restricted_by_grants(login, seeded):
     """A grant names columns, not values, so a writer may write any status the trigger allows."""
-    control = login("wft_control")
+    control = login("dsy_control")
     control.execute("UPDATE accepted_job SET status = 'admitted' WHERE job_id = %s", (seeded,))
     with pytest.raises(errors.CheckViolation):
         control.execute("UPDATE accepted_job SET status = 'succeeded' WHERE job_id = %s", (seeded,))
-    workflow = login("wft_workflow")
+    workflow = login("dsy_workflow")
     workflow.execute("UPDATE accepted_job SET status = 'running' WHERE job_id = %s", (seeded,))
     status = workflow.execute("SELECT status FROM accepted_job WHERE job_id = %s", (seeded,))
     assert status.fetchone() == ("running",)
@@ -456,12 +456,12 @@ def test_status_value_is_not_restricted_by_grants(login, seeded):
 
 def test_reapplying_the_file_restores_the_grants(appdb, login, seeded):
     with psycopg.connect(appdb, autocommit=True) as admin:
-        admin.execute("GRANT UPDATE ON accepted_job TO wft_reader")
-        admin.execute("REVOKE UPDATE (published_at) ON accepted_job FROM wft_dispatch")
+        admin.execute("GRANT UPDATE ON accepted_job TO dsy_reader")
+        admin.execute("REVOKE UPDATE (published_at) ON accepted_job FROM dsy_dispatch")
         admin.execute(ROLES_SQL)
         admin.execute(ROLES_SQL)
-        assert not writes_granted(admin, "wft_reader", "accepted_job", "UPDATE")
-    mark_published(login("wft_dispatch"), seeded)
+        assert not writes_granted(admin, "dsy_reader", "accepted_job", "UPDATE")
+    mark_published(login("dsy_dispatch"), seeded)
 
 
 def test_roles_apply_again_in_a_second_database_of_the_same_container(appdb):
@@ -470,9 +470,9 @@ def test_roles_apply_again_in_a_second_database_of_the_same_container(appdb):
         admin.execute(sql.SQL("CREATE DATABASE {}").format(sql.Identifier(second)))
     dsn = make_conninfo(appdb, dbname=second)
     result = subprocess.run(
-        [sys.executable, "-m", "wft_migrate", "apply", "--dsn", dsn], capture_output=True, text=True
+        [sys.executable, "-m", "dsy_migrate", "apply", "--dsn", dsn], capture_output=True, text=True
     )
     assert result.returncode == 0, result.stderr
     assert "applied R__roles.sql" in result.stdout
     with psycopg.connect(dsn) as conn:
-        assert writes_granted(conn, "wft_dispatch", "accepted_job", "INSERT")
+        assert writes_granted(conn, "dsy_dispatch", "accepted_job", "INSERT")

@@ -13,20 +13,20 @@ import subprocess
 from pathlib import Path
 
 import pytest
-from wft_itest.session import RUN_LABEL
-from wft_workloads import bundle
+from dsy_itest.session import RUN_LABEL
+from dsy_workloads import bundle
 
 ROOT = Path(__file__).resolve().parents[2]
 IMAGE_SH = ROOT / "deploy/workers/image.sh"
 POOLS = ("compile", "simulate", "aggregate")
 TOOLS = ("wasmtime", "wasm-tools", "uv")
 ON_PATH = {"compile": ["uv", "wasm-tools"], "simulate": ["wasmtime"], "aggregate": []}
-# The scratch environment a pool pod gives the worker, each a directory of the /var/wft volume.
+# The scratch environment a pool pod gives the worker, each a directory of the /var/dsy volume.
 SCRATCH_ENV = {
-    "HOME": "/var/wft/home",
-    "TMPDIR": "/var/wft/tmp",
-    "XDG_CACHE_HOME": "/var/wft/cache",
-    "UV_CACHE_DIR": "/var/wft/cache/uv",
+    "HOME": "/var/dsy/home",
+    "TMPDIR": "/var/dsy/tmp",
+    "XDG_CACHE_HOME": "/var/dsy/cache",
+    "UV_CACHE_DIR": "/var/dsy/cache/uv",
 }
 PROBE = f"""
 import json, os, shutil
@@ -35,7 +35,7 @@ print(json.dumps({{
     "uid": os.getuid(),
     "on_path": sorted(found),
     "mtimes": sorted({{os.stat(shutil.which(t)).st_mtime for t in found if t != "uv"}}),
-    "etc_wft": os.path.exists("/etc/wft"),
+    "etc_dsy": os.path.exists("/etc/dsy"),
 }}))
 """
 
@@ -48,7 +48,7 @@ def run(*argv: str, check: bool = True) -> subprocess.CompletedProcess:
 
 @pytest.fixture(scope="module")
 def images(t1):
-    refs = {pool: f"wft-test-{pool}-worker:{t1.run_id.lower()}" for pool in POOLS}
+    refs = {pool: f"dsy-test-{pool}-worker:{t1.run_id.lower()}" for pool in POOLS}
     try:
         for pool, ref in refs.items():
             print(run(str(IMAGE_SH), pool, ref).stdout.strip())
@@ -74,14 +74,14 @@ def test_image_command_user_and_tools(images, docker_run, pool):
     )
     probe = docker_run(images[pool], "-c", PROBE, entrypoint="python")
     print(config["Entrypoint"], config.get("Cmd"), probe.stdout.strip())
-    assert config["Entrypoint"] == ["python", "-m", "wft_worker", "--pool", pool]
+    assert config["Entrypoint"] == ["python", "-m", "dsy_worker", "--pool", pool]
     assert config.get("Cmd") is None
     assert probe.returncode == 0, probe.stderr
     found = json.loads(probe.stdout)
     assert found["uid"] == 65532
     assert found["on_path"] == ON_PATH[pool]
     assert found["mtimes"] in ([], [1])
-    assert found["etc_wft"] is False
+    assert found["etc_dsy"] is False
 
 
 @pytest.mark.parametrize(
@@ -100,14 +100,14 @@ def test_image_compile_builds_workload_bundle_read_only(t1, images, docker_run, 
     tmp_path.chmod(0o755)
     label = f"{RUN_LABEL}={t1.run_id}"
     volume = run("docker", "volume", "create", "--label", label).stdout.strip()
-    dirs = " ".join([*SCRATCH_ENV.values(), "/var/wft/task/links"])
+    dirs = " ".join([*SCRATCH_ENV.values(), "/var/dsy/task/links"])
     build = (
-        f"mkdir -p {dirs} && python -m wft_compile build --bundle /in/{bundle.NAME} "
-        "--entry wft_workloads.main --out /var/wft/task/out --find-links /var/wft/task/links"
+        f"mkdir -p {dirs} && python -m dsy_compile build --bundle /in/{bundle.NAME} "
+        "--entry dsy_workloads.main --out /var/dsy/task/out --find-links /var/dsy/task/links"
     )
     options = ["--read-only", "--user", "65532", "--network", "none"]
     options += ["--memory", "1g", "--memory-swap", "1g", "--cpus", "1"]
-    options += ["--mount", f"type=volume,src={volume},dst=/var/wft"]
+    options += ["--mount", f"type=volume,src={volume},dst=/var/dsy"]
     options += ["--mount", f"type=bind,src={tmp_path},dst=/in,readonly"]
     options += [arg for name, value in SCRATCH_ENV.items() for arg in ("-e", f"{name}={value}")]
     try:
@@ -128,7 +128,7 @@ def test_image_sh_refuses_changed_hash(tmp_path):
     sri = text.split('pname = "wasmtime"')[1].split('hash = "')[1].split('"')[0]
     other = base64.b64encode(hashlib.sha256(b"another asset").digest()).decode()
     pins.write_text(text.replace(sri, f"sha256-{other}"))
-    ref = "wft-test-refused-worker:local"
+    ref = "dsy-test-refused-worker:local"
     refused = run(str(tmp_path / "deploy/workers/image.sh"), "simulate", ref, check=False)
     print(f"exit {refused.returncode}: {refused.stderr.strip()}")
     assert refused.returncode == 1

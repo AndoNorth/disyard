@@ -1,8 +1,8 @@
-"""The reaper Schedule of the naming contract is the one wft_artifactreaper.schedule delivers."""
+"""The reaper Schedule of the naming contract is the one dsy_artifactreaper.schedule delivers."""
 
 import pytest
-from wft_artifactreaper import schedule
-from wft_workflow.contract import naming
+from dsy_artifactreaper import schedule
+from dsy_workflow.contract import naming
 
 CONSTANTS = {
     "id": "SCHEDULE_ID",

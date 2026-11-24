@@ -18,7 +18,7 @@ PEAK_MIB = 230
 CALLS = 4
 JOBS_PER_CALL = 3_000
 INDEX_BYTES = 128 * 1024 * 1024
-ACCEPTED = "SELECT count(*) FROM event WHERE type = 'dev.wft.job.accepted.v1'"
+ACCEPTED = "SELECT count(*) FROM event WHERE type = 'dev.dsy.job.accepted.v1'"
 
 
 def peak_mib(pid: int) -> float:

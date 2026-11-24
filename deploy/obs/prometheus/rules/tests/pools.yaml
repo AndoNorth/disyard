@@ -5,90 +5,90 @@ tests:
   - interval: 1m
     name: backlog age fires for a queue waiting past 10 minutes and stays silent for a young one
     input_series:
-      - series: 'approximate_backlog_age_seconds{taskqueue="wft_simulate",task_type="Activity",partition="0"}'
+      - series: 'approximate_backlog_age_seconds{taskqueue="dsy_simulate",task_type="Activity",partition="0"}'
         values: '700x12'
-      - series: 'approximate_backlog_age_seconds{taskqueue="wft_simulate",task_type="Activity",partition="1"}'
+      - series: 'approximate_backlog_age_seconds{taskqueue="dsy_simulate",task_type="Activity",partition="1"}'
         values: '30x12'
-      - series: 'approximate_backlog_age_seconds{taskqueue="wft_compile",task_type="Activity",partition="0"}'
+      - series: 'approximate_backlog_age_seconds{taskqueue="dsy_compile",task_type="Activity",partition="0"}'
         values: '30x12'
     alert_rule_test:
       - eval_time: 4m
-        alertname: WftPoolBacklogAgeHigh
+        alertname: DsyPoolBacklogAgeHigh
         exp_alerts: []
       - eval_time: 8m
-        alertname: WftPoolBacklogAgeHigh
+        alertname: DsyPoolBacklogAgeHigh
         exp_alerts:
-          - exp_labels: {severity: warning, taskqueue: wft_simulate}
+          - exp_labels: {severity: warning, taskqueue: dsy_simulate}
             exp_annotations:
               runbook_url: >-
-                https://github.com/AndoNorth/weft/blob/main/docs/runbooks/alerts.md#wftpoolbacklogagehigh
-              summary: The oldest task on Temporal queue wft_simulate has waited 11m 40s.
+                https://github.com/AndoNorth/disyard/blob/main/docs/runbooks/alerts.md#dsypoolbacklogagehigh
+              summary: The oldest task on Temporal queue dsy_simulate has waited 11m 40s.
               description: >-
                 The pool is not keeping up with its queue. The server spells the queue with
                 underscores in place of dashes.
   - interval: 1m
     name: unschedulable fires for a pool with a new verdict and stays silent for placed ones
     input_series:
-      - series: 'wft_placement_decisions_total{pool="simulate",verdict="unschedulable"}'
+      - series: 'dsy_placement_decisions_total{pool="simulate",verdict="unschedulable"}'
         values: '0 0 1 1 1'
-      - series: 'wft_placement_decisions_total{pool="compile",verdict="unschedulable"}'
+      - series: 'dsy_placement_decisions_total{pool="compile",verdict="unschedulable"}'
         values: '2x4'
-      - series: 'wft_placement_decisions_total{pool="compile",verdict="placed"}'
+      - series: 'dsy_placement_decisions_total{pool="compile",verdict="placed"}'
         values: '0+5x4'
     alert_rule_test:
       - eval_time: 3m
-        alertname: WftUnschedulableTasks
+        alertname: DsyUnschedulableTasks
         exp_alerts:
           - exp_labels: {severity: warning, pool: simulate}
             exp_annotations:
               runbook_url: >-
-                https://github.com/AndoNorth/weft/blob/main/docs/runbooks/alerts.md#wftunschedulabletasks
+                https://github.com/AndoNorth/disyard/blob/main/docs/runbooks/alerts.md#dsyunschedulabletasks
               summary: Placement found no slot for tasks of pool simulate.
               description: A task needs more than any slot of its pool offers.
   - interval: 1m
     name: heartbeat storm fires above 5 timeouts and stays silent at or below 5
     input_series:
-      - series: 'activity_task_timeout{taskqueue="wft_simulate",timeout_type="Heartbeat",activityType="run"}'
+      - series: 'activity_task_timeout{taskqueue="dsy_simulate",timeout_type="Heartbeat",activityType="run"}'
         values: '0+2x10'
-      - series: 'activity_task_timeout{taskqueue="wft_compile",timeout_type="Heartbeat",activityType="run"}'
+      - series: 'activity_task_timeout{taskqueue="dsy_compile",timeout_type="Heartbeat",activityType="run"}'
         values: '0 1 2 3 4 5 5 5 5 5 5'
-      - series: 'activity_task_timeout{taskqueue="wft_aggregate",timeout_type="StartToClose",activityType="run"}'
+      - series: 'activity_task_timeout{taskqueue="dsy_aggregate",timeout_type="StartToClose",activityType="run"}'
         values: '0+9x10'
     alert_rule_test:
       - eval_time: 9m
-        alertname: WftHeartbeatTimeoutStorm
+        alertname: DsyHeartbeatTimeoutStorm
         exp_alerts:
-          - exp_labels: {severity: critical, taskqueue: wft_simulate}
+          - exp_labels: {severity: critical, taskqueue: dsy_simulate}
             exp_annotations:
               runbook_url: >-
-                https://github.com/AndoNorth/weft/blob/main/docs/runbooks/alerts.md#wftheartbeattimeoutstorm
+                https://github.com/AndoNorth/disyard/blob/main/docs/runbooks/alerts.md#dsyheartbeattimeoutstorm
               summary: >-
-                More than 5 attempts on Temporal queue wft_simulate timed out waiting for a heartbeat
+                More than 5 attempts on Temporal queue dsy_simulate timed out waiting for a heartbeat
                 in 15 minutes.
               description: Workers on the queue are stalled or lost, and the attempts are retried.
   - interval: 1m
     name: pool saturated fires after 30 busy minutes and stays silent with a free slot
     input_series:
-      - series: 'temporal_worker_task_slots_used{task_queue="wft-simulate",worker_type="ActivityWorker"}'
+      - series: 'temporal_worker_task_slots_used{task_queue="dsy-simulate",worker_type="ActivityWorker"}'
         values: '4x40'
-      - series: 'temporal_worker_task_slots_available{task_queue="wft-simulate",worker_type="ActivityWorker"}'
+      - series: 'temporal_worker_task_slots_available{task_queue="dsy-simulate",worker_type="ActivityWorker"}'
         values: '0x40'
-      - series: 'temporal_worker_task_slots_used{task_queue="wft-compile",worker_type="ActivityWorker"}'
+      - series: 'temporal_worker_task_slots_used{task_queue="dsy-compile",worker_type="ActivityWorker"}'
         values: '1x40'
-      - series: 'temporal_worker_task_slots_available{task_queue="wft-compile",worker_type="ActivityWorker"}'
+      - series: 'temporal_worker_task_slots_available{task_queue="dsy-compile",worker_type="ActivityWorker"}'
         values: '1x40'
     alert_rule_test:
       - eval_time: 20m
-        alertname: WftPoolSaturated
+        alertname: DsyPoolSaturated
         exp_alerts: []
       - eval_time: 35m
-        alertname: WftPoolSaturated
+        alertname: DsyPoolSaturated
         exp_alerts:
-          - exp_labels: {severity: info, task_queue: wft-simulate}
+          - exp_labels: {severity: info, task_queue: dsy-simulate}
             exp_annotations:
               runbook_url: >-
-                https://github.com/AndoNorth/weft/blob/main/docs/runbooks/alerts.md#wftpoolsaturated
-              summary: Every activity slot of queue wft-simulate has been busy for 30 minutes.
+                https://github.com/AndoNorth/disyard/blob/main/docs/runbooks/alerts.md#dsypoolsaturated
+              summary: Every activity slot of queue dsy-simulate has been busy for 30 minutes.
               description: >-
                 The pool runs at full width, which is expected under load and worth knowing when its
                 backlog grows.

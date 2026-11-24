@@ -31,7 +31,7 @@ def by_container(expr: str) -> dict[tuple[str, str, str], float]:
 
 seconds = int(sys.argv[1])
 window = f"{seconds}s"
-namespaces = "|".join(sys.argv[2:]) or "wft-obs|wft-control|wft-workers|wft-infra"
+namespaces = "|".join(sys.argv[2:]) or "dsy-obs|dsy-control|dsy-workers|dsy-infra"
 selector = f'{{namespace=~"{namespaces}",container!="",container!="POD"}}'
 peak = by_container(f"max_over_time(container_memory_working_set_bytes{selector}[{window}])")
 throttled = by_container(f"increase(container_cpu_cfs_throttled_periods_total{selector}[{window}])")

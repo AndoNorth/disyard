@@ -1,12 +1,12 @@
 [project]
-name = "wft-itest"
+name = "dsy-itest"
 version = "0.0.0"
 license = "Apache-2.0"
 requires-python = ">=3.13,<3.14"
 dependencies = ["pytest", "pyyaml"]
 
 [project.entry-points.pytest11]
-wft_itest = "wft_itest.fixtures"
+dsy_itest = "dsy_itest.fixtures"
 
 [build-system]
 requires = ["hatchling"]

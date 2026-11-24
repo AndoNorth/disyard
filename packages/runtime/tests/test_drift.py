@@ -6,7 +6,7 @@ import sys
 from pathlib import Path
 
 import pytest
-from wft_runtime.models import FILES
+from dsy_runtime.models import FILES
 
 ROOT = Path(__file__).resolve().parents[3]
 SCHEMAS = [relative for _, relative in FILES.values()]
@@ -14,7 +14,7 @@ SCHEMAS = [relative for _, relative in FILES.values()]
 EDIT = """
 import sys
 from pydantic import create_model
-from wft_runtime import gen, models
+from dsy_runtime import gen, models
 model, path = models.FILES[sys.argv[1]]
 edited = create_model(model.__name__, __base__=model, hint=(str | None, None))
 models.FILES[sys.argv[1]] = (edited, path)
@@ -24,7 +24,7 @@ sys.exit(gen.main(["--check"]))
 
 def run(*args):
     return subprocess.run(
-        [sys.executable, "-m", "wft_runtime.gen", *args], capture_output=True, text=True
+        [sys.executable, "-m", "dsy_runtime.gen", *args], capture_output=True, text=True
     )
 
 

@@ -2,8 +2,8 @@ import copy
 from pathlib import Path
 
 import pytest
-from wft_jobpatch import PatchReport, patch_check
-from wft_plan import canonical_bytes
+from dsy_jobpatch import PatchReport, patch_check
+from dsy_plan import canonical_bytes
 
 VECTORS = Path(__file__).resolve().parents[3] / "contracts/job/vectors/patch"
 CASES = sorted(p for p in VECTORS.glob("*/*") if p.is_dir())

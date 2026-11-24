@@ -2,10 +2,10 @@
 
 import json
 
+import dsy_events
 import pytest
-import wft_events
-from wft_compat import read_event
-from wft_compat.vectors import POISON, poison_files
+from dsy_compat import read_event
+from dsy_compat.vectors import POISON, poison_files
 
 CASES = sorted(p for p in POISON.glob("*.json") if not p.name.endswith(".expect.json"))
 WANTED = {
@@ -21,7 +21,7 @@ def test_the_poison_set_is_the_documented_failures():
 @pytest.mark.parametrize("path", CASES, ids=lambda p: p.stem)
 def test_a_poison_file_raises_the_error_its_sidecar_names(path):
     expect = json.loads(path.with_suffix(".expect.json").read_text())
-    with pytest.raises(getattr(wft_events, expect["error"])) as raised:
+    with pytest.raises(getattr(dsy_events, expect["error"])) as raised:
         read_event(path.read_bytes())
     assert type(raised.value).__name__ == expect["error"]
     assert raised.value.reason == expect["reason"]

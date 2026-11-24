@@ -1,4 +1,4 @@
-"""The JSON line, the field filter, `bind`, and the non-blocking OTLP push of `wft_obs.logs`."""
+"""The JSON line, the field filter, `bind`, and the non-blocking OTLP push of `dsy_obs.logs`."""
 
 import io
 import json
@@ -9,9 +9,9 @@ import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 import pytest
+from dsy_events.metrics import registry
+from dsy_obs import logs
 from opentelemetry.proto.collector.logs.v1.logs_service_pb2 import ExportLogsServiceRequest
-from wft_events.metrics import registry
-from wft_obs import logs
 
 TRACE_ID = "4bf92f3577b34da6a3ce929d0e0e4736"
 SPAN_ID = "00f067aa0ba902b7"
@@ -39,7 +39,7 @@ def otlp_handler(root) -> logs.OtlpHandler | None:
 
 
 def test_each_line_is_one_json_object_with_the_contract_fields(lines):
-    log = logging.getLogger("wft.test")
+    log = logging.getLogger("dsy.test")
     log.info("plain %s", "line")
     with logs.bind(tenant="t1", job_id="j1", task_id="k1", attempt_id="a1", pool="simulate"):
         log.warning("bound", extra={"event_type": "task.completed", "exit_class": "ok"})
@@ -63,7 +63,7 @@ def test_each_line_is_one_json_object_with_the_contract_fields(lines):
 
 def test_bind_derives_the_trace_ids_from_traceparent(lines):
     with logs.bind(traceparent=TRACEPARENT, job_id="j1"):
-        logging.getLogger("wft.test").info("traced")
+        logging.getLogger("dsy.test").info("traced")
     [line] = lines()
     assert line["trace_id"] == TRACE_ID and line["span_id"] == SPAN_ID
     assert "traceparent" not in line
@@ -72,7 +72,7 @@ def test_bind_derives_the_trace_ids_from_traceparent(lines):
 @pytest.mark.parametrize("value", ["", "garbage", f"00-{'0' * 32}-{SPAN_ID}-01"])
 def test_a_malformed_traceparent_sets_no_trace_ids(lines, value):
     with logs.bind(traceparent=value):
-        logging.getLogger("wft.test").info("x")
+        logging.getLogger("dsy.test").info("x")
     [line] = lines()
     assert "trace_id" not in line and "span_id" not in line
 
@@ -84,7 +84,7 @@ def test_bind_refuses_a_name_outside_the_contract(name):
 
 
 def test_bind_nests_and_restores(lines):
-    log = logging.getLogger("wft.test")
+    log = logging.getLogger("dsy.test")
     with logs.bind(job_id="j1"):
         with logs.bind(task_id="k1"):
             log.info("inner")
@@ -98,7 +98,7 @@ def test_bind_nests_and_restores(lines):
 
 def test_an_extra_key_outside_the_contract_is_not_emitted(lines):
     extra = {"jobid": "j1", "traceparent": TRACEPARENT, "user": "u", "job_id": "j2"}
-    logging.getLogger("wft.test").info("x", extra=extra)
+    logging.getLogger("dsy.test").info("x", extra=extra)
     [line] = lines()
     assert set(line) == set(logs.CORE) | {"job_id"}
     assert line["job_id"] == "j2"
@@ -108,7 +108,7 @@ def test_an_exception_is_kept_in_msg(lines):
     try:
         raise ValueError("boom")
     except ValueError:
-        logging.getLogger("wft.test").exception("failed")
+        logging.getLogger("dsy.test").exception("failed")
     [line] = lines()
     assert set(line) == set(logs.CORE)
     assert line["msg"].startswith("failed\n") and "ValueError: boom" in line["msg"]
@@ -130,8 +130,8 @@ def test_a_refusing_endpoint_never_blocks_and_counts_the_drops(monkeypatch, root
     logs.install("dispatch", stream=out)
     assert otlp_handler(root) is not None
     before = logs.dropped()
-    counted = registry.count("wft_obs_log_dropped_total", component="dispatch")
-    log = logging.getLogger("wft.test")
+    counted = registry.count("dsy_obs_log_dropped_total", component="dispatch")
+    log = logging.getLogger("dsy.test")
     started = time.monotonic()
     for i in range(10_000):
         log.info("line %d", i)
@@ -140,7 +140,7 @@ def test_a_refusing_endpoint_never_blocks_and_counts_the_drops(monkeypatch, root
     written = [json.loads(line)["msg"] for line in out.getvalue().splitlines()]
     assert sum(msg.startswith("line ") for msg in written) == 10_000
     assert logs.dropped() - before >= 10_000 - logs.QUEUE_SIZE - logs.BATCH_SIZE
-    exported = registry.count("wft_obs_log_dropped_total", component="dispatch") - counted
+    exported = registry.count("dsy_obs_log_dropped_total", component="dispatch") - counted
     assert exported == logs.dropped() - before
 
 
@@ -175,7 +175,7 @@ def test_the_push_carries_service_name_and_the_fields_as_attributes(root, monkey
         monkeypatch.setenv(logs.ENDPOINT, f"http://127.0.0.1:{receiver.server_address[1]}")
         logs.install("admission", stream=io.StringIO())
         with logs.bind(job_id="j1", traceparent=TRACEPARENT):
-            logging.getLogger("wft.test").info("pushed", extra={"user": "u", "pool": "compile"})
+            logging.getLogger("dsy.test").info("pushed", extra={"user": "u", "pool": "compile"})
         otlp_handler(root).close()
         receiver.shutdown()
     [(path, request)] = receiver.requests

@@ -1,7 +1,7 @@
 # Grafana
 
-Dashboards, Explore and annotations of the observability stack: Grafana from the pinned image of `deploy/versions.yaml`, in `wft-obs` on the obs node.
-The module is group `obs`, profile `ci`, and runs only on a cluster brought up with `WFT_OBS=on`, as the [stack overview](../README.md) says.
+Dashboards, Explore and annotations of the observability stack: Grafana from the pinned image of `deploy/versions.yaml`, in `dsy-obs` on the obs node.
+The module is group `obs`, profile `ci`, and runs only on a cluster brought up with `DSY_OBS=on`, as the [stack overview](../README.md) says.
 
 ## Files
 
@@ -17,10 +17,10 @@ The module is group `obs`, profile `ci`, and runs only on a cluster brought up w
 
 | uid | Backend | Notes |
 | --- | --- | --- |
-| `prometheus` | `prometheus.wft-obs:9090` | the default datasource |
-| `loki` | `loki.wft-obs:3100` | derived fields, below |
-| `tempo` | `tempo.wft-obs:3200` | |
-| `pyroscope` | `pyroscope.wft-obs:4040` | |
+| `prometheus` | `prometheus.dsy-obs:9090` | the default datasource |
+| `loki` | `loki.dsy-obs:3100` | derived fields, below |
+| `tempo` | `tempo.dsy-obs:3200` | |
+| `pyroscope` | `pyroscope.dsy-obs:4040` | |
 
 Tempo is provisioned before its module exists, and Grafana does not check a datasource at provisioning, so a query on Tempo answers an error until its backend runs.
 
@@ -29,7 +29,7 @@ The Loki datasource has two derived fields, each read from the structured metada
 | Field | Opens |
 | --- | --- |
 | `trace_id` | the trace of that id in the Tempo datasource |
-| `job_id` | the job's workflow page in the Temporal UI, `http://127.0.0.1:18233/namespaces/wft/workflows/job-<job id>` |
+| `job_id` | the job's workflow page in the Temporal UI, `http://127.0.0.1:18233/namespaces/dsy/workflows/job-<job id>` |
 
 The Tempo datasource has no `jsonData` setting for a link from a span attribute to an external URL, so the link is a provisioned correlation of type `external` on the `temporalWorkflowID` field.
 A correlation binds to a field of a result table and not to a span tag, so the link shows where a TraceQL query returns the attribute as a column, such as `{ resource.service.name = "admission" } | select(span.temporalWorkflowID)` with the table format set to Spans: each value opens the job's workflow page in the Temporal UI.
@@ -42,7 +42,7 @@ It does not show among a span's attributes in the trace view, which renders no l
 | Browse and Explore | `http://127.0.0.1:13000`, with no login: an anonymous visitor is an Editor, the role that gives Explore, and the port is bound to loopback |
 | The HTTP API | basic auth as user `admin` with the value of `deploy/obs/grafana/secrets.sh password`, on `http://127.0.0.1:13000/api/...` |
 
-The admin credential is generated on first use into `grafana.credential` in the state directory (`WFT_STATE_DIR`, else `$XDG_STATE_HOME/weft`), and the Secret carries it into the pod.
+The admin credential is generated on first use into `grafana.credential` in the state directory (`DSY_STATE_DIR`, else `$XDG_STATE_HOME/disyard`), and the Secret carries it into the pod.
 It is never committed.
 Grafana keeps the password in its database from its first start, so deleting the file while the cluster lives breaks the match, and `just nuke` resets both.
 Grafana reports the anonymous role setting as deprecated in favour of Viewer only, and the Editor role still gives Explore on the pinned version.

@@ -4,9 +4,9 @@ import io
 from pathlib import Path
 
 import pytest
-from wft_kernel.format import FormatError
-from wft_kernel.reader import read, rows, same_blocks
-from wft_kernel.writer import write
+from dsy_kernel.format import FormatError
+from dsy_kernel.reader import read, rows, same_blocks
+from dsy_kernel.writer import write
 
 VECTORS = Path(__file__).resolve().parents[3] / "contracts/workload/vectors/results"
 INVALID = sorted((VECTORS / "invalid").glob("*/*.xml"))
@@ -61,7 +61,7 @@ def test_every_valid_vector_has_its_expected_values():
 def test_reader_vectors_valid(name):
     with open(VECTORS / "valid" / name, "rb") as source:
         document = read(source)
-    assert document == {"schema": "wft.sim.v1", "seed": 7, "blocks": EXPECTED[name]}
+    assert document == {"schema": "dsy.sim.v1", "seed": 7, "blocks": EXPECTED[name]}
     assert same_blocks(EXPECTED[name], document["blocks"]) is None
 
 
@@ -111,14 +111,14 @@ def test_a_bad_row_far_into_the_document_refuses_before_any_row_is_yielded():
 def test_compares_values_not_bytes():
     one = (
         b'<?xml version="1.0" encoding="UTF-8"?>\n'
-        b'<results schema="wft.sim.v1" seed="7">'
+        b'<results schema="dsy.sim.v1" seed="7">'
         b'<block id="b" kind="scalar"><row name="&#97;&#10;" value="12"/></block>'
         b'<block id="s" kind="series"><row step="1" value="0.5"/></block>'
         b'<block id="e" kind="echo"></block>'
         b"</results>"
     )
     other = (
-        b"<results seed='7'   schema='wft.sim.v1'>\n"
+        b"<results seed='7'   schema='dsy.sim.v1'>\n"
         b"  <block kind='scalar' id='b'>\n    <row value='12' name='a&#xA;'></row>\n  </block>\n"
         b"  <!-- a comment -->\n"
         b'  <block kind="series" id="s"><row value="0.5" step="1" /></block>\n'

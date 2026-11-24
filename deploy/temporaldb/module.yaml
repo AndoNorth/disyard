@@ -1,6 +1,6 @@
 name: temporaldb
 group: infra
-namespace: wft-infra
+namespace: dsy-infra
 artifact:
   kind: image
   pin: postgres

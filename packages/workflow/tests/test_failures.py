@@ -3,12 +3,12 @@
 from dataclasses import replace
 
 import pytest
-from wft_events.models import CheckpointReference
-from wft_jobdoc.plan_models import Plan
-from wft_workflow.activities.plan import limits
-from wft_workflow.budgets import INFRA_RETRIES, Budgets, fresh, remember, resumed
-from wft_workflow.contract import failure_classes, pools
-from wft_workflow.failures import Failure, decide
+from dsy_events.models import CheckpointReference
+from dsy_jobdoc.plan_models import Plan
+from dsy_workflow.activities.plan import limits
+from dsy_workflow.budgets import INFRA_RETRIES, Budgets, fresh, remember, resumed
+from dsy_workflow.contract import failure_classes, pools
+from dsy_workflow.failures import Failure, decide
 
 JOB = "0b7e3f4a-5c6d-4e8f-9a0b-1c2d3e4f5a6b"
 HASH = "b" * 64
@@ -16,7 +16,7 @@ LIMITS = limits().profiles["ci"]
 PARAMS = {
     "compile": {
         "source": {
-            "uri": f"s3://wft-sources/sha256/bb/{HASH}",
+            "uri": f"s3://dsy-sources/sha256/bb/{HASH}",
             "sha256": HASH,
             "size": 1,
             "name": "src.tar.gz",
@@ -50,7 +50,7 @@ def task(kind: str, retries: int = 2):
 
 def checkpoint(attempt: int) -> CheckpointReference:
     return CheckpointReference(
-        uri=f"s3://wft-checkpoints/acme/b/{JOB}/7/sim/r0a{attempt}/0/checkpoint.json",
+        uri=f"s3://dsy-checkpoints/acme/b/{JOB}/7/sim/r0a{attempt}/0/checkpoint.json",
         sha256=f"{attempt:064x}",
         size=1,
         name="checkpoint.json",

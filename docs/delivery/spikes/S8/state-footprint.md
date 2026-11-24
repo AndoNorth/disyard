@@ -1,7 +1,7 @@
 # Spike: footprint of the real state components (S8)
 
 Run on 2026-11-01.
-Owner: the [durable state and artifact storage epic](https://github.com/AndoNorth/weft/issues/3), lane M.
+Owner: the [durable state and artifact storage epic](https://github.com/AndoNorth/disyard/issues/3), lane M.
 Breakdown and method: [docs/delivery/epics/05-state-storage.md](../../epics/05-state-storage.md), section 4 (M.1) and [docs/delivery/method.md](../../method.md).
 Throwaway code: [code/](code/), run as `nix develop -c docs/delivery/spikes/S8/code/run.sh`.
 Every number below is a `figure <name> <value>` line of that run, and the name is given in backticks beside it.
@@ -9,7 +9,7 @@ Every number below is a `figure <name> <value>` line of that run, and the name i
 ## Result
 
 **Pass.**
-The infra node is 5,120 MiB for both `ci` and `dev`, which gives a `wft-infra` quota of 4,772 MiB.
+The infra node is 5,120 MiB for both `ci` and `dev`, which gives a `dsy-infra` quota of 4,772 MiB.
 The sum of the limits of the five infra components (3,840 MiB) is at most that quota, the sum of the peaks of those components and the control reserve plus 20 percent (4,416 MiB) is at most the 4,494 MiB that the node allocates after the 50 MiB of daemons, and the `ci` sum of node limits is 10,880 MiB, at most 15,984 MiB.
 The smallest infra node in steps of 128 MiB that passes is 5,120 MiB, and 4,992 MiB fails the limits line by 106 MiB.
 
@@ -22,7 +22,7 @@ Two findings change module work and are not part of the pass line.
 
 ## Question
 
-What do the real app Postgres with TimescaleDB and the object store with its admin server and lifecycle worker need in memory and disk for the standard load, and what infra node and `wft-infra` quota do they, Temporal, its Postgres and RabbitMQ need together?
+What do the real app Postgres with TimescaleDB and the object store with its admin server and lifecycle worker need in memory and disk for the standard load, and what infra node and `dsy-infra` quota do they, Temporal, its Postgres and RabbitMQ need together?
 The standard load is 100,000 jobs of two tasks, so 100,000 accepted rows in chunks of 1,000 and 14 event rows per job.
 
 ## Environment
@@ -31,9 +31,9 @@ The standard load is 100,000 jobs of two tasks, so 100,000 accepted rows in chun
 | --- | --- |
 | Host | WSL2, 20,002 MiB `MemTotal` (`host.mem_total_mib`), 8 CPUs (`host.cpus`), kernel 6.6.87.2, Docker 29.1.3 |
 | Other work on the host | 14 other containers running (`host.other_containers`), not touched, 14,314 MiB `MemAvailable` before (`host.mem_available_mib.before`) and 14,431 MiB after (`host.mem_available_mib.after`) |
-| Locks | `/tmp/wft-cluster.lock` for the whole run and one of the two `wft-t1` lock files |
-| Containers | one at a time, `--memory 1g --memory-swap 1g`, published on 127.0.0.1 only, ports 19020 (Postgres) and 19021 (object store) of worker slot 2, label `wft.dev/verify-run` |
-| Left behind | none: `docker ps -a --filter label=wft.dev/verify-run` lists 0 after the run (`containers.left.label_all`) |
+| Locks | `/tmp/dsy-cluster.lock` for the whole run and one of the two `dsy-t1` lock files |
+| Containers | one at a time, `--memory 1g --memory-swap 1g`, published on 127.0.0.1 only, ports 19020 (Postgres) and 19021 (object store) of worker slot 2, label `dsy.dev/verify-run` |
+| Left behind | none: `docker ps -a --filter label=dsy.dev/verify-run` lists 0 after the run (`containers.left.label_all`) |
 | App database | `timescale/timescaledb:2.31.0-pg16`, PostgreSQL 16.15 (`pg.version`), TimescaleDB 2.31.0 (`pg.timescaledb_version`), telemetry off by setting |
 | Object store | `chrislusf/seaweedfs:4.51` with `weed server -s3`, `weed admin` and `weed worker -jobType=s3_lifecycle` as three processes of one container |
 | Client | `psycopg` 3.3.6 from `uv.lock`, boto3 1.43.119 |
@@ -60,7 +60,7 @@ Temporal, its Postgres and RabbitMQ are not images of this run.
   Jobs are created six seconds apart across 7 days, so the load fills 8 chunks (`pg.chunks`).
 - Phases: idle, 100,000 rows in 100 commits of 1,000, four updates of every row (published, admitted, running, succeeded), 1.4 million events in batches of 5,000 through `unnest` with `on conflict do nothing`, a `compress_chunk` of every chunk ended more than 2 days ago, a `compress_chunk` of the rest, then the batch size sweep.
 - The rate sweep inserts 100,000 rows and 280,000 events (20,000 jobs) into fresh scratch tables for each batch size, so the three sizes are comparable.
-- Object store phases: the four buckets of `contracts/artifact/layout.yaml` created with one object each, the S5 contract script (base, access, lifecycle with a past dated rule and a one minute detection interval), then 100,000 objects of 1 KiB into `wft-results` through 16 threads.
+- Object store phases: the four buckets of `contracts/artifact/layout.yaml` created with one object each, the S5 contract script (base, access, lifecycle with a past dated rule and a one minute detection interval), then 100,000 objects of 1 KiB into `dsy-results` through 16 threads.
   The contract script is the S5 one with its credentials generated for each run, and without the full disk and recover modes, which need a size capped tmpfs.
 - The object store was run twice: as in S5, and with `GOMEMLIMIT=512MiB` in the container environment and the contract run skipped.
 - The volume size limit is `floor(0.8 x 10,240 / (7 x 4))` = 292 MB, the rule of section 0.3 for a 10 GiB volume claim (`store.volume_size_limit_mb`).
@@ -159,7 +159,7 @@ Volumes are not preallocated, so the 28 volumes use 0 MiB at idle (`store_tuned.
 | Temporal | 686 MiB | 1,024 MiB | S3b: peak anon with both history caches capped, sized at 1 CPU and 1 GiB |
 | Temporal's Postgres | 1,024 MiB, standing in for a peak that S3b did not record | 1,024 MiB | S3b: run at 1 GiB, 3,507 MiB on disk at 100,000 jobs |
 | RabbitMQ | 154.6 MiB | 256 MiB | S4: peak 154.6 MiB at a 1 GiB cap, the limit is a decision of this spike |
-| `wft-control` pods on the infra node | 640 MiB (estimate) | 640 MiB (estimate) | an estimate until the dispatch API, the workflow worker and admission replace it |
+| `dsy-control` pods on the infra node | 640 MiB (estimate) | 640 MiB (estimate) | an estimate until the dispatch API, the workflow worker and admission replace it |
 
 The control reserve is the dispatch and control API at 256 MiB, the workflow worker at 256 MiB and admission at 128 MiB.
 
@@ -175,7 +175,7 @@ The images were already on the host, so pull time is not measured, and the compr
 
 ## Node and quota table
 
-Rules, from the repository: allocatable is the node size less 256 MiB less one sixteenth of it, the quota of `wft-infra` is allocatable plus 5 percent (`scripts/cluster/namespaces.sh render`, run on a probe copy of the preset for each size), and the daemons take 50 MiB.
+Rules, from the repository: allocatable is the node size less 256 MiB less one sixteenth of it, the quota of `dsy-infra` is allocatable plus 5 percent (`scripts/cluster/namespaces.sh render`, run on a probe copy of the preset for each size), and the daemons take 50 MiB.
 A limit of a measured component is its peak plus a quarter in whole 64 MiB steps, and a carried component keeps its source figure.
 
 | Component | Peak (MiB) | Limit (MiB) | Names |
@@ -185,8 +185,8 @@ A limit of a measured component is its peak plus a quarter in whole 64 MiB steps
 | Temporal | 686 | 1,024 | `node.component.temporal.peak_mib`, `node.component.temporal.limit_mib` |
 | Temporal's Postgres | 1,024 | 1,024 | `node.component.temporaldb.peak_mib`, `node.component.temporaldb.limit_mib` |
 | RabbitMQ | 155 | 256 | `node.component.rabbitmq.peak_mib`, `node.component.rabbitmq.limit_mib` |
-| Sum of the five `wft-infra` components | 3,040 | 3,840 | `node.sum_peaks_mib`, `node.sum_limits_mib` |
-| `wft-control` reserve (estimate) | 640 | 640 | `node.component.control_reserve.limit_mib` |
+| Sum of the five `dsy-infra` components | 3,040 | 3,840 | `node.sum_peaks_mib`, `node.sum_limits_mib` |
+| `dsy-control` reserve (estimate) | 640 | 640 | `node.component.control_reserve.limit_mib` |
 | Sum with the reserve | 3,680 | 4,480 | `node.sum_limits_with_control_mib` |
 | Sum of peaks with the reserve plus 20 percent | 4,416 | | `node.sum_peaks_with_control_plus_20pct_mib` |
 
@@ -198,7 +198,7 @@ A limit of a measured component is its peak plus a quarter in whole 64 MiB steps
 | **Proposed infra node** | **5,120 MiB** | **5,120 MiB** | `node.ci.infra_mib`, `node.dev.infra_mib` |
 | Allocatable, 5,120 - 256 - 320 | 4,544 MiB | 4,544 MiB | `node.ci.allocatable_mib`, `node.dev.allocatable_mib` |
 | Allocatable after the daemons, 4,544 - 50 | 4,494 MiB | 4,494 MiB | `node.ci.allocatable_after_daemons_mib`, `node.dev.allocatable_after_daemons_mib` |
-| **Proposed `wft-infra` quota**, 4,544 x 1.05 rounded up | **4,772 MiB** | **4,772 MiB** | `node.ci.quota_mib`, `node.dev.quota_mib` |
+| **Proposed `dsy-infra` quota**, 4,544 x 1.05 rounded up | **4,772 MiB** | **4,772 MiB** | `node.ci.quota_mib`, `node.dev.quota_mib` |
 | Limits 3,840 at most the quota | yes | yes | `node.ci.check.limits_within_quota`, `node.dev.check.limits_within_quota` |
 | Limits with the reserve, 4,480, at most 4,494 | yes | yes | `node.ci.check.limits_with_control_within_allocatable`, `node.dev.check.limits_with_control_within_allocatable` |
 | Peaks with the reserve plus 20 percent, 4,416, at most 4,494 | yes | yes | `node.ci.check.peaks_plus_20pct_within_allocatable`, `node.dev.check.peaks_plus_20pct_within_allocatable` |
@@ -249,5 +249,5 @@ Whether the default storage class enforces a claim size is not measured here, an
 - No query load ran during ingest, no replication, no `pg_dump` and no restart under write load.
 - The `Days` lifecycle rule on aged objects, the abort of incomplete multipart uploads and the full disk behaviour are not run here (the full disk modes need a size capped tmpfs, which the container helper does not offer).
 - RabbitMQ, Temporal and its Postgres were not re-run, and the Temporal Postgres peak is its limit.
-- The `wft-control` reserve is an estimate.
+- The `dsy-control` reserve is an estimate.
 - Host `MemAvailable` was 14 GiB, far above the 1 GiB floor of the earlier spikes, so no watchdog was needed, and CPU contention from the 14 other containers was not controlled.

@@ -42,7 +42,7 @@ server.update(placement)
 admintools = {"image": image("temporalio/admin-tools")}
 admintools.update(placement)
 overlay = {"server": server, "admintools": admintools, "schema": {"resources": res[name + "-schema"]}}
-ui = os.getenv("WFT_OBS") == "on"
+ui = os.getenv("DSY_OBS") == "on"
 if ui:
     nodeport = [p for p in read_yaml("../host/ports.yaml")["ports"] if p["name"] == "temporal-ui"][0]["node_port"]
     web = {

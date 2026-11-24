@@ -90,7 +90,7 @@ def scrape(name: str, url: str, needle: str) -> None:
 async def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--frontend", required=True)
-    parser.add_argument("--namespace", default="wft")
+    parser.add_argument("--namespace", default="dsy")
     parser.add_argument("--matching", required=True)
     parser.add_argument("--history", required=True)
     parser.add_argument("--sdk-port", type=int, required=True)

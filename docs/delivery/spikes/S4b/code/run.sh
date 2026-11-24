@@ -2,19 +2,19 @@
 # Spike S4b: builds python-qpid-proton from its sdist for each version under test, in a scratch venv
 # of the dev shell's Python and in a build stage on the pinned python image, then runs the five S4
 # checks three times per version and the measurements once, each against a fresh RabbitMQ container
-# under one wft_itest T1 lock. Prints one `figure <name> <value>` line per number. Run in the dev shell:
+# under one dsy_itest T1 lock. Prints one `figure <name> <value>` line per number. Run in the dev shell:
 #   nix develop -c docs/delivery/spikes/S4b/code/run.sh [out-dir] [--only-checks|--only-measure]
 # Exit 0 the run completed (the verdict is a figure), 1 a step failed, 2 usage.
 set -uo pipefail
 root=$(cd "$(dirname "${BASH_SOURCE[0]}")/../../../../.." && pwd)
 code=$root/docs/delivery/spikes/S4b/code
-out=$(realpath -m "${1:-$(mktemp -d "${TMPDIR:-/tmp}/wft-s4b.XXXXXX")}")
+out=$(realpath -m "${1:-$(mktemp -d "${TMPDIR:-/tmp}/dsy-s4b.XXXXXX")}")
 mode=${2:-all}
 case $mode in all | --only-checks | --only-measure) ;; *) echo "usage: run.sh [out-dir] [--only-checks|--only-measure]" >&2; exit 2 ;; esac
 mkdir -p "$out"
 # The T1 port slot defaults to the pool slot of this checkout, so two worktrees never share ports.
-export WFT_SLOT=${WFT_SLOT:-$(basename "$(dirname "$root")")}
-[[ $WFT_SLOT =~ ^[0-9]$ ]] || export WFT_SLOT=0
+export DSY_SLOT=${DSY_SLOT:-$(basename "$(dirname "$root")")}
+[[ $DSY_SLOT =~ ^[0-9]$ ]] || export DSY_SLOT=0
 say() { echo "[$(date +%T)] $*" >&2; }
 figure() { echo "figure $1 $2" | tee -a "$out/figures.txt"; }
 : >"$out/figures.txt"
@@ -45,13 +45,13 @@ for proton in 0.40.0 0.41.1; do
     say "build proton $proton in a build stage on $base"
     start=$(date +%s.%N)
     image=failed
-    docker build -q --build-arg "BASE=$base" --build-arg "PROTON=$proton" -t "wft-s4b-proton:$proton" \
+    docker build -q --build-arg "BASE=$base" --build-arg "PROTON=$proton" -t "dsy-s4b-proton:$proton" \
         -f "$code/Dockerfile" "$code" >"$out/docker-$proton.log" 2>&1 && image=ok
     figure "proton$proton.image.build" "$image"
     figure "proton$proton.image.build_s" "$(echo "$(date +%s.%N) - $start" | bc | xargs printf '%.1f')"
-    figure "proton$proton.image.import" "$(docker run --rm "wft-s4b-proton:$proton" python -c \
+    figure "proton$proton.image.import" "$(docker run --rm "dsy-s4b-proton:$proton" python -c \
         'import proton, sys; print(".".join(map(str, proton.VERSION)) + "/py" + sys.version.split()[0])' 2>&1)"
-    docker image rm -f "wft-s4b-proton:$proton" >/dev/null 2>&1
+    docker image rm -f "dsy-s4b-proton:$proton" >/dev/null 2>&1
     [ $built -eq 0 ] || { rc=1; continue; }
     if [ "$mode" != --only-measure ]; then
         say "checks 1 to 5, three runs, proton $proton"
@@ -66,5 +66,5 @@ for proton in 0.40.0 0.41.1; do
 done
 
 figure host.mem_available_mib.after "$(awk '/^MemAvailable:/ { print int($2 / 1024) }' /proc/meminfo)"
-figure containers.left.label_all "$(docker ps -aq --filter label=wft.dev/verify-run --filter name=s4b | wc -l)"
+figure containers.left.label_all "$(docker ps -aq --filter label=dsy.dev/verify-run --filter name=s4b | wc -l)"
 exit $rc

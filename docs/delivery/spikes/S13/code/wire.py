@@ -1,5 +1,5 @@
 # ruff: noqa: E501  (throwaway spike code with long prose lines)
-"""Turns the throwaway wiring on for every service and pool worker Deployment, and opens the pool egress to wft-obs.
+"""Turns the throwaway wiring on for every service and pool worker Deployment, and opens the pool egress to dsy-obs.
 
 Each Deployment gains an init container that copies the payload image onto an emptyDir, the volume mounted at /wiring,
 PYTHONPATH, the collector and Pyroscope addresses of deploy/tilt/obs.star, and the component name.
@@ -9,15 +9,15 @@ Usage: wire.py
 import json
 import subprocess
 
-CONTEXT = "kind-wft"
+CONTEXT = "kind-dsy"
 TARGETS = [
     # namespace, deployment, container, component, pool
-    ("wft-control", "admission", "admission", "admission", ""),
-    ("wft-control", "dispatch", "dispatch", "dispatch", ""),
-    ("wft-control", "placement", "placement", "placement", ""),
-    ("wft-workers", "compile-worker", "compile-worker", "compile-worker", "compile"),
-    ("wft-workers", "simulate-worker", "simulate-worker", "simulate-worker", "simulate"),
-    ("wft-workers", "aggregate-worker", "aggregate-worker", "aggregate-worker", "aggregate"),
+    ("dsy-control", "admission", "admission", "admission", ""),
+    ("dsy-control", "dispatch", "dispatch", "dispatch", ""),
+    ("dsy-control", "placement", "placement", "placement", ""),
+    ("dsy-workers", "compile-worker", "compile-worker", "compile-worker", "compile"),
+    ("dsy-workers", "simulate-worker", "simulate-worker", "simulate-worker", "simulate"),
+    ("dsy-workers", "aggregate-worker", "aggregate-worker", "aggregate-worker", "aggregate"),
 ]
 
 
@@ -32,16 +32,16 @@ def kubectl(*args: str, data: str | None = None) -> str:
 
 
 def workflow_target() -> tuple[str, str, str, str, str]:
-    names = kubectl("-n", "wft-control", "get", "deploy", "-o", "name").split()
+    names = kubectl("-n", "dsy-control", "get", "deploy", "-o", "name").split()
     name = next(n.split("/")[1] for n in names if n.startswith("deployment.apps/workflow-worker"))
-    return ("wft-control", name, "workflow-worker", "workflow", "")
+    return ("dsy-control", name, "workflow-worker", "workflow", "")
 
 
 def patch(namespace: str, name: str, container: str, component: str, pool: str) -> None:
     env = [
         {"name": "PYTHONPATH", "value": "/wiring"},
-        {"name": "OTEL_EXPORTER_OTLP_ENDPOINT", "value": "http://collector.wft-obs:4318"},
-        {"name": "WFT_PYROSCOPE_ADDRESS", "value": "http://pyroscope.wft-obs:4040"},
+        {"name": "OTEL_EXPORTER_OTLP_ENDPOINT", "value": "http://collector.dsy-obs:4318"},
+        {"name": "DSY_PYROSCOPE_ADDRESS", "value": "http://pyroscope.dsy-obs:4040"},
         {"name": "S13_COMPONENT", "value": component},
         {"name": "S13_POOL", "value": pool},
     ]
@@ -90,7 +90,7 @@ def patch(namespace: str, name: str, container: str, component: str, pool: str) 
 policy = {
     "apiVersion": "networking.k8s.io/v1",
     "kind": "NetworkPolicy",
-    "metadata": {"name": "s13-obs-egress", "namespace": "wft-workers"},
+    "metadata": {"name": "s13-obs-egress", "namespace": "dsy-workers"},
     "spec": {
         "podSelector": {},
         "policyTypes": ["Egress"],
@@ -99,7 +99,7 @@ policy = {
                 "to": [
                     {
                         "namespaceSelector": {
-                            "matchLabels": {"kubernetes.io/metadata.name": "wft-obs"}
+                            "matchLabels": {"kubernetes.io/metadata.name": "dsy-obs"}
                         },
                         "podSelector": {"matchLabels": {"app": app}},
                     }

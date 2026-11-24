@@ -3,7 +3,7 @@
   "title": "Cluster health",
   "description": "Nodes, pods and Deployments of the kind cluster, from kube-state-metrics, cAdvisor and the kubelet.",
   "tags": [
-    "wft"
+    "dsy"
   ],
   "editable": false,
   "schemaVersion": 39,

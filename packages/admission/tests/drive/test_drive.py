@@ -9,7 +9,7 @@ import subprocess
 import sys
 
 import pytest
-from wft_admission.drive import (
+from dsy_admission.drive import (
     CLEARED,
     Counters,
     Tally,
@@ -20,18 +20,18 @@ from wft_admission.drive import (
     split,
     unsupported,
 )
-from wft_admission.drive.__main__ import main, parser
-from wft_compat import read_event
-from wft_events import EventError
-from wft_workflow.harness import source_bundle
+from dsy_admission.drive.__main__ import main, parser
+from dsy_compat import read_event
+from dsy_events import EventError
+from dsy_workflow.harness import source_bundle
 
 METRICS = """\
-# HELP wft_admission_skipped_total wft_admission_skipped_total
-# TYPE wft_admission_skipped_total counter
-wft_admission_skipped_total{reason="outstanding-action",service_name="temporal-core"} 3
-wft_admission_skipped_total{reason="started",service_name="temporal-core"} 1
-wft_admission_duplicates_total{service_name="temporal-core"} 0
-wft_admission_wait_seconds_bucket{priority_class="standard",le="0.1"} 4
+# HELP dsy_admission_skipped_total dsy_admission_skipped_total
+# TYPE dsy_admission_skipped_total counter
+dsy_admission_skipped_total{reason="outstanding-action",service_name="temporal-core"} 3
+dsy_admission_skipped_total{reason="started",service_name="temporal-core"} 1
+dsy_admission_duplicates_total{service_name="temporal-core"} 0
+dsy_admission_wait_seconds_bucket{priority_class="standard",le="0.1"} 4
 temporal_request{operation="StartWorkflowExecution"} 9
 """
 
@@ -42,10 +42,10 @@ def key(name: str, **labels: str):
 
 def test_parses_the_journeys():
     args = parser().parse_args(
-        ["--kube-context", "kind-wft", "smoke", "--jobs", "500", "--global-cap", "20"]
+        ["--kube-context", "kind-dsy", "smoke", "--jobs", "500", "--global-cap", "20"]
     )
     assert (args.kube_context, args.journey, args.jobs, args.global_cap) == (
-        "kind-wft",
+        "kind-dsy",
         "smoke",
         500,
         20,
@@ -80,7 +80,7 @@ def test_refuses_a_cluster_it_cannot_reach(tmp_path):
     config = tmp_path / "kubeconfig"
     config.write_text("apiVersion: v1\nkind: Config\nclusters: []\ncontexts: []\nusers: []\n")
     done = subprocess.run(
-        [sys.executable, "-m", "wft_admission.drive", "--kube-context", "no-such", "smoke"],
+        [sys.executable, "-m", "dsy_admission.drive", "--kube-context", "no-such", "smoke"],
         capture_output=True,
         text=True,
         timeout=60,
@@ -89,7 +89,7 @@ def test_refuses_a_cluster_it_cannot_reach(tmp_path):
     )
     print(done.stderr)
     assert done.returncode == 2
-    assert "drive: refused: no deployment/admission in wft-control on no-such" in done.stderr
+    assert "drive: refused: no deployment/admission in dsy-control on no-such" in done.stderr
     assert done.stdout == ""
 
 
@@ -167,36 +167,36 @@ def test_restart_lines_and_verdict():
 def test_parses_only_the_admission_samples():
     samples = parse_metrics(METRICS)
     assert samples == {
-        key("wft_admission_skipped_total", reason="outstanding-action"): 3,
-        key("wft_admission_skipped_total", reason="started"): 1,
-        key("wft_admission_duplicates_total"): 0,
-        ("wft_admission_wait_seconds_bucket", (("le", "0.1"), ("priority_class", "standard"))): 4,
+        key("dsy_admission_skipped_total", reason="outstanding-action"): 3,
+        key("dsy_admission_skipped_total", reason="started"): 1,
+        key("dsy_admission_duplicates_total"): 0,
+        ("dsy_admission_wait_seconds_bucket", (("le", "0.1"), ("priority_class", "standard"))): 4,
     }
 
 
 def test_tally_counts_from_the_first_sample_across_restarts():
-    outstanding = key("wft_admission_skipped_total", reason="outstanding-action")
-    started = key("wft_admission_skipped_total", reason="started")
+    outstanding = key("dsy_admission_skipped_total", reason="outstanding-action")
+    started = key("dsy_admission_skipped_total", reason="started")
     tally = Tally()
     tally.feed({outstanding: 3, started: 1})
     tally.feed({outstanding: 5, started: 1})
-    assert tally.total("wft_admission_skipped_total") == 2
+    assert tally.total("dsy_admission_skipped_total") == 2
     # A new pod starts its counters at zero, and a label it serves only later counts from zero.
     tally.feed({outstanding: 1})
     tally.feed({outstanding: 2, started: 4})
-    assert tally.total("wft_admission_skipped_total", reason="outstanding-action") == 4
-    assert tally.total("wft_admission_skipped_total", reason="started") == 3
-    assert tally.total("wft_admission_skipped_total") == 7
-    assert tally.total("wft_admission_duplicates_total") == 0
+    assert tally.total("dsy_admission_skipped_total", reason="outstanding-action") == 4
+    assert tally.total("dsy_admission_skipped_total", reason="started") == 3
+    assert tally.total("dsy_admission_skipped_total") == 7
+    assert tally.total("dsy_admission_duplicates_total") == 0
 
 
 def deployment(env: list[dict]) -> dict:
     labels = {"app.kubernetes.io/name": "admission"}
-    container = {"name": "admission", "image": "wft-admission", "env": env}
+    container = {"name": "admission", "image": "dsy-admission", "env": env}
     return {
         "apiVersion": "apps/v1",
         "kind": "Deployment",
-        "metadata": {"name": "admission", "namespace": "wft-control"},
+        "metadata": {"name": "admission", "namespace": "dsy-control"},
         "spec": {
             "selector": {"matchLabels": labels},
             "template": {"metadata": {"labels": labels}, "spec": {"containers": [container]}},
@@ -219,21 +219,21 @@ def set_env_locally(tmp_path, env: list[dict], args: list[str]) -> list[dict]:
 
 def test_run_environment_replaces_what_an_earlier_run_left(tmp_path):
     left = [
-        {"name": "WFT_POOL_QUEUE_PREFIX", "value": "h-dead0000-"},
-        {"name": "WFT_ADMISSION_GLOBAL_CAP", "value": "3"},
-        {"name": "WFT_TENANCY_PROFILE", "value": "ci"},
+        {"name": "DSY_POOL_QUEUE_PREFIX", "value": "h-dead0000-"},
+        {"name": "DSY_ADMISSION_GLOBAL_CAP", "value": "3"},
+        {"name": "DSY_TENANCY_PROFILE", "value": "ci"},
     ]
     assert set_env_locally(tmp_path, left, env_args("h-0123abcd-", None)) == [
-        {"name": "WFT_POOL_QUEUE_PREFIX", "value": "h-0123abcd-"},
-        {"name": "WFT_TENANCY_PROFILE", "value": "ci"},
+        {"name": "DSY_POOL_QUEUE_PREFIX", "value": "h-0123abcd-"},
+        {"name": "DSY_TENANCY_PROFILE", "value": "ci"},
     ]
     assert set_env_locally(tmp_path, left, env_args("h-0123abcd-", 20)) == [
-        {"name": "WFT_POOL_QUEUE_PREFIX", "value": "h-0123abcd-"},
-        {"name": "WFT_ADMISSION_GLOBAL_CAP", "value": "20"},
-        {"name": "WFT_TENANCY_PROFILE", "value": "ci"},
+        {"name": "DSY_POOL_QUEUE_PREFIX", "value": "h-0123abcd-"},
+        {"name": "DSY_ADMISSION_GLOBAL_CAP", "value": "20"},
+        {"name": "DSY_TENANCY_PROFILE", "value": "ci"},
     ]
     assert set_env_locally(tmp_path, left, CLEARED) == [
-        {"name": "WFT_TENANCY_PROFILE", "value": "ci"}
+        {"name": "DSY_TENANCY_PROFILE", "value": "ci"}
     ]
 
 

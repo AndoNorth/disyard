@@ -2,7 +2,7 @@ load('../../../live_update.star', 'python_live_update')
 
 module = read_yaml('module.yaml')
 
-python_live_update('wft-pyservice', '.', src='src', dest='/app')
+python_live_update('dsy-pyservice', '.', src='src', dest='/app')
 k8s_yaml(encode_yaml({
     'apiVersion': 'apps/v1',
     'kind': 'Deployment',
@@ -11,7 +11,7 @@ k8s_yaml(encode_yaml({
         'selector': {'matchLabels': {'app': module['name']}},
         'template': {
             'metadata': {'labels': {'app': module['name']}},
-            'spec': {'containers': [{'name': module['name'], 'image': 'wft-pyservice'}]},
+            'spec': {'containers': [{'name': module['name'], 'image': 'dsy-pyservice'}]},
         },
     },
 }))

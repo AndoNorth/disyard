@@ -11,12 +11,12 @@ import json
 import subprocess
 import sys
 
-NAMESPACES = {"wft-control", "wft-workers"}
+NAMESPACES = {"dsy-control", "dsy-workers"}
 
 
 def kubectl(*args: str) -> str:
     return subprocess.run(
-        ["kubectl", "--context", "kind-wft", *args], check=True, capture_output=True, text=True
+        ["kubectl", "--context", "kind-dsy", *args], check=True, capture_output=True, text=True
     ).stdout
 
 

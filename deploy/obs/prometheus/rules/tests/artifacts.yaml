@@ -5,41 +5,41 @@ tests:
   - interval: 1m
     name: cache miss storm fires when nearly every compile ran and stays silent with hits
     input_series:
-      - series: 'wft_state_cache_misses'
+      - series: 'dsy_state_cache_misses'
         values: '0+2x60'
-      - series: 'wft_state_cache_hits'
+      - series: 'dsy_state_cache_hits'
         values: '0x60'
     alert_rule_test:
       - eval_time: 40m
-        alertname: WftCompileCacheMissStorm
+        alertname: DsyCompileCacheMissStorm
         exp_alerts:
           - exp_labels: {severity: warning}
             exp_annotations:
               runbook_url: >-
-                https://github.com/AndoNorth/weft/blob/main/docs/runbooks/alerts.md#wftcompilecachemissstorm
+                https://github.com/AndoNorth/disyard/blob/main/docs/runbooks/alerts.md#dsycompilecachemissstorm
               summary: Over 90 percent of the compiles of the last hour ran instead of hitting the cache.
               description: The compile cache is not being reused, so a key may vary between identical sources.
   - interval: 1m
     name: cache miss storm stays silent when half the compiles hit and when few compiles run
     input_series:
-      - series: 'wft_state_cache_misses{case="mixed"}'
+      - series: 'dsy_state_cache_misses{case="mixed"}'
         values: '0+2x60'
-      - series: 'wft_state_cache_hits{case="mixed"}'
+      - series: 'dsy_state_cache_hits{case="mixed"}'
         values: '0+2x60'
     alert_rule_test:
       - eval_time: 40m
-        alertname: WftCompileCacheMissStorm
+        alertname: DsyCompileCacheMissStorm
         exp_alerts: []
   - interval: 1m
     name: cache miss storm stays silent below 20 misses
     input_series:
-      - series: 'wft_state_cache_misses'
+      - series: 'dsy_state_cache_misses'
         values: '0+0.1x60'
-      - series: 'wft_state_cache_hits'
+      - series: 'dsy_state_cache_hits'
         values: '0x60'
     alert_rule_test:
       - eval_time: 40m
-        alertname: WftCompileCacheMissStorm
+        alertname: DsyCompileCacheMissStorm
         exp_alerts: []
   - interval: 1m
     name: store capacity fires above 70 percent and stays silent below it
@@ -50,15 +50,15 @@ tests:
         values: '25x20'
     alert_rule_test:
       - eval_time: 5m
-        alertname: WftStoreCapacityHigh
+        alertname: DsyStoreCapacityHigh
         exp_alerts: []
       - eval_time: 15m
-        alertname: WftStoreCapacityHigh
+        alertname: DsyStoreCapacityHigh
         exp_alerts:
           - exp_labels: {severity: warning}
             exp_annotations:
               runbook_url: >-
-                https://github.com/AndoNorth/weft/blob/main/docs/runbooks/alerts.md#wftstorecapacityhigh
+                https://github.com/AndoNorth/disyard/blob/main/docs/runbooks/alerts.md#dsystorecapacityhigh
               summary: The object store data volume is 75 percent used.
               description: >-
                 The share is the df figure of the data volume, above the 70 percent threshold of the
@@ -72,5 +72,5 @@ tests:
         values: '60x20'
     alert_rule_test:
       - eval_time: 15m
-        alertname: WftStoreCapacityHigh
+        alertname: DsyStoreCapacityHigh
         exp_alerts: []

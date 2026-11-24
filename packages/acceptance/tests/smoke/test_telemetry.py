@@ -4,9 +4,9 @@ changing what the fake stack shows."""
 import time
 
 import pytest
-from wft_acceptance import smoke
-from wft_acceptance.smoke import telemetry
-from wft_obs.targets import JOBS
+from dsy_acceptance import smoke
+from dsy_acceptance.smoke import telemetry
+from dsy_obs.targets import JOBS
 
 PASS = (
     f"ok telemetry: {len(JOBS)} scrape jobs up, logs of 6 services, trace of 3 services, 8 profiles"
@@ -113,7 +113,7 @@ def test_telemetry_a_trace_tempo_does_not_know_names_each_service(fake_obs, caps
 
 
 def test_telemetry_a_component_without_a_profile_names_it(fake_obs, capsys):
-    fake_obs.services.remove("wft.placement")
+    fake_obs.services.remove("dsy.placement")
     _, lines = run(capsys)
     assert lines[10] == "FAIL telemetry: after 1 s: no profile of placement"
 

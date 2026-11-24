@@ -2,10 +2,10 @@
 refuses a gateway that breaks the rules control relies on."""
 
 import pytest
-from wft_dispatchapi.ports import SIGNALS, NoWorkflow, TemporalUnavailable
-from wft_dispatchapi.testing import FakeGateway, gateway_contract
-from wft_workflow.contract import naming
-from wft_workflow.models import ControlSignal
+from dsy_dispatchapi.ports import SIGNALS, NoWorkflow, TemporalUnavailable
+from dsy_dispatchapi.testing import FakeGateway, gateway_contract
+from dsy_workflow.contract import naming
+from dsy_workflow.models import ControlSignal
 
 JOB = "7d1c3a52-5a8b-4f3e-9d0e-2b6f1c4e8a90"
 

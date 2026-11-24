@@ -11,7 +11,7 @@ from pathlib import Path
 import psycopg
 import pytest
 import yaml
-from wft_artifactindex import (
+from dsy_artifactindex import (
     Deleted,
     Existing,
     Indexed,
@@ -64,7 +64,7 @@ def vectors(kind: str) -> list[Path]:
 def component(n: int = 0) -> dict:
     sha = f"{n:064x}"
     return {
-        "uri": f"s3://wft-components/sha256/{sha[:2]}/{sha}",
+        "uri": f"s3://dsy-components/sha256/{sha[:2]}/{sha}",
         "sha256": sha,
         "size": 10,
         "name": "job.wasm",
@@ -74,7 +74,7 @@ def component(n: int = 0) -> dict:
 
 def result(attempt: str, task: str = "simulate-0") -> dict:
     return {
-        "uri": f"s3://wft-results/acme/b/{JOB}/seed-7/{task}/{attempt}/result.xml",
+        "uri": f"s3://dsy-results/acme/b/{JOB}/seed-7/{task}/{attempt}/result.xml",
         "sha256": "4" * 64,
         "size": 1,
         "name": "result.xml",
@@ -141,7 +141,7 @@ def test_a_refusal_names_the_rule_of_the_loader():
         "missing-attempt-segment": "missing-attempt-segment",
         "key-template-mismatch": "key-template-mismatch",
     }
-    from wft_artifactindex.reference import validate
+    from dsy_artifactindex.reference import validate
 
     for path in vectors("invalid"):
         want = reasons.get(path.parent.name)
@@ -198,7 +198,7 @@ def test_mark_deleted_keeps_the_row(conn):
     assert index_reference(conn, ref) == Revived(rows(conn)[0][0])
     assert index_reference(conn, ref) == Existing(rows(conn)[0][0])
     with pytest.raises(LookupError):
-        mark_deleted(conn, "s3://wft-results/none", NOW)
+        mark_deleted(conn, "s3://dsy-results/none", NOW)
 
 
 def test_mark_deleted_is_refused_while_a_cache_entry_names_the_wasm(conn):
@@ -344,7 +344,7 @@ JOB_B = "7c1d2f10-0000-5000-8000-000000000001"
 def manifest(n: int = 0) -> dict:
     sha = f"{n + 5000:064x}"
     return {
-        "uri": f"s3://wft-sources/sha256/{sha[:2]}/{sha}",
+        "uri": f"s3://dsy-sources/sha256/{sha[:2]}/{sha}",
         "sha256": sha,
         "size": 10,
         "name": "manifest.json",
@@ -355,7 +355,7 @@ def manifest(n: int = 0) -> dict:
 def build_info(n: int = 0) -> dict:
     sha = f"{n + 9000:064x}"
     return {
-        "uri": f"s3://wft-components/sha256/{sha[:2]}/{sha}",
+        "uri": f"s3://dsy-components/sha256/{sha[:2]}/{sha}",
         "sha256": sha,
         "size": 10,
         "name": "build-info.json",
@@ -366,7 +366,7 @@ def build_info(n: int = 0) -> dict:
 def checkpoint(attempt: str, segment: str, task: str = "simulate-0") -> dict:
     key = f"acme/b/{JOB}/seed-7/{task}/{attempt}/{segment}/checkpoint.json"
     return {
-        "uri": f"s3://wft-checkpoints/{key}",
+        "uri": f"s3://dsy-checkpoints/{key}",
         "sha256": "5" * 64,
         "size": 1,
         "name": "checkpoint.json",
@@ -707,9 +707,9 @@ def test_checkpoints_of_lists_the_live_checkpoints_of_a_task_newest_first(conn):
     assert previous_checkpoint(conn, other[0]) is None
 
 
-def test_wft_migrate_check_passes_against_every_applied_migration(appdb):
+def test_dsy_migrate_check_passes_against_every_applied_migration(appdb):
     done = subprocess.run(
-        [sys.executable, "-m", "wft_migrate", "check", "--dsn", appdb],
+        [sys.executable, "-m", "dsy_migrate", "check", "--dsn", appdb],
         capture_output=True,
         text=True,
     )

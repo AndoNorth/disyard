@@ -1,5 +1,5 @@
 """The state inputs exporter: its names held to the catalogue, and against a migrated database as
-the `wft_reader` group, a pass served on the Temporal runtime's Prometheus endpoint."""
+the `dsy_reader` group, a pass served on the Temporal runtime's Prometheus endpoint."""
 
 import os
 import re
@@ -16,10 +16,10 @@ from urllib.parse import urlsplit, urlunsplit
 import psycopg
 import pytest
 import yaml
-from wft_obs import metrics
-from wft_obs.inputs import Exporter, metric_name
-from wft_obs.inputs.__main__ import serve
-from wft_stateops.inputs import load, parse
+from dsy_obs import metrics
+from dsy_obs.inputs import Exporter, metric_name
+from dsy_obs.inputs.__main__ import serve
+from dsy_stateops.inputs import load, parse
 
 ROOT = Path(__file__).resolve().parents[4]
 CATALOGUE = yaml.safe_load((ROOT / "contracts/instrumentation/metrics.yaml").read_text())["metrics"]
@@ -58,17 +58,17 @@ def served():
 
 @pytest.fixture
 def reader(appdb):
-    """The DSN of a login that is a member of `wft_reader` only, as the module's login is."""
+    """The DSN of a login that is a member of `dsy_reader` only, as the module's login is."""
     with psycopg.connect(appdb, autocommit=True) as admin:
         admin.execute(f"drop role if exists {READER}")
-        admin.execute(f"create role {READER} login password 'x' in role wft_reader")
+        admin.execute(f"create role {READER} login password 'x' in role dsy_reader")
     parts = urlsplit(appdb)
     host = parts.netloc.rsplit("@", 1)[-1]
     return urlunsplit(parts._replace(netloc=f"{READER}:x@{host}"))
 
 
 def test_the_names_are_the_catalogued_state_names():
-    catalogued = {n for n in CATALOGUE if n.startswith("wft_state_")}
+    catalogued = {n for n in CATALOGUE if n.startswith("dsy_state_")}
     assert {metric_name(i) for i in EXPORTED} == catalogued
 
 
@@ -118,10 +118,10 @@ def test_every_input_is_served_as_its_gauge(reader, served):
     text = scrape(url)
     for item in EXPORTED:
         assert series(text, metric_name(item)), item.name
-    assert series(text, "wft_state_connections")[""] > 0
-    assert series(text, "wft_state_database_size_bytes")[""] > 0
-    codes = CATALOGUE["wft_state_artifact_failures"]["labels"]["code"]["values"]
-    labels = "".join(series(text, "wft_state_artifact_failures"))
+    assert series(text, "dsy_state_connections")[""] > 0
+    assert series(text, "dsy_state_database_size_bytes")[""] > 0
+    codes = CATALOGUE["dsy_state_artifact_failures"]["labels"]["code"]["values"]
+    labels = "".join(series(text, "dsy_state_artifact_failures"))
     assert sorted(re.findall(r'code="([^"]+)"', labels)) == sorted(codes)
 
 
@@ -145,7 +145,7 @@ inputs:
     exporter = Exporter(meter, appdb, inputs)
 
     assert exporter.run_once() == 2
-    assert series(scrape(url), "wft_state_flaky") == {"": 10.0}
+    assert series(scrape(url), "dsy_state_flaky") == {"": 10.0}
 
     with psycopg.connect(appdb, autocommit=True) as admin:
         admin.execute("update flip set n = 0")
@@ -153,8 +153,8 @@ inputs:
     assert exporter.run_once() == 1
 
     text = scrape(url)
-    assert series(text, "wft_state_flaky") == {"": 10.0}
-    assert series(text, "wft_state_steady") == {"": 2.0}
+    assert series(text, "dsy_state_flaky") == {"": 10.0}
+    assert series(text, "dsy_state_steady") == {"": 2.0}
     assert exporter.errors == {"flaky": 1}
 
 
@@ -162,13 +162,13 @@ inputs:
 def test_the_process_serves_the_inputs_and_stops_on_sigterm(reader, tmp_path):
     port, ready = free_port(), tmp_path / "ready"
     env = {
-        **{k: v for k, v in os.environ.items() if not k.startswith(("OTEL_", "WFT_"))},
-        "WFT_STATE_INPUTS_DSN": reader,
-        "WFT_METRICS_ADDRESS": f"127.0.0.1:{port}",
-        "WFT_READY_FILE": str(ready),
+        **{k: v for k, v in os.environ.items() if not k.startswith(("OTEL_", "DSY_"))},
+        "DSY_STATE_INPUTS_DSN": reader,
+        "DSY_METRICS_ADDRESS": f"127.0.0.1:{port}",
+        "DSY_READY_FILE": str(ready),
     }
     process = subprocess.Popen(
-        [sys.executable, "-m", "wft_obs.inputs"], env=env, stdout=subprocess.PIPE, text=True
+        [sys.executable, "-m", "dsy_obs.inputs"], env=env, stdout=subprocess.PIPE, text=True
     )
     try:
         deadline = time.monotonic() + 30
@@ -176,7 +176,7 @@ def test_the_process_serves_the_inputs_and_stops_on_sigterm(reader, tmp_path):
             assert process.poll() is None, process.stdout.read()
             assert time.monotonic() < deadline, "the exporter never became ready"
             time.sleep(0.2)
-        assert series(scrape(f"http://127.0.0.1:{port}/metrics"), "wft_state_connections")[""] > 0
+        assert series(scrape(f"http://127.0.0.1:{port}/metrics"), "dsy_state_connections")[""] > 0
         process.send_signal(signal.SIGTERM)
         assert process.wait(timeout=15) == 0
     finally:
@@ -185,8 +185,8 @@ def test_the_process_serves_the_inputs_and_stops_on_sigterm(reader, tmp_path):
 
 
 def test_the_process_without_a_dsn_exits_2(tmp_path):
-    env = {k: v for k, v in os.environ.items() if not k.startswith(("OTEL_", "WFT_"))}
-    command = [sys.executable, "-m", "wft_obs.inputs"]
+    env = {k: v for k, v in os.environ.items() if not k.startswith(("OTEL_", "DSY_"))}
+    command = [sys.executable, "-m", "dsy_obs.inputs"]
     run = subprocess.run(command, env=env, capture_output=True, text=True, timeout=30)
     assert run.returncode == 2
-    assert "WFT_STATE_INPUTS_DSN" in run.stderr
+    assert "DSY_STATE_INPUTS_DSN" in run.stderr

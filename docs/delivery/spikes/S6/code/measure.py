@@ -59,7 +59,7 @@ class Sampler(threading.Thread):
 
 def one_run(args, variant, flags, temp, index, seed, hold=0):
     """One container, one guest run. Returns the scratch directory."""
-    name = f"wft-{args.run_id}-{variant}-{temp}-{index}"
+    name = f"dsy-{args.run_id}-{variant}-{temp}-{index}"
     scratch = Path(args.out) / name
     (scratch / "in").mkdir(parents=True)
     (scratch / "out").mkdir()

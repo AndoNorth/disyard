@@ -30,7 +30,7 @@
           "type": "integer"
         },
         "uri": {
-          "pattern": "^s3://wft-checkpoints/.+$",
+          "pattern": "^s3://dsy-checkpoints/.+$",
           "title": "Uri",
           "type": "string"
         }
@@ -74,7 +74,7 @@
       "type": "object"
     }
   },
-  "$id": "urn:wft:schema:task.checkpoint.committed:1.0",
+  "$id": "urn:dsy:schema:task.checkpoint.committed:1.0",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
   "description": "The `sequence` is the position among the attempt's checkpoints and feeds the event id.",

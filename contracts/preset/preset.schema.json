@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/AndoNorth/weft/contracts/preset/preset.schema.json",
+  "$id": "https://github.com/AndoNorth/disyard/contracts/preset/preset.schema.json",
   "title": "deploy/presets/<name>.yaml",
   "type": "object",
   "required": ["name", "fitted", "memory_mib", "cpus", "nodes", "host", "mirror"],

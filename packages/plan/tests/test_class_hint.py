@@ -1,4 +1,4 @@
-from wft_plan import class_hint, stats
+from dsy_plan import class_hint, stats
 
 
 def hint_for(good, plan_of, profile_of, timeout):

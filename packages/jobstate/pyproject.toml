@@ -1,15 +1,15 @@
 [project]
-name = "wft-jobstate"
+name = "dsy-jobstate"
 version = "0.0.0"
 license = "Apache-2.0"
 requires-python = ">=3.13,<3.14"
-dependencies = ["psycopg[binary]", "pydantic", "pyyaml", "wft-events"]
+dependencies = ["psycopg[binary]", "pydantic", "pyyaml", "dsy-events"]
 
-[project.entry-points."wft.migrations"]
-jobstate = "wft_jobstate.migrations"
+[project.entry-points."dsy.migrations"]
+jobstate = "dsy_jobstate.migrations"
 
 [tool.uv.sources]
-wft-events = { workspace = true }
+dsy-events = { workspace = true }
 
 [build-system]
 requires = ["hatchling"]

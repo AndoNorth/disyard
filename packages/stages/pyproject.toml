@@ -1,13 +1,13 @@
 [project]
-name = "wft-stages"
+name = "dsy-stages"
 version = "0.0.0"
 license = "Apache-2.0"
 requires-python = ">=3.13,<3.14"
-dependencies = ["wft-events", "wft-keys", "jsonschema", "pyyaml"]
+dependencies = ["dsy-events", "dsy-keys", "jsonschema", "pyyaml"]
 
 [tool.uv.sources]
-wft-events = { workspace = true }
-wft-keys = { workspace = true }
+dsy-events = { workspace = true }
+dsy-keys = { workspace = true }
 
 [build-system]
 requires = ["hatchling"]

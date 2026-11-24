@@ -13,7 +13,7 @@ import time
 from pathlib import Path
 
 import pytest
-from wft_placement import kube, service
+from dsy_placement import kube, service
 
 TESTS = Path(__file__).parents[1]
 
@@ -90,7 +90,7 @@ def free_port() -> int:
 
 # The service's own entry point, with the service account directory given on the command line in
 # place of the one a pod mounts.
-ENTRY = "import sys; from pathlib import Path; from wft_placement.service import main; " + (
+ENTRY = "import sys; from pathlib import Path; from dsy_placement.service import main; " + (
     "sys.exit(main(account=Path(sys.argv[1])))"
 )
 
@@ -104,10 +104,10 @@ def spawn(api, account, tmp_path):
         port = free_port()
         api_host, _, api_port = api.url.removeprefix("https://").rpartition(":")
         env = os.environ | {
-            "WFT_PLACEMENT_LISTEN": f"127.0.0.1:{port}",
-            "WFT_SNAPSHOT_EVERY_S": str(every_s),
-            "WFT_READY_FILE": str(ready),
-            "WFT_METRICS_ADDRESS": f"127.0.0.1:{free_port()}",
+            "DSY_PLACEMENT_LISTEN": f"127.0.0.1:{port}",
+            "DSY_SNAPSHOT_EVERY_S": str(every_s),
+            "DSY_READY_FILE": str(ready),
+            "DSY_METRICS_ADDRESS": f"127.0.0.1:{free_port()}",
             "KUBERNETES_SERVICE_HOST": api_host,
             "KUBERNETES_SERVICE_PORT": api_port,
         }

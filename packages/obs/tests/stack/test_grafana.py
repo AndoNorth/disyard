@@ -54,8 +54,8 @@ def test_deployment_recreates_its_single_pod():
 
 def test_pod_runs_on_the_obs_pool_inside_the_resources_of_its_manifest():
     pod = deployment()["spec"]["template"]["spec"]
-    assert pod["nodeSelector"] == {"wft.dev/pool": "obs"}
-    assert pod["tolerations"][0]["key"] == "wft.dev/pool"
+    assert pod["nodeSelector"] == {"dsy.dev/pool": "obs"}
+    assert pod["tolerations"][0]["key"] == "dsy.dev/pool"
     module = yaml.safe_load((MODULE / "module.yaml").read_text())
     assert container()["resources"] == module["resources"]["grafana"]
     memory = container()["resources"]
@@ -67,7 +67,7 @@ def test_pod_runs_on_the_obs_pool_inside_the_resources_of_its_manifest():
 
 def test_every_object_is_in_the_obs_namespace():
     for obj in grafana.render():
-        assert obj["metadata"]["namespace"] == "wft-obs"
+        assert obj["metadata"]["namespace"] == "dsy-obs"
 
 
 def test_database_lives_on_a_local_volume_so_annotations_survive_a_pod_replacement():
@@ -150,7 +150,7 @@ def test_loki_derives_a_trace_link_to_tempo_and_a_workflow_link_to_the_temporal_
     assert fields["trace_id"]["datasourceUid"] == "tempo"
     assert fields["trace_id"]["url"] == "${__value.raw}"
     assert fields["job_id"]["url"] == (
-        "http://127.0.0.1:18233/namespaces/wft/workflows/job-${__value.raw}"
+        "http://127.0.0.1:18233/namespaces/dsy/workflows/job-${__value.raw}"
     )
     # The correlation ids are structured metadata, so both read a label by name.
     for field in fields.values():
@@ -163,7 +163,7 @@ def test_tempo_links_the_workflow_id_tag_of_a_span_to_the_temporal_ui():
     assert correlation["config"]["field"] == "temporalWorkflowID"
     # The span tag already holds the workflow id, prefix included.
     assert correlation["config"]["target"]["url"] == (
-        "http://127.0.0.1:18233/namespaces/wft/workflows/${temporalWorkflowID}"
+        "http://127.0.0.1:18233/namespaces/dsy/workflows/${temporalWorkflowID}"
     )
 
 
@@ -174,7 +174,7 @@ def test_provisioning_file_escapes_the_dollar_names_grafana_expands_from_its_env
 
 
 def test_the_workflow_page_prefix_is_the_workflow_id_of_a_job():
-    from wft_keys import workflow_id
+    from dsy_keys import workflow_id
 
     assert workflow_id("J") == grafana.WORKFLOW_ID_PREFIX + "J"
 
@@ -203,7 +203,7 @@ def secrets(state: Path, *args: str) -> subprocess.CompletedProcess:
         [str(MODULE / "secrets.sh"), *args],
         capture_output=True,
         text=True,
-        env={**os.environ, "WFT_STATE_DIR": str(state)},
+        env={**os.environ, "DSY_STATE_DIR": str(state)},
     )
 
 
@@ -224,7 +224,7 @@ def test_credential_renders_as_the_secret_the_pod_reads(tmp_path):
     assert secret["kind"] == "Secret"
     assert (secret["metadata"]["name"], secret["metadata"]["namespace"]) == (
         "grafana-admin",
-        "wft-obs",
+        "dsy-obs",
     )
     assert secret["stringData"] == {"admin-user": "admin", "admin-password": password}
 

@@ -18,7 +18,7 @@ BUNDLE_VECTORS = sorted(VECTORS.glob("invalid/bundle/*/*.json"))
 
 def run(*args):
     return subprocess.run(
-        [sys.executable, "-m", "wft_jobtools", *map(str, args)], capture_output=True, text=True
+        [sys.executable, "-m", "dsy_jobtools", *map(str, args)], capture_output=True, text=True
     )
 
 

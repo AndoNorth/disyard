@@ -1,7 +1,7 @@
 groups:
-  - name: wft-intake
+  - name: dsy-intake
     rules:
-      - alert: WftDeadLetterQueueNotEmpty
+      - alert: DsyDeadLetterQueueNotEmpty
         expr: rabbitmq_detailed_queue_messages_ready{queue="intake.dlq"} > 0
         for: 5m
         labels:
@@ -9,8 +9,8 @@ groups:
         annotations:
           summary: The intake dead-letter queue holds {{ $value }} message(s).
           description: Every dead letter needs a recovery decision, replay or purge.
-          runbook_url: https://github.com/AndoNorth/weft/blob/main/docs/runbooks/alerts.md#wftdeadletterqueuenotempty
-      - alert: WftIntakeQueueStalled
+          runbook_url: https://github.com/AndoNorth/disyard/blob/main/docs/runbooks/alerts.md#dsydeadletterqueuenotempty
+      - alert: DsyIntakeQueueStalled
         expr: |
           rabbitmq_detailed_queue_messages_ready{queue=~"intake\\..+", queue!="intake.dlq"} > 0
           and
@@ -21,24 +21,24 @@ groups:
         annotations:
           summary: Intake queue {{ $labels.queue }} has ready messages and no consumer.
           description: Nothing admits the jobs of this queue.
-          runbook_url: https://github.com/AndoNorth/weft/blob/main/docs/runbooks/alerts.md#wftintakequeuestalled
-      - alert: WftIntakePublishUnroutable
-        expr: sum(increase(wft_broker_publish_total{outcome="unroutable"}[10m])) > 0
+          runbook_url: https://github.com/AndoNorth/disyard/blob/main/docs/runbooks/alerts.md#dsyintakequeuestalled
+      - alert: DsyIntakePublishUnroutable
+        expr: sum(increase(dsy_broker_publish_total{outcome="unroutable"}[10m])) > 0
         for: 10m
         labels:
           severity: critical
         annotations:
           summary: The broker client published messages the exchange could not route.
           description: The topology differs from the tenancy profile of the publisher.
-          runbook_url: https://github.com/AndoNorth/weft/blob/main/docs/runbooks/alerts.md#wftintakepublishunroutable
-      - alert: WftIntakeWaitHigh
+          runbook_url: https://github.com/AndoNorth/disyard/blob/main/docs/runbooks/alerts.md#dsyintakepublishunroutable
+      - alert: DsyIntakeWaitHigh
         expr: |
           histogram_quantile(0.95, sum by (priority_class, le)
-            (rate(wft_admission_wait_seconds_bucket[15m]))) > 3600
+            (rate(dsy_admission_wait_seconds_bucket[15m]))) > 3600
         for: 30m
         labels:
           severity: warning
         annotations:
           summary: Jobs of class {{ $labels.priority_class }} wait over an hour to be admitted (p95).
           description: The wait from acceptance to admission is above the estimate of one hour.
-          runbook_url: https://github.com/AndoNorth/weft/blob/main/docs/runbooks/alerts.md#wftintakewaithigh
+          runbook_url: https://github.com/AndoNorth/disyard/blob/main/docs/runbooks/alerts.md#dsyintakewaithigh

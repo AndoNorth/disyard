@@ -7,13 +7,13 @@ import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 import pytest
+from dsy_events.metrics import registry
+from dsy_obs import logs, traces
+from dsy_obs.setup import setup
+from dsy_temporal.trace import current_traceparent, stage_span
 from opentelemetry import trace
 from opentelemetry.proto.collector.trace.v1.trace_service_pb2 import ExportTraceServiceRequest
 from opentelemetry.sdk.trace import TracerProvider
-from wft_events.metrics import registry
-from wft_obs import logs, traces
-from wft_obs.setup import setup
-from wft_temporal.trace import current_traceparent, stage_span
 
 TRACE_ID = "4bf92f3577b34da6a3ce929d0e0e4736"
 SPAN_ID = "00f067aa0ba902b7"
@@ -56,7 +56,7 @@ def test_with_the_endpoint_unset_no_provider_is_installed_and_spans_stay_no_ops(
     monkeypatch.delenv(traces.ENDPOINT, raising=False)
     setup("workflow")
     assert not isinstance(trace.get_tracer_provider(), TracerProvider)
-    with stage_span(trace.get_tracer("wft"), "stage", TRACEPARENT):
+    with stage_span(trace.get_tracer("dsy"), "stage", TRACEPARENT):
         assert current_traceparent() == TRACEPARENT
 
 
@@ -66,7 +66,7 @@ def test_a_stage_span_arrives_with_its_parents_trace_id_and_the_service_name(fre
         setup("workflow")
         provider = trace.get_tracer_provider()
         assert isinstance(provider, TracerProvider)
-        with stage_span(trace.get_tracer("wft"), "stage", TRACEPARENT) as span:
+        with stage_span(trace.get_tracer("dsy"), "stage", TRACEPARENT) as span:
             inside = current_traceparent()
         provider.shutdown()
         receiver.shutdown()
@@ -87,9 +87,9 @@ def test_a_refusing_endpoint_never_blocks_and_counts_the_drops(fresh, monkeypatc
     monkeypatch.setattr(logs, "CLOSE_SECONDS", 0.1)
     monkeypatch.setattr(traces, "CLOSE_SECONDS", 0.1)
     setup("dispatch")
-    tracer = trace.get_tracer("wft")
+    tracer = trace.get_tracer("dsy")
     before = traces.dropped()
-    counted = registry.count("wft_obs_span_dropped_total", component="dispatch")
+    counted = registry.count("dsy_obs_span_dropped_total", component="dispatch")
     started = time.monotonic()
     for _ in range(10_000):
         with stage_span(tracer, "stage", TRACEPARENT):
@@ -97,7 +97,7 @@ def test_a_refusing_endpoint_never_blocks_and_counts_the_drops(fresh, monkeypatc
     elapsed = time.monotonic() - started
     assert elapsed < 2, f"10,000 spans took {elapsed:.2f}s"
     assert traces.dropped() - before >= 10_000 - traces.QUEUE_SIZE - traces.BATCH_SIZE
-    exported = registry.count("wft_obs_span_dropped_total", component="dispatch") - counted
+    exported = registry.count("dsy_obs_span_dropped_total", component="dispatch") - counted
     assert exported == traces.dropped() - before
 
 

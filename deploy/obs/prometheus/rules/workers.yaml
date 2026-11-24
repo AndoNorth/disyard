@@ -1,35 +1,35 @@
 groups:
-  - name: wft-workers
+  - name: dsy-workers
     rules:
-      - alert: WftWorkerOOM
+      - alert: DsyWorkerOOM
         expr: >-
           sum by (pool)
-          (increase(wft_worker_tasks_total{exit_class=~"oom_killed|compile_oom|aggregate_oom"}[15m])) > 0
+          (increase(dsy_worker_tasks_total{exit_class=~"oom_killed|compile_oom|aggregate_oom"}[15m])) > 0
         labels:
           severity: warning
         annotations:
           summary: Task attempts of pool {{ $labels.pool }} were killed for memory.
           description: The task needs more memory than its pool slot gives it.
-          runbook_url: https://github.com/AndoNorth/weft/blob/main/docs/runbooks/alerts.md#wftworkeroom
-      - alert: WftCompileFailuresHigh
+          runbook_url: https://github.com/AndoNorth/disyard/blob/main/docs/runbooks/alerts.md#dsyworkeroom
+      - alert: DsyCompileFailuresHigh
         expr: |
           sum by (exit_class) (
-            increase(wft_worker_tasks_total{pool="compile", exit_class!~"ok|compile_oom"}[15m])
+            increase(dsy_worker_tasks_total{pool="compile", exit_class!~"ok|compile_oom"}[15m])
           ) > 5
         labels:
           severity: warning
         annotations:
           summary: More than 5 compile attempts ended in {{ $labels.exit_class }} in 15 minutes.
           description: Compiles keep failing the same way, so look at the exit class before the testbench.
-          runbook_url: https://github.com/AndoNorth/weft/blob/main/docs/runbooks/alerts.md#wftcompilefailureshigh
-      - alert: WftAggregateFailuresHigh
+          runbook_url: https://github.com/AndoNorth/disyard/blob/main/docs/runbooks/alerts.md#dsycompilefailureshigh
+      - alert: DsyAggregateFailuresHigh
         expr: |
           sum by (exit_class) (
-            increase(wft_worker_tasks_total{pool="aggregate", exit_class!~"ok|aggregate_oom"}[15m])
+            increase(dsy_worker_tasks_total{pool="aggregate", exit_class!~"ok|aggregate_oom"}[15m])
           ) > 5
         labels:
           severity: warning
         annotations:
           summary: More than 5 aggregate attempts ended in {{ $labels.exit_class }} in 15 minutes.
           description: Aggregates keep failing the same way, so look at the exit class before the results.
-          runbook_url: https://github.com/AndoNorth/weft/blob/main/docs/runbooks/alerts.md#wftaggregatefailureshigh
+          runbook_url: https://github.com/AndoNorth/disyard/blob/main/docs/runbooks/alerts.md#dsyaggregatefailureshigh

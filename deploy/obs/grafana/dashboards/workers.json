@@ -3,7 +3,7 @@
   "title": "Workers",
   "description": "Task attempts per pool by exit class, OOM counts per pool, durations and heartbeats.",
   "tags": [
-    "wft"
+    "dsy"
   ],
   "editable": false,
   "schemaVersion": 39,
@@ -76,7 +76,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum by (pool, exit_class) (rate(wft_worker_tasks_total[$__rate_interval]))",
+          "expr": "sum by (pool, exit_class) (rate(dsy_worker_tasks_total[$__rate_interval]))",
           "legendFormat": "{{pool}} {{exit_class}}"
         }
       ],
@@ -120,7 +120,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum by (pool, exit_class) (increase(wft_worker_tasks_total[$__range]))",
+          "expr": "sum by (pool, exit_class) (increase(dsy_worker_tasks_total[$__range]))",
           "legendFormat": "{{pool}} {{exit_class}}",
           "instant": true,
           "range": false
@@ -170,7 +170,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum by (pool) (rate(wft_worker_tasks_total{exit_class!=\"ok\"}[$__rate_interval])) / sum by (pool) (rate(wft_worker_tasks_total[$__rate_interval]))",
+          "expr": "sum by (pool) (rate(dsy_worker_tasks_total{exit_class!=\"ok\"}[$__rate_interval])) / sum by (pool) (rate(dsy_worker_tasks_total[$__rate_interval]))",
           "legendFormat": "{{pool}}"
         }
       ],
@@ -228,7 +228,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum by (pool) (increase(wft_worker_tasks_total{exit_class=~\"oom_killed|compile_oom|aggregate_oom\"}[$__range]))",
+          "expr": "sum by (pool) (increase(dsy_worker_tasks_total{exit_class=~\"oom_killed|compile_oom|aggregate_oom\"}[$__range]))",
           "legendFormat": "{{pool}}",
           "instant": true,
           "range": false
@@ -277,7 +277,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum by (pool) (rate(wft_worker_tasks_total{exit_class=~\"oom_killed|compile_oom|aggregate_oom\"}[$__rate_interval]))",
+          "expr": "sum by (pool) (rate(dsy_worker_tasks_total{exit_class=~\"oom_killed|compile_oom|aggregate_oom\"}[$__rate_interval]))",
           "legendFormat": "{{pool}}"
         }
       ],
@@ -322,7 +322,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum by (container) (kube_pod_container_status_last_terminated_reason{namespace=\"wft-workers\", reason=\"OOMKilled\"})",
+          "expr": "sum by (container) (kube_pod_container_status_last_terminated_reason{namespace=\"dsy-workers\", reason=\"OOMKilled\"})",
           "legendFormat": "{{container}}",
           "instant": true,
           "range": false
@@ -369,7 +369,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum by (container) (increase(kube_pod_container_status_restarts_total{namespace=\"wft-workers\"}[$__range]))",
+          "expr": "sum by (container) (increase(kube_pod_container_status_restarts_total{namespace=\"dsy-workers\"}[$__range]))",
           "legendFormat": "{{container}}",
           "instant": true,
           "range": false
@@ -431,7 +431,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "histogram_quantile(0.95, sum by (pool, le) (rate(wft_worker_task_seconds_bucket[$__rate_interval])))",
+          "expr": "histogram_quantile(0.95, sum by (pool, le) (rate(dsy_worker_task_seconds_bucket[$__rate_interval])))",
           "legendFormat": "{{pool}}"
         }
       ],
@@ -478,7 +478,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "histogram_quantile(0.95, sum by (pool, le) (rate(wft_worker_heartbeat_lag_seconds_bucket[$__rate_interval])))",
+          "expr": "histogram_quantile(0.95, sum by (pool, le) (rate(dsy_worker_heartbeat_lag_seconds_bucket[$__rate_interval])))",
           "legendFormat": "{{pool}}"
         }
       ],
@@ -525,7 +525,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum(rate(wft_worker_aggregate_inputs_total[$__rate_interval]))",
+          "expr": "sum(rate(dsy_worker_aggregate_inputs_total[$__rate_interval]))",
           "legendFormat": "inputs"
         },
         {
@@ -534,7 +534,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum(rate(wft_worker_aggregate_rows_total[$__rate_interval]))",
+          "expr": "sum(rate(dsy_worker_aggregate_rows_total[$__rate_interval]))",
           "legendFormat": "rows"
         }
       ],
@@ -581,7 +581,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum by (component) (rate(wft_obs_log_dropped_total{component=~\".+-worker\"}[$__rate_interval]))",
+          "expr": "sum by (component) (rate(dsy_obs_log_dropped_total{component=~\".+-worker\"}[$__rate_interval]))",
           "legendFormat": "logs {{component}}"
         },
         {
@@ -590,7 +590,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum by (component) (rate(wft_obs_span_dropped_total{component=~\".+-worker\"}[$__rate_interval]))",
+          "expr": "sum by (component) (rate(dsy_obs_span_dropped_total{component=~\".+-worker\"}[$__rate_interval]))",
           "legendFormat": "spans {{component}}"
         }
       ],

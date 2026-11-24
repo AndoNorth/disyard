@@ -11,20 +11,20 @@ import pytest
 ROOT = Path(__file__).resolve().parents[3]
 
 PROBE = """
-import wft_worker.__main__, wft_worker.probe, wft_worker.runner, wft_worker.service
-from wft_worker.activity import run_task
-from wft_worker.config import ENV, Config
-from wft_worker.pools import aggregate, compile, simulate
+import dsy_worker.__main__, dsy_worker.probe, dsy_worker.runner, dsy_worker.service
+from dsy_worker.activity import run_task
+from dsy_worker.config import ENV, Config
+from dsy_worker.pools import aggregate, compile, simulate
 
-environ = {name: "/var/wft/x" for name in ENV.values()} | {"WFT_SLOT_MEMORY_MIB": "384"}
-assert Config.from_env("simulate", environ).queue == "wft-simulate"
+environ = {name: "/var/dsy/x" for name in ENV.values()} | {"DSY_SLOT_MEMORY_MIB": "384"}
+assert Config.from_env("simulate", environ).queue == "dsy-simulate"
 assert run_task.__temporal_activity_definition.name == "run_task"
 """
 
 EXTRAS = {
-    "compile": {"uv", "wft-compile"},
-    "simulate": {"wft-runtime"},
-    "aggregate": {"wft-aggregate"},
+    "compile": {"uv", "dsy-compile"},
+    "simulate": {"dsy-runtime"},
+    "aggregate": {"dsy-aggregate"},
 }
 
 
@@ -57,17 +57,17 @@ def run(*cmd, **kwargs) -> subprocess.CompletedProcess:
 
 
 def test_wheel_extras_add_each_pool_its_own_library():
-    worker = lock()["wft-worker"]
+    worker = lock()["dsy-worker"]
     extras = worker["optional-dependencies"]
     assert {pool: {d["name"] for d in extras[pool]} for pool in extras} == EXTRAS
     core = {d["name"] for d in worker["dependencies"]}
-    assert "wft-workflow" in core and not core & {"uv", "wft-aggregate"}
+    assert "dsy-workflow" in core and not core & {"uv", "dsy-aggregate"}
 
 
 def test_wheel_in_a_clean_venv_imports_every_module(tmp_path):
     """Runs isolated from a directory with no repository above it, so a path into the tree fails."""
     wheels = tmp_path / "wheels"
-    for package in workspace_closure("wft-worker"):
+    for package in workspace_closure("dsy-worker"):
         run("uv", "build", "--wheel", "--package", package, "-o", str(wheels), cwd=ROOT)
     venv = tmp_path / "venv"
     run("uv", "venv", "--python", sys.executable, str(venv))
@@ -87,7 +87,7 @@ def test_wheel_export_of_each_pool_lists_its_extra_only(pool):
         "--frozen",
         "--no-hashes",
         "--package",
-        "wft-worker",
+        "dsy-worker",
         "--extra",
         pool,
         cwd=ROOT,

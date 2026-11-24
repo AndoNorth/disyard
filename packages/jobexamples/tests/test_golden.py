@@ -1,11 +1,11 @@
 import subprocess
 import sys
 
-from wft_jobexamples import golden
+from dsy_jobexamples import golden
 
 PLANS = golden.PLANS
 CODE = (
-    "from wft_jobexamples import golden; print(golden.hashes_text(golden.golden_files()), end='')"
+    "from dsy_jobexamples import golden; print(golden.hashes_text(golden.golden_files()), end='')"
 )
 
 

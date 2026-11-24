@@ -1,6 +1,6 @@
 # Dispatch
 
-The dispatch and control API, `python -m wft_dispatchapi.service`, deployed in `wft-control` on the infra pool.
+The dispatch and control API, `python -m dsy_dispatchapi.service`, deployed in `dsy-control` on the infra pool.
 One process serves two listeners, `dispatch-api` for uploads, batch submit and batch reads and `control-api` for control and the job status read, and runs the reconciler and the control retrier, as [the API contract](../../contracts/api/README.md) says.
 Module: `dispatch`, the name of the reserve row that the cluster budget held for it.
 
@@ -37,7 +37,7 @@ The NodePorts are those of the rows of the [host access map](../host/ports.yaml)
 The Prometheus metrics are on container port 9090, which has no Service:
 
 ```sh
-kubectl --context kind-wft -n wft-control port-forward --address 127.0.0.1 deploy/dispatch 9090:9090
+kubectl --context kind-dsy -n dsy-control port-forward --address 127.0.0.1 deploy/dispatch 9090:9090
 ```
 
 ## Configuration
@@ -46,17 +46,17 @@ The service reads only its environment.
 
 | Variable | From |
 | --- | --- |
-| `WFT_TEMPORAL_ADDRESS` | the Temporal frontend in `wft-infra` |
-| `WFT_STORE_ENDPOINT` | the object store in `wft-infra` |
-| `WFT_SUBMIT_CREDENTIALS` | `/etc/wft/store/credentials.json`, mounted from the Secret `dispatch-store` |
-| `WFT_BROKER_ADDRESS` | `rabbitmq.wft-infra.svc.cluster.local:5672` |
-| `WFT_TENANCY_PROFILE` | the tenancy profile that `contracts/tenancy/tenancy.yaml` maps the Tilt profile to |
-| `WFT_METRICS_ADDRESS` | port 9090 of the pod |
-| `WFT_DISPATCH_DSN`, `WFT_CONTROL_DSN`, `WFT_ARTIFACTS_DSN`, `WFT_READER_DSN` | the Secret `dispatch-logins` |
-| `WFT_BROKER_PASSWORD` | the Secret `dispatch-broker` |
+| `DSY_TEMPORAL_ADDRESS` | the Temporal frontend in `dsy-infra` |
+| `DSY_STORE_ENDPOINT` | the object store in `dsy-infra` |
+| `DSY_SUBMIT_CREDENTIALS` | `/etc/dsy/store/credentials.json`, mounted from the Secret `dispatch-store` |
+| `DSY_BROKER_ADDRESS` | `rabbitmq.dsy-infra.svc.cluster.local:5672` |
+| `DSY_TENANCY_PROFILE` | the tenancy profile that `contracts/tenancy/tenancy.yaml` maps the Tilt profile to |
+| `DSY_METRICS_ADDRESS` | port 9090 of the pod |
+| `DSY_DISPATCH_DSN`, `DSY_CONTROL_DSN`, `DSY_ARTIFACTS_DSN`, `DSY_READER_DSN` | the Secret `dispatch-logins` |
+| `DSY_BROKER_PASSWORD` | the Secret `dispatch-broker` |
 
-The listeners take their container ports, because the module sets neither `WFT_DISPATCH_API_LISTEN` nor `WFT_CONTROL_API_LISTEN`.
-The submit limits keep their defaults, each of which a `WFT_DISPATCH_<NAME>` variable can replace without a rebuild.
+The listeners take their container ports, because the module sets neither `DSY_DISPATCH_API_LISTEN` nor `DSY_CONTROL_API_LISTEN`.
+The submit limits keep their defaults, each of which a `DSY_DISPATCH_<NAME>` variable can replace without a rebuild.
 
 ## Logins and Secrets
 
@@ -64,10 +64,10 @@ The group roles of the app database cannot log in, so the service has one login 
 
 | Login | Group role | Used by | DSN variable |
 | --- | --- | --- | --- |
-| `dispatch_dispatch` | `wft_dispatch` | the submit sequence, the publisher and the reconciler | `WFT_DISPATCH_DSN` |
-| `dispatch_control` | `wft_control` | control, the retrier and the resume finisher | `WFT_CONTROL_DSN` |
-| `dispatch_artifacts` | `wft_artifacts` | the index and link rows of a submit and of a patched resume | `WFT_ARTIFACTS_DSN` |
-| `dispatch_reader` | `wft_reader` | the status read and the reasons that the retrier signals | `WFT_READER_DSN` |
+| `dispatch_dispatch` | `dsy_dispatch` | the submit sequence, the publisher and the reconciler | `DSY_DISPATCH_DSN` |
+| `dispatch_control` | `dsy_control` | control, the retrier and the resume finisher | `DSY_CONTROL_DSN` |
+| `dispatch_artifacts` | `dsy_artifacts` | the index and link rows of a submit and of a patched resume | `DSY_ARTIFACTS_DSN` |
+| `dispatch_reader` | `dsy_reader` | the status read and the reasons that the retrier signals | `DSY_READER_DSN` |
 
 Their passwords are generated on first use into `dispatch.logins.json` in the state directory of the cluster scripts, readable by its owner only, and never committed.
 The Secret `dispatch-logins` holds the four DSNs, and the Secret `dispatch-store` holds `credentials.json` with the `submit` store identity only, taken from `objectstore.credentials.json`.
@@ -77,7 +77,7 @@ It creates a missing login, and converges one whose password, attributes or memb
 A second run prints every login `unchanged` and `changed: 0`.
 `logins.sh check` exits 1 when a login differs or cannot log in with its password.
 
-The Secret `dispatch-broker` holds the password of the broker user `dispatch` as `WFT_BROKER_PASSWORD`, taken from the broker module's helper, which generates it on first use:
+The Secret `dispatch-broker` holds the password of the broker user `dispatch` as `DSY_BROKER_PASSWORD`, taken from the broker module's helper, which generates it on first use:
 
 ```sh
 uv run --frozen python deploy/rabbitmq/config.py password dispatch
@@ -93,12 +93,12 @@ On SIGTERM the service finishes the chunk of a submit in hand within its drain o
 ```sh
 curl -s http://127.0.0.1:18081/readyz
 curl -s http://127.0.0.1:18080/readyz
-kubectl --context kind-wft -n wft-control logs deploy/dispatch
+kubectl --context kind-dsy -n dsy-control logs deploy/dispatch
 ```
 
 ## Smoke driver
 
-`python -m wft_dispatchapi.smoke --scenario NAME` drives the deployed API from the host, from the root of the tree, through the two host ports, and through port-forwards for what it counts beyond the API.
+`python -m dsy_dispatchapi.smoke --scenario NAME` drives the deployed API from the host, from the root of the tree, through the two host ports, and through port-forwards for what it counts beyond the API.
 Its scenarios are `upload`, `submit`, `cancel-before-start`, `run`, `pause-resume`, `cancel-running` and `restart`, and each prints the lines its module docstring names.
 `cancel-before-start` scales `admission` to no replica while it submits and cancels its job, and back after.
 `restart` deletes the `dispatch` pod during a batch call, sends the call again, and cancels the batch once it has counted.
@@ -107,7 +107,7 @@ Every scenario but `upload` first makes the deployed workflow worker build curre
 The jobs of `run`, `pause-resume`, `cancel-running` and `restart` run on the deployed pool workers.
 
 ```sh
-uv run --frozen python -m wft_dispatchapi.smoke --scenario submit --jobs 3
+uv run --frozen python -m dsy_dispatchapi.smoke --scenario submit --jobs 3
 ```
 
 ## Changing the base image

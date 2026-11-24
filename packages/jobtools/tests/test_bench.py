@@ -4,8 +4,8 @@ import subprocess
 import sys
 from pathlib import Path
 
-from wft_jobdoc.profile_files import load_profile
-from wft_jobtools import bench
+from dsy_jobdoc.profile_files import load_profile
+from dsy_jobtools import bench
 
 ROOT = Path(__file__).resolve().parents[3]
 
@@ -26,7 +26,7 @@ def test_template_has_the_requested_size():
 
 def run(*args):
     return subprocess.run(
-        [sys.executable, "-m", "wft_jobtools.bench", *args], capture_output=True, text=True
+        [sys.executable, "-m", "dsy_jobtools.bench", *args], capture_output=True, text=True
     )
 
 

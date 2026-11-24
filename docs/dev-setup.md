@@ -61,10 +61,10 @@ No logic lives in the justfile, and each real recipe calls `scripts/<name>.sh`.
 | `pre-push` | real | - | the fast gate that the pre-push hook runs, see [Git hooks](#git-hooks) |
 | `hooks-status` | real | - | prints whether the git hooks are installed for this checkout |
 | `ports` | real | - | reports each host port a run binds that something already holds, with the holder's pid, start time and command, and exits 1, see [Port check](#port-check) |
-| `up` | real | - | brings up the kind cluster `wft` and its local registry for `WFT_PRESET` (default `ci`), after the port check when the cluster does not exist yet |
+| `up` | real | - | brings up the kind cluster `dsy` and its local registry for `DSY_PRESET` (default `ci`), after the port check when the cluster does not exist yet |
 | `down` | real | - | stops the node containers and keeps the cluster, the registry and the host data directory |
 | `nuke` | real | - | destroys the cluster, its registry and the host data directory of the preset that started it |
-| `cluster-verify` | real | - | read-only checks that the cluster `wft` matches `WFT_PRESET` (default `ci`): preset, pod slots, module budget, nodes, node limits, quotas, module readiness, live requests, pressure and loopback ports, one `ok` or `FAIL` line each |
+| `cluster-verify` | real | - | read-only checks that the cluster `dsy` matches `DSY_PRESET` (default `ci`): preset, pod slots, module budget, nodes, node limits, quotas, module readiness, live requests, pressure and loopback ports, one `ok` or `FAIL` line each |
 | `smoke` | real | - | the smoke gate: attaches to the running `ci` cluster, checks every layer and runs one job to its known answer within 300 s, see [the validation matrix](runbooks/validation-matrix.md#the-smoke-rows) |
 | `scan [deps \| images \| secrets]` | real | - | the security scans, see [Security scans](#security-scans) |
 | `e2e` | stub | acceptance | end-to-end run |
@@ -83,14 +83,14 @@ error: recipe `e2e` failed on line 2 with exit code 3
 ### Port check
 
 `nix develop -c just ports` lists every host port that something already listens on, and `just up` runs it before it creates a cluster.
-The ports are the rows of `scripts/dev-ports.map` plus those of `deploy/host/ports.yaml`, and `WFT_SLOT` shifts the rows that carry a stride.
-A port published by one of the `wft-*` containers is labelled a leftover, and nothing is stopped or removed.
+The ports are the rows of `scripts/dev-ports.map` plus those of `deploy/host/ports.yaml`, and `DSY_SLOT` shifts the rows that carry a stride.
+A port published by one of the `dsy-*` containers is labelled a leftover, and nothing is stopped or removed.
 `lsof` and `ss` are host tools: without both the check exits 0 and prints an install hint.
-The T1 helper of `wft_itest` takes a free port when a port of its slot is held, so a squatter does not fail an integration test.
+The T1 helper of `dsy_itest` takes a free port when a port of its slot is held, so a squatter does not fail an integration test.
 
 ### Observability switch
 
-A local or smoke run that wants the observability stack brings the cluster up with `WFT_OBS=on nix develop -c just up` (after `just nuke` when the cluster exists with the switch off), and `scripts/tilt/run.sh ci` and `just cluster-verify` then follow the recorded value; the [Observability switch](cluster-host.md#observability-switch) section has the detail.
+A local or smoke run that wants the observability stack brings the cluster up with `DSY_OBS=on nix develop -c just up` (after `just nuke` when the cluster exists with the switch off), and `scripts/tilt/run.sh ci` and `just cluster-verify` then follow the recorded value; the [Observability switch](cluster-host.md#observability-switch) section has the detail.
 
 ## Python with uv
 
@@ -108,7 +108,7 @@ A uv-managed `cpython` already present in `~/.local/share/uv/python` still wins 
 `UV_PYTHON` stays unset because setting it breaks `uv pip`.
 
 `scripts/env.sh` also adds a private directory with `libstdc++`, `libgcc_s` and `libz` from the host to `LD_LIBRARY_PATH`, so manylinux wheels such as numpy import under the Nix interpreter.
-`WFT_LD_EXTRA=<dir>[:<dir>...]` appends further library directories.
+`DSY_LD_EXTRA=<dir>[:<dir>...]` appends further library directories.
 
 Provenance check:
 
@@ -139,7 +139,7 @@ Outside the flake shell the only result is `fail in-dev-shell`, because host cop
 | `wsl-systemd` | PID 1 is systemd | set `[boot]` `systemd=true` in `/etc/wsl.conf`, then `wsl --shutdown` from Windows |
 | `repo-on-ext4` | the repo is not under `/mnt/<drive>/` and not on a 9p, drvfs, cifs or nfs mount | move the clone under the WSL home directory, a `warn` means a non-ext4 local filesystem |
 | `inotify-instances` | `fs.inotify.max_user_instances` is at least 512 | `sudo sysctl fs.inotify.max_user_instances=512`, persisted in `/etc/sysctl.d/` |
-| `memory-vs-preset` | host memory covers `memory_mib` in `deploy/presets/$WFT_PRESET.yaml` (default preset `ci`), or `obs_memory_mib` with `WFT_OBS=on` | give WSL2 more memory in `.wslconfig`, and a `warn` with `WFT_OBS=on` means the host fits the preset only with the [observability switch](cluster-host.md#observability-switch) off |
+| `memory-vs-preset` | host memory covers `memory_mib` in `deploy/presets/$DSY_PRESET.yaml` (default preset `ci`), or `obs_memory_mib` with `DSY_OBS=on` | give WSL2 more memory in `.wslconfig`, and a `warn` with `DSY_OBS=on` means the host fits the preset only with the [observability switch](cluster-host.md#observability-switch) off |
 | `path-provenance` | for every pinned tool (including `yq`, `wasmtime` and `wasm-tools`) the first match on PATH is a `/nix/store` path, not `~/.nix-profile` or `/nix/var/nix/profiles` | the detail prints `which -a` for each offender, so a profile copy ahead of the flake can be removed or PATH reordered |
 
 `scripts/doctor.test.sh` is the fault-injection self-test.
@@ -256,7 +256,7 @@ Each skipped job still reports as skipped, so a check made required later never 
 
 The image builds, `deploy/workers/image.sh` and `deploy/workflow/image.sh`, read the wheels that `uv.lock` pins and the release assets of `nix/wasm-tools.nix` from the build download cache before the network, locally as in CI.
 A second build on the same host downloads nothing, and every cached file is checked against its pinned hash before use.
-The cache is `~/.cache/weft/build` (under `XDG_CACHE_HOME` when set, or `WFT_BUILD_CACHE`), removing it is always safe, and `actions/cache` carries it between runs of the `test` jobs and `state-modules`.
+The cache is `~/.cache/disyard/build` (under `XDG_CACHE_HOME` when set, or `DSY_BUILD_CACHE`), removing it is always safe, and `actions/cache` carries it between runs of the `test` jobs and `state-modules`.
 `actions/cache` also carries `~/.cache/uv`, keyed by `uv.lock` alone, so a `test` job neither downloads the wheels nor builds `python-qpid-proton` from its sdist again.
 
 CI can be switched off in two ways:
@@ -287,7 +287,7 @@ Lint on the workflow file is part of it, so a line over 120 columns in `ci.yml` 
 | `fail cgroup-v2` or `fail wsl-systemd` | WSL2 configuration, see the table above, then `wsl --shutdown` |
 | `fail repo-on-ext4` | the clone is on a Windows drive, clone again under the WSL home directory |
 | `fail inotify-instances` | raise the sysctl as above |
-| `warn memory-vs-preset` with `WFT_OBS=on` | the host fits the preset only with the observability switch off, give WSL2 more memory or leave the switch off |
+| `warn memory-vs-preset` with `DSY_OBS=on` | the host fits the preset only with the observability switch off, give WSL2 more memory or leave the switch off |
 | `uv sync` picks a different Python | `UV_PYTHON_PREFERENCE` is not `only-system`, which means the shell was not entered through the flake |
 | `error: experimental feature 'flakes' is disabled` | Nix config lacks flakes, see `nix-flakes` |
 
@@ -296,7 +296,7 @@ Lint on the workflow file is part of it, so a line over 120 columns in `ci.yml` 
 On a clean checkout, with the host prerequisites in place:
 
 - [ ] `nix develop -c just doctor` exits 0, prints no `fail` line, and prints an `ok path-provenance` line saying the tools resolve first to the flake.
-  A `warn memory-vs-preset` is acceptable only with `WFT_OBS=on`, see the table above.
+  A `warn memory-vs-preset` is acceptable only with `DSY_OBS=on`, see the table above.
 - [ ] `nix develop -c just --list` prints the recipe table above, one name per recipe.
 - [ ] `nix develop -c just ci` exits 0, ending with `all checks passed!` from `nix flake check`.
   The unit and integration tests run unless only documentation changed.
@@ -306,10 +306,10 @@ On a clean checkout, with the host prerequisites in place:
 
 With a cluster, which needs the [operator runbook](runbooks/operator.md):
 
-- [ ] `nix develop -c just up` ends with `cluster wft ready: preset ci, WFT_OBS=off, 6 nodes`, and `scripts/tilt/run.sh ci` exits 0.
+- [ ] `nix develop -c just up` ends with `cluster dsy ready: preset ci, DSY_OBS=off, 6 nodes`, and `scripts/tilt/run.sh ci` exits 0.
 - [ ] `nix develop -c just cluster-verify` exits 0 with no `FAIL` line.
 - [ ] `nix develop -c just smoke` exits 0 and ends with `smoke ci: 11 ok, 0 failed, 0 skipped, <s> s`.
-- [ ] `nix develop -c just nuke` ends with `cluster wft, registry wft-registry and <data dir> are gone`, and the checks of [confirming nothing is left](runbooks/operator.md#confirm-nothing-is-left-behind) pass.
+- [ ] `nix develop -c just nuke` ends with `cluster dsy, registry dsy-registry and <data dir> are gone`, and the checks of [confirming nothing is left](runbooks/operator.md#confirm-nothing-is-left-behind) pass.
 
 ## Runbooks
 

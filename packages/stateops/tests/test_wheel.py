@@ -9,29 +9,29 @@ import pytest
 ROOT = Path(__file__).resolve().parents[3]
 
 PACKAGES = (
-    "wft-stateops",
-    "wft-jobstate",
-    "wft-events",
-    "wft-eventstore",
-    "wft-compat",
-    "wft-keys",
-    "wft-migrate",
-    "wft-storecheck",
-    "wft-itest",
+    "dsy-stateops",
+    "dsy-jobstate",
+    "dsy-events",
+    "dsy-eventstore",
+    "dsy-compat",
+    "dsy-keys",
+    "dsy-migrate",
+    "dsy-storecheck",
+    "dsy-itest",
 )
 
 PROBE = """
-import wft_stateops
-from wft_stateops.invariants import queries
-from wft_stateops.inputs import load
+import dsy_stateops
+from dsy_stateops.invariants import queries
+from dsy_stateops.inputs import load
 assert load().inputs
 from importlib import resources
-assert (resources.files('wft_stateops.migrations') / 'R__roles.sql').is_file()
+assert (resources.files('dsy_stateops.migrations') / 'R__roles.sql').is_file()
 assert len(queries()) == 6, sorted(queries())
-from wft_stateops.windows import params
+from dsy_stateops.windows import params
 assert params()['failure_codes'] and params()['unreferenced_grace']
 from datetime import UTC, datetime
-from wft_stateops.bench import EVENTS_PER_JOB, job_events, job_row
+from dsy_stateops.bench import EVENTS_PER_JOB, job_events, job_row
 assert len(job_events(0, job_row(0), datetime.now(UTC))) == EVENTS_PER_JOB
 
 """

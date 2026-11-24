@@ -6,8 +6,8 @@ import sys
 from pathlib import Path
 
 import pytest
-from wft_broker.contract import topology
-from wft_broker.models import FILES
+from dsy_broker.contract import topology
+from dsy_broker.models import FILES
 
 ROOT = Path(__file__).resolve().parents[3]
 CONTRACTS = {name: ROOT / "contracts" / name for name in ("broker", "tenancy")}
@@ -34,7 +34,7 @@ REASONS = {
 
 def check(*args) -> subprocess.CompletedProcess:
     return subprocess.run(
-        [sys.executable, "-m", "wft_broker.contract", "--check", *map(str, args)],
+        [sys.executable, "-m", "dsy_broker.contract", "--check", *map(str, args)],
         capture_output=True,
         text=True,
     )
@@ -99,7 +99,7 @@ def test_loader_usage_errors(tmp_path):
     assert check(tmp_path / "missing.yaml", "--as", "topology").returncode == 2
     assert check(unnamed, "--as", "no-such-schema").returncode == 2
     bare = subprocess.run(
-        [sys.executable, "-m", "wft_broker.contract", str(PINNED[0])], capture_output=True
+        [sys.executable, "-m", "dsy_broker.contract", str(PINNED[0])], capture_output=True
     )
     assert bare.returncode == 2
 

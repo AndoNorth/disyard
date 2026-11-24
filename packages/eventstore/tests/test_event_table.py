@@ -5,9 +5,9 @@ from pathlib import Path
 import psycopg
 import pytest
 import yaml
-from wft_eventstore import STUBBED
-from wft_eventstore.gen import render_policies
-from wft_eventstore.models import UUID_PATTERN, EventRow, Retention
+from dsy_eventstore import STUBBED
+from dsy_eventstore.gen import render_policies
+from dsy_eventstore.models import UUID_PATTERN, EventRow, Retention
 
 pytestmark = pytest.mark.integration
 
@@ -23,12 +23,12 @@ SQL_TYPES = {
 }
 
 
-def row(db, event_id="/wft/workflow#1", time="2026-10-30T12:00:00.123456Z", **extra):
+def row(db, event_id="/dsy/workflow#1", time="2026-10-30T12:00:00.123456Z", **extra):
     values = {
         "event_id": event_id,
         "event_time": time,
         "type": "job.started",
-        "source": "/wft/workflow",
+        "source": "/dsy/workflow",
         "tenant": "acme",
         "job_id": JOB,
         "body": "{}",

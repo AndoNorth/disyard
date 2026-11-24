@@ -1,21 +1,21 @@
 groups:
-  - name: wft-dispatch
+  - name: dsy-dispatch
     rules:
-      - alert: WftReconcilerBacklogOld
-        expr: max(wft_dispatch_unpublished_oldest_seconds) > 600
+      - alert: DsyReconcilerBacklogOld
+        expr: max(dsy_dispatch_unpublished_oldest_seconds) > 600
         for: 5m
         labels:
           severity: warning
         annotations:
           summary: An accepted job has waited over 10 minutes for its publish to the broker.
           description: The reconciler is not publishing accepted jobs.
-          runbook_url: https://github.com/AndoNorth/weft/blob/main/docs/runbooks/alerts.md#wftreconcilerbacklogold
-      - alert: WftControlOutboxOld
-        expr: max(wft_control_outbox_oldest_seconds) > 300
+          runbook_url: https://github.com/AndoNorth/disyard/blob/main/docs/runbooks/alerts.md#dsyreconcilerbacklogold
+      - alert: DsyControlOutboxOld
+        expr: max(dsy_control_outbox_oldest_seconds) > 300
         for: 5m
         labels:
           severity: warning
         annotations:
           summary: A control request has waited over 5 minutes for delivery to its workflow.
           description: A cancel, terminate, pause or resume is not reaching its job.
-          runbook_url: https://github.com/AndoNorth/weft/blob/main/docs/runbooks/alerts.md#wftcontroloutboxold
+          runbook_url: https://github.com/AndoNorth/disyard/blob/main/docs/runbooks/alerts.md#dsycontroloutboxold

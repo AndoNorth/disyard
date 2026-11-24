@@ -1,11 +1,11 @@
-"""Each call of `wft_obs.query` sends what its backend expects and reads the canned answer of
+"""Each call of `dsy_obs.query` sends what its backend expects and reads the canned answer of
 `FakeObs`."""
 
 import json
 
 import pytest
-from wft_obs import query
-from wft_obs.query import QueryError
+from dsy_obs import query
+from dsy_obs.query import QueryError
 
 UP = {"metric": {"__name__": "up", "job": "kubelet"}, "value": [1700000000, "1"]}
 TARGET = {"labels": {"job": "kubelet"}, "health": "up"}
@@ -52,8 +52,8 @@ def test_trace_of_an_unknown_id_raises(fake):
 
 
 def test_profiled_reads_the_service_names_and_sends_milliseconds(fake):
-    fake.services = ["wft.workflow", "wft.dispatch"]
-    assert query.profiled(fake.url, 1700000000, 1700000300) == ["wft.dispatch", "wft.workflow"]
+    fake.services = ["dsy.workflow", "dsy.dispatch"]
+    assert query.profiled(fake.url, 1700000000, 1700000300) == ["dsy.dispatch", "dsy.workflow"]
     sent = json.loads(last(fake, "/querier.v1.QuerierService/LabelValues").body)
     assert sent == {"name": "service_name", "start": 1700000000000, "end": 1700000300000}
 

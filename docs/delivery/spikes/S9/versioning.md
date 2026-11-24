@@ -1,7 +1,7 @@
 # Spike: pinned versioning on SDK 1.35.0 and the pinned-bug override (S9)
 
 Run on 2026-11-10.
-Owner: the [workflow engine epic](https://github.com/AndoNorth/weft/issues/6), lane S, filed as [spike issue 315](https://github.com/AndoNorth/weft/issues/315).
+Owner: the [workflow engine epic](https://github.com/AndoNorth/disyard/issues/6), lane S, filed as [spike issue 315](https://github.com/AndoNorth/disyard/issues/315).
 Spec: the S9 block of [the workflow engine breakdown](../../epics/08-workflow-engine.md#s9-versioning-on-sdk-1350-and-the-pinned-bug-override), and decision D6 there.
 Method: [docs/delivery/method.md](../../method.md).
 Throwaway code: [code/](code/), run as `nix develop -c uv run python docs/delivery/spikes/S9/code/spike.py [out-dir]`.
@@ -36,13 +36,13 @@ SDK 1.35.0 has no client method for worker deployments, so D6 relies on the raw 
 | Host | WSL2, 16,406 MiB `MemAvailable` before the run (`host.mem_available_mib.before`) |
 | Server | `temporalio/temporal:1.9.1` pinned by digest in `deploy/versions.yaml`, `temporal server start-dev --headless`, which reports `temporal version 1.9.1 (Server 1.32.0, UI 2.54.1)` (`server.cli`) and server version 1.32.0 from `GetSystemInfo` (`server.version`) |
 | SDK | `temporalio` 1.35.0 from `uv.lock` (`sdk.temporalio`), `uv.lock` unchanged |
-| Containers | one, the dev server, started through `wft_itest.Session` with its T1 lock file, 1 GiB cap, port on 127.0.0.1 only and the run label, removed after the run |
-| Left behind | none of this run: `docker ps -a --filter label=wft.dev/verify-run` listed 0 at the end of the run (`containers.left.label_all`) |
-| Workers | all in the spike process: builds A, B and C of [code/builds.py](code/builds.py) as versioned workers of deployment `wft-workflow-worker` on queue `wft-workflow`, and one unversioned worker on `wft-pool-simulate` |
+| Containers | one, the dev server, started through `dsy_itest.Session` with its T1 lock file, 1 GiB cap, port on 127.0.0.1 only and the run label, removed after the run |
+| Left behind | none of this run: `docker ps -a --filter label=dsy.dev/verify-run` listed 0 at the end of the run (`containers.left.label_all`) |
+| Workers | all in the spike process: builds A, B and C of [code/builds.py](code/builds.py) as versioned workers of deployment `dsy-workflow-worker` on queue `dsy-workflow`, and one unversioned worker on `dsy-pool-simulate` |
 
 ## The builds
 
-One workflow type, `JobWorkflow`, declared `@workflow.defn(versioning_behavior=VersioningBehavior.PINNED)` in three builds, each on a worker with `WorkerDeploymentConfig(version=WorkerDeploymentVersion("wft-workflow-worker", <build>), use_worker_versioning=True)`.
+One workflow type, `JobWorkflow`, declared `@workflow.defn(versioning_behavior=VersioningBehavior.PINNED)` in three builds, each on a worker with `WorkerDeploymentConfig(version=WorkerDeploymentVersion("dsy-workflow-worker", <build>), use_worker_versioning=True)`.
 The workflow runs a `prepare` activity on the pool queue, waits on the signal `go`, runs a finish activity, and returns its build, its steps and the version the SDK reported at each of four points.
 
 - A is the build with the bug: its finish step is `finish-buggy`.
@@ -58,7 +58,7 @@ The workflow runs a `prepare` activity on the pool queue, waits on the signal `g
 | Set A on the fresh deployment | none | A | none | yes | `s9-spike` | `current_a.*` |
 | Set B after B's pollers are seen | A | B | A | yes | `s9-spike` | `current_b.*` |
 
-Before any version was current, a workflow started on `wft-workflow` completed 0 workflow tasks in 3 s, although A's pollers were registered (`no_current.completed_tasks`).
+Before any version was current, a workflow started on `dsy-workflow` completed 0 workflow tasks in 3 s, although A's pollers were registered (`no_current.completed_tasks`).
 After A became current, the same workflow completed 2 tasks within 3 s (`no_current.completed_tasks_after_a`), so a workflow started with no current version is not lost, and A, the only build with pollers, ran it once A was current.
 
 ### Workflows
@@ -70,12 +70,12 @@ After A became current, the same workflow completed 2 tasks within 3 s (`no_curr
 | `started-on-b` | B | signalled | B, B, B, B | `prepare`, `finish-fixed` | `on_b.*` |
 | `moved-to-c` | B | override to C, signalled, override back to B | B, B, B, B | `prepare`, `finish-fixed` | `unguarded.*` |
 
-The SDK reports the version in its canonical form with a dot, `wft-workflow-worker.A`, while the search attribute holds `wft-workflow-worker:A` with a colon.
+The SDK reports the version in its canonical form with a dot, `dsy-workflow-worker.A`, while the search attribute holds `dsy-workflow-worker:A` with a colon.
 The moved workflow reports A for the points B replays and B for the points B runs, so the value is deterministic across the move, as the docstring of `get_current_deployment_version` in SDK 1.35.0 says.
 
 ### Visibility count
 
-The query is `TemporalWorkerDeploymentVersion = 'wft-workflow-worker:A' AND TemporalWorkflowVersioningBehavior = 'Pinned' AND ExecutionStatus = 'Running'`.
+The query is `TemporalWorkerDeploymentVersion = 'dsy-workflow-worker:A' AND TemporalWorkflowVersioningBehavior = 'Pinned' AND ExecutionStatus = 'Running'`.
 
 | Moment | Count on A | Count on B | Names |
 | --- | --- | --- | --- |

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Self-test for check-dev-ports.sh: a free port passes, a held port fails naming its holder, the WFT_SLOT stride moves
-# a range, ss alone finds a holder, a wft-* container is labelled a leftover, and a host without lsof and ss passes
+# Self-test for check-dev-ports.sh: a free port passes, a held port fails naming its holder, the DSY_SLOT stride moves
+# a range, ss alone finds a holder, a dsy-* container is labelled a leftover, and a host without lsof and ss passes
 # with a hint. Every port is one the test binds itself, on a free port it picked.
 set -euo pipefail
 
@@ -19,8 +19,8 @@ free_port() { python3 -c 'import socket; s = socket.socket(); s.bind(("127.0.0.1
 port=$(free_port)
 no_hosts="$work/hosts.yaml"
 echo 'ports: []' >"$no_hosts"
-export WFT_HOST_PORTS="$no_hosts" WFT_PORT_MAP="$work/map"
-echo "demo $port $port" >"$WFT_PORT_MAP"
+export DSY_HOST_PORTS="$no_hosts" DSY_PORT_MAP="$work/map"
+echo "demo $port $port" >"$DSY_PORT_MAP"
 
 # run <args to env...> leaves the output in $out and the exit code in $rc.
 run() {
@@ -43,34 +43,34 @@ grep -qF "held: demo port $port, pid $holder started" <<<"$out" || fail "the hol
 grep -qF "http.server $port" <<<"$out" || fail "the holder command is not shown: $out"
 ok "a held port fails naming the pid, start time and command"
 
-run WFT_PORT_TOOL=ss
+run DSY_PORT_TOOL=ss
 [ "$rc" -eq 1 ] || fail "ss exited $rc: $out"
 grep -qF "pid $holder" <<<"$out" || fail "ss did not find the holder: $out"
 ok "ss alone finds the holder"
 
-run WFT_PORT_TOOL=none
+run DSY_PORT_TOOL=none
 [ "$rc" -eq 0 ] || fail "no tool exited $rc: $out"
 grep -qF "neither lsof nor ss" <<<"$out" || fail "no install hint: $out"
 ok "no tool exits 0 with an install hint"
 
-echo "demo $((port - 10)) $((port - 10)) 10" >"$WFT_PORT_MAP"
-run WFT_SLOT=1
+echo "demo $((port - 10)) $((port - 10)) 10" >"$DSY_PORT_MAP"
+run DSY_SLOT=1
 [ "$rc" -eq 1 ] || fail "slot 1 did not reach the held port: $out"
-run WFT_SLOT=0
+run DSY_SLOT=0
 [ "$rc" -eq 0 ] || fail "slot 0 reached a port outside its range: $out"
-ok "WFT_SLOT shifts a range by its stride"
+ok "DSY_SLOT shifts a range by its stride"
 
-echo "demo $port $port" >"$WFT_PORT_MAP"
+echo "demo $port $port" >"$DSY_PORT_MAP"
 mkdir "$work/bin"
-printf '#!/bin/sh\necho wft-leftover\n' >"$work/bin/docker"
+printf '#!/bin/sh\necho dsy-leftover\n' >"$work/bin/docker"
 chmod +x "$work/bin/docker"
 run PATH="$work/bin:$PATH"
-grep -qF "leftover wft container wft-leftover" <<<"$out" || fail "a wft-* container is not labelled: $out"
+grep -qF "leftover dsy container dsy-leftover" <<<"$out" || fail "a dsy-* container is not labelled: $out"
 [ "$rc" -eq 1 ] || fail "a leftover container did not fail the check: $out"
 printf '#!/bin/sh\necho other-service\n' >"$work/bin/docker"
 run PATH="$work/bin:$PATH"
-grep -qF "leftover" <<<"$out" && fail "a container that is not wft-* was called a leftover: $out"
-ok "only a wft-* container is labelled a leftover"
+grep -qF "leftover" <<<"$out" && fail "a container that is not dsy-* was called a leftover: $out"
+ok "only a dsy-* container is labelled a leftover"
 
 kill "$holder"
 wait "$holder" 2>/dev/null || true

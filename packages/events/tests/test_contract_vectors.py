@@ -13,13 +13,13 @@ VECTORS = ROOT / "scripts/verify/cluster/lib/vectors.sh"
 
 # The buckets and key templates of the storage epic, which layout.yaml must equal.
 STORAGE_TEMPLATES = {
-    "wft-sources": {"sha256/<hash2>/<hash>"},
-    "wft-components": {"sha256/<hash2>/<hash>"},
-    "wft-results": {
+    "dsy-sources": {"sha256/<hash2>/<hash>"},
+    "dsy-components": {"sha256/<hash2>/<hash>"},
+    "dsy-results": {
         "<tenant>/<batch>/<job>/<seed>/<task>/<attempt>/<name>",
         "<tenant>/<batch>/aggregate/<job>/<task>/<attempt>/<name>",
     },
-    "wft-checkpoints": {"<tenant>/<batch>/<job>/<seed>/<task>/<attempt>/<segment>/<name>"},
+    "dsy-checkpoints": {"<tenant>/<batch>/<job>/<seed>/<task>/<attempt>/<segment>/<name>"},
 }
 JOB_TYPES = {
     "job.accepted",
@@ -91,8 +91,8 @@ def test_projection_covers_the_16_job_types():
 def test_resumed_depends_on_who_emits_it():
     resumed = load("contracts/status/status.yaml")["projection"]["job.resumed"]
     assert {e["when"]["source"]: e["sets"] for e in resumed} == {
-        "/wft/workflow": "running",
-        "/wft/control": "accepted",
+        "/dsy/workflow": "running",
+        "/dsy/control": "accepted",
     }
 
 

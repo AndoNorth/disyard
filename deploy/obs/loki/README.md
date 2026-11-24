@@ -1,8 +1,8 @@
 # Loki and the collector
 
-Logs and Kubernetes events of the observability stack: Loki and the OpenTelemetry Collector from the pinned images of `deploy/versions.yaml`, in `wft-obs` on the obs node.
+Logs and Kubernetes events of the observability stack: Loki and the OpenTelemetry Collector from the pinned images of `deploy/versions.yaml`, in `dsy-obs` on the obs node.
 Modules: `loki` here and `collector` in [its own directory](../collector/config.py).
-Both are group `obs`, profile `ci`, and run only on a cluster brought up with `WFT_OBS=on`, as the [stack overview](../README.md) says.
+Both are group `obs`, profile `ci`, and run only on a cluster brought up with `DSY_OBS=on`, as the [stack overview](../README.md) says.
 
 ## Files
 
@@ -18,11 +18,11 @@ The collector directory holds the same three files, at 50m of CPU and 160 MiB.
 
 | Source | Path |
 | --- | --- |
-| A Python service | pushes OTLP HTTP to `collector.wft-obs:4318`, as `OTEL_EXPORTER_OTLP_ENDPOINT` says when the switch is on, and the collector forwards to Loki's OTLP endpoint `loki.wft-obs:3100/otlp` |
+| A Python service | pushes OTLP HTTP to `collector.dsy-obs:4318`, as `OTEL_EXPORTER_OTLP_ENDPOINT` says when the switch is on, and the collector forwards to Loki's OTLP endpoint `loki.dsy-obs:3100/otlp` |
 | Kubernetes events | the collector watches `events.k8s.io` events of every namespace itself, and tags them `service_name=kubernetes-events` |
 
 Temporal, RabbitMQ, Postgres and the store keep `kubectl logs` only.
-The collector's traces pipeline forwards spans to `tempo.wft-obs:4318` with no retry and no queue, so spans are dropped while Tempo is absent and the collector's memory does not grow.
+The collector's traces pipeline forwards spans to `tempo.dsy-obs:4318` with no retry and no queue, so spans are dropped while Tempo is absent and the collector's memory does not grow.
 
 ## Labels and structured metadata
 
@@ -41,7 +41,7 @@ S13 measured a wide LogQL range killing Loki at 256 MiB, so a query over hours w
 ## Reaching it
 
 ```sh
-kubectl --context kind-wft -n wft-obs port-forward --address 127.0.0.1 svc/loki 13100:3100
+kubectl --context kind-dsy -n dsy-obs port-forward --address 127.0.0.1 svc/loki 13100:3100
 ```
 
-`wft_obs.query.loki` reads the API through that forward.
+`dsy_obs.query.loki` reads the API through that forward.

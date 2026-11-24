@@ -9,21 +9,21 @@ import uuid
 
 import psycopg
 import pytest
+from dsy_admission import claim as claim_module
+from dsy_admission.claim import Claimed, Skipped, accepted_of, claim
+from dsy_admission.start import start
+from dsy_events import EventError, build_event, format_time, from_bytes
+from dsy_eventstore import insert_events
+from dsy_jobstate import Lost, get_job, request_action, transition
+from dsy_keys import workflow_id
 from temporalio.service import RPCError, RPCStatusCode
-from wft_admission import claim as claim_module
-from wft_admission.claim import Claimed, Skipped, accepted_of, claim
-from wft_admission.start import start
-from wft_events import EventError, build_event, format_time, from_bytes
-from wft_eventstore import insert_events
-from wft_jobstate import Lost, get_job, request_action, transition
-from wft_keys import workflow_id
 
 pytestmark = [pytest.mark.integration, pytest.mark.pair]
 
 LIMIT_S = 60
-ACCEPTED = ("dev.wft.job.accepted.v1", "/wft/dispatch")
-ADMITTED = ("dev.wft.job.admitted.v1", "/wft/admission")
-PUBLISHED = ("dev.wft.job.published.v1", "/wft/admission")
+ACCEPTED = ("dev.dsy.job.accepted.v1", "/dsy/dispatch")
+ADMITTED = ("dev.dsy.job.admitted.v1", "/dsy/admission")
+PUBLISHED = ("dev.dsy.job.published.v1", "/dsy/admission")
 
 
 def run(body):
@@ -65,7 +65,7 @@ def test_claim_writes_admitted_event(admission_db, seed, db):
     ).fetchone()
     admitted = from_bytes(body.encode())
     row = get_job(db, job_id)
-    assert admitted.source == "/wft/admission"
+    assert admitted.source == "/dsy/admission"
     assert admitted.data == {"workflow_id": f"job-{job_id}"}
     assert (admitted.tenant, admitted.jobid, admitted.traceparent) == (
         row.tenant,
@@ -156,7 +156,7 @@ def mark_as_dispatch(conn, accepted) -> bool:
             [
                 build_event(
                     "job.published",
-                    source="/wft/dispatch",
+                    source="/dsy/dispatch",
                     tenant=accepted.tenant,
                     jobid=accepted.jobid,
                     priorityclass=accepted.priorityclass,
@@ -170,7 +170,7 @@ def mark_as_dispatch(conn, accepted) -> bool:
     return found is not None
 
 
-SETTER = {"dispatch": "/wft/dispatch", "claim": "/wft/admission"}
+SETTER = {"dispatch": "/dsy/dispatch", "claim": "/dsy/admission"}
 
 
 @pytest.mark.parametrize("first", SETTER)

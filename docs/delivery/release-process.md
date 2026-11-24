@@ -102,7 +102,7 @@ The path is 0.1.0 when the proof of concept is done, further 0.y.z releases as t
 
 The whole repository is one product with one version.
 Recommendation: one version for the repository, and no per-package or per-image versions.
-Why: nobody installs a single `wft-*` package, pulls a single image, or deploys part of the system.
+Why: nobody installs a single `dsy-*` package, pulls a single image, or deploys part of the system.
 The packages are uv workspace members (`pyproject.toml:9`), images are built from source on every deploy (`deploy/dispatchapi/Tiltfile.module:21-26`) and pushed to the cluster's own local registry (`scripts/up.sh:2`), and the whole system comes up through one `just up`.
 Independent versions pay off when separate consumers upgrade separate parts, and here there are none.
 
@@ -396,7 +396,7 @@ No existing file changes behaviour, and no tag exists to migrate.
 
 ## References
 
-- Issue: https://github.com/AndoNorth/weft/issues/583
+- Issue: https://github.com/AndoNorth/disyard/issues/583
 - Semantic Versioning 2.0.0: https://semver.org/spec/v2.0.0.html (rule 4 for 0.y.z, rule 9 for pre-releases, rule 11 for ordering)
 - Conventional Commits 1.0.0: https://www.conventionalcommits.org/en/v1.0.0/ (the `!` breaking marker)
 - Delivery method: `docs/delivery/method.md` (squash merges at line 59, green `main` at 90-91, contract versions at 102, epic positions at 184-190, the gate at 193)

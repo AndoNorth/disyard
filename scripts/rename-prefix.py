@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Rename the old prefix wdf to wft and the old repository name wasm-dag-forge to weft,
+"""Rename the old prefix wft to dsy and the old project name weft to disyard,
 or check that none is left.
 
 usage: rename-prefix.py apply [ROOT]
@@ -21,12 +21,22 @@ import subprocess
 import sys
 from pathlib import Path
 
-CASES = {"wdf": "wft", "WDF": "WFT", "Wdf": "Wft", "wasm-dag-forge": "weft"}
-# Prefix left: not a letter or digit, so an underscore counts as a boundary.
-# Prefix right: lower case must not run on into a word.
-TOKEN = re.compile(r"(?<![A-Za-z0-9])(wdf|WDF|Wdf)(?![a-z0-9])|wasm-dag-forge")
+CASES = {
+    "wft": "dsy",
+    "WFT": "DSY",
+    "Wft": "Dsy",
+    "weft": "disyard",
+    "Weft": "Disyard",
+    "WEFT": "DISYARD",
+}
+# Left: not a letter or digit, so an underscore counts as a boundary.
+# Right: lower case must not run on into a word.
+# A Markdown anchor is the lower-cased heading, so a name after `#` runs on into the heading.
+TOKEN = re.compile(r"(?<![A-Za-z0-9])(wft|WFT|Wft|weft|Weft|WEFT)(?![a-z0-9])|(?<=#)wft(?=[a-z])")
+# Names inside a hex constant or a word that the token rule cannot see, spelled out.
+LITERALS = {"0x7766746D": "0x6473796D", '"wftm"': '"dsym"'}
 # The check is stricter than the rewrite, so a hit the rewrite leaves still fails the gate.
-ANY_CASE = re.compile("wdf|wasm-dag-forge", re.IGNORECASE)
+ANY_CASE = re.compile("wft|weft", re.IGNORECASE)
 # Inline base64 payloads (fonts in exported SVGs) hold the prefix by chance and stay byte-identical.
 BASE64 = re.compile(r"base64,[A-Za-z0-9+/=]+")
 BINARY_SUFFIXES = {".gif", ".png", ".whl"}
@@ -48,13 +58,19 @@ def allowed(rules, path, line):
     return any(p.search(path) and pattern.search(line) for p, pattern in rules)
 
 
+def rewrite_plain(text):
+    for old, new in LITERALS.items():
+        text = text.replace(old, new)
+    return TOKEN.sub(lambda t: CASES[t.group(0)], text)
+
+
 def rewrite(text):
     parts, last = [], 0
     for m in BASE64.finditer(text):
-        parts.append(TOKEN.sub(lambda t: CASES[t.group(0)], text[last : m.start()]))
+        parts.append(rewrite_plain(text[last : m.start()]))
         parts.append(m.group(0))
         last = m.end()
-    parts.append(TOKEN.sub(lambda t: CASES[t.group(0)], text[last:]))
+    parts.append(rewrite_plain(text[last:]))
     return "".join(parts)
 
 
@@ -153,7 +169,7 @@ def check(paths):
                 bad += 1
     if bad:
         print(
-            f"error: {bad} hits of an old name, rename wdf to wft and wasm-dag-forge to weft,"
+            f"error: {bad} hits of an old name, rename wft to dsy and weft to disyard,"
             " or allowlist them"
         )
     return 1 if bad else 0

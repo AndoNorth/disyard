@@ -13,13 +13,13 @@ pool = {"key": topology["pool_label"], "value": "infra"}
 naming = read_yaml("../../contracts/temporal/naming.yaml")
 tenancy = read_yaml("../../contracts/tenancy/tenancy.yaml")
 
-tilt_profile = os.getenv("WFT_TILT_PROFILE", "")
+tilt_profile = os.getenv("DSY_TILT_PROFILE", "")
 if not tilt_profile:
-    fail("WFT_TILT_PROFILE is unset: load this module through the root Tiltfile")
+    fail("DSY_TILT_PROFILE is unset: load this module through the root Tiltfile")
 if tilt_profile not in tenancy["tilt_profiles"]:
     fail("no tenancy profile for Tilt profile %r in contracts/tenancy/tenancy.yaml" % tilt_profile)
 
-image = "wft-" + name
+image = "dsy-" + name
 custom_build(
     image,
     os.path.abspath("image.sh"),
@@ -50,20 +50,20 @@ k8s_yaml(encode_yaml({
     "kind": "Secret",
     "metadata": {"name": name + "-broker", "namespace": namespace},
     "type": "Opaque",
-    "stringData": {"WFT_BROKER_PASSWORD": broker_password},
+    "stringData": {"DSY_BROKER_PASSWORD": broker_password},
 }))
 
-svc = lambda service, port: "%s.wft-infra.svc.cluster.local:%d" % (service, port)
-ready = "/tmp/wft-ready"
+svc = lambda service, port: "%s.dsy-infra.svc.cluster.local:%d" % (service, port)
+ready = "/tmp/dsy-ready"
 labels = {"app.kubernetes.io/name": name}
-# WFT_ADMISSION_GLOBAL_CAP and WFT_POOL_QUEUE_PREFIX stay unset: only a driver run sets them, and removes them after.
+# DSY_ADMISSION_GLOBAL_CAP and DSY_POOL_QUEUE_PREFIX stay unset: only a driver run sets them, and removes them after.
 env = {
-    "WFT_TEMPORAL_ADDRESS": svc("temporal-frontend", 7233),
-    "WFT_TEMPORAL_NAMESPACE": naming["namespace"],
-    "WFT_BROKER_ADDRESS": svc("rabbitmq", 5672),
-    "WFT_TENANCY_PROFILE": tenancy["tilt_profiles"][tilt_profile],
-    "WFT_METRICS_ADDRESS": "0.0.0.0:9464",
-    "WFT_READY_FILE": ready,
+    "DSY_TEMPORAL_ADDRESS": svc("temporal-frontend", 7233),
+    "DSY_TEMPORAL_NAMESPACE": naming["namespace"],
+    "DSY_BROKER_ADDRESS": svc("rabbitmq", 5672),
+    "DSY_TENANCY_PROFILE": tenancy["tilt_profiles"][tilt_profile],
+    "DSY_METRICS_ADDRESS": "0.0.0.0:9464",
+    "DSY_READY_FILE": ready,
 }
 env.update(obs_env())
 

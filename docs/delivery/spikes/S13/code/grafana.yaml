@@ -3,15 +3,15 @@
 # a ConfigMap that apply.sh creates, anonymous Editor on the cluster-internal port.
 apiVersion: v1
 kind: ConfigMap
-metadata: {name: grafana-provisioning, namespace: wft-obs}
+metadata: {name: grafana-provisioning, namespace: dsy-obs}
 data:
   datasources.yaml: |
     apiVersion: 1
     datasources:
-      - {name: Prometheus, uid: prometheus, type: prometheus, url: "http://prometheus.wft-obs:9090", isDefault: true}
-      - {name: Loki, uid: loki, type: loki, url: "http://loki.wft-obs:3100"}
-      - {name: Tempo, uid: tempo, type: tempo, url: "http://tempo.wft-obs:3200"}
-      - {name: Pyroscope, uid: pyroscope, type: grafana-pyroscope-datasource, url: "http://pyroscope.wft-obs:4040"}
+      - {name: Prometheus, uid: prometheus, type: prometheus, url: "http://prometheus.dsy-obs:9090", isDefault: true}
+      - {name: Loki, uid: loki, type: loki, url: "http://loki.dsy-obs:3100"}
+      - {name: Tempo, uid: tempo, type: tempo, url: "http://tempo.dsy-obs:3200"}
+      - {name: Pyroscope, uid: pyroscope, type: grafana-pyroscope-datasource, url: "http://pyroscope.dsy-obs:4040"}
   dashboards.yaml: |
     apiVersion: 1
     providers:
@@ -19,12 +19,12 @@ data:
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
-metadata: {name: grafana, namespace: wft-obs}
+metadata: {name: grafana, namespace: dsy-obs}
 spec: {accessModes: [ReadWriteOnce], resources: {requests: {storage: 1Gi}}}
 ---
 apiVersion: apps/v1
 kind: Deployment
-metadata: {name: grafana, namespace: wft-obs}
+metadata: {name: grafana, namespace: dsy-obs}
 spec:
   replicas: 1
   strategy: {type: Recreate}
@@ -32,8 +32,8 @@ spec:
   template:
     metadata: {labels: {app: grafana}}
     spec:
-      nodeSelector: {wft.dev/pool: obs}
-      tolerations: [{key: wft.dev/pool, operator: Equal, value: obs, effect: NoSchedule}]
+      nodeSelector: {dsy.dev/pool: obs}
+      tolerations: [{key: dsy.dev/pool, operator: Equal, value: obs, effect: NoSchedule}]
       securityContext: {runAsUser: 472, runAsGroup: 472, fsGroup: 472}
       containers:
         - name: grafana
@@ -57,5 +57,5 @@ spec:
 ---
 apiVersion: v1
 kind: Service
-metadata: {name: grafana, namespace: wft-obs}
+metadata: {name: grafana, namespace: dsy-obs}
 spec: {selector: {app: grafana}, ports: [{name: http, port: 3000}]}

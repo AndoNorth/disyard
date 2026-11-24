@@ -9,41 +9,41 @@ resolution-markers = [
 
 [manifest]
 members = [
-    "weft",
-    "wft-acceptance",
-    "wft-admission",
-    "wft-aggregate",
-    "wft-artifactclient",
-    "wft-artifactindex",
-    "wft-artifactreaper",
-    "wft-broker",
-    "wft-clusterkit",
-    "wft-compat",
-    "wft-compile",
-    "wft-dispatchapi",
-    "wft-events",
-    "wft-eventstore",
-    "wft-itest",
-    "wft-jobcheck",
-    "wft-jobdoc",
-    "wft-jobexamples",
-    "wft-jobpatch",
-    "wft-jobstate",
-    "wft-jobtools",
-    "wft-kernel",
-    "wft-keys",
-    "wft-migrate",
-    "wft-obs",
-    "wft-placement",
-    "wft-plan",
-    "wft-runtime",
-    "wft-stages",
-    "wft-stateops",
-    "wft-storecheck",
-    "wft-temporal",
-    "wft-worker",
-    "wft-workflow",
-    "wft-workloads",
+    "disyard",
+    "dsy-acceptance",
+    "dsy-admission",
+    "dsy-aggregate",
+    "dsy-artifactclient",
+    "dsy-artifactindex",
+    "dsy-artifactreaper",
+    "dsy-broker",
+    "dsy-clusterkit",
+    "dsy-compat",
+    "dsy-compile",
+    "dsy-dispatchapi",
+    "dsy-events",
+    "dsy-eventstore",
+    "dsy-itest",
+    "dsy-jobcheck",
+    "dsy-jobdoc",
+    "dsy-jobexamples",
+    "dsy-jobpatch",
+    "dsy-jobstate",
+    "dsy-jobtools",
+    "dsy-kernel",
+    "dsy-keys",
+    "dsy-migrate",
+    "dsy-obs",
+    "dsy-placement",
+    "dsy-plan",
+    "dsy-runtime",
+    "dsy-stages",
+    "dsy-stateops",
+    "dsy-storecheck",
+    "dsy-temporal",
+    "dsy-worker",
+    "dsy-workflow",
+    "dsy-workloads",
 ]
 
 [[package]]
@@ -854,7 +854,7 @@ wheels = [
 ]
 
 [[package]]
-name = "weft"
+name = "disyard"
 version = "0.0.0"
 source = { virtual = "." }
 
@@ -862,40 +862,40 @@ source = { virtual = "." }
 dev = [
     { name = "hypothesis" },
     { name = "pytest" },
-    { name = "wft-acceptance" },
-    { name = "wft-admission" },
-    { name = "wft-aggregate" },
-    { name = "wft-artifactclient" },
-    { name = "wft-artifactindex" },
-    { name = "wft-artifactreaper" },
-    { name = "wft-broker" },
-    { name = "wft-clusterkit" },
-    { name = "wft-compat" },
-    { name = "wft-compile" },
-    { name = "wft-dispatchapi" },
-    { name = "wft-events" },
-    { name = "wft-eventstore" },
-    { name = "wft-itest" },
-    { name = "wft-jobcheck" },
-    { name = "wft-jobdoc" },
-    { name = "wft-jobexamples" },
-    { name = "wft-jobpatch" },
-    { name = "wft-jobstate" },
-    { name = "wft-jobtools" },
-    { name = "wft-kernel" },
-    { name = "wft-keys" },
-    { name = "wft-migrate" },
-    { name = "wft-obs" },
-    { name = "wft-placement" },
-    { name = "wft-plan" },
-    { name = "wft-runtime" },
-    { name = "wft-stages" },
-    { name = "wft-stateops" },
-    { name = "wft-storecheck" },
-    { name = "wft-temporal" },
-    { name = "wft-worker" },
-    { name = "wft-workflow" },
-    { name = "wft-workloads" },
+    { name = "dsy-acceptance" },
+    { name = "dsy-admission" },
+    { name = "dsy-aggregate" },
+    { name = "dsy-artifactclient" },
+    { name = "dsy-artifactindex" },
+    { name = "dsy-artifactreaper" },
+    { name = "dsy-broker" },
+    { name = "dsy-clusterkit" },
+    { name = "dsy-compat" },
+    { name = "dsy-compile" },
+    { name = "dsy-dispatchapi" },
+    { name = "dsy-events" },
+    { name = "dsy-eventstore" },
+    { name = "dsy-itest" },
+    { name = "dsy-jobcheck" },
+    { name = "dsy-jobdoc" },
+    { name = "dsy-jobexamples" },
+    { name = "dsy-jobpatch" },
+    { name = "dsy-jobstate" },
+    { name = "dsy-jobtools" },
+    { name = "dsy-kernel" },
+    { name = "dsy-keys" },
+    { name = "dsy-migrate" },
+    { name = "dsy-obs" },
+    { name = "dsy-placement" },
+    { name = "dsy-plan" },
+    { name = "dsy-runtime" },
+    { name = "dsy-stages" },
+    { name = "dsy-stateops" },
+    { name = "dsy-storecheck" },
+    { name = "dsy-temporal" },
+    { name = "dsy-worker" },
+    { name = "dsy-workflow" },
+    { name = "dsy-workloads" },
 ]
 
 [package.metadata]
@@ -904,90 +904,90 @@ dev = [
 dev = [
     { name = "hypothesis" },
     { name = "pytest" },
-    { name = "wft-acceptance", editable = "packages/acceptance" },
-    { name = "wft-admission", editable = "packages/admission" },
-    { name = "wft-aggregate", editable = "packages/aggregate" },
-    { name = "wft-artifactclient", editable = "packages/artifactclient" },
-    { name = "wft-artifactindex", editable = "packages/artifactindex" },
-    { name = "wft-artifactreaper", editable = "packages/artifactreaper" },
-    { name = "wft-broker", editable = "packages/broker" },
-    { name = "wft-clusterkit", editable = "packages/clusterkit" },
-    { name = "wft-compat", editable = "packages/compat" },
-    { name = "wft-compile", editable = "packages/compile" },
-    { name = "wft-dispatchapi", editable = "packages/dispatchapi" },
-    { name = "wft-events", editable = "packages/events" },
-    { name = "wft-eventstore", editable = "packages/eventstore" },
-    { name = "wft-itest", editable = "packages/itest" },
-    { name = "wft-jobcheck", editable = "packages/jobcheck" },
-    { name = "wft-jobdoc", editable = "packages/jobdoc" },
-    { name = "wft-jobexamples", editable = "packages/jobexamples" },
-    { name = "wft-jobpatch", editable = "packages/jobpatch" },
-    { name = "wft-jobstate", editable = "packages/jobstate" },
-    { name = "wft-jobtools", editable = "packages/jobtools" },
-    { name = "wft-kernel", editable = "packages/kernel" },
-    { name = "wft-keys", editable = "packages/keys" },
-    { name = "wft-migrate", editable = "packages/migrate" },
-    { name = "wft-obs", editable = "packages/obs" },
-    { name = "wft-placement", editable = "packages/placement" },
-    { name = "wft-plan", editable = "packages/plan" },
-    { name = "wft-runtime", editable = "packages/runtime" },
-    { name = "wft-stages", editable = "packages/stages" },
-    { name = "wft-stateops", editable = "packages/stateops" },
-    { name = "wft-storecheck", editable = "packages/storecheck" },
-    { name = "wft-temporal", editable = "packages/temporal" },
-    { name = "wft-worker", editable = "packages/worker" },
-    { name = "wft-workflow", editable = "packages/workflow" },
-    { name = "wft-workloads", editable = "packages/workloads" },
+    { name = "dsy-acceptance", editable = "packages/acceptance" },
+    { name = "dsy-admission", editable = "packages/admission" },
+    { name = "dsy-aggregate", editable = "packages/aggregate" },
+    { name = "dsy-artifactclient", editable = "packages/artifactclient" },
+    { name = "dsy-artifactindex", editable = "packages/artifactindex" },
+    { name = "dsy-artifactreaper", editable = "packages/artifactreaper" },
+    { name = "dsy-broker", editable = "packages/broker" },
+    { name = "dsy-clusterkit", editable = "packages/clusterkit" },
+    { name = "dsy-compat", editable = "packages/compat" },
+    { name = "dsy-compile", editable = "packages/compile" },
+    { name = "dsy-dispatchapi", editable = "packages/dispatchapi" },
+    { name = "dsy-events", editable = "packages/events" },
+    { name = "dsy-eventstore", editable = "packages/eventstore" },
+    { name = "dsy-itest", editable = "packages/itest" },
+    { name = "dsy-jobcheck", editable = "packages/jobcheck" },
+    { name = "dsy-jobdoc", editable = "packages/jobdoc" },
+    { name = "dsy-jobexamples", editable = "packages/jobexamples" },
+    { name = "dsy-jobpatch", editable = "packages/jobpatch" },
+    { name = "dsy-jobstate", editable = "packages/jobstate" },
+    { name = "dsy-jobtools", editable = "packages/jobtools" },
+    { name = "dsy-kernel", editable = "packages/kernel" },
+    { name = "dsy-keys", editable = "packages/keys" },
+    { name = "dsy-migrate", editable = "packages/migrate" },
+    { name = "dsy-obs", editable = "packages/obs" },
+    { name = "dsy-placement", editable = "packages/placement" },
+    { name = "dsy-plan", editable = "packages/plan" },
+    { name = "dsy-runtime", editable = "packages/runtime" },
+    { name = "dsy-stages", editable = "packages/stages" },
+    { name = "dsy-stateops", editable = "packages/stateops" },
+    { name = "dsy-storecheck", editable = "packages/storecheck" },
+    { name = "dsy-temporal", editable = "packages/temporal" },
+    { name = "dsy-worker", editable = "packages/worker" },
+    { name = "dsy-workflow", editable = "packages/workflow" },
+    { name = "dsy-workloads", editable = "packages/workloads" },
 ]
 
 [[package]]
-name = "wft-acceptance"
+name = "dsy-acceptance"
 version = "0.0.0"
 source = { editable = "packages/acceptance" }
 dependencies = [
     { name = "temporalio" },
-    { name = "wft-broker" },
-    { name = "wft-clusterkit" },
-    { name = "wft-kernel" },
-    { name = "wft-obs" },
-    { name = "wft-workflow" },
-    { name = "wft-workloads" },
+    { name = "dsy-broker" },
+    { name = "dsy-clusterkit" },
+    { name = "dsy-kernel" },
+    { name = "dsy-obs" },
+    { name = "dsy-workflow" },
+    { name = "dsy-workloads" },
 ]
 
 [package.metadata]
 requires-dist = [
     { name = "temporalio" },
-    { name = "wft-broker", editable = "packages/broker" },
-    { name = "wft-clusterkit", editable = "packages/clusterkit" },
-    { name = "wft-kernel", editable = "packages/kernel" },
-    { name = "wft-obs", editable = "packages/obs" },
-    { name = "wft-workflow", editable = "packages/workflow" },
-    { name = "wft-workloads", editable = "packages/workloads" },
+    { name = "dsy-broker", editable = "packages/broker" },
+    { name = "dsy-clusterkit", editable = "packages/clusterkit" },
+    { name = "dsy-kernel", editable = "packages/kernel" },
+    { name = "dsy-obs", editable = "packages/obs" },
+    { name = "dsy-workflow", editable = "packages/workflow" },
+    { name = "dsy-workloads", editable = "packages/workloads" },
 ]
 
 [[package]]
-name = "wft-admission"
+name = "dsy-admission"
 version = "0.0.0"
 source = { editable = "packages/admission" }
 dependencies = [
     { name = "psycopg", extra = ["binary"] },
     { name = "pydantic" },
     { name = "temporalio" },
-    { name = "wft-broker" },
-    { name = "wft-compat" },
-    { name = "wft-events" },
-    { name = "wft-eventstore" },
-    { name = "wft-jobstate" },
-    { name = "wft-keys" },
-    { name = "wft-obs" },
-    { name = "wft-stages" },
-    { name = "wft-temporal" },
-    { name = "wft-workflow" },
+    { name = "dsy-broker" },
+    { name = "dsy-compat" },
+    { name = "dsy-events" },
+    { name = "dsy-eventstore" },
+    { name = "dsy-jobstate" },
+    { name = "dsy-keys" },
+    { name = "dsy-obs" },
+    { name = "dsy-stages" },
+    { name = "dsy-temporal" },
+    { name = "dsy-workflow" },
 ]
 
 [package.optional-dependencies]
 cluster = [
-    { name = "wft-clusterkit" },
+    { name = "dsy-clusterkit" },
 ]
 
 [package.metadata]
@@ -995,43 +995,43 @@ requires-dist = [
     { name = "psycopg", extras = ["binary"] },
     { name = "pydantic" },
     { name = "temporalio" },
-    { name = "wft-broker", editable = "packages/broker" },
-    { name = "wft-clusterkit", marker = "extra == 'cluster'", editable = "packages/clusterkit" },
-    { name = "wft-compat", editable = "packages/compat" },
-    { name = "wft-events", editable = "packages/events" },
-    { name = "wft-eventstore", editable = "packages/eventstore" },
-    { name = "wft-jobstate", editable = "packages/jobstate" },
-    { name = "wft-keys", editable = "packages/keys" },
-    { name = "wft-obs", editable = "packages/obs" },
-    { name = "wft-stages", editable = "packages/stages" },
-    { name = "wft-temporal", editable = "packages/temporal" },
-    { name = "wft-workflow", editable = "packages/workflow" },
+    { name = "dsy-broker", editable = "packages/broker" },
+    { name = "dsy-clusterkit", marker = "extra == 'cluster'", editable = "packages/clusterkit" },
+    { name = "dsy-compat", editable = "packages/compat" },
+    { name = "dsy-events", editable = "packages/events" },
+    { name = "dsy-eventstore", editable = "packages/eventstore" },
+    { name = "dsy-jobstate", editable = "packages/jobstate" },
+    { name = "dsy-keys", editable = "packages/keys" },
+    { name = "dsy-obs", editable = "packages/obs" },
+    { name = "dsy-stages", editable = "packages/stages" },
+    { name = "dsy-temporal", editable = "packages/temporal" },
+    { name = "dsy-workflow", editable = "packages/workflow" },
 ]
 provides-extras = ["cluster"]
 
 [[package]]
-name = "wft-aggregate"
+name = "dsy-aggregate"
 version = "0.0.0"
 source = { editable = "packages/aggregate" }
 dependencies = [
     { name = "numpy" },
     { name = "pandas" },
-    { name = "wft-artifactclient" },
-    { name = "wft-kernel" },
-    { name = "wft-storecheck" },
+    { name = "dsy-artifactclient" },
+    { name = "dsy-kernel" },
+    { name = "dsy-storecheck" },
 ]
 
 [package.metadata]
 requires-dist = [
     { name = "numpy", specifier = ">=2.5.4" },
     { name = "pandas", specifier = ">=3.1.1" },
-    { name = "wft-artifactclient", editable = "packages/artifactclient" },
-    { name = "wft-kernel", editable = "packages/kernel" },
-    { name = "wft-storecheck", editable = "packages/storecheck" },
+    { name = "dsy-artifactclient", editable = "packages/artifactclient" },
+    { name = "dsy-kernel", editable = "packages/kernel" },
+    { name = "dsy-storecheck", editable = "packages/storecheck" },
 ]
 
 [[package]]
-name = "wft-artifactclient"
+name = "dsy-artifactclient"
 version = "0.0.0"
 source = { editable = "packages/artifactclient" }
 dependencies = [
@@ -1039,10 +1039,10 @@ dependencies = [
     { name = "pydantic" },
     { name = "pytest" },
     { name = "pyyaml" },
-    { name = "wft-artifactindex" },
-    { name = "wft-compat" },
-    { name = "wft-events" },
-    { name = "wft-storecheck" },
+    { name = "dsy-artifactindex" },
+    { name = "dsy-compat" },
+    { name = "dsy-events" },
+    { name = "dsy-storecheck" },
 ]
 
 [package.metadata]
@@ -1051,21 +1051,21 @@ requires-dist = [
     { name = "pydantic" },
     { name = "pytest" },
     { name = "pyyaml" },
-    { name = "wft-artifactindex", editable = "packages/artifactindex" },
-    { name = "wft-compat", editable = "packages/compat" },
-    { name = "wft-events", editable = "packages/events" },
-    { name = "wft-storecheck", editable = "packages/storecheck" },
+    { name = "dsy-artifactindex", editable = "packages/artifactindex" },
+    { name = "dsy-compat", editable = "packages/compat" },
+    { name = "dsy-events", editable = "packages/events" },
+    { name = "dsy-storecheck", editable = "packages/storecheck" },
 ]
 
 [[package]]
-name = "wft-artifactindex"
+name = "dsy-artifactindex"
 version = "0.0.0"
 source = { editable = "packages/artifactindex" }
 dependencies = [
     { name = "psycopg", extra = ["binary"] },
     { name = "pydantic" },
     { name = "pyyaml" },
-    { name = "wft-events" },
+    { name = "dsy-events" },
 ]
 
 [package.metadata]
@@ -1073,20 +1073,20 @@ requires-dist = [
     { name = "psycopg", extras = ["binary"] },
     { name = "pydantic" },
     { name = "pyyaml" },
-    { name = "wft-events", editable = "packages/events" },
+    { name = "dsy-events", editable = "packages/events" },
 ]
 
 [[package]]
-name = "wft-artifactreaper"
+name = "dsy-artifactreaper"
 version = "0.0.0"
 source = { editable = "packages/artifactreaper" }
 dependencies = [
     { name = "psycopg", extra = ["binary"] },
     { name = "pyyaml" },
     { name = "temporalio" },
-    { name = "wft-artifactclient" },
-    { name = "wft-artifactindex" },
-    { name = "wft-storecheck" },
+    { name = "dsy-artifactclient" },
+    { name = "dsy-artifactindex" },
+    { name = "dsy-storecheck" },
 ]
 
 [package.metadata]
@@ -1094,23 +1094,23 @@ requires-dist = [
     { name = "psycopg", extras = ["binary"] },
     { name = "pyyaml" },
     { name = "temporalio" },
-    { name = "wft-artifactclient", editable = "packages/artifactclient" },
-    { name = "wft-artifactindex", editable = "packages/artifactindex" },
-    { name = "wft-storecheck", editable = "packages/storecheck" },
+    { name = "dsy-artifactclient", editable = "packages/artifactclient" },
+    { name = "dsy-artifactindex", editable = "packages/artifactindex" },
+    { name = "dsy-storecheck", editable = "packages/storecheck" },
 ]
 
 [[package]]
-name = "wft-broker"
+name = "dsy-broker"
 version = "0.0.0"
 source = { editable = "packages/broker" }
 dependencies = [
     { name = "pydantic" },
     { name = "python-qpid-proton" },
     { name = "pyyaml" },
-    { name = "wft-compat" },
-    { name = "wft-events" },
-    { name = "wft-itest" },
-    { name = "wft-jobdoc" },
+    { name = "dsy-compat" },
+    { name = "dsy-events" },
+    { name = "dsy-itest" },
+    { name = "dsy-jobdoc" },
 ]
 
 [package.metadata]
@@ -1118,55 +1118,55 @@ requires-dist = [
     { name = "pydantic" },
     { name = "python-qpid-proton", specifier = "==0.40.0" },
     { name = "pyyaml" },
-    { name = "wft-compat", editable = "packages/compat" },
-    { name = "wft-events", editable = "packages/events" },
-    { name = "wft-itest", editable = "packages/itest" },
-    { name = "wft-jobdoc", editable = "packages/jobdoc" },
+    { name = "dsy-compat", editable = "packages/compat" },
+    { name = "dsy-events", editable = "packages/events" },
+    { name = "dsy-itest", editable = "packages/itest" },
+    { name = "dsy-jobdoc", editable = "packages/jobdoc" },
 ]
 
 [[package]]
-name = "wft-clusterkit"
+name = "dsy-clusterkit"
 version = "0.0.0"
 source = { editable = "packages/clusterkit" }
 dependencies = [
-    { name = "wft-storecheck" },
+    { name = "dsy-storecheck" },
 ]
 
 [package.metadata]
-requires-dist = [{ name = "wft-storecheck", editable = "packages/storecheck" }]
+requires-dist = [{ name = "dsy-storecheck", editable = "packages/storecheck" }]
 
 [[package]]
-name = "wft-compat"
+name = "dsy-compat"
 version = "0.0.0"
 source = { editable = "packages/compat" }
 dependencies = [
-    { name = "wft-events" },
+    { name = "dsy-events" },
 ]
 
 [package.metadata]
-requires-dist = [{ name = "wft-events", editable = "packages/events" }]
+requires-dist = [{ name = "dsy-events", editable = "packages/events" }]
 
 [[package]]
-name = "wft-compile"
+name = "dsy-compile"
 version = "0.0.0"
 source = { editable = "packages/compile" }
 dependencies = [
     { name = "componentize-py" },
-    { name = "wft-jobcheck" },
-    { name = "wft-keys" },
-    { name = "wft-runtime" },
+    { name = "dsy-jobcheck" },
+    { name = "dsy-keys" },
+    { name = "dsy-runtime" },
 ]
 
 [package.metadata]
 requires-dist = [
     { name = "componentize-py", specifier = "==0.25.1" },
-    { name = "wft-jobcheck", editable = "packages/jobcheck" },
-    { name = "wft-keys", editable = "packages/keys" },
-    { name = "wft-runtime", editable = "packages/runtime" },
+    { name = "dsy-jobcheck", editable = "packages/jobcheck" },
+    { name = "dsy-keys", editable = "packages/keys" },
+    { name = "dsy-runtime", editable = "packages/runtime" },
 ]
 
 [[package]]
-name = "wft-dispatchapi"
+name = "dsy-dispatchapi"
 version = "0.0.0"
 source = { editable = "packages/dispatchapi" }
 dependencies = [
@@ -1175,28 +1175,28 @@ dependencies = [
     { name = "pydantic" },
     { name = "pyyaml" },
     { name = "temporalio" },
-    { name = "wft-artifactclient" },
-    { name = "wft-artifactindex" },
-    { name = "wft-broker" },
-    { name = "wft-compile" },
-    { name = "wft-events" },
-    { name = "wft-eventstore" },
-    { name = "wft-itest" },
-    { name = "wft-jobcheck" },
-    { name = "wft-jobpatch" },
-    { name = "wft-jobstate" },
-    { name = "wft-keys" },
-    { name = "wft-obs" },
-    { name = "wft-plan" },
-    { name = "wft-stages" },
-    { name = "wft-temporal" },
-    { name = "wft-workflow" },
+    { name = "dsy-artifactclient" },
+    { name = "dsy-artifactindex" },
+    { name = "dsy-broker" },
+    { name = "dsy-compile" },
+    { name = "dsy-events" },
+    { name = "dsy-eventstore" },
+    { name = "dsy-itest" },
+    { name = "dsy-jobcheck" },
+    { name = "dsy-jobpatch" },
+    { name = "dsy-jobstate" },
+    { name = "dsy-keys" },
+    { name = "dsy-obs" },
+    { name = "dsy-plan" },
+    { name = "dsy-stages" },
+    { name = "dsy-temporal" },
+    { name = "dsy-workflow" },
 ]
 
 [package.optional-dependencies]
 cluster = [
-    { name = "wft-acceptance" },
-    { name = "wft-clusterkit" },
+    { name = "dsy-acceptance" },
+    { name = "dsy-clusterkit" },
 ]
 
 [package.metadata]
@@ -1206,29 +1206,29 @@ requires-dist = [
     { name = "pydantic" },
     { name = "pyyaml" },
     { name = "temporalio" },
-    { name = "wft-acceptance", marker = "extra == 'cluster'", editable = "packages/acceptance" },
-    { name = "wft-artifactclient", editable = "packages/artifactclient" },
-    { name = "wft-artifactindex", editable = "packages/artifactindex" },
-    { name = "wft-broker", editable = "packages/broker" },
-    { name = "wft-clusterkit", marker = "extra == 'cluster'", editable = "packages/clusterkit" },
-    { name = "wft-compile", editable = "packages/compile" },
-    { name = "wft-events", editable = "packages/events" },
-    { name = "wft-eventstore", editable = "packages/eventstore" },
-    { name = "wft-itest", editable = "packages/itest" },
-    { name = "wft-jobcheck", editable = "packages/jobcheck" },
-    { name = "wft-jobpatch", editable = "packages/jobpatch" },
-    { name = "wft-jobstate", editable = "packages/jobstate" },
-    { name = "wft-keys", editable = "packages/keys" },
-    { name = "wft-obs", editable = "packages/obs" },
-    { name = "wft-plan", editable = "packages/plan" },
-    { name = "wft-stages", editable = "packages/stages" },
-    { name = "wft-temporal", editable = "packages/temporal" },
-    { name = "wft-workflow", editable = "packages/workflow" },
+    { name = "dsy-acceptance", marker = "extra == 'cluster'", editable = "packages/acceptance" },
+    { name = "dsy-artifactclient", editable = "packages/artifactclient" },
+    { name = "dsy-artifactindex", editable = "packages/artifactindex" },
+    { name = "dsy-broker", editable = "packages/broker" },
+    { name = "dsy-clusterkit", marker = "extra == 'cluster'", editable = "packages/clusterkit" },
+    { name = "dsy-compile", editable = "packages/compile" },
+    { name = "dsy-events", editable = "packages/events" },
+    { name = "dsy-eventstore", editable = "packages/eventstore" },
+    { name = "dsy-itest", editable = "packages/itest" },
+    { name = "dsy-jobcheck", editable = "packages/jobcheck" },
+    { name = "dsy-jobpatch", editable = "packages/jobpatch" },
+    { name = "dsy-jobstate", editable = "packages/jobstate" },
+    { name = "dsy-keys", editable = "packages/keys" },
+    { name = "dsy-obs", editable = "packages/obs" },
+    { name = "dsy-plan", editable = "packages/plan" },
+    { name = "dsy-stages", editable = "packages/stages" },
+    { name = "dsy-temporal", editable = "packages/temporal" },
+    { name = "dsy-workflow", editable = "packages/workflow" },
 ]
 provides-extras = ["cluster"]
 
 [[package]]
-name = "wft-events"
+name = "dsy-events"
 version = "0.0.0"
 source = { editable = "packages/events" }
 dependencies = [
@@ -1236,7 +1236,7 @@ dependencies = [
     { name = "psycopg", extra = ["binary"] },
     { name = "pydantic" },
     { name = "pyyaml" },
-    { name = "wft-keys" },
+    { name = "dsy-keys" },
 ]
 
 [package.metadata]
@@ -1245,30 +1245,30 @@ requires-dist = [
     { name = "psycopg", extras = ["binary"] },
     { name = "pydantic" },
     { name = "pyyaml" },
-    { name = "wft-keys", editable = "packages/keys" },
+    { name = "dsy-keys", editable = "packages/keys" },
 ]
 
 [[package]]
-name = "wft-eventstore"
+name = "dsy-eventstore"
 version = "0.0.0"
 source = { editable = "packages/eventstore" }
 dependencies = [
     { name = "pydantic" },
     { name = "pyyaml" },
-    { name = "wft-compat" },
-    { name = "wft-events" },
+    { name = "dsy-compat" },
+    { name = "dsy-events" },
 ]
 
 [package.metadata]
 requires-dist = [
     { name = "pydantic" },
     { name = "pyyaml" },
-    { name = "wft-compat", editable = "packages/compat" },
-    { name = "wft-events", editable = "packages/events" },
+    { name = "dsy-compat", editable = "packages/compat" },
+    { name = "dsy-events", editable = "packages/events" },
 ]
 
 [[package]]
-name = "wft-itest"
+name = "dsy-itest"
 version = "0.0.0"
 source = { editable = "packages/itest" }
 dependencies = [
@@ -1283,22 +1283,22 @@ requires-dist = [
 ]
 
 [[package]]
-name = "wft-jobcheck"
+name = "dsy-jobcheck"
 version = "0.0.0"
 source = { editable = "packages/jobcheck" }
 dependencies = [
-    { name = "wft-jobdoc" },
-    { name = "wft-plan" },
+    { name = "dsy-jobdoc" },
+    { name = "dsy-plan" },
 ]
 
 [package.metadata]
 requires-dist = [
-    { name = "wft-jobdoc", editable = "packages/jobdoc" },
-    { name = "wft-plan", editable = "packages/plan" },
+    { name = "dsy-jobdoc", editable = "packages/jobdoc" },
+    { name = "dsy-plan", editable = "packages/plan" },
 ]
 
 [[package]]
-name = "wft-jobdoc"
+name = "dsy-jobdoc"
 version = "0.0.0"
 source = { editable = "packages/jobdoc" }
 dependencies = [
@@ -1315,46 +1315,46 @@ requires-dist = [
 ]
 
 [[package]]
-name = "wft-jobexamples"
+name = "dsy-jobexamples"
 version = "0.0.0"
 source = { editable = "packages/jobexamples" }
 dependencies = [
-    { name = "wft-jobcheck" },
-    { name = "wft-jobdoc" },
-    { name = "wft-plan" },
+    { name = "dsy-jobcheck" },
+    { name = "dsy-jobdoc" },
+    { name = "dsy-plan" },
 ]
 
 [package.metadata]
 requires-dist = [
-    { name = "wft-jobcheck", editable = "packages/jobcheck" },
-    { name = "wft-jobdoc", editable = "packages/jobdoc" },
-    { name = "wft-plan", editable = "packages/plan" },
+    { name = "dsy-jobcheck", editable = "packages/jobcheck" },
+    { name = "dsy-jobdoc", editable = "packages/jobdoc" },
+    { name = "dsy-plan", editable = "packages/plan" },
 ]
 
 [[package]]
-name = "wft-jobpatch"
+name = "dsy-jobpatch"
 version = "0.0.0"
 source = { editable = "packages/jobpatch" }
 dependencies = [
-    { name = "wft-jobdoc" },
-    { name = "wft-plan" },
+    { name = "dsy-jobdoc" },
+    { name = "dsy-plan" },
 ]
 
 [package.metadata]
 requires-dist = [
-    { name = "wft-jobdoc", editable = "packages/jobdoc" },
-    { name = "wft-plan", editable = "packages/plan" },
+    { name = "dsy-jobdoc", editable = "packages/jobdoc" },
+    { name = "dsy-plan", editable = "packages/plan" },
 ]
 
 [[package]]
-name = "wft-jobstate"
+name = "dsy-jobstate"
 version = "0.0.0"
 source = { editable = "packages/jobstate" }
 dependencies = [
     { name = "psycopg", extra = ["binary"] },
     { name = "pydantic" },
     { name = "pyyaml" },
-    { name = "wft-events" },
+    { name = "dsy-events" },
 ]
 
 [package.metadata]
@@ -1362,59 +1362,59 @@ requires-dist = [
     { name = "psycopg", extras = ["binary"] },
     { name = "pydantic" },
     { name = "pyyaml" },
-    { name = "wft-events", editable = "packages/events" },
+    { name = "dsy-events", editable = "packages/events" },
 ]
 
 [[package]]
-name = "wft-jobtools"
+name = "dsy-jobtools"
 version = "0.0.0"
 source = { editable = "packages/jobtools" }
 dependencies = [
-    { name = "wft-jobcheck" },
-    { name = "wft-jobdoc" },
-    { name = "wft-jobexamples" },
-    { name = "wft-jobpatch" },
-    { name = "wft-plan" },
+    { name = "dsy-jobcheck" },
+    { name = "dsy-jobdoc" },
+    { name = "dsy-jobexamples" },
+    { name = "dsy-jobpatch" },
+    { name = "dsy-plan" },
 ]
 
 [package.metadata]
 requires-dist = [
-    { name = "wft-jobcheck", editable = "packages/jobcheck" },
-    { name = "wft-jobdoc", editable = "packages/jobdoc" },
-    { name = "wft-jobexamples", editable = "packages/jobexamples" },
-    { name = "wft-jobpatch", editable = "packages/jobpatch" },
-    { name = "wft-plan", editable = "packages/plan" },
+    { name = "dsy-jobcheck", editable = "packages/jobcheck" },
+    { name = "dsy-jobdoc", editable = "packages/jobdoc" },
+    { name = "dsy-jobexamples", editable = "packages/jobexamples" },
+    { name = "dsy-jobpatch", editable = "packages/jobpatch" },
+    { name = "dsy-plan", editable = "packages/plan" },
 ]
 
 [[package]]
-name = "wft-kernel"
+name = "dsy-kernel"
 version = "0.0.0"
 source = { editable = "packages/kernel" }
 
 [[package]]
-name = "wft-keys"
+name = "dsy-keys"
 version = "0.0.0"
 source = { editable = "packages/keys" }
 
 [[package]]
-name = "wft-migrate"
+name = "dsy-migrate"
 version = "0.0.0"
 source = { editable = "packages/migrate" }
 dependencies = [
     { name = "psycopg", extra = ["binary"] },
     { name = "pytest" },
-    { name = "wft-itest" },
+    { name = "dsy-itest" },
 ]
 
 [package.metadata]
 requires-dist = [
     { name = "psycopg", extras = ["binary"] },
     { name = "pytest" },
-    { name = "wft-itest", editable = "packages/itest" },
+    { name = "dsy-itest", editable = "packages/itest" },
 ]
 
 [[package]]
-name = "wft-obs"
+name = "dsy-obs"
 version = "0.0.0"
 source = { editable = "packages/obs" }
 dependencies = [
@@ -1423,12 +1423,12 @@ dependencies = [
     { name = "pyroscope-io" },
     { name = "pyyaml" },
     { name = "temporalio" },
-    { name = "wft-events" },
+    { name = "dsy-events" },
 ]
 
 [package.optional-dependencies]
 stateops = [
-    { name = "wft-stateops" },
+    { name = "dsy-stateops" },
 ]
 
 [package.metadata]
@@ -1438,91 +1438,91 @@ requires-dist = [
     { name = "pyroscope-io" },
     { name = "pyyaml" },
     { name = "temporalio" },
-    { name = "wft-events", editable = "packages/events" },
-    { name = "wft-stateops", marker = "extra == 'stateops'", editable = "packages/stateops" },
+    { name = "dsy-events", editable = "packages/events" },
+    { name = "dsy-stateops", marker = "extra == 'stateops'", editable = "packages/stateops" },
 ]
 provides-extras = ["stateops"]
 
 [[package]]
-name = "wft-placement"
+name = "dsy-placement"
 version = "0.0.0"
 source = { editable = "packages/placement" }
 dependencies = [
-    { name = "wft-obs" },
-    { name = "wft-workflow" },
+    { name = "dsy-obs" },
+    { name = "dsy-workflow" },
 ]
 
 [package.metadata]
 requires-dist = [
-    { name = "wft-obs", editable = "packages/obs" },
-    { name = "wft-workflow", editable = "packages/workflow" },
+    { name = "dsy-obs", editable = "packages/obs" },
+    { name = "dsy-workflow", editable = "packages/workflow" },
 ]
 
 [[package]]
-name = "wft-plan"
+name = "dsy-plan"
 version = "0.0.0"
 source = { editable = "packages/plan" }
 dependencies = [
-    { name = "wft-jobdoc" },
+    { name = "dsy-jobdoc" },
 ]
 
 [package.metadata]
-requires-dist = [{ name = "wft-jobdoc", editable = "packages/jobdoc" }]
+requires-dist = [{ name = "dsy-jobdoc", editable = "packages/jobdoc" }]
 
 [[package]]
-name = "wft-runtime"
+name = "dsy-runtime"
 version = "0.0.0"
 source = { editable = "packages/runtime" }
 dependencies = [
     { name = "pydantic" },
     { name = "pyyaml" },
-    { name = "wft-jobdoc" },
-    { name = "wft-kernel" },
-    { name = "wft-keys" },
+    { name = "dsy-jobdoc" },
+    { name = "dsy-kernel" },
+    { name = "dsy-keys" },
 ]
 
 [package.metadata]
 requires-dist = [
     { name = "pydantic" },
     { name = "pyyaml" },
-    { name = "wft-jobdoc", editable = "packages/jobdoc" },
-    { name = "wft-kernel", editable = "packages/kernel" },
-    { name = "wft-keys", editable = "packages/keys" },
+    { name = "dsy-jobdoc", editable = "packages/jobdoc" },
+    { name = "dsy-kernel", editable = "packages/kernel" },
+    { name = "dsy-keys", editable = "packages/keys" },
 ]
 
 [[package]]
-name = "wft-stages"
+name = "dsy-stages"
 version = "0.0.0"
 source = { editable = "packages/stages" }
 dependencies = [
     { name = "jsonschema" },
     { name = "pyyaml" },
-    { name = "wft-events" },
-    { name = "wft-keys" },
+    { name = "dsy-events" },
+    { name = "dsy-keys" },
 ]
 
 [package.metadata]
 requires-dist = [
     { name = "jsonschema" },
     { name = "pyyaml" },
-    { name = "wft-events", editable = "packages/events" },
-    { name = "wft-keys", editable = "packages/keys" },
+    { name = "dsy-events", editable = "packages/events" },
+    { name = "dsy-keys", editable = "packages/keys" },
 ]
 
 [[package]]
-name = "wft-stateops"
+name = "dsy-stateops"
 version = "0.0.0"
 source = { editable = "packages/stateops" }
 dependencies = [
     { name = "psycopg", extra = ["binary"] },
     { name = "pydantic" },
     { name = "pyyaml" },
-    { name = "wft-events" },
-    { name = "wft-eventstore" },
-    { name = "wft-jobstate" },
-    { name = "wft-keys" },
-    { name = "wft-migrate" },
-    { name = "wft-storecheck" },
+    { name = "dsy-events" },
+    { name = "dsy-eventstore" },
+    { name = "dsy-jobstate" },
+    { name = "dsy-keys" },
+    { name = "dsy-migrate" },
+    { name = "dsy-storecheck" },
 ]
 
 [package.metadata]
@@ -1530,16 +1530,16 @@ requires-dist = [
     { name = "psycopg", extras = ["binary"] },
     { name = "pydantic" },
     { name = "pyyaml" },
-    { name = "wft-events", editable = "packages/events" },
-    { name = "wft-eventstore", editable = "packages/eventstore" },
-    { name = "wft-jobstate", editable = "packages/jobstate" },
-    { name = "wft-keys", editable = "packages/keys" },
-    { name = "wft-migrate", editable = "packages/migrate" },
-    { name = "wft-storecheck", editable = "packages/storecheck" },
+    { name = "dsy-events", editable = "packages/events" },
+    { name = "dsy-eventstore", editable = "packages/eventstore" },
+    { name = "dsy-jobstate", editable = "packages/jobstate" },
+    { name = "dsy-keys", editable = "packages/keys" },
+    { name = "dsy-migrate", editable = "packages/migrate" },
+    { name = "dsy-storecheck", editable = "packages/storecheck" },
 ]
 
 [[package]]
-name = "wft-storecheck"
+name = "dsy-storecheck"
 version = "0.0.0"
 source = { editable = "packages/storecheck" }
 dependencies = [
@@ -1558,7 +1558,7 @@ requires-dist = [
 ]
 
 [[package]]
-name = "wft-temporal"
+name = "dsy-temporal"
 version = "0.0.0"
 source = { editable = "packages/temporal" }
 dependencies = [
@@ -1566,9 +1566,9 @@ dependencies = [
     { name = "opentelemetry-sdk" },
     { name = "pyyaml" },
     { name = "temporalio" },
-    { name = "wft-events" },
-    { name = "wft-itest" },
-    { name = "wft-keys" },
+    { name = "dsy-events" },
+    { name = "dsy-itest" },
+    { name = "dsy-keys" },
 ]
 
 [package.metadata]
@@ -1577,57 +1577,57 @@ requires-dist = [
     { name = "opentelemetry-sdk" },
     { name = "pyyaml" },
     { name = "temporalio" },
-    { name = "wft-events", editable = "packages/events" },
-    { name = "wft-itest", editable = "packages/itest" },
-    { name = "wft-keys", editable = "packages/keys" },
+    { name = "dsy-events", editable = "packages/events" },
+    { name = "dsy-itest", editable = "packages/itest" },
+    { name = "dsy-keys", editable = "packages/keys" },
 ]
 
 [[package]]
-name = "wft-worker"
+name = "dsy-worker"
 version = "0.0.0"
 source = { editable = "packages/worker" }
 dependencies = [
     { name = "temporalio" },
-    { name = "wft-artifactclient" },
-    { name = "wft-events" },
-    { name = "wft-keys" },
-    { name = "wft-obs" },
-    { name = "wft-stages" },
-    { name = "wft-temporal" },
-    { name = "wft-workflow" },
+    { name = "dsy-artifactclient" },
+    { name = "dsy-events" },
+    { name = "dsy-keys" },
+    { name = "dsy-obs" },
+    { name = "dsy-stages" },
+    { name = "dsy-temporal" },
+    { name = "dsy-workflow" },
 ]
 
 [package.optional-dependencies]
 aggregate = [
-    { name = "wft-aggregate" },
+    { name = "dsy-aggregate" },
 ]
 compile = [
     { name = "uv" },
-    { name = "wft-compile" },
+    { name = "dsy-compile" },
 ]
 simulate = [
-    { name = "wft-runtime" },
+    { name = "dsy-runtime" },
 ]
 
 [package.metadata]
 requires-dist = [
     { name = "temporalio" },
     { name = "uv", marker = "extra == 'compile'", specifier = "==0.11.21" },
-    { name = "wft-aggregate", marker = "extra == 'aggregate'", editable = "packages/aggregate" },
-    { name = "wft-artifactclient", editable = "packages/artifactclient" },
-    { name = "wft-compile", marker = "extra == 'compile'", editable = "packages/compile" },
-    { name = "wft-events", editable = "packages/events" },
-    { name = "wft-keys", editable = "packages/keys" },
-    { name = "wft-obs", editable = "packages/obs" },
-    { name = "wft-runtime", marker = "extra == 'simulate'", editable = "packages/runtime" },
-    { name = "wft-stages", editable = "packages/stages" },
-    { name = "wft-temporal", editable = "packages/temporal" },
-    { name = "wft-workflow", editable = "packages/workflow" },
+    { name = "dsy-aggregate", marker = "extra == 'aggregate'", editable = "packages/aggregate" },
+    { name = "dsy-artifactclient", editable = "packages/artifactclient" },
+    { name = "dsy-compile", marker = "extra == 'compile'", editable = "packages/compile" },
+    { name = "dsy-events", editable = "packages/events" },
+    { name = "dsy-keys", editable = "packages/keys" },
+    { name = "dsy-obs", editable = "packages/obs" },
+    { name = "dsy-runtime", marker = "extra == 'simulate'", editable = "packages/runtime" },
+    { name = "dsy-stages", editable = "packages/stages" },
+    { name = "dsy-temporal", editable = "packages/temporal" },
+    { name = "dsy-workflow", editable = "packages/workflow" },
 ]
 provides-extras = ["compile", "simulate", "aggregate"]
 
 [[package]]
-name = "wft-workflow"
+name = "dsy-workflow"
 version = "0.0.0"
 source = { editable = "packages/workflow" }
 dependencies = [
@@ -1635,28 +1635,28 @@ dependencies = [
     { name = "pydantic" },
     { name = "pyyaml" },
     { name = "temporalio" },
-    { name = "wft-artifactclient" },
-    { name = "wft-artifactindex" },
-    { name = "wft-artifactreaper" },
-    { name = "wft-compat" },
-    { name = "wft-compile" },
-    { name = "wft-events" },
-    { name = "wft-eventstore" },
-    { name = "wft-itest" },
-    { name = "wft-jobdoc" },
-    { name = "wft-jobpatch" },
-    { name = "wft-jobstate" },
-    { name = "wft-keys" },
-    { name = "wft-obs" },
-    { name = "wft-plan" },
-    { name = "wft-runtime" },
-    { name = "wft-stages" },
-    { name = "wft-temporal" },
+    { name = "dsy-artifactclient" },
+    { name = "dsy-artifactindex" },
+    { name = "dsy-artifactreaper" },
+    { name = "dsy-compat" },
+    { name = "dsy-compile" },
+    { name = "dsy-events" },
+    { name = "dsy-eventstore" },
+    { name = "dsy-itest" },
+    { name = "dsy-jobdoc" },
+    { name = "dsy-jobpatch" },
+    { name = "dsy-jobstate" },
+    { name = "dsy-keys" },
+    { name = "dsy-obs" },
+    { name = "dsy-plan" },
+    { name = "dsy-runtime" },
+    { name = "dsy-stages" },
+    { name = "dsy-temporal" },
 ]
 
 [package.optional-dependencies]
 cluster = [
-    { name = "wft-clusterkit" },
+    { name = "dsy-clusterkit" },
 ]
 
 [package.metadata]
@@ -1665,34 +1665,34 @@ requires-dist = [
     { name = "pydantic" },
     { name = "pyyaml" },
     { name = "temporalio" },
-    { name = "wft-artifactclient", editable = "packages/artifactclient" },
-    { name = "wft-artifactindex", editable = "packages/artifactindex" },
-    { name = "wft-artifactreaper", editable = "packages/artifactreaper" },
-    { name = "wft-clusterkit", marker = "extra == 'cluster'", editable = "packages/clusterkit" },
-    { name = "wft-compat", editable = "packages/compat" },
-    { name = "wft-compile", editable = "packages/compile" },
-    { name = "wft-events", editable = "packages/events" },
-    { name = "wft-eventstore", editable = "packages/eventstore" },
-    { name = "wft-itest", editable = "packages/itest" },
-    { name = "wft-jobdoc", editable = "packages/jobdoc" },
-    { name = "wft-jobpatch", editable = "packages/jobpatch" },
-    { name = "wft-jobstate", editable = "packages/jobstate" },
-    { name = "wft-keys", editable = "packages/keys" },
-    { name = "wft-obs", editable = "packages/obs" },
-    { name = "wft-plan", editable = "packages/plan" },
-    { name = "wft-runtime", editable = "packages/runtime" },
-    { name = "wft-stages", editable = "packages/stages" },
-    { name = "wft-temporal", editable = "packages/temporal" },
+    { name = "dsy-artifactclient", editable = "packages/artifactclient" },
+    { name = "dsy-artifactindex", editable = "packages/artifactindex" },
+    { name = "dsy-artifactreaper", editable = "packages/artifactreaper" },
+    { name = "dsy-clusterkit", marker = "extra == 'cluster'", editable = "packages/clusterkit" },
+    { name = "dsy-compat", editable = "packages/compat" },
+    { name = "dsy-compile", editable = "packages/compile" },
+    { name = "dsy-events", editable = "packages/events" },
+    { name = "dsy-eventstore", editable = "packages/eventstore" },
+    { name = "dsy-itest", editable = "packages/itest" },
+    { name = "dsy-jobdoc", editable = "packages/jobdoc" },
+    { name = "dsy-jobpatch", editable = "packages/jobpatch" },
+    { name = "dsy-jobstate", editable = "packages/jobstate" },
+    { name = "dsy-keys", editable = "packages/keys" },
+    { name = "dsy-obs", editable = "packages/obs" },
+    { name = "dsy-plan", editable = "packages/plan" },
+    { name = "dsy-runtime", editable = "packages/runtime" },
+    { name = "dsy-stages", editable = "packages/stages" },
+    { name = "dsy-temporal", editable = "packages/temporal" },
 ]
 provides-extras = ["cluster"]
 
 [[package]]
-name = "wft-workloads"
+name = "dsy-workloads"
 version = "0.0.0"
 source = { editable = "packages/workloads" }
 dependencies = [
-    { name = "wft-kernel" },
+    { name = "dsy-kernel" },
 ]
 
 [package.metadata]
-requires-dist = [{ name = "wft-kernel", editable = "packages/kernel" }]
+requires-dist = [{ name = "dsy-kernel", editable = "packages/kernel" }]

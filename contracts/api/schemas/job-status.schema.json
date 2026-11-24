@@ -30,7 +30,7 @@
           "type": "integer"
         },
         "uri": {
-          "pattern": "^s3://wft-checkpoints/.+$",
+          "pattern": "^s3://dsy-checkpoints/.+$",
           "title": "Uri",
           "type": "string"
         }
@@ -131,7 +131,7 @@
           "type": "integer"
         },
         "uri": {
-          "pattern": "^s3://wft-(sources|components|results|checkpoints)/.+$",
+          "pattern": "^s3://dsy-(sources|components|results|checkpoints)/.+$",
           "title": "Uri",
           "type": "string"
         }
@@ -285,7 +285,7 @@
       "type": "object"
     }
   },
-  "$id": "urn:wft:schema:api:job-status:1",
+  "$id": "urn:dsy:schema:api:job-status:1",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
   "properties": {

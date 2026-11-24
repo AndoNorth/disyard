@@ -6,7 +6,7 @@ import uuid
 
 import psycopg
 import pytest
-from wft_jobstate import (
+from dsy_jobstate import (
     ControlRequest,
     IllegalTransition,
     JobNotFound,
@@ -38,13 +38,13 @@ def make_row(**overrides) -> JobRow:
         "batch_id": str(uuid.uuid4()),
         "priority_class": "standard",
         "manifest_ref": {
-            "uri": f"s3://wft-sources/sha256/aa/{SHA}",
+            "uri": f"s3://dsy-sources/sha256/aa/{SHA}",
             "sha256": SHA,
             "size": 7,
             "name": "m",
             "kind": "manifest",
         },
-        "schema_version": "wft.job.accepted/3",
+        "schema_version": "dsy.job.accepted/3",
         "traceparent": "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01",
         "seed": 3,
         "parameters": {"a": 1},

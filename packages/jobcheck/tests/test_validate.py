@@ -5,8 +5,8 @@ import json
 from pathlib import Path
 
 import pytest
-from wft_jobcheck import StaticResolver, validate
-from wft_jobdoc.profile_files import load_profile
+from dsy_jobcheck import StaticResolver, validate
+from dsy_jobdoc.profile_files import load_profile
 
 ROOT = Path(__file__).resolve().parents[3]
 CONTRACT = ROOT / "contracts/job"
@@ -53,7 +53,7 @@ def test_pass_gating(good):
     cyclic = copy.deepcopy(good)
     cyclic["tasks"]["build"]["depends_on"] = ["agg"]
     cyclic["tasks"]["build"]["params"]["source"]["sha256"] = "e" * 64
-    cyclic["tasks"]["build"]["params"]["source"]["uri"] = f"s3://wft-sources/sha256/ee/{'e' * 64}"
+    cyclic["tasks"]["build"]["params"]["source"]["uri"] = f"s3://dsy-sources/sha256/ee/{'e' * 64}"
     assert {"dependency-cycle", "bundle-unresolved"} <= set(codes(run(cyclic)))
     # Counting limits run beside a broken graph, and plan limits wait for it to be sound.
     wide = copy.deepcopy(good)

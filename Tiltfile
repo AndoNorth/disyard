@@ -5,7 +5,7 @@
 # Tilt treats every kind-* context as local, so the guard below pins the one cluster this repository owns.
 # Each Tiltfile.module registers its own resources, labelled with the module's group.
 
-CONTEXT = 'kind-wft'
+CONTEXT = 'kind-dsy'
 
 config.define_string('profile')
 config.define_string('modules_dir')
@@ -21,17 +21,17 @@ profiles = read_yaml('deploy/tilt/profiles.yaml')['profiles']
 if profile not in profiles:
     fail('unknown profile %s, expected one of %s' % (profile, sorted(profiles.keys())))
 # The observability switch comes from the environment, which scripts/tilt/run.sh sets from the cluster's record.
-obs = os.getenv('WFT_OBS', '') or 'off'
+obs = os.getenv('DSY_OBS', '') or 'off'
 if obs not in ['on', 'off']:
-    fail('WFT_OBS is %s, expected on or off' % obs)
+    fail('DSY_OBS is %s, expected on or off' % obs)
 groups = profiles[profile]['groups'] + (profiles[profile].get('opt_in', []) if obs == 'on' else [])
 # A profile may reuse another profile's module selection, which is how soak runs the ci modules without live update.
 module_profile = profiles[profile].get('modules', profile)
 
 # Library functions read the mode from the environment because a loaded file cannot see Tiltfile globals.
-os.putenv('WFT_LIVE_UPDATE', '1' if profiles[profile].get('live_update', False) else '0')
-os.putenv('WFT_TILT_PROFILE', profile)
-os.putenv('WFT_OBS', obs)
+os.putenv('DSY_LIVE_UPDATE', '1' if profiles[profile].get('live_update', False) else '0')
+os.putenv('DSY_TILT_PROFILE', profile)
+os.putenv('DSY_OBS', obs)
 
 # Components sit at most two levels down (deploy/dummy/<group>), so fixtures under deploy/tilt are skipped.
 root = os.path.abspath(modules_dir) + '/'

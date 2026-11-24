@@ -1,7 +1,7 @@
 """Without a DSN the bench starts and removes its own container."""
 
 import pytest
-from wft_stateops import bench
+from dsy_stateops import bench
 
 
 def test_bench_without_a_dsn_runs_in_its_own_container(capsys):

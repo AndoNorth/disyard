@@ -6,12 +6,12 @@ import asyncio
 import uuid
 
 import pytest
-from wft_artifactclient.client import ArtifactClient
-from wft_artifactclient.keys import split_uri
-from wft_storecheck.s3 import client as s3_client
-from wft_worker.testing import FAILS
-from wft_workflow.contract import check_task_input
-from wft_workflow.testing import Fail, FakePool, Succeed, activity_contract, connect
+from dsy_artifactclient.client import ArtifactClient
+from dsy_artifactclient.keys import split_uri
+from dsy_storecheck.s3 import client as s3_client
+from dsy_worker.testing import FAILS
+from dsy_workflow.contract import check_task_input
+from dsy_workflow.testing import Fail, FakePool, Succeed, activity_contract, connect
 
 pytestmark = [pytest.mark.integration, pytest.mark.pair]
 
@@ -42,7 +42,7 @@ def test_contract_cases_pass_activity_contract_on_fake_pool(temporal, pool_store
     async def body():
         client = await connect(temporal)
         store = ArtifactClient(pool_store.endpoint, pool_store.credentials[pool])
-        queue = f"wft-{pool}-{uuid.uuid4()}"
+        queue = f"dsy-{pool}-{uuid.uuid4()}"
         async with FakePool(client, pool, script, store=store, queue=queue) as fake:
             await activity_contract(client, fake.queue, given)
         return fake.calls

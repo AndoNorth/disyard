@@ -2,7 +2,7 @@
 """Starts trace export, log export and profiling in a process, from its environment.
 
 OTEL_EXPORTER_OTLP_ENDPOINT turns on a TracerProvider and a log handler that push to the collector, and
-WFT_PYROSCOPE_ADDRESS turns on Pyroscope push mode, with the queue sizes of the epic's D14 and D21.
+DSY_PYROSCOPE_ADDRESS turns on Pyroscope push mode, with the queue sizes of the epic's D14 and D21.
 The component name comes from S13_COMPONENT. Any failure is swallowed, because the wiring must never stop a service.
 """
 
@@ -11,7 +11,7 @@ import os
 
 component = os.environ.get("S13_COMPONENT", "unknown")
 endpoint = os.environ.get("OTEL_EXPORTER_OTLP_ENDPOINT")
-pyroscope_address = os.environ.get("WFT_PYROSCOPE_ADDRESS")
+pyroscope_address = os.environ.get("DSY_PYROSCOPE_ADDRESS")
 
 if endpoint:
     try:
@@ -52,7 +52,7 @@ if pyroscope_address:
         import pyroscope
 
         pyroscope.configure(
-            application_name=f"wft.{component}",
+            application_name=f"dsy.{component}",
             server_address=pyroscope_address,
             tags={"pool": os.environ.get("S13_POOL", "")} if os.environ.get("S13_POOL") else {},
         )

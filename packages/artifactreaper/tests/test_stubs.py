@@ -6,7 +6,7 @@ import inspect
 import pytest
 
 LANES = {"reap": "P", "schedule": "P", "__main__": "P"}
-MODULES = {name: importlib.import_module(f"wft_artifactreaper.{name}") for name in LANES}
+MODULES = {name: importlib.import_module(f"dsy_artifactreaper.{name}") for name in LANES}
 
 
 @pytest.mark.parametrize("module", MODULES)
@@ -22,5 +22,5 @@ def test_every_stub_of_a_module_is_listed(module):
 
 def test_the_schedule_names_are_the_ones_of_the_breakdown():
     schedule = MODULES["schedule"]
-    assert schedule.SCHEDULE_ID == "wft-artifact-reaper"
+    assert schedule.SCHEDULE_ID == "dsy-artifact-reaper"
     assert schedule.TASK_QUEUE

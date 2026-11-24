@@ -1,16 +1,16 @@
 [project]
-name = "wft-jobtools"
+name = "dsy-jobtools"
 version = "0.0.0"
 license = "Apache-2.0"
 requires-python = ">=3.13,<3.14"
-dependencies = ["wft-jobdoc", "wft-jobcheck", "wft-plan", "wft-jobpatch", "wft-jobexamples"]
+dependencies = ["dsy-jobdoc", "dsy-jobcheck", "dsy-plan", "dsy-jobpatch", "dsy-jobexamples"]
 
 [tool.uv.sources]
-wft-jobdoc = { workspace = true }
-wft-jobcheck = { workspace = true }
-wft-plan = { workspace = true }
-wft-jobpatch = { workspace = true }
-wft-jobexamples = { workspace = true }
+dsy-jobdoc = { workspace = true }
+dsy-jobcheck = { workspace = true }
+dsy-plan = { workspace = true }
+dsy-jobpatch = { workspace = true }
+dsy-jobexamples = { workspace = true }
 
 [build-system]
 requires = ["hatchling"]

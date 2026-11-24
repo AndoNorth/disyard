@@ -1,15 +1,15 @@
-# Stand-in for the dispatch and control endpoint: one replica in wft-control answering HTTP on the control-api NodePort.
+# Stand-in for the dispatch and control endpoint: one replica in dsy-control answering HTTP on the control-api NodePort.
 # It serves a static file with busybox httpd, so the host access map can be proved before a real module exists.
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: wft-control
+  name: dsy-control
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: dummy-endpoint
-  namespace: wft-control
+  namespace: dsy-control
 spec:
   replicas: 1
   selector:
@@ -21,14 +21,14 @@ spec:
         app: dummy-endpoint
     spec:
       nodeSelector:
-        wft.dev/pool: infra
+        dsy.dev/pool: infra
       tolerations:
-        - key: wft.dev/pool
+        - key: dsy.dev/pool
           operator: Exists
       containers:
         - name: httpd
           image: busybox:1.37@sha256:a7dbc319b1438115a207e11930dc4bb3e643dcb3ec0bdd694bb36cd8fad289ec
-          command: ["sh", "-c", "echo wft-dummy-endpoint > /tmp/index.html && exec httpd -f -p 8080 -h /tmp"]
+          command: ["sh", "-c", "echo dsy-dummy-endpoint > /tmp/index.html && exec httpd -f -p 8080 -h /tmp"]
           ports:
             - containerPort: 8080
           resources:
@@ -43,7 +43,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: dummy-endpoint
-  namespace: wft-control
+  namespace: dsy-control
 spec:
   type: NodePort
   selector:

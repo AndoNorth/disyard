@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Footprint spike: brings up the ci preset, replaces its components with memory-holding stand-ins from a figures table,
 # holds them while host MemAvailable is sampled, and checks the pass line. Run under the cluster lock and the dev shell:
-#   flock /tmp/wft-cluster.lock nix develop -c docs/delivery/spikes/S2/code/run.sh <figures.tsv> <out-dir> <hold-seconds>
+#   flock /tmp/dsy-cluster.lock nix develop -c docs/delivery/spikes/S2/code/run.sh <figures.tsv> <out-dir> <hold-seconds>
 # The cluster is always deleted on exit. Exit 0 pass, 1 fail, 3 aborted on host memory.
 set -uo pipefail
 root=$(cd "$(dirname "${BASH_SOURCE[0]}")/../../../../.." && pwd)
@@ -9,13 +9,13 @@ cd "$root" || exit 2
 [ $# -eq 3 ] && [ -f "$1" ] || { echo "usage: run.sh <figures.tsv> <out-dir> <hold-seconds>" >&2; exit 2; }
 figures=$1 out=$2 hold=$3
 mkdir -p "$out"
-export WFT_CLUSTER_LOCK_HELD=1
-context=kind-wft
+export DSY_CLUSTER_LOCK_HELD=1
+context=kind-dsy
 floor_mib=1024
 k() { kubectl --context "$context" "$@"; }
 avail() { awk '/^MemAvailable:/ { print int($2 / 1024) }' /proc/meminfo; }
 say() { echo "[$(date +%T)] $*" | tee -a "$out/run.log"; }
-nodes=$(docker ps -a --filter label=io.x-k8s.kind.cluster=wft --format '{{.Names}}' 2>/dev/null | sort)
+nodes=$(docker ps -a --filter label=io.x-k8s.kind.cluster=dsy --format '{{.Names}}' 2>/dev/null | sort)
 fail=0
 verdict() { if [ "$2" -eq 0 ]; then say "PASS $1: $3"; else say "FAIL $1: $3"; fail=1; fi; }
 
@@ -24,7 +24,7 @@ cleanup() {
     kill "$watch" 2>/dev/null
     say "teardown: just nuke"
     just nuke >>"$out/nuke.log" 2>&1
-    say "teardown done, MemAvailable $(avail) MiB, wft containers left: $(docker ps -aq --filter label=io.x-k8s.kind.cluster=wft | wc -l)"
+    say "teardown done, MemAvailable $(avail) MiB, dsy containers left: $(docker ps -aq --filter label=io.x-k8s.kind.cluster=dsy | wc -l)"
 }
 trap cleanup EXIT
 
@@ -36,8 +36,8 @@ trap cleanup EXIT
         echo "$(date +%s),$a" >>"$out/memavailable.csv"
         if [ "$a" -lt "$floor_mib" ]; then
             touch "$out/ABORT"
-            for ns in wft-infra wft-workers; do
-                kubectl --context "$context" -n "$ns" delete pod -l wft.dev/spike=s2 --force --grace-period 0 >/dev/null 2>&1
+            for ns in dsy-infra dsy-workers; do
+                kubectl --context "$context" -n "$ns" delete pod -l dsy.dev/spike=s2 --force --grace-period 0 >/dev/null 2>&1
             done
             exit 0
         fi
@@ -53,12 +53,12 @@ up1=$?
 say "just up (first): exit $up1 in $(($(date +%s) - t0)) s"
 tail -n 12 "$out/up1.log" | tee -a "$out/run.log"
 [ "$up1" -eq 0 ] || { say "cluster did not come up"; verdict cluster-ready 1 "just up exit $up1"; exit 1; }
-nodes=$(docker ps --filter label=io.x-k8s.kind.cluster=wft --format '{{.Names}}' | sort)
+nodes=$(docker ps --filter label=io.x-k8s.kind.cluster=dsy --format '{{.Names}}' | sort)
 scripts/cluster/namespaces.sh apply ci >"$out/namespaces.log" 2>&1 || { say "namespaces failed"; exit 1; }
 
 # CONTROL_PLANE_MIB raises the control plane container limit alone, to test whether its memory.events max stops rising.
 if [ -n "${CONTROL_PLANE_MIB:-}" ]; then
-    docker update --memory "${CONTROL_PLANE_MIB}m" --memory-swap "${CONTROL_PLANE_MIB}m" wft-control-plane >/dev/null
+    docker update --memory "${CONTROL_PLANE_MIB}m" --memory-swap "${CONTROL_PLANE_MIB}m" dsy-control-plane >/dev/null
     say "control plane container limit raised to $CONTROL_PLANE_MIB MiB"
 fi
 for n in $nodes; do
@@ -77,11 +77,11 @@ say "idle cluster, no stand-ins: MemAvailable $(avail) MiB"
     done
 } | tee "$out/idle-nodes.csv" | tee -a "$out/run.log"
 # shellcheck disable=SC2086
-docker stats --no-stream --format 'table {{.Name}}\t{{.MemUsage}}\t{{.CPUPerc}}' $nodes wft-registry | tee "$out/idle-stats.txt" | tee -a "$out/run.log"
+docker stats --no-stream --format 'table {{.Name}}\t{{.MemUsage}}\t{{.CPUPerc}}' $nodes dsy-registry | tee "$out/idle-stats.txt" | tee -a "$out/run.log"
 
 counter() { docker exec "$1" awk -v key="$2" '$1 == key { print $2 }' /sys/fs/cgroup/memory.events; }
 for n in $nodes; do echo "$n $(counter "$n" oom_kill) $(counter "$n" max)"; done >"$out/events-before.txt"
-ids_before=$(docker ps -q --filter label=io.x-k8s.kind.cluster=wft | sort | tr '\n' ' ')
+ids_before=$(docker ps -q --filter label=io.x-k8s.kind.cluster=dsy | sort | tr '\n' ' ')
 
 pin="busybox:$(yq '.images.canary.version' deploy/versions.yaml)@$(yq '.images.canary.digest' deploy/versions.yaml)"
 docker pull -q "$pin" >/dev/null && docker tag "$pin" localhost:5001/canary:pinned && docker push -q localhost:5001/canary:pinned >/dev/null
@@ -102,7 +102,7 @@ kind: Pod
 metadata:
   name: $name
   namespace: $ns
-  labels: {wft.dev/spike: s2}
+  labels: {dsy.dev/spike: s2}
 spec:
   restartPolicy: Never
   nodeSelector: {$pool_label: $pool}
@@ -133,7 +133,7 @@ while [ "$(date +%s)" -lt "$end" ] && ! aborted; do sleep 5; done
 
 say "state after the hold"
 k get nodes -L "$pool_label" | tee -a "$out/run.log"
-k get pods -A -l wft.dev/spike=s2 -o wide | tee -a "$out/run.log"
+k get pods -A -l dsy.dev/spike=s2 -o wide | tee -a "$out/run.log"
 {
     echo "node,memory_current_MiB,limit_MiB,oom_kill_before,oom_kill_after,max_before,max_after"
     for n in $nodes; do
@@ -150,7 +150,7 @@ min=$(cut -d, -f2 "$out/memavailable.csv" | sort -n | head -1)
 want_nodes=$(yq '.nodes[].count' deploy/presets/ci.yaml | awk '{ n += $1 } END { print n }')
 ready=$(k get nodes --no-headers | awk '$2 == "Ready"' | wc -l)
 want_pods=$(grep -vc '^#' "$figures")
-running=$(k get pods -A -l wft.dev/spike=s2 --no-headers | awk '$4 == "Running"' | wc -l)
+running=$(k get pods -A -l dsy.dev/spike=s2 --no-headers | awk '$4 == "Running"' | wc -l)
 oom=$(awk -F, 'NR > 1 && $5 > $4 { n++ } END { print n + 0 }' "$out/loaded-nodes.csv")
 maxrise=$(awk -F, 'NR > 1 && $7 > $6 { n++ } END { print n + 0 }' "$out/loaded-nodes.csv")
 
@@ -158,7 +158,7 @@ if aborted; then say "RESULT aborted"; exit 3; fi
 t1=$(date +%s)
 just up >"$out/up2.log" 2>&1
 up2=$?
-ids_after=$(docker ps -q --filter label=io.x-k8s.kind.cluster=wft | sort | tr '\n' ' ')
+ids_after=$(docker ps -q --filter label=io.x-k8s.kind.cluster=dsy | sort | tr '\n' ' ')
 say "just up (second, under load): exit $up2 in $(($(date +%s) - t1)) s, containers unchanged: $([ "$ids_before" = "$ids_after" ] && echo yes || echo no)"
 tail -n 4 "$out/up2.log" | tee -a "$out/run.log"
 

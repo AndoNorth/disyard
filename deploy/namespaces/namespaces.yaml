@@ -3,15 +3,15 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: wft-infra
+  name: dsy-infra
   labels:
-    wft.dev/group: infra
+    dsy.dev/group: infra
 ---
 apiVersion: v1
 kind: LimitRange
 metadata:
   name: defaults
-  namespace: wft-infra
+  namespace: dsy-infra
 spec:
   limits:
     - type: Container
@@ -25,15 +25,15 @@ spec:
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: wft-control
+  name: dsy-control
   labels:
-    wft.dev/group: control
+    dsy.dev/group: control
 ---
 apiVersion: v1
 kind: LimitRange
 metadata:
   name: defaults
-  namespace: wft-control
+  namespace: dsy-control
 spec:
   limits:
     - type: Container
@@ -47,15 +47,15 @@ spec:
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: wft-workers
+  name: dsy-workers
   labels:
-    wft.dev/group: workers
+    dsy.dev/group: workers
 ---
 apiVersion: v1
 kind: LimitRange
 metadata:
   name: defaults
-  namespace: wft-workers
+  namespace: dsy-workers
 spec:
   limits:
     - type: Container
@@ -69,15 +69,15 @@ spec:
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: wft-obs
+  name: dsy-obs
   labels:
-    wft.dev/group: obs
+    dsy.dev/group: obs
 ---
 apiVersion: v1
 kind: LimitRange
 metadata:
   name: defaults
-  namespace: wft-obs
+  namespace: dsy-obs
 spec:
   limits:
     - type: Container

@@ -3,10 +3,10 @@
 from pathlib import Path
 
 import pytest
+from dsy_events import Event, from_bytes, to_bytes
+from dsy_events.models import JobParams
+from dsy_temporal import ENCODING, EventPayloadConverter
 from temporalio.converter import DefaultPayloadConverter
-from wft_events import Event, from_bytes, to_bytes
-from wft_events.models import JobParams
-from wft_temporal import ENCODING, EventPayloadConverter
 
 VECTORS = Path(__file__).resolve().parents[3] / "contracts/events/vectors/accepted/valid"
 UNICODE = from_bytes((VECTORS / "tracestate-and-unicode.json").read_bytes())

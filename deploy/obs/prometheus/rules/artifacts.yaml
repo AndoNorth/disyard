@@ -1,20 +1,20 @@
 groups:
-  - name: wft-artifacts
+  - name: dsy-artifacts
     rules:
-      - alert: WftCompileCacheMissStorm
+      - alert: DsyCompileCacheMissStorm
         expr: |
-          delta(wft_state_cache_misses[1h]) >= 20
+          delta(dsy_state_cache_misses[1h]) >= 20
           and
-          delta(wft_state_cache_misses[1h])
-            / (delta(wft_state_cache_misses[1h]) + delta(wft_state_cache_hits[1h])) > 0.9
+          delta(dsy_state_cache_misses[1h])
+            / (delta(dsy_state_cache_misses[1h]) + delta(dsy_state_cache_hits[1h])) > 0.9
         for: 15m
         labels:
           severity: warning
         annotations:
           summary: Over 90 percent of the compiles of the last hour ran instead of hitting the cache.
           description: The compile cache is not being reused, so a key may vary between identical sources.
-          runbook_url: https://github.com/AndoNorth/weft/blob/main/docs/runbooks/alerts.md#wftcompilecachemissstorm
-      - alert: WftStoreCapacityHigh
+          runbook_url: https://github.com/AndoNorth/disyard/blob/main/docs/runbooks/alerts.md#dsycompilecachemissstorm
+      - alert: DsyStoreCapacityHigh
         expr: |
           100 * sum(SeaweedFS_volumeServer_resource{name="/data", type="used"})
           / (
@@ -29,4 +29,4 @@ groups:
           description: >-
             The share is the df figure of the data volume, above the 70 percent threshold of the store
             capacity input.
-          runbook_url: https://github.com/AndoNorth/weft/blob/main/docs/runbooks/alerts.md#wftstorecapacityhigh
+          runbook_url: https://github.com/AndoNorth/disyard/blob/main/docs/runbooks/alerts.md#dsystorecapacityhigh

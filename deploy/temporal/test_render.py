@@ -30,7 +30,7 @@ SCHEMA_LIMITS = ("128Mi", "50m")
 KEYS = {"history.hostLevelCacheMaxSize": 1000, "history.eventsCacheMaxSizeBytes": 32768}
 CHECKSUM = "checksum/dynamic-config"
 INFRA_TOLERATION = {
-    "key": "wft.dev/pool",
+    "key": "dsy.dev/pool",
     "operator": "Equal",
     "value": "infra",
     "effect": "NoSchedule",
@@ -65,7 +65,7 @@ def tiltfile_result(root, values=None, versions=None):
     return subprocess.run(
         ["tilt", "alpha", "tiltfile-result", "-f", str(root / "Tiltfile")],
         cwd=root,
-        env={**os.environ, "KUBECONFIG": str(ROOT / "scripts/tilt/fixtures/kubeconfig-wft.yaml")},
+        env={**os.environ, "KUBECONFIG": str(ROOT / "scripts/tilt/fixtures/kubeconfig-dsy.yaml")},
         capture_output=True,
         text=True,
     )
@@ -119,7 +119,7 @@ def test_dynamic_config_keys(rendered):
 def test_limits_match_s10(rendered):
     objects, _, _ = rendered
     assert sorted(n for k, n in objects if k == "Deployment") == ["temporal-" + s for s in SERVICES]
-    assert {o["metadata"]["namespace"] for o in objects.values()} == {"wft-infra"}
+    assert {o["metadata"]["namespace"] for o in objects.values()} == {"dsy-infra"}
     for s, d in deployments(objects).items():
         assert d["spec"]["replicas"] == 1
         (container,) = d["spec"]["template"]["spec"]["containers"]
@@ -128,7 +128,7 @@ def test_limits_match_s10(rendered):
     for c in job["initContainers"] + job["containers"]:
         assert c["resources"] == sized(*SCHEMA_LIMITS)
     for pod in [d["spec"]["template"]["spec"] for d in deployments(objects).values()] + [job]:
-        assert pod["nodeSelector"] == {"wft.dev/pool": "infra"}
+        assert pod["nodeSelector"] == {"dsy.dev/pool": "infra"}
         assert pod["tolerations"] == [INFRA_TOLERATION]
     assert sum(int(m[:-2]) for m, _ in S10_LIMITS.values()) == 1024
     assert sum(int(c[:-1]) for _, c in S10_LIMITS.values()) == 1000

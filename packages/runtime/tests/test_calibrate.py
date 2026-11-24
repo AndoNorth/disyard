@@ -9,10 +9,10 @@ from pathlib import Path
 
 import pytest
 import yaml
-from wft_compile.build import build
-from wft_runtime import pins
-from wft_runtime.calibrate import FIXTURES, TOLERANCE, differs, load
-from wft_workloads import bundle
+from dsy_compile.build import build
+from dsy_runtime import pins
+from dsy_runtime.calibrate import FIXTURES, TOLERANCE, differs, load
+from dsy_workloads import bundle
 
 RATE = "units_per_second: "
 
@@ -20,12 +20,12 @@ RATE = "units_per_second: "
 @pytest.fixture(scope="module")
 def component(tmp_path_factory) -> Path:
     work = tmp_path_factory.mktemp("calibrate")
-    return build(bundle.write(work), "wft_workloads.main", work / "built").component
+    return build(bundle.write(work), "dsy_workloads.main", work / "built").component
 
 
 def calibrate(*args) -> subprocess.CompletedProcess:
     done = subprocess.run(
-        [sys.executable, "-m", "wft_runtime.calibrate", *map(str, args)],
+        [sys.executable, "-m", "dsy_runtime.calibrate", *map(str, args)],
         capture_output=True,
         text=True,
     )
@@ -92,7 +92,7 @@ def test_write_records_every_argument_set(component, tmp_path):
     written = tmp_path / "catalogue.yaml"
     done = calibrate("--component", component, "--runs", 1, "--write", written)
     assert done.returncode == 0
-    assert written.read_text().startswith("# Written by python -m wft_runtime.calibrate --write")
+    assert written.read_text().startswith("# Written by python -m dsy_runtime.calibrate --write")
     catalogue = load(written)
     assert catalogue.keys() == load().keys()
     assert catalogue["durations"].keys() == load()["durations"].keys()

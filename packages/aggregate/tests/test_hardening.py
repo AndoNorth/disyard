@@ -4,11 +4,11 @@ summary is written, whichever aggregation reads it."""
 import json
 from pathlib import Path
 
+import dsy_aggregate.__main__ as cli
 import pytest
-import wft_aggregate.__main__ as cli
-from wft_aggregate.read import max_bytes
-from wft_kernel.rows import blocks
-from wft_kernel.writer import write
+from dsy_aggregate.read import max_bytes
+from dsy_kernel.rows import blocks
+from dsy_kernel.writer import write
 
 ROOT = Path(__file__).resolve().parents[3]
 VECTORS = ROOT / "contracts/workload/vectors/results/invalid"
@@ -20,7 +20,7 @@ LAUGHS = HEAD + (
     b'  <!ENTITY l0 "lol">\n'
     + b"".join(f'  <!ENTITY l{i} "{f"&l{i - 1};" * 10}">\n'.encode() for i in range(1, 11))
     + b"]>\n"
-    b'<results schema="wft.sim.v1" seed="7">\n'
+    b'<results schema="dsy.sim.v1" seed="7">\n'
     b'  <block id="b" kind="echo">\n'
     b'    <row key="k" value="&l10;"/>\n'
     b"  </block>\n"

@@ -6,7 +6,7 @@ import inspect
 import pytest
 
 LANES = {"main": "W", "bundle": "W", "level1": "W", "fault": "W"}
-MODULES = {name: importlib.import_module(f"wft_workloads.{name}") for name in LANES}
+MODULES = {name: importlib.import_module(f"dsy_workloads.{name}") for name in LANES}
 
 
 @pytest.mark.parametrize("module", MODULES)

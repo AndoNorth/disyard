@@ -4,8 +4,8 @@ import json
 from pathlib import Path
 
 import pytest
-from wft_jobcheck import StaticResolver, validate
-from wft_jobdoc.profile_files import load_profile
+from dsy_jobcheck import StaticResolver, validate
+from dsy_jobdoc.profile_files import load_profile
 
 ROOT = Path(__file__).resolve().parents[3]
 VECTORS = ROOT / "contracts/job/vectors/invalid"

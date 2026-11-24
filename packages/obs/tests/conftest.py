@@ -2,7 +2,7 @@
 `-m` expression names the marker, so the unit run never reaches for a cluster."""
 
 import pytest
-from wft_obs.testing import FakeObs
+from dsy_obs.testing import FakeObs
 
 
 def pytest_configure(config):

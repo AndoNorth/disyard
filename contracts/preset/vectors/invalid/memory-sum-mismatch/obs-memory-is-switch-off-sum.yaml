@@ -29,7 +29,7 @@ nodes:
     memory_mib: 1024
 host:
   ports: deploy/host/ports.yaml
-  data_dir: ~/.local/share/wft/vector
+  data_dir: ~/.local/share/dsy/vector
 mirror: false
 obs_stack:
   cpus: 1.5

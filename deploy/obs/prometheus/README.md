@@ -1,8 +1,8 @@
 # Prometheus and kube-state-metrics
 
-Metrics and alert rules of the observability stack: Prometheus and kube-state-metrics from the pinned images of `deploy/versions.yaml`, in `wft-obs` on the obs node.
+Metrics and alert rules of the observability stack: Prometheus and kube-state-metrics from the pinned images of `deploy/versions.yaml`, in `dsy-obs` on the obs node.
 Modules: `prometheus` here and `kube-state-metrics` in [its own directory](../kube-state-metrics/config.py).
-Both are group `obs`, profile `ci`, and run only on a cluster brought up with `WFT_OBS=on`, as the [stack overview](../README.md) says.
+Both are group `obs`, profile `ci`, and run only on a cluster brought up with `DSY_OBS=on`, as the [stack overview](../README.md) says.
 
 ## Files
 
@@ -15,7 +15,7 @@ Both are group `obs`, profile `ci`, and run only on a cluster brought up with `W
 
 ## What it scrapes
 
-The jobs are `wft_obs.targets.JOBS`, held equal to the rendered configuration by `packages/obs/tests/stack`.
+The jobs are `dsy_obs.targets.JOBS`, held equal to the rendered configuration by `packages/obs/tests/stack`.
 
 | Job | Targets |
 | --- | --- |
@@ -37,7 +37,7 @@ The OTLP receiver is on, so the smoke gate pushes its results to `/api/v1/otlp/v
 ## Reaching it
 
 ```sh
-kubectl --context kind-wft -n wft-obs port-forward --address 127.0.0.1 svc/prometheus 19090:9090
+kubectl --context kind-dsy -n dsy-obs port-forward --address 127.0.0.1 svc/prometheus 19090:9090
 ```
 
-`wft_obs.query` reads the API through that forward, and `ALERTS` shows the firing alerts.
+`dsy_obs.query` reads the API through that forward, and `ALERTS` shows the firing alerts.

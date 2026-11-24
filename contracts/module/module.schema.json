@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/AndoNorth/weft/contracts/module/module.schema.json",
+  "$id": "https://github.com/AndoNorth/disyard/contracts/module/module.schema.json",
   "title": "deploy/<component>/module.yaml",
   "type": "object",
   "required": ["name", "group", "namespace", "artifact", "resources", "readiness", "profiles"],
@@ -8,7 +8,7 @@
   "properties": {
     "name": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" },
     "group": { "enum": ["infra", "control", "workers", "obs"] },
-    "namespace": { "enum": ["wft-infra", "wft-control", "wft-workers", "wft-obs"] },
+    "namespace": { "enum": ["dsy-infra", "dsy-control", "dsy-workers", "dsy-obs"] },
     "artifact": {
       "type": "object",
       "required": ["kind", "pin"],
@@ -65,10 +65,10 @@
     }
   },
   "allOf": [
-    { "if": { "properties": { "group": { "const": "infra" } } }, "then": { "properties": { "namespace": { "const": "wft-infra" } } } },
-    { "if": { "properties": { "group": { "const": "control" } } }, "then": { "properties": { "namespace": { "const": "wft-control" } } } },
-    { "if": { "properties": { "group": { "const": "workers" } } }, "then": { "properties": { "namespace": { "const": "wft-workers" } } } },
-    { "if": { "properties": { "group": { "const": "obs" } } }, "then": { "properties": { "namespace": { "const": "wft-obs" } } } }
+    { "if": { "properties": { "group": { "const": "infra" } } }, "then": { "properties": { "namespace": { "const": "dsy-infra" } } } },
+    { "if": { "properties": { "group": { "const": "control" } } }, "then": { "properties": { "namespace": { "const": "dsy-control" } } } },
+    { "if": { "properties": { "group": { "const": "workers" } } }, "then": { "properties": { "namespace": { "const": "dsy-workers" } } } },
+    { "if": { "properties": { "group": { "const": "obs" } } }, "then": { "properties": { "namespace": { "const": "dsy-obs" } } } }
   ],
   "$defs": {
     "quantities": {

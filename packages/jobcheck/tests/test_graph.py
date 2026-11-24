@@ -3,8 +3,8 @@
 from pathlib import Path
 
 import pytest
-from wft_jobcheck.graph import check_graph
-from wft_jobdoc import parse_document
+from dsy_jobcheck.graph import check_graph
+from dsy_jobdoc import parse_document
 
 VECTORS = Path(__file__).resolve().parents[3] / "contracts/job/vectors"
 FILES = sorted((VECTORS / "invalid/graph").glob("*/*.json"))

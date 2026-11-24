@@ -1,4 +1,4 @@
-# The throwaway wiring: the OTLP and Pyroscope client libraries of wft-obs on the pinned Python, with a sitecustomize
+# The throwaway wiring: the OTLP and Pyroscope client libraries of dsy-obs on the pinned Python, with a sitecustomize
 # that starts them in any Python process whose environment names the collector or Pyroscope. A pod copies /payload
 # onto a volume with an init container and puts it on PYTHONPATH, so no service image is rebuilt.
 ARG BASE

@@ -1,4 +1,4 @@
-# wft_plan
+# dsy_plan
 
 Compiles a validated job document to a plan and gives the plan its identity.
 The contract is [contracts/job/](../../contracts/job/README.md), and the rationale is in [docs/delivery/epics/04-validator.md](../../docs/delivery/epics/04-validator.md).
@@ -66,12 +66,12 @@ The declarations stay in the bound plan, so binding a bound plan again with the 
 ## Versions and compatibility
 
 The document minors and the plan version follow the additive-only rule of the events contract: within a version a field may be added only as optional, and a required field, a removed field or a renamed one needs a new version.
-`wft_plan.evolution.violations(old, new)` walks two schemas through `properties`, `items`, `additionalProperties`, `patternProperties`, `$ref`, `oneOf` and `anyOf` and reports each such change with the path to the field, so a model held in the map of tasks is compared as well.
+`dsy_plan.evolution.violations(old, new)` walks two schemas through `properties`, `items`, `additionalProperties`, `patternProperties`, `$ref`, `oneOf` and `anyOf` and reports each such change with the path to the field, so a model held in the map of tasks is compared as well.
 `test_schema_evolution.py` compares every committed schema with the one the models generate, and names the field that broke the rule.
-The generic walker of `wft_compat` stops at `properties` and `items`, so it is not used here.
+The generic walker of `dsy_compat` stops at `properties` and `items`, so it is not used here.
 
 `read_plan(data)` reads plan version 1 from JSON text or a parsed mapping and raises `UnsupportedPlanVersion` for any other version, a missing one and a non-integer one.
 It has no hook for another version, and the PR that introduces plan version N+1 adds the branch that reads version N, with `contracts/job/vectors/plans/N/` as its test.
-That branch stays for the window of an event major (`wft_compat.window.readable_days`), because a stored job outlives a deploy by that long.
+That branch stays for the window of an event major (`dsy_compat.window.readable_days`), because a stored job outlives a deploy by that long.
 
 `test_golden_plans_still_compile` recompiles every example against the slots fixture to the committed bytes, so a change to defaults, ordering or canonical form fails and needs a contract-change PR.

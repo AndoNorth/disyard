@@ -1,15 +1,15 @@
 ---
 detection_interval_minutes: 60
 buckets:
-  wft-sources:
+  dsy-sources:
     rules:
       - kind: abort-incomplete-multipart
-        window: housekeeping.wft-sources.abort_incomplete_multipart_after_days
-  wft-components:
+        window: housekeeping.dsy-sources.abort_incomplete_multipart_after_days
+  dsy-components:
     rules:
       - kind: abort-incomplete-multipart
-        window: housekeeping.wft-components.abort_incomplete_multipart_after_days
-  wft-results:
+        window: housekeeping.dsy-components.abort_incomplete_multipart_after_days
+  dsy-results:
     rules:
       - kind: abort-incomplete-multipart
-        window: housekeeping.wft-results.abort_incomplete_multipart_after_days
+        window: housekeeping.dsy-results.abort_incomplete_multipart_after_days

@@ -4,7 +4,7 @@ age and the error, and answers `current()` while a read is in flight."""
 import time
 
 import pytest
-from wft_placement import kube
+from dsy_placement import kube
 
 
 class Snapshot:
@@ -45,7 +45,7 @@ def test_snapshotter_keeps_last_good(api, snapshotter):
     snapshotter = snapshotter(every_s=60)
     snapshotter.read()
     first, age_s, error = snapshotter.current()
-    assert first.nodes == ["wft-worker"] and first.pods == ["compile-worker-0"]
+    assert first.nodes == ["dsy-worker"] and first.pods == ["compile-worker-0"]
     assert error is None
 
     api.fail = 3
@@ -61,7 +61,7 @@ def test_snapshotter_keeps_last_good(api, snapshotter):
 
     snapshotter.read()
     snapshot, age_s, error = snapshotter.current()
-    assert snapshot is not first and snapshot.nodes == ["wft-worker"]
+    assert snapshot is not first and snapshot.nodes == ["dsy-worker"]
     assert error is None
     assert age_s < ages[-1]
 

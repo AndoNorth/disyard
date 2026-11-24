@@ -87,7 +87,7 @@
       "type": "object"
     }
   },
-  "$id": "urn:wft:schema:state.inputs:1",
+  "$id": "urn:dsy:schema:state.inputs:1",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
   "description": "contracts/state/inputs.yaml.",

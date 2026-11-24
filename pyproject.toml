@@ -1,5 +1,5 @@
 [project]
-name = "weft"
+name = "disyard"
 version = "0.0.0"
 license = "Apache-2.0"
 requires-python = ">=3.13,<3.14"
@@ -10,85 +10,85 @@ members = ["packages/*"]
 
 # Workspace members are installed through the dev group, because a plain `uv run` installs only the root project.
 [tool.uv.sources]
-wft-acceptance = { workspace = true }
-wft-admission = { workspace = true }
-wft-aggregate = { workspace = true }
-wft-artifactclient = { workspace = true }
-wft-artifactindex = { workspace = true }
-wft-artifactreaper = { workspace = true }
-wft-broker = { workspace = true }
-wft-clusterkit = { workspace = true }
-wft-compat = { workspace = true }
-wft-compile = { workspace = true }
-wft-dispatchapi = { workspace = true }
-wft-events = { workspace = true }
-wft-eventstore = { workspace = true }
-wft-itest = { workspace = true }
-wft-jobcheck = { workspace = true }
-wft-jobdoc = { workspace = true }
-wft-jobexamples = { workspace = true }
-wft-jobpatch = { workspace = true }
-wft-jobstate = { workspace = true }
-wft-jobtools = { workspace = true }
-wft-kernel = { workspace = true }
-wft-keys = { workspace = true }
-wft-migrate = { workspace = true }
-wft-obs = { workspace = true }
-wft-placement = { workspace = true }
-wft-plan = { workspace = true }
-wft-runtime = { workspace = true }
-wft-stages = { workspace = true }
-wft-stateops = { workspace = true }
-wft-storecheck = { workspace = true }
-wft-temporal = { workspace = true }
-wft-worker = { workspace = true }
-wft-workflow = { workspace = true }
-wft-workloads = { workspace = true }
+dsy-acceptance = { workspace = true }
+dsy-admission = { workspace = true }
+dsy-aggregate = { workspace = true }
+dsy-artifactclient = { workspace = true }
+dsy-artifactindex = { workspace = true }
+dsy-artifactreaper = { workspace = true }
+dsy-broker = { workspace = true }
+dsy-clusterkit = { workspace = true }
+dsy-compat = { workspace = true }
+dsy-compile = { workspace = true }
+dsy-dispatchapi = { workspace = true }
+dsy-events = { workspace = true }
+dsy-eventstore = { workspace = true }
+dsy-itest = { workspace = true }
+dsy-jobcheck = { workspace = true }
+dsy-jobdoc = { workspace = true }
+dsy-jobexamples = { workspace = true }
+dsy-jobpatch = { workspace = true }
+dsy-jobstate = { workspace = true }
+dsy-jobtools = { workspace = true }
+dsy-kernel = { workspace = true }
+dsy-keys = { workspace = true }
+dsy-migrate = { workspace = true }
+dsy-obs = { workspace = true }
+dsy-placement = { workspace = true }
+dsy-plan = { workspace = true }
+dsy-runtime = { workspace = true }
+dsy-stages = { workspace = true }
+dsy-stateops = { workspace = true }
+dsy-storecheck = { workspace = true }
+dsy-temporal = { workspace = true }
+dsy-worker = { workspace = true }
+dsy-workflow = { workspace = true }
+dsy-workloads = { workspace = true }
 
 [dependency-groups]
 dev = [
     "hypothesis",
     "pytest",
-    "wft-acceptance",
-    "wft-admission",
-    "wft-aggregate",
-    "wft-artifactclient",
-    "wft-artifactindex",
-    "wft-artifactreaper",
-    "wft-broker",
-    "wft-clusterkit",
-    "wft-compat",
-    "wft-compile",
-    "wft-dispatchapi",
-    "wft-events",
-    "wft-eventstore",
-    "wft-itest",
-    "wft-jobcheck",
-    "wft-jobdoc",
-    "wft-jobexamples",
-    "wft-jobpatch",
-    "wft-jobstate",
-    "wft-jobtools",
-    "wft-kernel",
-    "wft-keys",
-    "wft-migrate",
-    "wft-obs",
-    "wft-placement",
-    "wft-plan",
-    "wft-runtime",
-    "wft-stages",
-    "wft-stateops",
-    "wft-storecheck",
-    "wft-temporal",
-    "wft-worker",
-    "wft-workflow",
-    "wft-workloads",
+    "dsy-acceptance",
+    "dsy-admission",
+    "dsy-aggregate",
+    "dsy-artifactclient",
+    "dsy-artifactindex",
+    "dsy-artifactreaper",
+    "dsy-broker",
+    "dsy-clusterkit",
+    "dsy-compat",
+    "dsy-compile",
+    "dsy-dispatchapi",
+    "dsy-events",
+    "dsy-eventstore",
+    "dsy-itest",
+    "dsy-jobcheck",
+    "dsy-jobdoc",
+    "dsy-jobexamples",
+    "dsy-jobpatch",
+    "dsy-jobstate",
+    "dsy-jobtools",
+    "dsy-kernel",
+    "dsy-keys",
+    "dsy-migrate",
+    "dsy-obs",
+    "dsy-placement",
+    "dsy-plan",
+    "dsy-runtime",
+    "dsy-stages",
+    "dsy-stateops",
+    "dsy-storecheck",
+    "dsy-temporal",
+    "dsy-worker",
+    "dsy-workflow",
+    "dsy-workloads",
 ]
 
 [tool.pytest.ini_options]
 # Several packages have a tests/test_vectors.py, so test modules are imported by path and not by basename.
 addopts = "--import-mode=importlib"
 markers = [
-    "integration: needs containers started through wft_itest",
+    "integration: needs containers started through dsy_itest",
     "slow: large results, deselected by scripts/test.sh and run only when selected",
 ]

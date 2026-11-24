@@ -10,15 +10,15 @@ from contextlib import contextmanager
 from pathlib import Path
 
 import pytest
-from wft_broker import client
-from wft_broker import topology as rendered
-from wft_broker.client import Credentials, connect
-from wft_broker.contract import topology
-from wft_broker.models import BrokerUnavailable, Outcome, PublishTimeout, TopologyError
-from wft_broker.testing import FakeBroker, broker_contract
-from wft_broker.testing.conformance import CHECKS
-from wft_broker.testing.container import broker_container
-from wft_events.metrics import registry
+from dsy_broker import client
+from dsy_broker import topology as rendered
+from dsy_broker.client import Credentials, connect
+from dsy_broker.contract import topology
+from dsy_broker.models import BrokerUnavailable, Outcome, PublishTimeout, TopologyError
+from dsy_broker.testing import FakeBroker, broker_contract
+from dsy_broker.testing.conformance import CHECKS
+from dsy_broker.testing.container import broker_container
+from dsy_events.metrics import registry
 
 pytestmark = pytest.mark.integration
 
@@ -230,7 +230,7 @@ def test_dead_letter_on_sixth_delivery(open_as):
     (dead,) = open_as("operator").consumer(DLQ).pull(1, TIMEOUT_S)
     assert dead.body == b"dies"
     assert dead.annotations["x-last-death-reason"] == "delivery_limit"
-    assert "x-opt-wft-reason" not in dead.annotations
+    assert "x-opt-dsy-reason" not in dead.annotations
     assert consumer.drain(1, TIMEOUT_S) == []
     dead.ack()
 
@@ -242,8 +242,8 @@ def test_reason_in_same_settle(open_as):
     (dead,) = open_as("operator").consumer(DLQ).pull(1, TIMEOUT_S)
     assert dead.body == b"poison"
     expected = {
-        "x-opt-wft-reason": "MALFORMED",
-        "x-opt-wft-detail": "not-json: settle test",
+        "x-opt-dsy-reason": "MALFORMED",
+        "x-opt-dsy-detail": "not-json: settle test",
         "x-last-death-reason": "rejected",
         "x-first-death-queue": QUEUE,
     }
@@ -290,7 +290,7 @@ def test_last_delivery_flagged(open_as):
     assert (last.last, last.delivery_count) == (True, LIMIT)
     last.dead_letter("ADMISSION_FAILED", "TimeoutError: last delivery test")
     (dead,) = open_as("operator").consumer(DLQ).pull(1, TIMEOUT_S)
-    assert dead.annotations["x-opt-wft-reason"] == "ADMISSION_FAILED"
+    assert dead.annotations["x-opt-dsy-reason"] == "ADMISSION_FAILED"
     assert not dead.last
     dead.ack()
 
@@ -351,9 +351,9 @@ def test_counters(broker, open_as):
         with pytest.raises(TopologyError):
             open_as("dispatch").publish(QUEUE, b"m")
     assert moved(before) == {
-        "wft_broker_publish_total{outcome=accepted}": 1,
-        "wft_broker_publish_total{outcome=unroutable}": 1,
-        "wft_broker_publish_total{outcome=topology-error}": 1,
+        "dsy_broker_publish_total{outcome=accepted}": 1,
+        "dsy_broker_publish_total{outcome=unroutable}": 1,
+        "dsy_broker_publish_total{outcome=topology-error}": 1,
     }
 
     before = Counter(registry.counters)
@@ -364,25 +364,25 @@ def test_counters(broker, open_as):
     consumer.pull(1, TIMEOUT_S)[0].dead_letter("UNSUPPORTED_VERSION", "major: counters test")
     open_as("operator").consumer(DLQ).pull(1, TIMEOUT_S)[0].ack()
     assert moved(before) == {
-        "wft_broker_publish_total{outcome=accepted}": 1,
-        "wft_broker_settle_total{call=release}": 1,
-        "wft_broker_settle_total{call=retry}": 1,
-        "wft_broker_settle_total{call=ack}": 1,
-        "wft_broker_settle_total{call=dead_letter}": 1,
-        "wft_broker_dead_letter_total{reason=UNSUPPORTED_VERSION}": 1,
+        "dsy_broker_publish_total{outcome=accepted}": 1,
+        "dsy_broker_settle_total{call=release}": 1,
+        "dsy_broker_settle_total{call=retry}": 1,
+        "dsy_broker_settle_total{call=ack}": 1,
+        "dsy_broker_settle_total{call=dead_letter}": 1,
+        "dsy_broker_dead_letter_total{reason=UNSUPPORTED_VERSION}": 1,
     }
 
     last = retried_to_last(publisher, consumer)
     before = Counter(registry.counters)
     last.retry()
-    assert moved(before) == {"wft_broker_settle_total{call=retry}": 1}
+    assert moved(before) == {"dsy_broker_settle_total{call=retry}": 1}
     open_as("operator").consumer(DLQ).pull(1, TIMEOUT_S)[0].ack()
 
     before = Counter(registry.counters)
     accepted = fill(publisher)
     assert moved(before) == {
-        "wft_broker_publish_total{outcome=accepted}": accepted,
-        "wft_broker_publish_total{outcome=rejected}": 1,
+        "dsy_broker_publish_total{outcome=accepted}": accepted,
+        "dsy_broker_publish_total{outcome=rejected}": 1,
     }
     while got := consumer.drain(100, TIMEOUT_S):
         for delivery in got:
@@ -393,7 +393,7 @@ def test_counters(broker, open_as):
         before = Counter(registry.counters)
         with pytest.raises(PublishTimeout):
             publisher.publish(QUEUE, b"m", timeout_s=3)
-        assert moved(before) == {"wft_broker_publish_total{outcome=timeout}": 1}
+        assert moved(before) == {"dsy_broker_publish_total{outcome=timeout}": 1}
     finally:
         alarm(broker, False)
 
@@ -402,4 +402,4 @@ def test_counters(broker, open_as):
     before = Counter(registry.counters)
     with pytest.raises(BrokerUnavailable):
         closed.publish(QUEUE, b"m")
-    assert moved(before) == {"wft_broker_publish_total{outcome=unavailable}": 1}
+    assert moved(before) == {"dsy_broker_publish_total{outcome=unavailable}": 1}

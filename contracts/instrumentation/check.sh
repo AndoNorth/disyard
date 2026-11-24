@@ -24,7 +24,7 @@ mapfile -t denied < <(yq -p json -o yaml '."x-label-denylist"[]' "$schema")
 while read -r name; do
     type=$(N=$name yq '.metrics[strenv(N)].type' "$file")
     unit=$(N=$name yq '.metrics[strenv(N)].unit // ""' "$file")
-    [[ $name =~ ^wft_[a-z][a-z0-9]*(_[a-z0-9]+)+$ ]] || fail bad-metric-name "$name is not wft_ and snake case"
+    [[ $name =~ ^dsy_[a-z][a-z0-9]*(_[a-z0-9]+)+$ ]] || fail bad-metric-name "$name is not dsy_ and snake case"
     if [ "$type" = counter ]; then
         [[ $name == *_total ]] || fail bad-metric-name "counter $name does not end in _total"
         stem=${name%_total}

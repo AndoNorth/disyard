@@ -167,7 +167,7 @@ def main():
 
     def put(i):
         key = f"tenant{i % 8}/batch{i // 1000}/job{i}/{i}/compile/r0a1/result.bin"
-        client.put_object(Bucket="wft-results", Key=key, Body=body)
+        client.put_object(Bucket="dsy-results", Key=key, Body=body)
         stored.append(i)
 
     # One client for all threads, since a boto3 client is thread safe.
@@ -190,7 +190,7 @@ def main():
     if not failed:
         report_processes(container, "after_objects")
         pages = client.get_paginator("list_objects_v2").paginate(
-            Bucket="wft-results", Prefix="tenant"
+            Bucket="dsy-results", Prefix="tenant"
         )
         figure(f"{P}.objects_listed", sum(page["KeyCount"] for page in pages))
     sampler.phase = "idle_after"

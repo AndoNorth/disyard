@@ -1,1 +1,1 @@
-{"blocks":[{"id":"result","kind":"digest","rows":[{"name":"sum_squares","value":"ABCD"}]}],"schema":"wft.sim.v1","seed":3}
+{"blocks":[{"id":"result","kind":"digest","rows":[{"name":"sum_squares","value":"ABCD"}]}],"schema":"dsy.sim.v1","seed":3}

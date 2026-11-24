@@ -4,10 +4,10 @@ import ast
 import pkgutil
 from pathlib import Path
 
-import wft_placement
-from wft_placement import policy
-from wft_workflow.placement import Placement, PlacementRequest, task_pools
-from wft_workflow.testing import placer_contract
+import dsy_placement
+from dsy_placement import policy
+from dsy_workflow.placement import Placement, PlacementRequest, task_pools
+from dsy_workflow.testing import placer_contract
 
 # What decides an answer: the static placer, the pool table and the task pool registry, and an
 # answer built by hand.
@@ -18,7 +18,7 @@ ANSWERS = {"Placement", "Unschedulable"}
 class FixedQueue:
     def place(self, request: PlacementRequest, escalate: bool = False) -> Placement:
         return Placement(
-            queue="wft-fixed",
+            queue="dsy-fixed",
             memory_class="64Mi",
             escalated=False,
             schedule_to_start_s=1,
@@ -28,7 +28,7 @@ class FixedQueue:
 
 
 def _modules() -> dict[str, ast.Module]:
-    package = Path(wft_placement.__file__).parent
+    package = Path(dsy_placement.__file__).parent
     return {
         info.name: ast.parse((package / f"{info.name}.py").read_text())
         for info in pkgutil.iter_modules([str(package)])
@@ -59,7 +59,7 @@ def test_policy_is_one_module(monkeypatch):
     monkeypatch.setattr(policy, "policy", FixedQueue)
     for task_type in task_pools():
         request = PlacementRequest(task_type=task_type, cpu_milli=1, memory_mib=1, run_timeout_s=60)
-        assert wft_placement.policy.policy().place(request).queue == "wft-fixed"
+        assert dsy_placement.policy.policy().place(request).queue == "dsy-fixed"
     modules = _modules()
     assert "policy" in modules and "snapshot" in modules
     breaches = [

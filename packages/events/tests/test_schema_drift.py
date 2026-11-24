@@ -5,7 +5,7 @@ import shutil
 import subprocess
 import sys
 
-from wft_events.profile import CONTRACT_DIR
+from dsy_events.profile import CONTRACT_DIR
 
 ROOT = CONTRACT_DIR.parents[1]
 SCHEMA = "contracts/events/schemas/job.accepted/1.0.json"
@@ -13,7 +13,7 @@ SCHEMA = "contracts/events/schemas/job.accepted/1.0.json"
 
 def run(*args):
     return subprocess.run(
-        [sys.executable, "-m", "wft_events.schemagen", *args], capture_output=True, text=True
+        [sys.executable, "-m", "dsy_events.schemagen", *args], capture_output=True, text=True
     )
 
 

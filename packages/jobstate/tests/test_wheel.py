@@ -9,16 +9,16 @@ import pytest
 ROOT = Path(__file__).resolve().parents[3]
 
 PROBE = """
-import wft_jobstate
+import dsy_jobstate
 import json
-from wft_jobstate.models import CONTRACT, JobRow
-from wft_jobstate.models import STATUSES
+from dsy_jobstate.models import CONTRACT, JobRow
+from dsy_jobstate.models import STATUSES
 assert len(STATUSES) == 10
 for name in ['status.yaml', 'limits.yaml', 'job-row/1.json']:
     assert (CONTRACT / name).is_file(), name
 from importlib import metadata, resources
-assert metadata.entry_points(group='wft.migrations')['jobstate'].value == 'wft_jobstate.migrations'
-names = {f.name for f in resources.files('wft_jobstate.migrations').iterdir()}
+assert metadata.entry_points(group='dsy.migrations')['jobstate'].value == 'dsy_jobstate.migrations'
+names = {f.name for f in resources.files('dsy_jobstate.migrations').iterdir()}
 assert {'0100_accepted_job.sql', 'R__job_vocab.sql'} <= names, names
 schema = json.loads((CONTRACT / 'job-row/1.json').read_text())
 assert set(schema["properties"]) == set(JobRow.model_fields)
@@ -36,7 +36,7 @@ def run(*cmd, **kwargs) -> subprocess.CompletedProcess:
 def clean_python(tmp_path_factory) -> Path:
     work = tmp_path_factory.mktemp("wheel")
     wheels = work / "wheels"
-    for package in ("wft-jobstate", "wft-events", "wft-keys"):
+    for package in ("dsy-jobstate", "dsy-events", "dsy-keys"):
         run("uv", "build", "--wheel", "--package", package, "-o", str(wheels), cwd=ROOT)
     venv = work / "venv"
     run("uv", "venv", "--python", sys.executable, str(venv))

@@ -3,9 +3,9 @@
 import json
 
 import pytest
-from wft_acceptance.clients.store import fetch
+from dsy_acceptance.clients.store import fetch
 
-URI = "s3://wft-results/acme/b/j/0/sim/r1a1/results.xml"
+URI = "s3://dsy-results/acme/b/j/0/sim/r1a1/results.xml"
 # Two identities with distinct keys, so a signature names which one signed.
 CREDENTIALS = {
     "export": {"access_key": "EXPORTKEY", "secret_key": "export-secret"},
@@ -16,12 +16,12 @@ CREDENTIALS = {
 @pytest.fixture
 def store(serve, tmp_path, monkeypatch):
     (tmp_path / "objectstore.credentials.json").write_text(json.dumps(CREDENTIALS))
-    monkeypatch.setenv("WFT_STATE_DIR", str(tmp_path))
+    monkeypatch.setenv("DSY_STATE_DIR", str(tmp_path))
     return serve()
 
 
 def test_store_fetch_checks_identity(store):
-    path = "/wft-results/acme/b/j/0/sim/r1a1/results.xml"
+    path = "/dsy-results/acme/b/j/0/sim/r1a1/results.xml"
     store.answer("GET", path, (200, b"<results/>"), (200, b"<results/>"))
 
     assert fetch(URI, "export", store.url) == b"<results/>"
@@ -37,5 +37,5 @@ def test_store_fetch_refuses_an_unknown_identity_or_uri(store):
     with pytest.raises(KeyError, match="admin"):
         fetch(URI, "admin", store.url)
     with pytest.raises(ValueError, match="not an s3://<bucket>/<key> uri"):
-        fetch("s3://wft-results", "export", store.url)
+        fetch("s3://dsy-results", "export", store.url)
     assert store.calls == []

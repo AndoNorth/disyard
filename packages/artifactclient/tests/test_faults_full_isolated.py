@@ -3,10 +3,10 @@
 import time
 
 import pytest
-from wft_artifactclient.client import ArtifactClient, RetryPolicy
-from wft_artifactclient.errors import OutputUploadFailed
-from wft_events.models import ProducerRef
-from wft_storecheck.fullness import HEARTBEAT_SECONDS, OBJECT, FullDisk, fill
+from dsy_artifactclient.client import ArtifactClient, RetryPolicy
+from dsy_artifactclient.errors import OutputUploadFailed
+from dsy_events.models import ProducerRef
+from dsy_storecheck.fullness import HEARTBEAT_SECONDS, OBJECT, FullDisk, fill
 
 pytestmark = [pytest.mark.integration, pytest.mark.isolated]
 
@@ -29,7 +29,7 @@ def test_a_full_store_gives_output_upload_failed(seaweed):
     try:
         time.sleep(HEARTBEAT_SECONDS)
         run = FullDisk()
-        fill(target, "wft-results", run)
+        fill(target, "dsy-results", run)
         with pytest.raises(OutputUploadFailed) as failed:
             client.put_attempt(
                 bytes(OBJECT),

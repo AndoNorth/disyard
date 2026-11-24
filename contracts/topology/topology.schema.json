@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/AndoNorth/weft/contracts/topology/topology.schema.json",
+  "$id": "https://github.com/AndoNorth/disyard/contracts/topology/topology.schema.json",
   "title": "contracts/topology/topology.yaml",
   "type": "object",
   "required": ["pool_label", "taint_effect", "pools", "namespaces"],
@@ -14,13 +14,13 @@
     },
     "namespaces": {
       "type": "object",
-      "required": ["wft-infra", "wft-control", "wft-workers", "wft-obs"],
+      "required": ["dsy-infra", "dsy-control", "dsy-workers", "dsy-obs"],
       "additionalProperties": false,
       "properties": {
-        "wft-infra": { "$ref": "#/$defs/namespace" },
-        "wft-control": { "$ref": "#/$defs/namespace" },
-        "wft-workers": { "$ref": "#/$defs/namespace" },
-        "wft-obs": { "$ref": "#/$defs/namespace" }
+        "dsy-infra": { "$ref": "#/$defs/namespace" },
+        "dsy-control": { "$ref": "#/$defs/namespace" },
+        "dsy-workers": { "$ref": "#/$defs/namespace" },
+        "dsy-obs": { "$ref": "#/$defs/namespace" }
       }
     }
   },

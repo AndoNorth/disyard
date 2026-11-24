@@ -1,20 +1,20 @@
 [project]
-name = "wft-aggregate"
+name = "dsy-aggregate"
 version = "0.0.0"
 license = "Apache-2.0"
 requires-python = ">=3.13,<3.14"
 dependencies = [
     "numpy>=2.5.4",
     "pandas>=3.1.1",
-    "wft-artifactclient",
-    "wft-kernel",
-    "wft-storecheck",
+    "dsy-artifactclient",
+    "dsy-kernel",
+    "dsy-storecheck",
 ]
 
 [tool.uv.sources]
-wft-artifactclient = { workspace = true }
-wft-kernel = { workspace = true }
-wft-storecheck = { workspace = true }
+dsy-artifactclient = { workspace = true }
+dsy-kernel = { workspace = true }
+dsy-storecheck = { workspace = true }
 
 [build-system]
 requires = ["hatchling"]

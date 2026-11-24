@@ -109,7 +109,7 @@ def scrape_config() -> dict:
                 "job_name": "rabbitmq-detailed",
                 "metrics_path": "/metrics/detailed",
                 "params": {"family": RABBITMQ_FAMILIES},
-                "kubernetes_sd_configs": [{"role": "pod", "namespaces": {"names": ["wft-infra"]}}],
+                "kubernetes_sd_configs": [{"role": "pod", "namespaces": {"names": ["dsy-infra"]}}],
                 "relabel_configs": [
                     {
                         "source_labels": ["__meta_kubernetes_pod_container_port_number"],
@@ -154,7 +154,7 @@ def render() -> list[dict]:
     rules = _rules()
     meta = {"name": NAME, "namespace": namespace}
     labels = {"app": NAME, "app.kubernetes.io/name": NAME}
-    cluster = "wft-" + NAME
+    cluster = "dsy-" + NAME
     return [
         {"apiVersion": "v1", "kind": "ServiceAccount", "metadata": meta},
         {

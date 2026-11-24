@@ -1,6 +1,6 @@
 name: worker
 group: workers
-namespace: wft-workers
+namespace: dsy-workers
 artifact: {kind: image, pin: pause}
 resources:
   worker:

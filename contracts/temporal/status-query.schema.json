@@ -30,7 +30,7 @@
           "type": "integer"
         },
         "uri": {
-          "pattern": "^s3://wft-checkpoints/.+$",
+          "pattern": "^s3://dsy-checkpoints/.+$",
           "title": "Uri",
           "type": "string"
         }
@@ -155,7 +155,7 @@
       "type": "object"
     }
   },
-  "$id": "urn:wft:schema:temporal:status-query:1",
+  "$id": "urn:dsy:schema:temporal:status-query:1",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
   "description": "The result of the query status.",

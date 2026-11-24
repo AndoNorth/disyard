@@ -3,7 +3,7 @@
   "title": "Intake and admission",
   "description": "From a submit call through dispatch's outbox and the intake queues to admission's start of the job workflow.",
   "tags": [
-    "wft"
+    "dsy"
   ],
   "editable": false,
   "schemaVersion": 39,
@@ -63,7 +63,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum by (outcome) (rate(wft_dispatch_jobs_total[$__rate_interval]))",
+          "expr": "sum by (outcome) (rate(dsy_dispatch_jobs_total[$__rate_interval]))",
           "legendFormat": "{{outcome}}"
         }
       ],
@@ -106,7 +106,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum by (reason) (rate(wft_dispatch_jobs_total{outcome=\"rejected\"}[$__rate_interval]))",
+          "expr": "sum by (reason) (rate(dsy_dispatch_jobs_total{outcome=\"rejected\"}[$__rate_interval]))",
           "legendFormat": "{{reason}}"
         }
       ],
@@ -125,7 +125,7 @@
     {
       "id": 4,
       "type": "timeseries",
-      "title": "wft_dispatch_submit_seconds quantiles",
+      "title": "dsy_dispatch_submit_seconds quantiles",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -149,7 +149,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "histogram_quantile(0.5, sum by (le) (rate(wft_dispatch_submit_seconds_bucket[$__rate_interval])))",
+          "expr": "histogram_quantile(0.5, sum by (le) (rate(dsy_dispatch_submit_seconds_bucket[$__rate_interval])))",
           "legendFormat": "p50"
         },
         {
@@ -158,7 +158,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "histogram_quantile(0.95, sum by (le) (rate(wft_dispatch_submit_seconds_bucket[$__rate_interval])))",
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(dsy_dispatch_submit_seconds_bucket[$__rate_interval])))",
           "legendFormat": "p95"
         },
         {
@@ -167,7 +167,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "histogram_quantile(0.99, sum by (le) (rate(wft_dispatch_submit_seconds_bucket[$__rate_interval])))",
+          "expr": "histogram_quantile(0.99, sum by (le) (rate(dsy_dispatch_submit_seconds_bucket[$__rate_interval])))",
           "legendFormat": "p99"
         }
       ],
@@ -210,7 +210,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum(wft_dispatch_unpublished_jobs)",
+          "expr": "sum(dsy_dispatch_unpublished_jobs)",
           "legendFormat": "jobs"
         }
       ],
@@ -253,7 +253,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "max(wft_dispatch_unpublished_oldest_seconds)",
+          "expr": "max(dsy_dispatch_unpublished_oldest_seconds)",
           "legendFormat": "age"
         }
       ],
@@ -438,7 +438,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum by (outcome) (rate(wft_broker_publish_total[$__rate_interval]))",
+          "expr": "sum by (outcome) (rate(dsy_broker_publish_total[$__rate_interval]))",
           "legendFormat": "{{outcome}}"
         }
       ],
@@ -481,7 +481,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum by (call) (rate(wft_broker_settle_total[$__rate_interval]))",
+          "expr": "sum by (call) (rate(dsy_broker_settle_total[$__rate_interval]))",
           "legendFormat": "{{call}}"
         }
       ],
@@ -524,7 +524,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum by (reason) (rate(wft_broker_dead_letter_total[$__rate_interval]))",
+          "expr": "sum by (reason) (rate(dsy_broker_dead_letter_total[$__rate_interval]))",
           "legendFormat": "{{reason}}"
         }
       ],
@@ -580,7 +580,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum by (job_class) (wft_admission_live_jobs)",
+          "expr": "sum by (job_class) (dsy_admission_live_jobs)",
           "legendFormat": "live {{job_class}}"
         },
         {
@@ -589,7 +589,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum(wft_admission_open_jobs)",
+          "expr": "sum(dsy_admission_open_jobs)",
           "legendFormat": "open"
         },
         {
@@ -598,7 +598,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "max by (scope) (wft_admission_cap_jobs)",
+          "expr": "max by (scope) (dsy_admission_cap_jobs)",
           "legendFormat": "cap {{scope}}"
         }
       ],
@@ -641,7 +641,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum by (priority_class, job_class) (rate(wft_admission_admitted_total[$__rate_interval]))",
+          "expr": "sum by (priority_class, job_class) (rate(dsy_admission_admitted_total[$__rate_interval]))",
           "legendFormat": "{{priority_class}} {{job_class}}"
         }
       ],
@@ -660,7 +660,7 @@
     {
       "id": 17,
       "type": "timeseries",
-      "title": "wft_admission_wait_seconds quantiles",
+      "title": "dsy_admission_wait_seconds quantiles",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -684,7 +684,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "histogram_quantile(0.5, sum by (le) (rate(wft_admission_wait_seconds_bucket[$__rate_interval])))",
+          "expr": "histogram_quantile(0.5, sum by (le) (rate(dsy_admission_wait_seconds_bucket[$__rate_interval])))",
           "legendFormat": "p50"
         },
         {
@@ -693,7 +693,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "histogram_quantile(0.95, sum by (le) (rate(wft_admission_wait_seconds_bucket[$__rate_interval])))",
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(dsy_admission_wait_seconds_bucket[$__rate_interval])))",
           "legendFormat": "p95"
         },
         {
@@ -702,7 +702,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "histogram_quantile(0.99, sum by (le) (rate(wft_admission_wait_seconds_bucket[$__rate_interval])))",
+          "expr": "histogram_quantile(0.99, sum by (le) (rate(dsy_admission_wait_seconds_bucket[$__rate_interval])))",
           "legendFormat": "p99"
         }
       ],
@@ -721,7 +721,7 @@
     {
       "id": 18,
       "type": "timeseries",
-      "title": "wft_admission_snapshot_seconds quantiles",
+      "title": "dsy_admission_snapshot_seconds quantiles",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -745,7 +745,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "histogram_quantile(0.5, sum by (le) (rate(wft_admission_snapshot_seconds_bucket[$__rate_interval])))",
+          "expr": "histogram_quantile(0.5, sum by (le) (rate(dsy_admission_snapshot_seconds_bucket[$__rate_interval])))",
           "legendFormat": "p50"
         },
         {
@@ -754,7 +754,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "histogram_quantile(0.95, sum by (le) (rate(wft_admission_snapshot_seconds_bucket[$__rate_interval])))",
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(dsy_admission_snapshot_seconds_bucket[$__rate_interval])))",
           "legendFormat": "p95"
         },
         {
@@ -763,7 +763,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "histogram_quantile(0.99, sum by (le) (rate(wft_admission_snapshot_seconds_bucket[$__rate_interval])))",
+          "expr": "histogram_quantile(0.99, sum by (le) (rate(dsy_admission_snapshot_seconds_bucket[$__rate_interval])))",
           "legendFormat": "p99"
         }
       ],
@@ -806,7 +806,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "max by (dependency) (wft_admission_breaker_open)",
+          "expr": "max by (dependency) (dsy_admission_breaker_open)",
           "legendFormat": "{{dependency}}"
         }
       ],
@@ -849,7 +849,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum by (reason) (rate(wft_admission_skipped_total[$__rate_interval]))",
+          "expr": "sum by (reason) (rate(dsy_admission_skipped_total[$__rate_interval]))",
           "legendFormat": "{{reason}}"
         }
       ],
@@ -892,7 +892,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum by (reason) (rate(wft_admission_readmitted_total[$__rate_interval]))",
+          "expr": "sum by (reason) (rate(dsy_admission_readmitted_total[$__rate_interval]))",
           "legendFormat": "{{reason}}"
         }
       ],
@@ -935,7 +935,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum (rate(wft_admission_start_failed_total[$__rate_interval]))",
+          "expr": "sum (rate(dsy_admission_start_failed_total[$__rate_interval]))",
           "legendFormat": "start failed"
         },
         {
@@ -944,7 +944,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum (rate(wft_admission_queue_missing_total[$__rate_interval]))",
+          "expr": "sum (rate(dsy_admission_queue_missing_total[$__rate_interval]))",
           "legendFormat": "queue missing"
         },
         {
@@ -953,7 +953,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum (rate(wft_admission_duplicates_total[$__rate_interval]))",
+          "expr": "sum (rate(dsy_admission_duplicates_total[$__rate_interval]))",
           "legendFormat": "duplicate start"
         },
         {
@@ -962,7 +962,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum (rate(wft_admission_row_message_mismatch_total[$__rate_interval]))",
+          "expr": "sum (rate(dsy_admission_row_message_mismatch_total[$__rate_interval]))",
           "legendFormat": "row and message differ"
         }
       ],
@@ -1005,7 +1005,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum by (reason) (rate(wft_admission_dead_lettered_total[$__rate_interval]))",
+          "expr": "sum by (reason) (rate(dsy_admission_dead_lettered_total[$__rate_interval]))",
           "legendFormat": "{{reason}}"
         }
       ],

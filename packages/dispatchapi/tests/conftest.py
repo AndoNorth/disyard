@@ -1,9 +1,9 @@
 """The fixtures that the API's test directories share.
 
 Every container is held for one test module, so a module that holds two declares `pair` and no
-session ever holds a third: Postgres comes from `appdb` of wft_migrate, SeaweedFS from `shelf`
+session ever holds a third: Postgres comes from `appdb` of dsy_migrate, SeaweedFS from `shelf`
 and the Temporal dev server from `temporal`. The database logins are fresh members of the four
-group roles the service logs in through, the broker is wft_broker's own FakeBroker, and Temporal
+group roles the service logs in through, the broker is dsy_broker's own FakeBroker, and Temporal
 at T0 is FakeGateway.
 """
 
@@ -13,26 +13,26 @@ from pathlib import Path
 
 import psycopg
 import pytest
+from dsy_broker.tenancy import load
+from dsy_broker.testing import FakeBroker
+from dsy_dispatchapi.testing import FakeGateway
+from dsy_storecheck.fixtures import running
+from dsy_workflow.contract import naming
+from dsy_workflow.testing import connect
 from psycopg import sql
 from psycopg.conninfo import make_conninfo
 from temporalio.api.enums.v1 import IndexedValueType
 from temporalio.api.operatorservice.v1 import AddSearchAttributesRequest
-from wft_broker.tenancy import load
-from wft_broker.testing import FakeBroker
-from wft_dispatchapi.testing import FakeGateway
-from wft_storecheck.fixtures import running
-from wft_workflow.contract import naming
-from wft_workflow.testing import connect
 
 ROOT = Path(__file__).resolve().parents[3]
 PROFILE = "ci"
 # The group role of each service login: the submit sequence, control, index and link rows, and
 # reads of event payloads.
 GROUPS = {
-    "dispatch": "wft_dispatch",
-    "control": "wft_control",
-    "artifacts": "wft_artifacts",
-    "reader": "wft_reader",
+    "dispatch": "dsy_dispatch",
+    "control": "dsy_control",
+    "artifacts": "dsy_artifacts",
+    "reader": "dsy_reader",
 }
 ATTRIBUTE_TYPES = {
     "keyword": IndexedValueType.INDEXED_VALUE_TYPE_KEYWORD,

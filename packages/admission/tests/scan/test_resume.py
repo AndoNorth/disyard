@@ -5,16 +5,16 @@ restart, and a resume that control's cancel or a missing workflow overtakes."""
 import asyncio
 
 import pytest
+from dsy_admission.claim import Claimed, claim
+from dsy_admission.policy import Caps, Snapshot, plan
+from dsy_admission.resume import Resumes, pending
+from dsy_admission.start import start
+from dsy_jobstate import request_action, transition
+from dsy_keys import workflow_id
+from dsy_workflow.models import ControlSignal, StatusQuery
 from psycopg.types.json import Jsonb
 from temporalio.api.enums.v1 import EventType
 from temporalio.service import RPCError, RPCStatusCode
-from wft_admission.claim import Claimed, claim
-from wft_admission.policy import Caps, Snapshot, plan
-from wft_admission.resume import Resumes, pending
-from wft_admission.start import start
-from wft_jobstate import request_action, transition
-from wft_keys import workflow_id
-from wft_workflow.models import ControlSignal, StatusQuery
 
 pytestmark = [pytest.mark.integration, pytest.mark.pair]
 

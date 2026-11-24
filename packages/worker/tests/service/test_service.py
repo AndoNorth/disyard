@@ -12,14 +12,14 @@ import uuid
 from pathlib import Path
 
 import pytest
+from dsy_worker.config import ENV, MIRROR_ENV, PREFIX_ENV
+from dsy_worker.service import DRAIN
+from dsy_workflow.contract import check_failure
+from dsy_workflow.models import HeartbeatDetails, RaisedFailure, TaskInput
+from dsy_workflow.testing import activity_contract, connect
+from dsy_workflow.testing.pool import RunTaskOnce
 from temporalio.client import Client
 from temporalio.worker import UnsandboxedWorkflowRunner, Worker
-from wft_worker.config import ENV, MIRROR_ENV, PREFIX_ENV
-from wft_worker.service import DRAIN
-from wft_workflow.contract import check_failure
-from wft_workflow.models import HeartbeatDetails, RaisedFailure, TaskInput
-from wft_workflow.testing import activity_contract, connect
-from wft_workflow.testing.pool import RunTaskOnce
 
 LIMIT_S = 300
 # Far more work than any test waits for, beating often.
@@ -40,7 +40,7 @@ def with_params(task: TaskInput, params: dict) -> TaskInput:
 async def started(client: Client, queue: str, task: TaskInput, cancel: bool = False):
     """The workflow of run_task_once started on a queue of its own, for a test that acts while
     the activity runs."""
-    once = f"wft-run-task-once-{uuid.uuid4()}"
+    once = f"dsy-run-task-once-{uuid.uuid4()}"
     async with Worker(
         client,
         task_queue=once,
@@ -97,7 +97,7 @@ def test_activity_contract(worker, temporal, cases, pool):
     run(body())
     running.stop()
     assert running.process.wait(DRAIN.total_seconds()) == 0
-    assert f"polling {running.queue} in namespace wft for pool {pool}, unversioned" in (
+    assert f"polling {running.queue} in namespace dsy for pool {pool}, unversioned" in (
         running.output()
     )
     if pool == "simulate":
@@ -198,12 +198,12 @@ def test_ready_file_while_polling(worker, temporal, tmp_path):
     assert running.process.wait(DRAIN.total_seconds()) == 0
     assert not running.ready_file.exists()
 
-    environ = {k: v for k, v in os.environ.items() if not k.startswith("WFT_")}
+    environ = {k: v for k, v in os.environ.items() if not k.startswith("DSY_")}
     given = complete(tmp_path) | {ENV["temporal_address"]: temporal, ENV["namespace"]: "nowhere"}
     # Left by a process that was killed, so it never removed its file.
     Path(given[ENV["ready_file"]]).touch()
     done = subprocess.run(
-        [sys.executable, "-m", "wft_worker", "--pool", "aggregate"],
+        [sys.executable, "-m", "dsy_worker", "--pool", "aggregate"],
         env=environ | given,
         capture_output=True,
         text=True,
@@ -217,7 +217,7 @@ def test_ready_file_while_polling(worker, temporal, tmp_path):
 def complete(root: Path) -> dict[str, str]:
     return {
         ENV["temporal_address"]: "127.0.0.1:1",
-        ENV["namespace"]: "wft",
+        ENV["namespace"]: "dsy",
         ENV["store_endpoint"]: "http://127.0.0.1:1",
         ENV["store_credentials"]: str(root / "credentials.json"),
         ENV["slot_memory_mib"]: "1024",
@@ -229,18 +229,18 @@ def complete(root: Path) -> dict[str, str]:
 @pytest.mark.parametrize(
     ("pool", "change", "error"),
     [
-        ("simulate", {ENV["scratch"]: ""}, "missing environment: WFT_SCRATCH"),
+        ("simulate", {ENV["scratch"]: ""}, "missing environment: DSY_SCRATCH"),
         ("compile", {}, f"missing environment: {MIRROR_ENV}"),
-        ("aggregate", {PREFIX_ENV: "Up-"}, f"{PREFIX_ENV} gives the queue 'Up-wft-aggregate'"),
+        ("aggregate", {PREFIX_ENV: "Up-"}, f"{PREFIX_ENV} gives the queue 'Up-dsy-aggregate'"),
         ("nowhere", {}, "argument --pool: invalid choice: 'nowhere'"),
     ],
 )
 def test_missing_env_exits_2(tmp_path, pool, change, error):
     """A missing or malformed variable, or a pool that does not exist, exits 2 before anything
     connects."""
-    environ = {k: v for k, v in os.environ.items() if not k.startswith("WFT_")}
+    environ = {k: v for k, v in os.environ.items() if not k.startswith("DSY_")}
     done = subprocess.run(
-        [sys.executable, "-m", "wft_worker", "--pool", pool],
+        [sys.executable, "-m", "dsy_worker", "--pool", pool],
         env=environ | complete(tmp_path) | change,
         capture_output=True,
         text=True,

@@ -4,10 +4,10 @@ its fingerprint equal to the pinned vectors."""
 import json
 from pathlib import Path
 
+import dsy_keys
 import pytest
-import wft_keys
-from wft_dispatchapi.keys import batch_id, identify, job_key
-from wft_dispatchapi.models import BatchEntry, BatchHeader
+from dsy_dispatchapi.keys import batch_id, identify, job_key
+from dsy_dispatchapi.models import BatchEntry, BatchHeader
 
 PINNED = Path(__file__).resolve().parents[3] / "contracts/api/vectors/fingerprint.json"
 VECTORS = json.loads(PINNED.read_text())["vectors"]
@@ -45,9 +45,9 @@ def test_ids_derive_from_the_tenant_and_the_keys():
     identity = identify("acme", header(), entry(), MANIFEST)
 
     assert identity.key == "nightly/7"
-    assert identity.job_id == wft_keys.job_id("acme", "nightly/7")
+    assert identity.job_id == dsy_keys.job_id("acme", "nightly/7")
     assert identity.job_id != identify("other", header(), entry(), MANIFEST).job_id
-    assert batch_id("acme", header()) == wft_keys.batch_id("acme", "nightly")
+    assert batch_id("acme", header()) == dsy_keys.batch_id("acme", "nightly")
 
 
 def test_entry_classes_override_the_header():

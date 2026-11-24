@@ -5,18 +5,18 @@ emit."""
 import asyncio
 
 import pytest
+from dsy_events import Event
+from dsy_events.models import ATTEMPT_TYPES
+from dsy_stages import Facts, run_stage_contract
+from dsy_stages.facts import SAMPLE_DATA
+from dsy_stages.recording import type_name
+from dsy_temporal import event_data_converter
+from dsy_workflow.contract import naming
+from dsy_workflow.job import Identity, JobWorkflow, start_facts
+from dsy_workflow.testing import FakeControl, Zombie, connect
 from temporalio.api.enums.v1 import EventType
 from temporalio.client import Client, WorkflowExecutionStatus
 from temporalio.runtime import MetricBuffer, Runtime, TelemetryConfig
-from wft_events import Event
-from wft_events.models import ATTEMPT_TYPES
-from wft_stages import Facts, run_stage_contract
-from wft_stages.facts import SAMPLE_DATA
-from wft_stages.recording import type_name
-from wft_temporal import event_data_converter
-from wft_workflow.contract import naming
-from wft_workflow.job import Identity, JobWorkflow, start_facts
-from wft_workflow.testing import FakeControl, Zombie, connect
 
 pytestmark = pytest.mark.integration
 
@@ -208,13 +208,13 @@ def test_workflow_metrics_recorded(temporal, rig, plan, fan):
     by_name = {}
     for update in seen:
         by_name.setdefault(update.metric.name, []).append(update)
-    history = by_name["wft_workflow_history_events"]
+    history = by_name["dsy_workflow_history_events"]
     assert history and all(u.value > 0 for u in history)
     assert history[0].metric.kind == 2  # histogram
     assert {u.attributes["workflow_type"] for u in history} == {"JobWorkflow"}
-    assert sum(u.value for u in by_name["wft_workflow_lost_transitions_total"]) >= 1
+    assert sum(u.value for u in by_name["dsy_workflow_lost_transitions_total"]) >= 1
     for name, updates in by_name.items():
-        if name.startswith("wft_"):
+        if name.startswith("dsy_"):
             assert not {"job_id", "jobid", "task_id", "taskid"} & set(updates[0].attributes)
 
 

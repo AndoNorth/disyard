@@ -10,9 +10,9 @@ Usage: python harness_idem.py <harness arguments>
 
 import runpy
 
+from dsy_keys import workflow_id
+from dsy_workflow import harness
 from temporalio.exceptions import WorkflowAlreadyStartedError
-from wft_keys import workflow_id
-from wft_workflow import harness
 
 started = harness.start
 
@@ -25,4 +25,4 @@ async def idempotent_start(client, tier, job, prefix=""):
 
 
 harness.start = idempotent_start
-runpy.run_module("wft_workflow.harness", run_name="__main__")
+runpy.run_module("dsy_workflow.harness", run_name="__main__")

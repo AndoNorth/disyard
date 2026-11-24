@@ -1,16 +1,16 @@
 [project]
-name = "wft-eventstore"
+name = "dsy-eventstore"
 version = "0.0.0"
 license = "Apache-2.0"
 requires-python = ">=3.13,<3.14"
-dependencies = ["pydantic", "pyyaml", "wft-compat", "wft-events"]
+dependencies = ["pydantic", "pyyaml", "dsy-compat", "dsy-events"]
 
-[project.entry-points."wft.migrations"]
-eventstore = "wft_eventstore.migrations"
+[project.entry-points."dsy.migrations"]
+eventstore = "dsy_eventstore.migrations"
 
 [tool.uv.sources]
-wft-compat = { workspace = true }
-wft-events = { workspace = true }
+dsy-compat = { workspace = true }
+dsy-events = { workspace = true }
 
 [build-system]
 requires = ["hatchling"]

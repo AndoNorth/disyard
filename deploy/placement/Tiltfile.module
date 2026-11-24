@@ -9,22 +9,22 @@ namespace = module["namespace"]
 res = module["resources"]
 topology = read_yaml("../../contracts/topology/topology.yaml")
 pool = {"key": topology["pool_label"], "value": "infra"}
-role = "wft-placement-read"
+role = "dsy-placement-read"
 port = 8080
 
-image = "wft-" + name
+image = "dsy-" + name
 custom_build(
     image,
     os.path.abspath("image.sh"),
     deps = ["../../packages", "../../uv.lock", "Dockerfile", "image.sh", "../versions.yaml"],
 )
 
-ready = "/tmp/wft-ready"
+ready = "/tmp/dsy-ready"
 labels = {"app.kubernetes.io/name": name}
 env = {
-    "WFT_PLACEMENT_LISTEN": "0.0.0.0:%d" % port,
-    "WFT_READY_FILE": ready,
-    "WFT_METRICS_ADDRESS": "0.0.0.0:9464",
+    "DSY_PLACEMENT_LISTEN": "0.0.0.0:%d" % port,
+    "DSY_READY_FILE": ready,
+    "DSY_METRICS_ADDRESS": "0.0.0.0:9464",
 }
 env.update(obs_env())
 

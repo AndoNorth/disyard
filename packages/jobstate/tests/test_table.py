@@ -8,9 +8,9 @@ from pathlib import Path
 import psycopg
 import pytest
 import yaml
+from dsy_jobstate import STUBBED
+from dsy_jobstate.models import CLASSES, STATUSES, JobRow
 from psycopg import errors
-from wft_jobstate import STUBBED
-from wft_jobstate.models import CLASSES, STATUSES, JobRow
 
 pytestmark = pytest.mark.integration
 
@@ -19,7 +19,7 @@ README = (ROOT / "contracts/state/README.md").read_text()
 CONTRACT = yaml.safe_load((ROOT / "contracts/status/status.yaml").read_text())
 SHA = "a" * 64
 MANIFEST = {
-    "uri": f"s3://wft-sources/sha256/aa/{SHA}",
+    "uri": f"s3://dsy-sources/sha256/aa/{SHA}",
     "sha256": SHA,
     "size": 7,
     "name": "m",
@@ -33,7 +33,7 @@ ROW = {
     "batch_id": "6a1c1a1e-2f64-4f0e-9a58-0d3f1b9a3c11",
     "priority_class": "standard",
     "manifest_ref": json.dumps(MANIFEST),
-    "schema_version": "wft.job.accepted/3",
+    "schema_version": "dsy.job.accepted/3",
     "traceparent": "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01",
     "seed": 1,
     "parameters": "{}",
@@ -228,7 +228,7 @@ def test_trigger_refuses_a_move_outside_the_table(db):
 
 
 def test_the_vocabulary_file_can_be_applied_again_over_live_rows(db):
-    from wft_jobstate.gen import VOCAB
+    from dsy_jobstate.gen import VOCAB
 
     job = insert(db)
     db.execute("UPDATE accepted_job SET status = 'admitted' WHERE job_id = %s", (job,))

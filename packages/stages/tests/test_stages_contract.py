@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 import yaml
-from wft_stages.check import CATALOGUE, Invalid, check
+from dsy_stages.check import CATALOGUE, Invalid, check
 
 ROOT = Path(__file__).resolve().parents[3]
 TABLE = ROOT / "contracts/stages/stages.yaml"
@@ -35,12 +35,12 @@ def test_pinned_table_loads_and_names_the_six_stages_and_their_sources():
     stages = load()
     check({"stages": stages})
     assert {n: s["source"] for n, s in stages.items()} == {
-        "dispatch": "/wft/dispatch",
-        "control": "/wft/control",
-        "admission": "/wft/admission",
-        "workflow": "/wft/workflow",
-        "placement": "/wft/placement",
-        "worker": "/wft/worker",
+        "dispatch": "/dsy/dispatch",
+        "control": "/dsy/control",
+        "admission": "/dsy/admission",
+        "workflow": "/dsy/workflow",
+        "placement": "/dsy/placement",
+        "worker": "/dsy/worker",
     }
 
 
@@ -108,7 +108,7 @@ def drop_published(stages: dict) -> None:
             "unknown-data-field",
         ),
         (lambda s: s["placement"]["reads"]["data"].update({"task.nosuch": ["x"]}), "unknown-type"),
-        (lambda s: s["dispatch"]["emits"][0].update(source="/wft/control"), "source-mismatch"),
+        (lambda s: s["dispatch"]["emits"][0].update(source="/dsy/control"), "source-mismatch"),
         (drop_published, "unemitted-type"),
         (lambda s: s["control"]["emits"][4].pop("when"), "duplicate-emitter"),
         (lambda s: s.pop("placement"), "schema-violation"),

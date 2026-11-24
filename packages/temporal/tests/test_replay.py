@@ -4,8 +4,8 @@ import json
 import shutil
 
 import pytest
-from wft_temporal.corpus import CORPUS, CorpusError, histories, replay_corpus
-from wft_temporal.standin import StandInJob
+from dsy_temporal.corpus import CORPUS, CorpusError, histories, replay_corpus
+from dsy_temporal.standin import StandInJob
 
 
 def test_the_whole_corpus_replays_against_the_current_workflow_and_decoding():

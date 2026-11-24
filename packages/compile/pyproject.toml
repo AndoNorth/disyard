@@ -1,14 +1,14 @@
 [project]
-name = "wft-compile"
+name = "dsy-compile"
 version = "0.0.0"
 license = "Apache-2.0"
 requires-python = ">=3.13,<3.14"
-dependencies = ["componentize-py==0.25.1", "wft-jobcheck", "wft-keys", "wft-runtime"]
+dependencies = ["componentize-py==0.25.1", "dsy-jobcheck", "dsy-keys", "dsy-runtime"]
 
 [tool.uv.sources]
-wft-jobcheck = { workspace = true }
-wft-keys = { workspace = true }
-wft-runtime = { workspace = true }
+dsy-jobcheck = { workspace = true }
+dsy-keys = { workspace = true }
+dsy-runtime = { workspace = true }
 
 [build-system]
 requires = ["hatchling"]

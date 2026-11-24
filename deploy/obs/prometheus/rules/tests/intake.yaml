@@ -9,15 +9,15 @@ tests:
         values: '1x10'
     alert_rule_test:
       - eval_time: 4m
-        alertname: WftDeadLetterQueueNotEmpty
+        alertname: DsyDeadLetterQueueNotEmpty
         exp_alerts: []
       - eval_time: 6m
-        alertname: WftDeadLetterQueueNotEmpty
+        alertname: DsyDeadLetterQueueNotEmpty
         exp_alerts:
           - exp_labels: {severity: critical, queue: intake.dlq}
             exp_annotations:
               runbook_url: >-
-                https://github.com/AndoNorth/weft/blob/main/docs/runbooks/alerts.md#wftdeadletterqueuenotempty
+                https://github.com/AndoNorth/disyard/blob/main/docs/runbooks/alerts.md#dsydeadletterqueuenotempty
               summary: The intake dead-letter queue holds 1 message(s).
               description: Every dead letter needs a recovery decision, replay or purge.
   - interval: 1m
@@ -27,7 +27,7 @@ tests:
         values: '0x10'
     alert_rule_test:
       - eval_time: 10m
-        alertname: WftDeadLetterQueueNotEmpty
+        alertname: DsyDeadLetterQueueNotEmpty
         exp_alerts: []
   - interval: 1m
     name: stalled fires for a queue with messages and no consumer
@@ -38,12 +38,12 @@ tests:
         values: '0x15'
     alert_rule_test:
       - eval_time: 12m
-        alertname: WftIntakeQueueStalled
+        alertname: DsyIntakeQueueStalled
         exp_alerts:
           - exp_labels: {severity: critical, queue: intake.acme.standard}
             exp_annotations:
               runbook_url: >-
-                https://github.com/AndoNorth/weft/blob/main/docs/runbooks/alerts.md#wftintakequeuestalled
+                https://github.com/AndoNorth/disyard/blob/main/docs/runbooks/alerts.md#dsyintakequeuestalled
               summary: Intake queue intake.acme.standard has ready messages and no consumer.
               description: Nothing admits the jobs of this queue.
   - interval: 1m
@@ -63,65 +63,65 @@ tests:
         values: '0x15'
     alert_rule_test:
       - eval_time: 14m
-        alertname: WftIntakeQueueStalled
+        alertname: DsyIntakeQueueStalled
         exp_alerts: []
   - interval: 1m
     name: unroutable fires while the counter keeps rising
     input_series:
-      - series: 'wft_broker_publish_total{outcome="unroutable"}'
+      - series: 'dsy_broker_publish_total{outcome="unroutable"}'
         values: '0+1x30'
     alert_rule_test:
       - eval_time: 25m
-        alertname: WftIntakePublishUnroutable
+        alertname: DsyIntakePublishUnroutable
         exp_alerts:
           - exp_labels: {severity: critical}
             exp_annotations:
               runbook_url: >-
-                https://github.com/AndoNorth/weft/blob/main/docs/runbooks/alerts.md#wftintakepublishunroutable
+                https://github.com/AndoNorth/disyard/blob/main/docs/runbooks/alerts.md#dsyintakepublishunroutable
               summary: The broker client published messages the exchange could not route.
               description: The topology differs from the tenancy profile of the publisher.
   - interval: 1m
     name: unroutable stays silent for rejected publishes and a flat counter
     input_series:
-      - series: 'wft_broker_publish_total{outcome="rejected"}'
+      - series: 'dsy_broker_publish_total{outcome="rejected"}'
         values: '0+10x30'
-      - series: 'wft_broker_publish_total{outcome="unroutable"}'
+      - series: 'dsy_broker_publish_total{outcome="unroutable"}'
         values: '3x30'
     alert_rule_test:
       - eval_time: 25m
-        alertname: WftIntakePublishUnroutable
+        alertname: DsyIntakePublishUnroutable
         exp_alerts: []
   - interval: 1m
     name: intake wait fires when the p95 wait is above an hour
     input_series:
-      - series: 'wft_admission_wait_seconds_bucket{priority_class="standard",le="900"}'
+      - series: 'dsy_admission_wait_seconds_bucket{priority_class="standard",le="900"}'
         values: '0x60'
-      - series: 'wft_admission_wait_seconds_bucket{priority_class="standard",le="3600"}'
+      - series: 'dsy_admission_wait_seconds_bucket{priority_class="standard",le="3600"}'
         values: '0x60'
-      - series: 'wft_admission_wait_seconds_bucket{priority_class="standard",le="14400"}'
+      - series: 'dsy_admission_wait_seconds_bucket{priority_class="standard",le="14400"}'
         values: '0+10x60'
-      - series: 'wft_admission_wait_seconds_bucket{priority_class="standard",le="+Inf"}'
+      - series: 'dsy_admission_wait_seconds_bucket{priority_class="standard",le="+Inf"}'
         values: '0+10x60'
     alert_rule_test:
       - eval_time: 55m
-        alertname: WftIntakeWaitHigh
+        alertname: DsyIntakeWaitHigh
         exp_alerts:
           - exp_labels: {severity: warning, priority_class: standard}
             exp_annotations:
               runbook_url: >-
-                https://github.com/AndoNorth/weft/blob/main/docs/runbooks/alerts.md#wftintakewaithigh
+                https://github.com/AndoNorth/disyard/blob/main/docs/runbooks/alerts.md#dsyintakewaithigh
               summary: Jobs of class standard wait over an hour to be admitted (p95).
               description: The wait from acceptance to admission is above the estimate of one hour.
   - interval: 1m
     name: intake wait stays silent when jobs are admitted in seconds
     input_series:
-      - series: 'wft_admission_wait_seconds_bucket{priority_class="standard",le="5"}'
+      - series: 'dsy_admission_wait_seconds_bucket{priority_class="standard",le="5"}'
         values: '0+10x60'
-      - series: 'wft_admission_wait_seconds_bucket{priority_class="standard",le="3600"}'
+      - series: 'dsy_admission_wait_seconds_bucket{priority_class="standard",le="3600"}'
         values: '0+10x60'
-      - series: 'wft_admission_wait_seconds_bucket{priority_class="standard",le="+Inf"}'
+      - series: 'dsy_admission_wait_seconds_bucket{priority_class="standard",le="+Inf"}'
         values: '0+10x60'
     alert_rule_test:
       - eval_time: 55m
-        alertname: WftIntakeWaitHigh
+        alertname: DsyIntakeWaitHigh
         exp_alerts: []

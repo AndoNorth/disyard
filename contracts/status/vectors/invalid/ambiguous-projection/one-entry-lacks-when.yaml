@@ -8,7 +8,7 @@ projection:
   job.accepted: [{sets: accepted}]
   job.started: [{sets: running}]
   job.resumed:
-    - {when: {source: /wft/workflow}, sets: running}
+    - {when: {source: /dsy/workflow}, sets: running}
     - {sets: accepted}
   job.succeeded: [{sets: succeeded}]
   job.pause.requested: [{sets: null}]

@@ -1,7 +1,7 @@
 groups:
-  - name: wft-pools
+  - name: dsy-pools
     rules:
-      - alert: WftPoolBacklogAgeHigh
+      - alert: DsyPoolBacklogAgeHigh
         expr: max by (taskqueue) (approximate_backlog_age_seconds{task_type="Activity"}) > 600
         for: 5m
         labels:
@@ -11,16 +11,16 @@ groups:
           description: >-
             The pool is not keeping up with its queue. The server spells the queue with underscores in
             place of dashes.
-          runbook_url: https://github.com/AndoNorth/weft/blob/main/docs/runbooks/alerts.md#wftpoolbacklogagehigh
-      - alert: WftUnschedulableTasks
-        expr: sum by (pool) (increase(wft_placement_decisions_total{verdict="unschedulable"}[15m])) > 0
+          runbook_url: https://github.com/AndoNorth/disyard/blob/main/docs/runbooks/alerts.md#dsypoolbacklogagehigh
+      - alert: DsyUnschedulableTasks
+        expr: sum by (pool) (increase(dsy_placement_decisions_total{verdict="unschedulable"}[15m])) > 0
         labels:
           severity: warning
         annotations:
           summary: Placement found no slot for tasks of pool {{ $labels.pool }}.
           description: A task needs more than any slot of its pool offers.
-          runbook_url: https://github.com/AndoNorth/weft/blob/main/docs/runbooks/alerts.md#wftunschedulabletasks
-      - alert: WftHeartbeatTimeoutStorm
+          runbook_url: https://github.com/AndoNorth/disyard/blob/main/docs/runbooks/alerts.md#dsyunschedulabletasks
+      - alert: DsyHeartbeatTimeoutStorm
         expr: sum by (taskqueue) (increase(activity_task_timeout{timeout_type="Heartbeat"}[15m])) > 5
         labels:
           severity: critical
@@ -29,8 +29,8 @@ groups:
             More than 5 attempts on Temporal queue {{ $labels.taskqueue }} timed out waiting for a
             heartbeat in 15 minutes.
           description: Workers on the queue are stalled or lost, and the attempts are retried.
-          runbook_url: https://github.com/AndoNorth/weft/blob/main/docs/runbooks/alerts.md#wftheartbeattimeoutstorm
-      - alert: WftPoolSaturated
+          runbook_url: https://github.com/AndoNorth/disyard/blob/main/docs/runbooks/alerts.md#dsyheartbeattimeoutstorm
+      - alert: DsyPoolSaturated
         expr: |
           sum by (task_queue) (temporal_worker_task_slots_used{worker_type="ActivityWorker"})
           / sum by (task_queue) (
@@ -45,4 +45,4 @@ groups:
           description: >-
             The pool runs at full width, which is expected under load and worth knowing when its backlog
             grows.
-          runbook_url: https://github.com/AndoNorth/weft/blob/main/docs/runbooks/alerts.md#wftpoolsaturated
+          runbook_url: https://github.com/AndoNorth/disyard/blob/main/docs/runbooks/alerts.md#dsypoolsaturated

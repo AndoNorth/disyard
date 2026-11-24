@@ -43,8 +43,8 @@ def test_deployment_recreates_its_single_pod(name):
 @pytest.mark.parametrize("name", MODULES)
 def test_pod_runs_on_the_obs_pool_inside_the_resources_of_its_manifest(name):
     pod = deployment(MODULES[name])["spec"]["template"]["spec"]
-    assert pod["nodeSelector"] == {"wft.dev/pool": "obs"}
-    assert pod["tolerations"][0]["key"] == "wft.dev/pool"
+    assert pod["nodeSelector"] == {"dsy.dev/pool": "obs"}
+    assert pod["tolerations"][0]["key"] == "dsy.dev/pool"
     [container] = pod["containers"]
     module = yaml.safe_load((OBS / name / "module.yaml").read_text())
     assert container["resources"] == module["resources"][name]
@@ -79,7 +79,7 @@ def test_every_object_is_in_the_obs_namespace_or_cluster_scoped(name):
         if obj["kind"].startswith("ClusterRole"):
             assert "namespace" not in obj["metadata"]
         else:
-            assert obj["metadata"]["namespace"] == "wft-obs"
+            assert obj["metadata"]["namespace"] == "dsy-obs"
 
 
 def test_loki_keeps_ten_days_and_enforces_them_with_the_compactor():
@@ -100,7 +100,7 @@ def test_loki_accepts_structured_metadata_so_correlation_fields_stay_out_of_the_
 def test_loki_is_served_on_the_port_the_collector_and_clients_address():
     service = objects(loki)[("Service", "loki")]
     assert [p["port"] for p in service["spec"]["ports"]] == [3100]
-    assert collector.LOKI_ENDPOINT == "http://loki.wft-obs:3100/otlp"
+    assert collector.LOKI_ENDPOINT == "http://loki.dsy-obs:3100/otlp"
 
 
 def test_collector_receives_otlp_on_the_ports_the_services_push_to():
@@ -123,7 +123,7 @@ def test_collector_pipelines_carry_logs_and_events_to_loki_and_traces_to_tempo()
 
 def test_collector_drops_traces_while_tempo_is_absent_instead_of_queueing_them():
     exporter = collector.collector_config()["exporters"]["otlp_http/tempo"]
-    assert exporter["endpoint"] == "http://tempo.wft-obs:4318"
+    assert exporter["endpoint"] == "http://tempo.dsy-obs:4318"
     assert exporter["retry_on_failure"] == {"enabled": False}
     assert exporter["sending_queue"] == {"enabled": False}
 
@@ -153,6 +153,6 @@ def test_collector_memory_limiter_sits_under_the_container_limit():
 
 
 def test_collector_may_only_watch_events():
-    [rule] = objects(collector)[("ClusterRole", "wft-collector")]["rules"]
+    [rule] = objects(collector)[("ClusterRole", "dsy-collector")]["rules"]
     assert rule["resources"] == ["events"]
     assert rule["verbs"] == ["list", "watch"]

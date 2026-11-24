@@ -11,7 +11,7 @@ from contextlib import ExitStack
 from pathlib import Path
 
 import pytest
-from wft_itest.session import RUN_LABEL, host_port, image_ref
+from dsy_itest.session import RUN_LABEL, host_port, image_ref
 
 pytestmark = [pytest.mark.integration, pytest.mark.pair, pytest.mark.isolated]
 
@@ -98,8 +98,8 @@ def test_interrupting_a_child_test_leaves_no_container(sig, tmp_path):
     run_id = f"itest-child-{sig.name.lower()}-{os.getpid()}"
     env = {
         **os.environ,
-        "WFT_RUN_ID": run_id,
-        "WFT_T1_LOCK_DIR": str(tmp_path),
+        "DSY_RUN_ID": run_id,
+        "DSY_T1_LOCK_DIR": str(tmp_path),
     }
     child = subprocess.Popen(
         [sys.executable, "-m", "pytest", str(CHILD), "-q", "-p", "no:cacheprovider"],
@@ -129,7 +129,7 @@ def test_interrupting_a_child_test_leaves_no_container(sig, tmp_path):
 
 
 def test_an_unreachable_docker_fails_and_never_skips(tmp_path):
-    env = {**os.environ, "DOCKER_HOST": "unix:///nonexistent", "WFT_T1_LOCK_DIR": str(tmp_path)}
+    env = {**os.environ, "DOCKER_HOST": "unix:///nonexistent", "DSY_T1_LOCK_DIR": str(tmp_path)}
     child = subprocess.run(
         [sys.executable, "-m", "pytest", str(CHILD), "-q", "-rs", "-p", "no:cacheprovider"],
         env=env,

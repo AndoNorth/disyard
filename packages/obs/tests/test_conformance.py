@@ -1,4 +1,4 @@
-"""The calls of `wft_obs.query` over a backend, `FakeObs` by default and the real backends of a
+"""The calls of `dsy_obs.query` over a backend, `FakeObs` by default and the real backends of a
 running stack with `-m cluster`, so the fake answers in the shapes the real APIs answer.
 
 With `-m cluster`, each backend's base address comes from its environment variable, and a test
@@ -9,14 +9,14 @@ import os
 import time
 
 import pytest
-from wft_obs import query
-from wft_obs.query import QueryError
+from dsy_obs import query
+from dsy_obs.query import QueryError
 
 ADDRESSES = {
-    "prometheus": "WFT_OBS_PROMETHEUS_URL",
-    "loki": "WFT_OBS_LOKI_URL",
-    "tempo": "WFT_OBS_TEMPO_URL",
-    "pyroscope": "WFT_OBS_PYROSCOPE_URL",
+    "prometheus": "DSY_OBS_PROMETHEUS_URL",
+    "loki": "DSY_OBS_LOKI_URL",
+    "tempo": "DSY_OBS_TEMPO_URL",
+    "pyroscope": "DSY_OBS_PYROSCOPE_URL",
 }
 HEALTH = {"up", "down", "unknown"}
 
@@ -29,7 +29,7 @@ def seed(fake):
     fake.streams['{service_name=~".+"}'] = [
         {"stream": {"service_name": "dispatch"}, "values": [[str(int(now * 1e9)), "{}"]]}
     ]
-    fake.services = ["wft.dispatch"]
+    fake.services = ["dsy.dispatch"]
 
 
 @pytest.fixture(params=["fake", pytest.param("cluster", marks=pytest.mark.cluster)])

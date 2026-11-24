@@ -3,7 +3,7 @@
 from pathlib import Path
 
 import yaml
-from wft_workflow.contract import naming, pools, registry_pools
+from dsy_workflow.contract import naming, pools, registry_pools
 
 ROOT = Path(__file__).resolve().parents[3]
 SLOTS = ROOT / "deploy/presets/slots/ci.yaml"
@@ -53,7 +53,7 @@ def test_pools_are_real_with_the_measured_timeouts():
 def test_pools_and_queues_are_those_of_the_registry():
     assert set(pools().pools) == set(naming().pools) == registry_pools()
     assert naming().pools == {
-        "compile": "wft-compile",
-        "simulate": "wft-simulate",
-        "aggregate": "wft-aggregate",
+        "compile": "dsy-compile",
+        "simulate": "dsy-simulate",
+        "aggregate": "dsy-aggregate",
     }

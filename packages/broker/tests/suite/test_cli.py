@@ -1,7 +1,7 @@
 """The suite without a broker: its vectors, the parse of the detailed endpoint and its usage."""
 
 import pytest
-from wft_broker import suite
+from dsy_broker import suite
 
 DETAILED = """\
 # TYPE rabbitmq_detailed_queue_messages_ready gauge

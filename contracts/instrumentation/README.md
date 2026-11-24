@@ -1,15 +1,15 @@
 # Instrumentation contract
 
 Owner epic: #13 (observability), which took the contract over from #4 (job event envelope and state propagation).
-Version: 7
+Version: 8
 Consumers: every component that emits a metric, a log line or a span, and #14, #15, #16 and #17.
 
 This contract pins the rules for metrics, labels, log fields and traces, and the platform catalogue in `metrics.yaml`.
-Every metric a dashboard or a rule reads is in the catalogue: a `wft_` name under `metrics`, or a third-party series under `external`.
+Every metric a dashboard or a rule reads is in the catalogue: a `dsy_` name under `metrics`, or a third-party series under `external`.
 
 ## Metric names
 
-- A name is `wft_` followed by lower-case words and digits joined by underscores.
+- A name is `dsy_` followed by lower-case words and digits joined by underscores.
 - A counter ends in `_total`, and a gauge or a histogram never does.
 - A metric with a unit ends in that unit, in base units (`bytes`, `seconds`, `ratio`), before the `_total` of a counter.
 - A histogram declares its bucket bounds in `metrics.yaml`.
@@ -30,12 +30,12 @@ Every metric a dashboard or a rule reads is in the catalogue: a `wft_` name unde
 | `exit_class` | the classes of `contracts/workload/exit-classes.yaml`, of every pool |
 | `job_class` | `short`, `long`, the job classes of `contracts/tenancy/tenancy.yaml` |
 | `priority_class` | `standard`, the priority classes of `contracts/tenancy/tenancy.yaml` |
-| `outcome` of `wft_workflow_job_seconds` and `wft_workflow_jobs_total` | the terminal statuses of `contracts/status/status.yaml` |
-| `verdict` of `wft_placement_decisions_total` | `placed`, `unschedulable` |
+| `outcome` of `dsy_workflow_job_seconds` and `dsy_workflow_jobs_total` | the terminal statuses of `contracts/status/status.yaml` |
+| `verdict` of `dsy_placement_decisions_total` | `placed`, `unschedulable` |
 | `scope` | `global`, `open`, the two caps of the tenancy profile |
 | `component` | `dispatch`, `admission`, `workflow`, `placement`, `compile-worker`, `simulate-worker`, `aggregate-worker`, `state-inputs` |
 | `row` | `1` to `11`, and `run` for the whole run of the smoke gate |
-| `verdict` of `wft_smoke_row_verdict` | `ok`, `FAIL`, `skip` |
+| `verdict` of `dsy_smoke_row_verdict` | `ok`, `FAIL`, `skip` |
 
 ## Log fields
 
@@ -65,29 +65,29 @@ The stored event key keeps the name `event_id`, which is the pair `<source>#<id>
 
 ## The catalogue
 
-`metrics.yaml` holds every `wft_` name under `metrics`, with its type, unit, help, labels and, for a histogram, its buckets.
+`metrics.yaml` holds every `dsy_` name under `metrics`, with its type, unit, help, labels and, for a histogram, its buckets.
 The buckets are pinned here, and an emitter passes them to its runtime as they are; a change to them is a contract-change PR.
-The top finite bucket of `wft_workflow_job_seconds` is 604,800 s, the 7-day maximum of a job, so a full-length job does not land in `+Inf`.
+The top finite bucket of `dsy_workflow_job_seconds` is 604,800 s, the 7-day maximum of a job, so a full-length job does not land in `+Inf`.
 
 | Emitter | Names |
 | --- | --- |
-| the event serializer and reader | `wft_event_*` |
-| the broker client | `wft_broker_*` |
-| admission | `wft_admission_*` |
-| dispatch and control | `wft_dispatch_*`, `wft_control_*` |
-| workflow | `wft_workflow_*` |
-| placement | `wft_placement_*` |
-| the worker pools | `wft_worker_*` |
-| the smoke gate, pushed once per run | `wft_smoke_*` |
-| the state inputs exporter | `wft_state_*` |
-| the observability helper | `wft_obs_*` |
+| the event serializer and reader | `dsy_event_*` |
+| the broker client | `dsy_broker_*` |
+| admission | `dsy_admission_*` |
+| dispatch and control | `dsy_dispatch_*`, `dsy_control_*` |
+| workflow | `dsy_workflow_*` |
+| placement | `dsy_placement_*` |
+| the worker pools | `dsy_worker_*` |
+| the smoke gate, pushed once per run | `dsy_smoke_*` |
+| the state inputs exporter | `dsy_state_*` |
+| the observability helper | `dsy_obs_*` |
 
 The event metrics are asserted by the events lane and the upgrade metric by the compatibility lane, in their own tests.
-The broker counters live in the in-process registry of `wft_events.metrics`, which every process that loads it exports; [contracts/broker/README.md](../broker/README.md) describes them, and `packages/broker/tests/test_reasons.py` holds the `reason` values of `wft_broker_dead_letter_total` equal to the application codes of `contracts/broker/reasons.yaml`.
+The broker counters live in the in-process registry of `dsy_events.metrics`, which every process that loads it exports; [contracts/broker/README.md](../broker/README.md) describes them, and `packages/broker/tests/test_reasons.py` holds the `reason` values of `dsy_broker_dead_letter_total` equal to the application codes of `contracts/broker/reasons.yaml`.
 
-A state input of `contracts/state/inputs.yaml` of kind `sql`, `sql_labelled` or `invariants` is the gauge `wft_state_<input name>`, with `_bytes` or `_seconds` appended when its unit is one of those and its name does not already end in it.
+A state input of `contracts/state/inputs.yaml` of kind `sql`, `sql_labelled` or `invariants` is the gauge `dsy_state_<input name>`, with `_bytes` or `_seconds` appended when its unit is one of those and its name does not already end in it.
 The inputs of kind `store` are not catalogued, because the store's own metrics carry the same figures.
-A name with no emitter is not catalogued, so `wft_workflow_paused_jobs` and `wft_workflow_replay_failures_total` are not; `wft_admission_paused_jobs` is the one paused gauge.
+A name with no emitter is not catalogued, so `dsy_workflow_paused_jobs` and `dsy_workflow_replay_failures_total` are not; `dsy_admission_paused_jobs` is the one paused gauge.
 
 An entry marked `conditional: true`, under `metrics` or `external`, is legitimately absent from a healthy idle run.
 Its series is not exported until a fault or an unusual event happens, or the platform does not produce it on the local cluster.
@@ -96,7 +96,7 @@ A consumer that expects every catalogued series to have a sample, such as the li
 ### Third-party series
 
 `external` holds each third-party series a dashboard or a rule reads, with its type, help, the scrape job that collects it and the labels the rules group by.
-A third-party series keeps its own name, so the `wft_` naming rule does not apply to it, and its labels are held to the denylist.
+A third-party series keeps its own name, so the `dsy_` naming rule does not apply to it, and its labels are held to the denylist.
 The Temporal, kube-state-metrics, cAdvisor, kubelet, SeaweedFS and observability stack series that the dashboards and rules read are catalogued, grouped by their scrape job; a new one is added by a contract-change PR once it is confirmed on its pinned version.
 
 ## Loader

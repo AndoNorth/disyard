@@ -1,5 +1,5 @@
 {
-  description = "Weft dev shell";
+  description = "Disyard dev shell";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";

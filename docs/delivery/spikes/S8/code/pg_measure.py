@@ -14,8 +14,8 @@ import uuid
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
+import dsy_keys
 import psycopg
-import wft_keys
 from cg import Sampler, docker, figure
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -100,8 +100,8 @@ def job_rows(i):
     """The accepted row and 14 event rows of job i, created 6 seconds apart over the 7 days."""
     tenant = TENANTS[i % len(TENANTS)]
     key = f"sub-{i}"
-    job = wft_keys.job_id(tenant, key)
-    batch = wft_keys.batch_id(tenant, f"batch-{i // 1000}")
+    job = dsy_keys.job_id(tenant, key)
+    batch = dsy_keys.batch_id(tenant, f"batch-{i // 1000}")
     created = START + SPAN * i / JOBS
     sha = f"{i:064x}"
     manifest = json.dumps(
@@ -110,7 +110,7 @@ def job_rows(i):
             "name": "manifest.json",
             "sha256": sha,
             "size": 2048,
-            "uri": f"s3://wft-sources/sha256/{sha[:2]}/{sha}",
+            "uri": f"s3://dsy-sources/sha256/{sha[:2]}/{sha}",
         },
         separators=(",", ":"),
     )
@@ -122,7 +122,7 @@ def job_rows(i):
         "standard",
         "short",
         manifest,
-        "urn:wft:schema:job.accepted:1.0",
+        "urn:dsy:schema:job.accepted:1.0",
         f"00-4bf92f3577b34da6a3ce929d0e0e4736-{i:016x}-01",
         i,
         json.dumps({"class_override": "short"}),
@@ -136,7 +136,7 @@ def job_rows(i):
         doc, text = TEMPLATES[kind]
         moment = created + timedelta(milliseconds=400 * seq, microseconds=(i * 7 + seq * 13) % 1000)
         stamp = moment.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
-        event_id = wft_keys.cloudevent_id(job, task or "", "r0a1" if task else "", kind, seq)
+        event_id = dsy_keys.cloudevent_id(job, task or "", "r0a1" if task else "", kind, seq)
         body = (
             text.replace(doc["id"], event_id)
             .replace(doc["time"], stamp)

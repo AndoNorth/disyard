@@ -4,10 +4,10 @@ import json
 import logging
 
 import pytest
-from wft_events import Event, EventTooLarge, SchemaInvalid, to_bytes
-from wft_events.codec import MAX_BYTES, WARN_BYTES
-from wft_events.metrics import registry
-from wft_events.profile import CONTRACT_DIR
+from dsy_events import Event, EventTooLarge, SchemaInvalid, to_bytes
+from dsy_events.codec import MAX_BYTES, WARN_BYTES
+from dsy_events.metrics import registry
+from dsy_events.profile import CONTRACT_DIR
 
 KIB = 1024
 ACCEPTED = CONTRACT_DIR / "vectors/accepted/valid"
@@ -28,11 +28,11 @@ def padded(size: int, filler: str = "x"):
 
 
 def warnings() -> int:
-    return registry.count("wft_event_size_warnings_total")
+    return registry.count("dsy_event_size_warnings_total")
 
 
 def rejected(reason: str) -> int:
-    return registry.count("wft_event_rejected_total", reason=reason)
+    return registry.count("dsy_event_rejected_total", reason=reason)
 
 
 def test_one_byte_under_the_warning_size_is_silent(caplog):
@@ -59,11 +59,11 @@ def test_the_maximum_serialises():
 
 def test_one_byte_over_the_maximum_is_rejected_and_counted():
     event = padded(MAX_BYTES + 1)
-    before, observed = rejected("event-too-large"), registry.histograms["wft_event_bytes"].count
+    before, observed = rejected("event-too-large"), registry.histograms["dsy_event_bytes"].count
     with pytest.raises(EventTooLarge):
         to_bytes(event)
     assert rejected("event-too-large") == before + 1
-    assert registry.histograms["wft_event_bytes"].count == observed
+    assert registry.histograms["dsy_event_bytes"].count == observed
 
 
 def test_a_profile_failure_is_counted_under_its_own_reason():
@@ -75,7 +75,7 @@ def test_a_profile_failure_is_counted_under_its_own_reason():
 
 
 def test_to_bytes_observes_the_size_in_the_pinned_buckets():
-    histogram = registry.histograms["wft_event_bytes"]
+    histogram = registry.histograms["dsy_event_bytes"]
     before = (histogram.count, histogram.total, list(histogram.counts))
     size = len(to_bytes(padded(3 * KIB)))
     assert (histogram.count, histogram.total) == (before[0] + 1, before[1] + size)

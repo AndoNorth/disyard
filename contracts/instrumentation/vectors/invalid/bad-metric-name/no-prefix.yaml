@@ -6,7 +6,7 @@ metrics:
     help: Size of something.
     buckets: [1, 10]
     labels: {}
-  wft_example_total:
+  dsy_example_total:
     type: counter
     help: Things counted.
     labels:

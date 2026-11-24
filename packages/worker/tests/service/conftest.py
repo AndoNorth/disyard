@@ -1,4 +1,4 @@
-"""A real `python -m wft_worker --pool <pool>` process per test, on a queue prefix of its own, over
+"""A real `python -m dsy_worker --pool <pool>` process per test, on a queue prefix of its own, over
 the module's dev server and the session's SeaweedFS."""
 
 import contextlib
@@ -12,9 +12,9 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import pytest
-from wft_storecheck.s3 import dump_credentials
-from wft_worker.config import ENV, MIRROR_ENV, PREFIX_ENV
-from wft_workflow.contract import naming
+from dsy_storecheck.s3 import dump_credentials
+from dsy_worker.config import ENV, MIRROR_ENV, PREFIX_ENV
+from dsy_workflow.contract import naming
 
 # The slot of each pool: simulate in the 512 MiB that spike S11 passed, since the 384 MiB of the ci
 # preset leaves the guest no cap after the worker's reserve.
@@ -39,7 +39,7 @@ class Running:
 
 def environment(pool: str, temporal: str, store, root: Path, prefix: str) -> dict[str, str]:
     """The environment of the pool's process, holding its own store identity only, on the host's
-    environment with no other WFT_ variable."""
+    environment with no other DSY_ variable."""
     credentials = root / "credentials.json"
     dump_credentials(credentials, {pool: store.credentials[pool]})
     given = {
@@ -56,7 +56,7 @@ def environment(pool: str, temporal: str, store, root: Path, prefix: str) -> dic
         # The workload library needs no package, so an empty wheelhouse stands in for the mirror.
         (root / "mirror").mkdir()
         given[MIRROR_ENV] = (root / "mirror").as_uri()
-    host = {k: v for k, v in os.environ.items() if not k.startswith("WFT_")}
+    host = {k: v for k, v in os.environ.items() if not k.startswith("DSY_")}
     return host | given
 
 
@@ -72,7 +72,7 @@ def worker(temporal, pool_store, tmp_path):
         prefix = f"t-{uuid.uuid4().hex[:8]}-"
         log = root / "worker.log"
         process = subprocess.Popen(
-            [sys.executable, "-m", "wft_worker", "--pool", pool],
+            [sys.executable, "-m", "dsy_worker", "--pool", pool],
             env=environment(pool, temporal, pool_store, root, prefix),
             stdout=log.open("wb"),
             stderr=subprocess.STDOUT,

@@ -5,26 +5,26 @@ tests:
   - interval: 1m
     name: event rejected fires for the reason that rose
     input_series:
-      - series: 'wft_event_rejected_total{reason="schema-invalid"}'
+      - series: 'dsy_event_rejected_total{reason="schema-invalid"}'
         values: '0 0 2 2 2'
-      - series: 'wft_event_rejected_total{reason="event-too-large"}'
+      - series: 'dsy_event_rejected_total{reason="event-too-large"}'
         values: '3x4'
     alert_rule_test:
       - eval_time: 3m
-        alertname: WftEventRejected
+        alertname: DsyEventRejected
         exp_alerts:
           - exp_labels: {severity: warning, reason: schema-invalid}
             exp_annotations:
               runbook_url: >-
-                https://github.com/AndoNorth/weft/blob/main/docs/runbooks/alerts.md#wfteventrejected
+                https://github.com/AndoNorth/disyard/blob/main/docs/runbooks/alerts.md#dsyeventrejected
               summary: The event serializer refused events with reason schema-invalid.
               description: A producer emits events that fail the contract.
   - interval: 1m
     name: event rejected stays silent when no counter rises
     input_series:
-      - series: 'wft_event_rejected_total{reason="schema-invalid"}'
+      - series: 'dsy_event_rejected_total{reason="schema-invalid"}'
         values: '3x10'
     alert_rule_test:
       - eval_time: 9m
-        alertname: WftEventRejected
+        alertname: DsyEventRejected
         exp_alerts: []

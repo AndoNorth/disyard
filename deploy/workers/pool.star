@@ -7,7 +7,7 @@
 load("../tilt/obs.star", "obs_env")
 
 # The scratch volume and what lives on it: task scratch, the wasmtime module cache, HOME, the caches and the ready file.
-SCRATCH = "/var/wft"
+SCRATCH = "/var/dsy"
 SCRATCH_ENV = {
     "HOME": SCRATCH + "/home",
     "TMPDIR": SCRATCH + "/tmp",
@@ -15,27 +15,27 @@ SCRATCH_ENV = {
     "UV_CACHE_DIR": SCRATCH + "/cache/uv",
 }
 READY = SCRATCH + "/ready"
-CREDENTIALS = "/etc/wft/store/credentials.json"
+CREDENTIALS = "/etc/dsy/store/credentials.json"
 # The user every pool image runs as.
 USER = 65532
-MIRROR = "http://mirror.wft-infra.svc.cluster.local"
+MIRROR = "http://mirror.dsy-infra.svc.cluster.local"
 
 # The pods each pool may reach, as namespace, pod labels and target port. Every pool needs DNS, the Temporal frontend
 # and the object store, and the compile pool also the package mirror for its dependency fetch.
 DNS = ("kube-system", {"k8s-app": "kube-dns"}, 53)
-TEMPORAL = ("wft-infra", {"app.kubernetes.io/name": "temporal", "app.kubernetes.io/component": "frontend"}, 7233)
-STORE = ("wft-infra", {"app": "objectstore"}, 8333)
-MIRROR_POD = ("wft-infra", {"app": "mirror"}, 8080)
+TEMPORAL = ("dsy-infra", {"app.kubernetes.io/name": "temporal", "app.kubernetes.io/component": "frontend"}, 7233)
+STORE = ("dsy-infra", {"app": "objectstore"}, 8333)
+MIRROR_POD = ("dsy-infra", {"app": "mirror"}, 8080)
 
 # The SDK metrics port, named `metrics` so the stack's pod scrape finds it, and the stack pods a pool reaches with the
 # observability switch on: Prometheus scrapes the port, and the pod pushes to the collector and Pyroscope.
 METRICS_PORT = 9464
-PROMETHEUS = ("wft-obs", {"app.kubernetes.io/name": "prometheus"}, METRICS_PORT)
-COLLECTOR = ("wft-obs", {"app.kubernetes.io/name": "collector"}, 4318)
-PYROSCOPE = ("wft-obs", {"app.kubernetes.io/name": "pyroscope"}, 4040)
+PROMETHEUS = ("dsy-obs", {"app.kubernetes.io/name": "prometheus"}, METRICS_PORT)
+COLLECTOR = ("dsy-obs", {"app.kubernetes.io/name": "collector"}, 4318)
+PYROSCOPE = ("dsy-obs", {"app.kubernetes.io/name": "pyroscope"}, 4040)
 
 def _svc(service, port):
-    return "%s.wft-infra.svc.cluster.local:%d" % (service, port)
+    return "%s.dsy-infra.svc.cluster.local:%d" % (service, port)
 
 def _egress(peer, protocols = ["TCP"]):
     namespace, labels, port = peer
@@ -66,7 +66,7 @@ def pool_worker(pool):
     naming = read_yaml("../../../contracts/temporal/naming.yaml")
     labels = {"app.kubernetes.io/name": name}
 
-    image = "wft-" + name
+    image = "dsy-" + name
     custom_build(
         image,
         [os.path.abspath("../image.sh"), pool],
@@ -85,13 +85,13 @@ def pool_worker(pool):
 
     egress = [_egress(DNS, ["UDP", "TCP"]), _egress(TEMPORAL), _egress(STORE)]
     env = {
-        "WFT_TEMPORAL_ADDRESS": _svc("temporal-frontend", TEMPORAL[2]),
-        "WFT_NAMESPACE": naming["namespace"],
-        "WFT_STORE_ENDPOINT": "http://" + _svc("objectstore", STORE[2]),
-        "WFT_STORE_CREDENTIALS": CREDENTIALS,
-        "WFT_SCRATCH": SCRATCH,
-        "WFT_READY_FILE": READY,
-        "WFT_METRICS_ADDRESS": "0.0.0.0:%d" % METRICS_PORT,
+        "DSY_TEMPORAL_ADDRESS": _svc("temporal-frontend", TEMPORAL[2]),
+        "DSY_NAMESPACE": naming["namespace"],
+        "DSY_STORE_ENDPOINT": "http://" + _svc("objectstore", STORE[2]),
+        "DSY_STORE_CREDENTIALS": CREDENTIALS,
+        "DSY_SCRATCH": SCRATCH,
+        "DSY_READY_FILE": READY,
+        "DSY_METRICS_ADDRESS": "0.0.0.0:%d" % METRICS_PORT,
     }
     env.update(SCRATCH_ENV)
     obs = obs_env()
@@ -106,7 +106,7 @@ def pool_worker(pool):
         policy["ingress"] = [_ingress(PROMETHEUS)]
     if pool == "compile":
         egress.append(_egress(MIRROR_POD))
-        env["WFT_MIRROR"] = MIRROR
+        env["DSY_MIRROR"] = MIRROR
 
     k8s_yaml(encode_yaml({
         "apiVersion": "networking.k8s.io/v1",
@@ -165,7 +165,7 @@ def pool_worker(pool):
                         "image": image,
                         "ports": [{"name": "metrics", "containerPort": METRICS_PORT}],
                         "env": [{"name": k, "value": v} for k, v in sorted(env.items())] + [{
-                            "name": "WFT_SLOT_MEMORY_MIB",
+                            "name": "DSY_SLOT_MEMORY_MIB",
                             "valueFrom": {"resourceFieldRef": {"resource": "limits.memory", "divisor": "1Mi"}},
                         }],
                         # The service creates the file once it polls, and removes it when it starts to drain.

@@ -15,8 +15,8 @@ from pathlib import Path
 
 import pytest
 import yaml
-from wft_dispatchapi.service import ENV, LISTEN, LISTEN_ENV
-from wft_storecheck.s3 import Creds, dump_credentials
+from dsy_dispatchapi.service import ENV, LISTEN, LISTEN_ENV
+from dsy_storecheck.s3 import Creds, dump_credentials
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
@@ -32,12 +32,12 @@ DEPENDS = ["appdb-migrate", "objectstore-bootstrap", "temporal-bootstrap", "rabb
 ENV_SECRETS = ["dispatch-logins", "dispatch-broker"]
 STORE_ROLES = ("admin", "submit", "workflow", "indexer", "reaper", "compile")
 GROUPS = {
-    "WFT_DISPATCH_DSN": "wft_dispatch",
-    "WFT_CONTROL_DSN": "wft_control",
-    "WFT_ARTIFACTS_DSN": "wft_artifacts",
-    "WFT_READER_DSN": "wft_reader",
+    "DSY_DISPATCH_DSN": "dsy_dispatch",
+    "DSY_CONTROL_DSN": "dsy_control",
+    "DSY_ARTIFACTS_DSN": "dsy_artifacts",
+    "DSY_READER_DSN": "dsy_reader",
 }
-CREDENTIALS = "/etc/wft/store/credentials.json"
+CREDENTIALS = "/etc/dsy/store/credentials.json"
 
 _spec = importlib.util.spec_from_file_location(
     "rabbitmq_config", ROOT / "deploy/rabbitmq/config.py"
@@ -68,15 +68,15 @@ def tiltfile_result(root: Path, tilt_profile: str | None):
         + "load_dynamic('deploy/dispatchapi/Tiltfile.module')\n"
         + f"config.set_enabled_resources({DEPENDS + ['dispatch']})\n"
     )
-    env = {k: v for k, v in os.environ.items() if k != "WFT_TILT_PROFILE"}
+    env = {k: v for k, v in os.environ.items() if k != "DSY_TILT_PROFILE"}
     env |= {
-        "KUBECONFIG": str(ROOT / "scripts/tilt/fixtures/kubeconfig-wft.yaml"),
-        "WFT_STATE_DIR": str(state),
+        "KUBECONFIG": str(ROOT / "scripts/tilt/fixtures/kubeconfig-dsy.yaml"),
+        "DSY_STATE_DIR": str(state),
         # logins.py and config.py run in the environment of the tree, which the copy does not hold.
         "UV_PROJECT": str(ROOT),
     }
     if tilt_profile is not None:
-        env["WFT_TILT_PROFILE"] = tilt_profile
+        env["DSY_TILT_PROFILE"] = tilt_profile
     return subprocess.run(
         ["tilt", "alpha", "tiltfile-result", "-f", str(root / "Tiltfile")],
         cwd=root,
@@ -120,11 +120,11 @@ def env_of(objects) -> dict[str, str]:
 def test_one_replica_recreated_on_the_infra_pool(rendered):
     _, objects, _ = rendered
     deployment = objects["Deployment", "dispatch"]
-    assert deployment["metadata"]["namespace"] == "wft-control"
+    assert deployment["metadata"]["namespace"] == "dsy-control"
     assert deployment["spec"]["replicas"] == 1
     assert deployment["spec"]["strategy"] == {"type": "Recreate"}
     pod = pod_of(objects)
-    assert pod["nodeSelector"] == {"wft.dev/pool": "infra"}
+    assert pod["nodeSelector"] == {"dsy.dev/pool": "infra"}
     assert pod["terminationGracePeriodSeconds"] == 30
 
 
@@ -148,7 +148,7 @@ def test_two_node_ports_of_the_host_map(rendered):
     ports = {p["name"]: p["containerPort"] for p in container_of(objects)["ports"]}
     for listener, node_port in node_ports.items():
         service = objects["Service", listener]
-        assert service["metadata"]["namespace"] == "wft-control"
+        assert service["metadata"]["namespace"] == "dsy-control"
         assert service["spec"]["type"] == "NodePort"
         assert service["spec"]["selector"] == {"app.kubernetes.io/name": "dispatch"}
         [port] = service["spec"]["ports"]
@@ -156,7 +156,7 @@ def test_two_node_ports_of_the_host_map(rendered):
         # The container port is the one the service binds when its listen variable is unset.
         assert ports[listener] == port["port"] == int(LISTEN[listener].rsplit(":", 1)[1])
         assert LISTEN_ENV[listener] not in env_of(objects)
-    assert ports["metrics"] == int(env_of(objects)["WFT_METRICS_ADDRESS"].rsplit(":", 1)[1])
+    assert ports["metrics"] == int(env_of(objects)["DSY_METRICS_ADDRESS"].rsplit(":", 1)[1])
     # The metrics port has no Service and so no NodePort.
     assert {name for kind, name in objects if kind == "Service"} == set(node_ports)
 
@@ -181,14 +181,14 @@ def test_read_only_root_with_a_disk_backed_tmp(rendered):
 def test_service_configuration_from_env_and_secrets(rendered):
     _, objects, _ = rendered
     env = env_of(objects)
-    assert env["WFT_TEMPORAL_ADDRESS"] == "temporal-frontend.wft-infra.svc.cluster.local:7233"
-    assert env["WFT_STORE_ENDPOINT"] == "http://objectstore.wft-infra.svc.cluster.local:8333"
-    assert env["WFT_SUBMIT_CREDENTIALS"] == CREDENTIALS
-    assert env["WFT_BROKER_ADDRESS"] == "rabbitmq.wft-infra.svc.cluster.local:5672"
-    assert env["WFT_TENANCY_PROFILE"] == "ci"
+    assert env["DSY_TEMPORAL_ADDRESS"] == "temporal-frontend.dsy-infra.svc.cluster.local:7233"
+    assert env["DSY_STORE_ENDPOINT"] == "http://objectstore.dsy-infra.svc.cluster.local:8333"
+    assert env["DSY_SUBMIT_CREDENTIALS"] == CREDENTIALS
+    assert env["DSY_BROKER_ADDRESS"] == "rabbitmq.dsy-infra.svc.cluster.local:5672"
+    assert env["DSY_TENANCY_PROFILE"] == "ci"
     assert container_of(objects)["envFrom"] == [{"secretRef": {"name": s}} for s in ENV_SECRETS]
     from_secrets = {key for s in ENV_SECRETS for key in objects["Secret", s]["stringData"]}
-    assert from_secrets == {*GROUPS, "WFT_BROKER_PASSWORD"}
+    assert from_secrets == {*GROUPS, "DSY_BROKER_PASSWORD"}
     assert not from_secrets & set(env)
     assert set(ENV.values()) == set(env) | from_secrets
 
@@ -201,9 +201,9 @@ def test_four_logins_each_in_its_group(rendered):
     for env, dsn in dsns.items():
         login = dsn.removeprefix("postgresql://").split(":", 1)[0]
         assert dsn == (
-            f"postgresql://{login}:{known[login]}@appdb.wft-infra.svc.cluster.local:5432/postgres"
+            f"postgresql://{login}:{known[login]}@appdb.dsy-infra.svc.cluster.local:5432/postgres"
         )
-        assert login == "dispatch_" + GROUPS[env].removeprefix("wft_")
+        assert login == "dispatch_" + GROUPS[env].removeprefix("dsy_")
 
 
 def test_store_secret_holds_the_submit_identity_only(rendered):
@@ -215,9 +215,9 @@ def test_store_secret_holds_the_submit_identity_only(rendered):
 
 def test_broker_secret_from_the_broker_helper(rendered, monkeypatch):
     _, objects, root = rendered
-    monkeypatch.setenv("WFT_STATE_DIR", str(root / "state"))
+    monkeypatch.setenv("DSY_STATE_DIR", str(root / "state"))
     assert objects["Secret", "dispatch-broker"]["stringData"] == {
-        "WFT_BROKER_PASSWORD": rabbitmq.password("dispatch")
+        "DSY_BROKER_PASSWORD": rabbitmq.password("dispatch")
     }
 
 
@@ -228,7 +228,7 @@ def test_no_credential_in_any_manifest_but_the_secrets(rendered):
     secrets = [
         *known.values(),
         store["submit"]["secret_key"],
-        objects["Secret", "dispatch-broker"]["stringData"]["WFT_BROKER_PASSWORD"],
+        objects["Secret", "dispatch-broker"]["stringData"]["DSY_BROKER_PASSWORD"],
     ]
     for (kind, name), manifest in objects.items():
         if kind == "Secret":
@@ -239,7 +239,7 @@ def test_no_credential_in_any_manifest_but_the_secrets(rendered):
 
 def test_tenancy_profile_mapped_from_the_tilt_profile(tmp_path):
     _, objects = rendered_objects(tiltfile_result(tmp_path, "full"))
-    assert env_of(objects)["WFT_TENANCY_PROFILE"] == "dev"
+    assert env_of(objects)["DSY_TENANCY_PROFILE"] == "dev"
 
 
 def test_waits_for_logins_and_its_dependencies(rendered):
@@ -255,7 +255,7 @@ def test_waits_for_logins_and_its_dependencies(rendered):
 def test_no_tilt_profile_refused(tmp_path):
     run = tiltfile_result(tmp_path, None)
     assert run.returncode != 0
-    assert "WFT_TILT_PROFILE is unset" in run.stderr
+    assert "DSY_TILT_PROFILE is unset" in run.stderr
 
 
 def test_dockerfile_builds_proton_in_a_build_stage():
@@ -269,7 +269,7 @@ def test_dockerfile_builds_proton_in_a_build_stage():
     assert "gcc" not in runtime and "apt-get" not in runtime
     assert "COPY --from=proton /wheels" in runtime
     assert "--require-hashes" in runtime
-    assert runtime.rstrip().endswith('ENTRYPOINT ["python", "-m", "wft_dispatchapi.service"]')
+    assert runtime.rstrip().endswith('ENTRYPOINT ["python", "-m", "dsy_dispatchapi.service"]')
 
 
 def test_drops_every_capability_under_the_runtime_seccomp_profile(rendered):

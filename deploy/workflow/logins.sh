@@ -13,8 +13,8 @@ source scripts/cluster/forward.sh
 mode=${1:-apply}
 case $mode in apply | check) ;; *) echo "usage: logins.sh [apply|check]" >&2; exit 2 ;; esac
 
-context=kind-wft
-namespace=wft-infra
+context=kind-dsy
+namespace=dsy-infra
 k() { kubectl --context "$context" -n "$namespace" "$@"; }
 
 k wait --for=condition=Ready pod/appdb-0 --timeout=300s >/dev/null

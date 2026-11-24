@@ -1,13 +1,13 @@
 """Each pin equals the version that the lock file, the installed packages and the nix release
-fetches hold, so the copy in wft_runtime.pins cannot drift."""
+fetches hold, so the copy in dsy_runtime.pins cannot drift."""
 
 import re
 import tomllib
 from importlib.metadata import version
 from pathlib import Path
 
-from wft_runtime import pins
-from wft_runtime.contract import wit_version
+from dsy_runtime import pins
+from dsy_runtime.contract import wit_version
 
 ROOT = Path(__file__).resolve().parents[3]
 

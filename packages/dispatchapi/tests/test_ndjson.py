@@ -7,13 +7,13 @@ import socket
 import time
 
 import pytest
+from dsy_dispatchapi.limits import Limits
+from dsy_dispatchapi.models import BatchEntry, BatchHeader, EntryAnswer, SubmitSummary, SummaryLine
+from dsy_dispatchapi.ndjson import Reader, Rejected, Stop, Writer, request_body
 from hypothesis import given
 from hypothesis import strategies as st
-from wft_dispatchapi.limits import Limits
-from wft_dispatchapi.models import BatchEntry, BatchHeader, EntryAnswer, SubmitSummary, SummaryLine
-from wft_dispatchapi.ndjson import Reader, Rejected, Stop, Writer, request_body
 
-HEADER = {"batch_key": "nightly", "template": {"schema": "urn:wft:schema:job:1.0"}}
+HEADER = {"batch_key": "nightly", "template": {"schema": "urn:dsy:schema:job:1.0"}}
 JOB_ID = "6f1c1f2e-8d5b-5c3e-9a1f-2b7d4e6a8c90"
 TRACE_ID = "0af7651916cd43dd8448eb211c80319c"
 DEFAULTS = Limits()

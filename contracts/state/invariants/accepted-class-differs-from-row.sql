@@ -2,5 +2,5 @@
 SELECT e.event_id AS key
 FROM event e
 JOIN accepted_job j ON j.job_id = e.job_id
-WHERE e.type = 'dev.wft.job.accepted.v1'
+WHERE e.type = 'dev.dsy.job.accepted.v1'
   AND e.body::jsonb ->> 'jobclass' IS DISTINCT FROM j.job_class

@@ -40,8 +40,8 @@ def test_deployment_recreates_its_single_pod():
 
 def test_pod_runs_on_the_obs_pool_inside_the_resources_of_its_manifest():
     pod = deployment()["spec"]["template"]["spec"]
-    assert pod["nodeSelector"] == {"wft.dev/pool": "obs"}
-    assert pod["tolerations"][0]["key"] == "wft.dev/pool"
+    assert pod["nodeSelector"] == {"dsy.dev/pool": "obs"}
+    assert pod["tolerations"][0]["key"] == "dsy.dev/pool"
     [container] = pod["containers"]
     module = yaml.safe_load((OBS / "tempo/module.yaml").read_text())
     assert container["resources"] == module["resources"]["tempo"]
@@ -73,7 +73,7 @@ def test_configuration_checksum_rolls_the_pod_when_the_configuration_changes(mon
 
 def test_every_object_is_in_the_obs_namespace():
     for obj in tempo.render():
-        assert obj["metadata"]["namespace"] == "wft-obs"
+        assert obj["metadata"]["namespace"] == "dsy-obs"
 
 
 def test_container_runs_unprivileged_with_only_its_volume_writable():
@@ -110,11 +110,11 @@ def test_tempo_takes_spans_where_the_collector_sends_them():
     port = int(receiver["endpoint"].rsplit(":", 1)[1])
     service = objects()[("Service", "tempo")]
     assert {p["port"] for p in service["spec"]["ports"]} == {3200, port}
-    assert collector.TEMPO_ENDPOINT == f"http://tempo.wft-obs:{port}"
+    assert collector.TEMPO_ENDPOINT == f"http://tempo.dsy-obs:{port}"
 
 
 def test_tempo_is_served_where_the_grafana_datasource_reads_it():
     [datasource] = [d for d in grafana.datasources()["datasources"] if d["uid"] == "tempo"]
-    assert datasource["url"] == "http://tempo.wft-obs:3200"
+    assert datasource["url"] == "http://tempo.dsy-obs:3200"
     service = objects()[("Service", "tempo")]
     assert 3200 in {p["port"] for p in service["spec"]["ports"]}

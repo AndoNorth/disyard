@@ -28,7 +28,7 @@
       "type": "object"
     }
   },
-  "$id": "urn:wft:schema:stats:1",
+  "$id": "urn:dsy:schema:stats:1",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
   "description": "What admission and placement read from the job row instead of parsing the plan.",
