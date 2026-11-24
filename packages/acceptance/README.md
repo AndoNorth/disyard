@@ -20,13 +20,20 @@ The dev group of the workspace installs it.
 - `count_line(preset, rows, elapsed_s)` is `smoke <preset>: <n> ok, <n> failed, <n> skipped, <s> s`, and every row counts in exactly one bucket.
 - `exit_code(rows, passed_through=None)` is 0 when every row is ok and 1 otherwise, or `cluster-verify`'s usage exit 2 or refusal exit 4 when one of those ended the run.
 
-Not written yet, with the shape the gate and the e2e suite build on:
+The clients and the gate are delivered, each under `src/dsy_acceptance/`:
 
-- `dsy_acceptance.clients.api`: `template`, `batch`, and `Api(dispatch, control, tenant)` with `upload_source`, `submit_one`, `status` and `cancel_batch`.
-- `dsy_acceptance.clients.store`: `fetch(uri, identity) -> bytes`.
-- `dsy_acceptance.clients.temporal`: `connect(address) -> Client`.
-- `dsy_acceptance.clients.broker`: `dead_letters(address) -> int`.
-- `python -m dsy_acceptance.smoke`: the ordered driver of the gate, run by `scripts/smoke.sh`.
+- `clients.api`: `request`, `stream`, `template`, `batch`, `batch_key`, and `Api(dispatch, control, tenant)` with `upload_source`, `submit_one`, `status` and `cancel_batch`.
+- `clients.store`: `fetch(uri, identity, endpoint) -> bytes`, signed as the store role the caller names.
+- `clients.temporal`: `connect(address) -> Client`.
+- `clients.broker`: `dead_letters(address) -> int`.
+- `smoke`: `python -m dsy_acceptance.smoke`, the ordered driver of the gate run by `scripts/smoke.sh`, with `smoke.telemetry` for the observability row and `smoke.results` for the push of the verdicts to the smoke dashboard.
+
+Not written yet, which the e2e suite of the [test ladder](../../docs/acceptance-ladder.md) builds over the same clients:
+
+- Clients for the Postgres job row and its events, Temporal history, the observability read APIs and pod exec.
+- The fixtures of the two-chain job, the failing compile and the malformed result block.
+- `scripts/e2e.sh`, which is a stub that exits 3, and the suite under `e2e/`.
+- Every direct read the suite makes is listed in the ladder's [direct reads](../../docs/acceptance-ladder.md#direct-reads).
 
 ## The smoke recipe
 

@@ -37,12 +37,13 @@ These are named by recipes or presets and prove nothing today.
 
 | Check | State |
 | --- | --- |
-| `just e2e` | a stub that exits 3 with `not implemented: owned by #17` |
+| `just e2e` | level 4 of the [test ladder](../acceptance-ladder.md), a stub that exits 3 with `not implemented: owned by #17`, and the ladder lists its scenarios, budget and direct reads |
 | `just load-test` | a stub that exits 3 |
 | `just characterize` | a stub that exits 3 |
 | Soak | the `soak` preset and `scripts/tilt/run.sh soak` exist, and no soak run or pass criterion does yet |
 
 A stub exits 3 on purpose, so a script never mistakes it for success.
+The levels these checks belong to, and the rules that keep each behaviour at one level, are in the [test ladder](../acceptance-ladder.md).
 
 ## The smoke rows
 
