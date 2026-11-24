@@ -49,6 +49,7 @@ dsy-workloads = { workspace = true }
 dev = [
     "hypothesis",
     "pytest",
+    "pytest-xdist",
     "dsy-acceptance",
     "dsy-admission",
     "dsy-aggregate",

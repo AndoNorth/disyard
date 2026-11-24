@@ -9,7 +9,8 @@ command -v uv >/dev/null || { echo "error: uv not on PATH, run inside nix develo
 # --frozen runs the pytest pinned in uv.lock, and uv fails loudly when it cannot provide one.
 pytest=(uv run --frozen pytest)
 
+# One worker per core, whole files per worker so module-scoped fixtures run once. Pass -n0 to run serial.
 rc=0
-"${pytest[@]}" -m "not integration and not slow" "$@" || rc=$?
+"${pytest[@]}" -n auto --dist loadfile -m "not integration and not slow" "$@" || rc=$?
 if [ "$rc" -eq 5 ]; then echo "notice: no tests collected"; exit 0; fi
 exit "$rc"

@@ -52,7 +52,7 @@ No logic lives in the justfile, and each real recipe calls `scripts/<name>.sh`.
 | `doctor [--json]` | real | - | host preflight, see below |
 | `versions [--check]` | real | - | prints tool versions and `deploy/versions.yaml`, `--check` validates the file against its schema |
 | `lint` | real | - | ruff, yamllint, shellcheck, actionlint, kubeconform and nixfmt over the files each owns |
-| `test` | real | - | `pytest -m "not integration and not slow"`, nothing collected counts as success |
+| `test` | real | - | `pytest -n auto --dist loadfile -m "not integration and not slow"`, one worker per core and whole test files per worker, so `scripts/test.sh -n0` runs serial, nothing collected counts as success |
 | `itest [domain]` | real | - | `pytest -m integration`, optionally limited to `packages/<domain>` |
 | `contracts-map` | real | - | fails when a directory under `contracts/` has no row in the map of [contracts.md](contracts.md), or a row points at a missing path |
 | `ci` | real | - | `lint`, `check-links`, `contracts-map` and its self-test, the `ci-paths` and `ci-shards` self-tests, `verify-lint`, then `test` and `itest` unless only documentation changed, then `nix flake check` |
@@ -266,7 +266,7 @@ CI can be switched off in two ways:
 - A commit message containing `[skip ci]` skips the runs natively in GitHub Actions.
 
 Locally, `nix develop -c just pre-pr` is the gate before a pull request, and the pull request's CI run is the full proof.
-It runs the docs path of `just ci`, then the unit tests of every package changed against the merge base with `origin/main` and of every workspace member that depends on one of them, then the integration tests of the changed packages.
+It runs the docs path of `just ci`, then, in parallel as `just test`, the unit tests of every package changed against the merge base with `origin/main` and of every workspace member that depends on one of them, then the integration tests of the changed packages.
 `scripts/affected.py` reads the dependencies from the `[tool.uv.sources]` table of each `packages/*/pyproject.toml`.
 A change outside `packages/` that `scripts/ci-paths.sh` does not count as documentation, such as `scripts/`, `deploy/`, `contracts/`, `uv.lock`, `pyproject.toml` or the flake, can reach tests that no package owns.
 `just pre-pr` then prints `full run required` with the path and exits 1 without running anything, and the full run is needed instead.
