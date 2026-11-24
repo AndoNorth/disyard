@@ -931,8 +931,8 @@ WFL has no H2 item, because the workflow service already uses `dsy_obs.metrics.r
 - Needs: TS, DIS.
 
 **RIG-W-1 Workflow, temporal and worker tests: dev server, `make_current`, build id, and the worker's own copies** - M, judge
-- Scope: the 4 conftests that start `temporalio/temporal`, `make_current`, the four build-id lines, and `workflow/tests/test_worker.py`, `replay/record.py`, `versioning/test_versioning.py`'s `control_worker`, which builds the queue by string replace instead of calling `control_queue`; the `db`, `login` and `free_port` copies in `packages/worker/tests`.
-- Criteria: `grep -rln '"temporalio/temporal"' packages deploy` lists at most 5 files, each named in the pull request with the reason it differs (function scope, `--db-filename`, no namespace); `scripts/itest.sh workflow` and `scripts/itest.sh worker` pass.
+- Scope: the 4 conftests that start `temporalio/temporal`, `make_current`, the four build-id lines, and `workflow/tests/test_worker.py`, `replay/record.py`, `versioning/test_versioning.py`'s `control_worker`, which builds the queue by string replace instead of calling `control_queue`; the `db`, `login` and `free_port` copies in `packages/worker/tests`; and the workflow package's own copies: the `db` fixture and `CREATE ROLE` in `packages/workflow/tests/activities/conftest.py`, the `free_port` binds in `tests/service/conftest.py`, `tests/service/test_job_counters.py` and `tests/versioning/test_versioning.py`.
+- Criteria: `grep -rn --include='*.py' -E 'def db\(|CREATE ROLE|bind\(\("127.0.0.1", 0\)\)' packages/workflow/tests packages/worker/tests` prints nothing; `grep -rln '"temporalio/temporal"' packages deploy` lists at most 5 files, each named in the pull request with the reason it differs (function scope, `--db-filename`, no namespace); `scripts/itest.sh workflow` and `scripts/itest.sh worker` pass.
 - Verifier: `scripts/itest.sh workflow`, `scripts/itest.sh worker`.
 - Consumes / produces: consumes the TS fixtures; produces nothing new.
 - Needs: TS, WFL, WRK.
@@ -945,8 +945,9 @@ WFL has no H2 item, because the workflow service already uses `dsy_obs.metrics.r
 - Needs: TS-3, RIG-A-1, RIG-D-1 (it edits the same rigs after they migrate).
 
 **RIG-R-1 The remaining `db`, `login`, `shelf` and `free_port` copies** - M, mech per file
-- Scope: `artifactclient`, `artifactreaper`, `stateops`, `jobstate`, `eventstore`, `artifactindex`, `placement`, `obs`, `storecheck`, `compile`, `acceptance` tests.
-- Criteria: `grep -rln -E 'bind\(\("127.0.0.1", 0\)\)' packages/*/tests deploy` prints nothing; `grep -rn --include='*.py' -E 'def db\(' packages/*/tests` lists at most the `eventstore` wrapper; `grep -rln 'CREATE ROLE' packages/*/tests` lists at most 2 files, each named.
+- Scope: the tests of `artifactclient` (including `test_commit.py` and `test_cache.py`, which create roles), `artifactreaper`, `stateops`, `jobstate`, `eventstore`, `artifactindex`, `placement`, `obs`, `storecheck`, `compile` and `acceptance`.
+  The admission, dispatch and worker copies belong to RIG-A-1, RIG-D-1 and RIG-W-1, and the workflow copies to RIG-W-1.
+- Criteria: the three greps run over its own paths only, `RIGR=packages/{artifactclient,artifactreaper,stateops,jobstate,eventstore,artifactindex,placement,obs,storecheck,compile,acceptance}/tests`: `grep -rln -E 'bind\(\("127.0.0.1", 0\)\)' $RIGR` prints nothing; `grep -rn --include='*.py' -E 'def db\(' $RIGR` lists at most the `eventstore` wrapper; `grep -rln 'CREATE ROLE' $RIGR` lists at most 2 files, each named.
   The `until` copies are replaced only where the timeout semantics match.
 - Verifier: `scripts/test.sh` and `scripts/itest.sh` for each package touched, and the three greps.
 - Consumes / produces: consumes the TS fixtures; produces nothing new.
@@ -996,7 +997,7 @@ WFL has no H2 item, because the workflow service already uses `dsy_obs.metrics.r
 - Criteria: every row of section 10 has its evidence file, and the Closure section names the commit, the CI run and the ledger result.
 - Verifier: the evidence files `exit-test/<row>.txt` pasted in the pull request.
 - Consumes / produces: consumes every issue above; produces the Closure.
-- Needs: every issue above.
+- Needs: every issue above, including RIG-A-1, RIG-D-1, RIG-W-1, RIG-W-2 and RIG-R-1 to 3, because E-10 to E-12 are tree-wide.
 
 ## 8. Order, stubs and spikes
 
@@ -1087,6 +1088,7 @@ git -C <repo> archive origin/main | tar -x -C "$EXPORT"
 
 ### 10.2 The copy ledger
 
+Rows E-10 to E-12 stay tree-wide and are exit-test checks: EXIT-1 runs them only after all of phase 3 (RIG-A, RIG-D, RIG-W and RIG-R) has merged, and each RIG issue greps only its own paths.
 The numbers in "Before" were measured with the same commands on `main` at `ee88fc7` (a worktree, not an export, which makes no difference to `grep -rn`).
 "After" is the target, and a row that misses it needs a named reason in Closure.
 
