@@ -13,7 +13,7 @@ just smoke
 just smoke
 ```
 
-Three smoke runs give the `smoke` dashboard three points per row and three annotations, and give every counter a second increment, which some rate panels need, see [the first job](#the-first-job-of-a-cluster).
+Three smoke runs give the `smoke` dashboard three points per row and three annotations.
 Forward Prometheus as in [reading the firing alerts](../alerts.md#reading-the-firing-alerts).
 
 ## Dashboards
@@ -43,16 +43,14 @@ Result after three smoke runs: all nine dashboards load with no query error, and
 | `smoke` | "Failures per row over runs" | every row was ok, and a `FAIL` verdict is pushed only when a row fails |
 | `workers` | "Worker containers last terminated by OOMKilled" | no worker was OOM killed |
 | `cluster-health` | "Last termination reasons" | no container had terminated yet, and a restart fills it, see [the container restart drill](container-restart.md) |
-| `cluster-health` | "Volume use by claim" | the kubelet of this cluster exports no `kubelet_volume_stats_*` series, so it never has data |
-| `stack-health` | "Volume use by module", "Volume bytes used by module" | the same missing kubelet series |
 
 The `smoke` dashboard after three runs shows `Runs in range` 3, `ok` for the last verdict, and one point per row per run with three annotations (`smoke ok, batch smoke-...`).
 
-### The first job of a cluster
+### The volume panels
 
-After the first smoke run the panels "Jobs ended in range" and "Jobs ended by outcome /s" of `fleet` read `No data`, although one job ended.
-`dsy_workflow_jobs_total` is created with its first increment, so the first job leaves a single sample and `increase` and `rate` over one sample are empty.
-They fill from the second job on.
+"Volume use by module", "Volume bytes used by module" and "Volume use by obs backend" read the size gauges of Prometheus, Tempo and Loki, the ones `DsyObsVolumeFilling` reads.
+Tempo's gauge appears a few minutes after its first spans, once it has polled its blocks, and Loki's chunk bytes stay 0 until its first chunk is flushed, so a fresh cluster shows Loki at 0.
+Pyroscope and Grafana export no size gauge and have no volume panel.
 
 ## Wiring
 

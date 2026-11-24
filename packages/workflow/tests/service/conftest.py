@@ -117,7 +117,7 @@ async def _start_job(client: Client, control: FakeControl, build_id: str) -> Wor
         tenant="acme",
         jobid=str(uuid.uuid4()),
         priorityclass="standard",
-        jobclass="simulate",
+        jobclass="short",
         traceparent="00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01",
         time=datetime(2026, 11, 12, 12, 0, tzinfo=UTC),
         data={

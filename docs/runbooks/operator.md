@@ -40,6 +40,33 @@ The figures are the `memory_mib` and `obs_memory_mib` keys of [deploy/presets/](
 Pod slots are the same on every preset, so a preset changes how many pods run side by side and never how large one is.
 A resized preset needs `just nuke` first, because the kubelet reservation is written when a node is created and `just up` ends in a `MISMATCH` otherwise.
 
+### Measured cost of a live session
+
+One session on 2026-11-24: `DSY_OBS=on just up`, `scripts/tilt/run.sh ci` twice (the second after one commit changed the workflow image), four `just smoke` runs, a browser check of six dashboards, and `just nuke`.
+The host was an AMD Ryzen 5 7500F (6 cores, 8 logical CPUs in WSL2) with MemTotal 20,482,272 kB, shared with other agent sessions that ran tests and containers at the same time.
+Every figure below is a measurement from that one session, and the host-wide ones include the work of the other sessions.
+
+| Phase | Time |
+| --- | --- |
+| `just up` | 58 s |
+| `scripts/tilt/run.sh ci`, first deploy, images cached | 234 s |
+| `scripts/tilt/run.sh ci`, second deploy, one image rebuilt | 161 s |
+| `just smoke`, the four runs as the gate printed them | 78 s, 67 s, 28 s, 27 s |
+| Six dashboard screenshots and a scale-to-zero of Tempo | 78 s |
+| `just nuke` | 13 s |
+| Cluster lock held, `flock` taken to released | 2,542 s (42 min 22 s), of which about 14 min waited on the browser |
+
+| Resource | Figure |
+| --- | --- |
+| `MemAvailable` before `just up` | 16,806,564 kB |
+| `MemAvailable` over 59 samples, every 30 s from the end of `just up` to the teardown | maximum 15,706,924 kB, minimum 12,579,044 kB |
+| Load average over one minute, same samples | maximum 11.7, minimum 1.23 |
+| Node container memory, `docker stats` after the last smoke | control plane 744 MiB, `dsy-worker` 2,087 MiB, `dsy-worker2` 1,318 MiB, `dsy-worker3` 373 MiB, `dsy-worker4` 403 MiB, `dsy-worker5` 421 MiB, 5,346 MiB in all |
+| `docker system df`, first sample to peak | images 76.28 GB to 80.28 GB, local volumes 10.05 GB to 23.09 GB, build cache 65.44 GB to 72.90 GB |
+
+`kubectl top` is not available, because the cluster has no metrics API.
+The first `docker system df` sample was taken after `just up`, so the images and volumes of the nodes are already in it.
+
 ## Bring up
 
 1. Check the host.

@@ -10,6 +10,7 @@ import sys
 import time
 from datetime import UTC, datetime
 
+from dsy_aggregate.reduce import SUMMARY_NAME
 from dsy_aggregate.run import EXIT_CODES
 from dsy_artifactclient.errors import ArtifactError
 from dsy_artifactclient.staging import collect_outputs, upload_tail
@@ -35,6 +36,8 @@ ROLE = "aggregate"
 REASON = "reason: "
 # The task's own directory of the scratch root, emptied around each task.
 TASK = "task"
+# The directory of the task's own where the aggregate writes its summary.
+OUTPUT = "output"
 CLASSES = {code: cls for cls, code in EXIT_CODES.items()}
 
 
@@ -68,7 +71,7 @@ async def run(task: TaskInput, context: Context) -> TaskResult:
         argv = [sys.executable, "-m", "dsy_aggregate", "run", "--index", str(index_file)]
         argv += ["--tenant", request.tenant, "--aggregation", task.params.aggregation]
         argv += ["--args", json.dumps(task.params.args.model_dump(exclude_none=True))]
-        argv += ["--out", str(work / "output")]
+        argv += ["--out", str(work / OUTPUT)]
         # The pod's own store identity, which the service reads from the same variables.
         argv += ["--endpoint", os.environ[ENV["store_endpoint"]]]
         argv += ["--credentials", os.environ[ENV["store_credentials"]], "--role", ROLE]
@@ -112,9 +115,19 @@ async def run(task: TaskInput, context: Context) -> TaskResult:
                 details.reason, details, type=cls, non_retryable=deterministic
             ) from failure
         log_tail = await _upload_tail(context, child.tail, where, end, collected.undeclared)
+        count_summary(context, work / OUTPUT)
         return TaskResult(outputs=collected.references, log_tail=log_tail, started_at=started_at)
     finally:
         shutil.rmtree(work, ignore_errors=True)
+
+
+def count_summary(context: Context, out_dir) -> None:
+    """Counts the result files the summary in `out_dir` was reduced from, which are its inputs
+    less the missing ones, and their rows."""
+    if context.metrics is None:
+        return
+    summary = json.loads((out_dir / SUMMARY_NAME).read_text())
+    context.metrics.aggregated(summary["inputs"] - len(summary["missing"]), summary["rows"])
 
 
 def _failure(ended, tail: bytes) -> _Failed:

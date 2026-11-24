@@ -146,6 +146,40 @@ def test_smoke_reads_the_pushed_results_and_annotations():
     assert ["smoke"] in tags
 
 
+VOLUME_GAUGES = {
+    "prometheus": "prometheus_tsdb_storage_blocks_bytes",
+    "tempo": "tempodb_backend_bytes_total",
+    "loki": "loki_ingester_chunk_size_bytes_sum",
+}
+
+
+def volume_caps() -> dict[str, str]:
+    """The size cap of each backend as DsyObsVolumeFilling writes it, by the backend's label."""
+    rules = yaml.safe_load((ROOT / "deploy/obs/prometheus/rules/stack.yaml").read_text())
+    [rule] = [
+        rule
+        for group in rules["groups"]
+        for rule in group["rules"]
+        if rule["alert"] == "DsyObsVolumeFilling"
+    ]
+    return {
+        backend: cap
+        for cap, backend in re.findall(r'> ([0-9.e]+),\s*"backend", "(\w+)"', rule["expr"])
+    }
+
+
+@pytest.mark.parametrize("name", ["stack-health", "cluster-health"])
+def test_volume_use_reads_the_backends_own_gauges_against_the_alert_caps(name):
+    """The kubelet of a local-path claim reports no stored bytes, so the panels read what the
+    DsyObsVolumeFilling alert reads, divided by the same cap."""
+    caps = volume_caps()
+    assert set(caps) == set(VOLUME_GAUGES)
+    text = exprs(name)
+    assert not any("kubelet_volume_stats" in e for e in text)
+    for backend, gauge in VOLUME_GAUGES.items():
+        assert any(gauge in e and e.endswith(f"/ {caps[backend]}") for e in text), backend
+
+
 def test_stack_health_covers_every_obs_module():
     modules = [
         yaml.safe_load(p.read_text()) for p in sorted((ROOT / "deploy/obs").glob("*/module.yaml"))
@@ -159,8 +193,7 @@ def test_stack_health_covers_every_obs_module():
         for e in text
         if "kube_" in e or "kubelet_" in e
     )
-    # Volume use and memory read the namespace, so a module added to it is covered without an edit.
-    assert any("kubelet_volume_stats_used_bytes" in e for e in text)
+    # Memory and replicas read the namespace, so a module added to it is covered without an edit.
     assert any("kube_deployment_status_replicas_available" in e for e in text)
     for ingest in (
         "prometheus_tsdb_head_samples_appended_total",

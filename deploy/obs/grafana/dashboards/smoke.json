@@ -283,7 +283,140 @@
             "spanNulls": false
           }
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "row 1"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "cluster-verify"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "row 2"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "api"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "row 3"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "broker"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "row 4"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "temporal"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "row 5"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "placement"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "row 6"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "job-submit"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "row 7"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "job-run"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "row 8"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "job-result"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "row 9"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "job-aggregate"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "row 10"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "dead-letters"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "row 11"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "telemetry"
+              }
+            ]
+          }
+        ]
       },
       "targets": [
         {
@@ -382,7 +515,140 @@
             "spanNulls": false
           }
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "row 1"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "cluster-verify"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "row 2"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "api"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "row 3"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "broker"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "row 4"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "temporal"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "row 5"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "placement"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "row 6"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "job-submit"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "row 7"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "job-run"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "row 8"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "job-result"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "row 9"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "job-aggregate"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "row 10"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "dead-letters"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "row 11"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "telemetry"
+              }
+            ]
+          }
+        ]
       },
       "targets": [
         {

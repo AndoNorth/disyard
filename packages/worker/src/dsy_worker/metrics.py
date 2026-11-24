@@ -71,5 +71,10 @@ class Metrics:
         self.counters["dsy_worker_tasks_total"].add(1, self._labels(exit_class))
         self.histograms["dsy_worker_task_seconds"].record(seconds, self._labels(exit_class))
 
+    def aggregated(self, inputs: int, rows: int) -> None:
+        """Counts the result files an aggregate read and the rows in them."""
+        self.counters["dsy_worker_aggregate_inputs_total"].add(inputs)
+        self.counters["dsy_worker_aggregate_rows_total"].add(rows)
+
     def heartbeat_lag(self, seconds: float) -> None:
         self.histograms["dsy_worker_heartbeat_lag_seconds"].record(seconds, {"pool": self.pool})

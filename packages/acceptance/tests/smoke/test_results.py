@@ -3,11 +3,13 @@ address, each test changing the record or what the fake refuses."""
 
 import base64
 import json
+from pathlib import Path
 
 from dsy_acceptance import smoke
 from dsy_acceptance.smoke import results
 
 ROWS = [*map(str, range(1, 12)), "run"]
+SMOKE_DASHBOARD = Path(__file__).resolve().parents[4] / "deploy/obs/grafana/dashboards/smoke.json"
 
 
 def run(capsys) -> tuple[int, list[str], str]:
@@ -134,3 +136,21 @@ def test_results_annotation_is_posted_with_basic_auth(fake_obs, capsys, monkeypa
     run(capsys)
     [(_, headers)] = [s for s in sent if s[0].endswith("/api/annotations")]
     assert base64.b64decode(headers["Authorization"].removeprefix("Basic ")) == b"admin:secret"
+
+
+def test_the_dashboard_names_each_row_series_by_the_row_it_numbers():
+    """A row is pushed under its number, so the per-row panels name each series by override."""
+    dashboard = json.loads(SMOKE_DASHBOARD.read_text())
+    named = {
+        panel["title"]: {
+            override["matcher"]["options"]: override["properties"][0]["value"]
+            for override in panel["fieldConfig"]["overrides"]
+        }
+        for panel in dashboard["panels"]
+        if panel.get("fieldConfig", {}).get("overrides")
+    }
+    expected = {f"row {i}": name.rstrip(":") for i, name in enumerate(results.ROWS, 1)}
+    assert named == {
+        "Seconds per row over runs": expected,
+        "Failures per row over runs": expected,
+    }
