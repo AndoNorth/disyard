@@ -316,7 +316,7 @@ metrics:
     labels: {}
   dsy_worker_aggregate_rows_total:
     type: counter
-    help: Result rows the aggregate pool wrote.
+    help: Result rows the aggregate pool read.
     labels: {}
 
   # The smoke gate, pushed once per run.
