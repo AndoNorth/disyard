@@ -18,14 +18,14 @@ from dsy_admission import service
 from dsy_admission.service import ENV, GLOBAL_CAP_ENV, PREFIX_ENV, READY_ENV, Config, ConfigError
 from dsy_admission.service.metrics import COUNTERS, GAUGES, HISTOGRAMS
 from dsy_broker.tenancy import load
+from dsy_broker import suite
 from dsy_broker.testing import FakeBroker
-from dsy_broker.topology import intake_queues
 from dsy_jobstate import request_action, transition
 from dsy_keys import workflow_id
 from dsy_workflow.models import StatusQuery
 from temporalio.api.enums.v1 import EventType
 
-[QUEUE] = intake_queues(load("ci"))
+QUEUE = suite.intake_queue()
 LIMIT_S = 600
 # Every variable the service needs, with values it refuses or never reaches before it connects.
 FULL = {
