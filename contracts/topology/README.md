@@ -1,7 +1,7 @@
 # Topology contract
 
 Owner epic: #2 (fixed-resource cluster and Tilt).
-Version: 3
+Version: 4
 Consumers: placement and workers, observability, load and chaos, and the cluster and namespace work inside the owner epic.
 
 The topology fixes how nodes are labelled and tainted into pools and which namespaces exist.

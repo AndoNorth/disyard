@@ -1,7 +1,7 @@
 # Broker contract
 
 Owner epic: #7 (broker, RabbitMQ).
-Version: 2, in [VERSION](VERSION).
+Version: 3, in [VERSION](VERSION).
 The [Consumers](#consumers) section names who reads each part.
 
 RabbitMQ is the intake buffer for submitted jobs and nothing else.

@@ -1,7 +1,7 @@
 # Artifact contract
 
 Owner epic: #4 (job event envelope and state propagation).
-Version: 5
+Version: 6
 The artifacts epic (#12) adds the failure taxonomy, the staging contract, the object caps, the aggregate index format and the reaper windows.
 The [Consumers](#consumers) section names who reads each file.
 

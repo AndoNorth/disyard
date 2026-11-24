@@ -1,7 +1,7 @@
 # Workload contract
 
 Owner epic: #11 (workload toolchain, guest contract and aggregate task).
-Version: 2, in [VERSION](VERSION).
+Version: 3, in [VERSION](VERSION).
 WIT contract version: 1.0.0, the version in the `package` line of [wit/task.wit](wit/task.wit).
 The [Consumers](#consumers) section names who reads each part.
 

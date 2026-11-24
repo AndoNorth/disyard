@@ -1,7 +1,7 @@
 # State contract
 
 Owner epic: #3 (durable state and artifact storage).
-Version: 5
+Version: 6
 Consumers: dispatch (#24), admission (#8), workflow (#6), broker (#7), artifacts (#12), observability (#13) and the characterization and soak epics (#16, #17).
 
 This directory pins the shape of the three table families of the platform, the retention windows of the safety net and the loader of those windows.

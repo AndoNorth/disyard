@@ -1,7 +1,7 @@
 # Tenancy contract
 
 Owner epic: #7 (broker, RabbitMQ).
-Version: 2, in [VERSION](VERSION).
+Version: 3, in [VERSION](VERSION).
 The [Consumers](#consumers) section names who reads each part.
 
 This directory pins the tenants, the priority classes and the caps of each preset, in one file that the broker, admission and dispatch all read.

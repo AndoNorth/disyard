@@ -1,7 +1,7 @@
 # Stages contract
 
 Owner epic: #4 (job event envelope and state propagation).
-Version: 4
+Version: 5
 Consumers: storage (#3), workflow (#6), admission (#8), placement (#9), workers (#10) and dispatch (#24).
 
 The stage table says, for each stage of the platform, which source it writes under, which context attributes and data fields it reads, and which event types it emits.
