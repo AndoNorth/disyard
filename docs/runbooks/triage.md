@@ -28,7 +28,8 @@ The job's status does not change, or the job never ends.
 1. Read the status: `curl -s http://127.0.0.1:18080/v1/tenants/acme/jobs/<job id>`.
    `accepted` means it is not admitted yet, see [Nothing is admitted](#nothing-is-admitted).
    `admitted` or `running` means it has a workflow, so open it in the Temporal UI at `http://127.0.0.1:18233/namespaces/wft/workflows/job-<job id>`.
-2. In the Temporal UI, a task that was scheduled and never started is waiting for a worker: open the `fleet` dashboard, panel "Task attempts by pool /s", and the `placement-pools` dashboard.
+2. In the Temporal UI, a task that was scheduled and never started is waiting for a worker: open the `fleet` dashboard, panel "Task attempts by pool /s", and the `placement-pools` dashboard, whose panel "Workers available by pool" reads 0 for a pool whose worker is gone.
+   No alert fires for a pool with no worker, so read that panel or `kubectl --context kind-wft -n wft-workers get deploy` first.
    Run `max by (taskqueue) (approximate_backlog_age_seconds{task_type="Activity"})`: a growing value is [WftPoolBacklogAgeHigh](alerts.md#wftpoolbacklogagehigh), and no pollers on the queue is [WftTemporalWorkerUnhealthy](alerts.md#wfttemporalworkerunhealthy).
 3. A task that started and keeps failing shows in the `workers` dashboard, panel "Attempts by pool and exit class".
    Compile failures are [WftCompileFailuresHigh](alerts.md#wftcompilefailureshigh), aggregate failures [WftAggregateFailuresHigh](alerts.md#wftaggregatefailureshigh), and memory kills [WftWorkerOOM](alerts.md#wftworkeroom).
@@ -72,13 +73,14 @@ A dashboard is empty, a log line is not in Loki, or a trace is not in Tempo.
    A full volume stops ingest, see [WftObsVolumeFilling](alerts.md#wftobsvolumefilling).
 4. A Loki query that returns nothing is usually a selector that is too wide or a range that is too long: always name one service and keep the range to minutes, see [following one job](../../deploy/obs/README.md#following-one-job).
 5. Temporal keeps a closed workflow's history for 24 hours, so a finished job's timeline is gone from the UI after a day while its logs and traces remain.
+   A collector that is gone loses logs and spans silently, and shows as `Replicas available by module` 0 and a failing `telemetry` row in `just smoke`.
 6. No series at all, and no `WftWatchdog` in the alerts, means Prometheus is down: [WftWatchdog](alerts.md#wftwatchdog).
 7. The stack runs only on a cluster created with `WFT_OBS=on`, and `just smoke` prints `observability off, not checked` otherwise.
 
 ### Submits fail or the API is not ready
 
 1. `curl -s http://127.0.0.1:18081/readyz` and the same on port 18080: `503` means a database login, the object store or Temporal is down, see [dispatch API readiness](../../deploy/dispatchapi/README.md#readiness).
-   A connection reset means the Service has no endpoint yet.
+   A connection reset, or status `000` from `curl`, means the Service has no endpoint: the pod is not ready, which the loss of the object store, a database or Temporal also causes, and it takes the status and cancel calls with it, so read `kubectl --context kind-wft -n wft-control logs deploy/dispatch` for the `not ready:` line.
 2. The `intake-admission` dashboard, panel "Rejections by reason /s", names the reason code of rejected entries, and the codes are in [the API contract](../../contracts/api/README.md#reason-codes).
 3. `TOO_MANY_CALLS` and the other limits are in [the API contract](../../contracts/api/README.md#limits).
 
