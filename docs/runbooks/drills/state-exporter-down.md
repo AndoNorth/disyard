@@ -17,7 +17,7 @@ kubectl --context kind-dsy -n dsy-obs scale deploy/state-inputs --replicas=0
 | --- | --- | --- |
 | Query | `count({__name__=~"dsy_state_.+"})` | 18 before, and no result 75 s after |
 | Query | `up{pod=~"state-inputs.*"}` | no series |
-| Dashboard | `stack-health`, panel "Replicas available by module" | `state-inputs` reads `0`, drawn in the same green as the healthy modules |
+| Dashboard | `stack-health`, panel "Replicas available by module" | `state-inputs` reads `0`, drawn in the same green as the healthy modules when the drill ran, and in red since the panel colours 0 |
 | Alert | [DsyTargetDown](../alerts.md#dsytargetdown) | `pending` while the pod terminated and gone 60 s later, never fired in 6 minutes |
 
 Nothing alerts on a missing exporter.
