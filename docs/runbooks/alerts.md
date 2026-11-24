@@ -75,7 +75,8 @@ The rule names its own threshold, and this page never restates it beyond what an
 - Means: admission moved intake messages to the dead-letter queue.
   The `reason` label is `MALFORMED`, `UNSUPPORTED_VERSION` or `ADMISSION_FAILED`.
 - Confirm: `sum by (reason) (increase(wft_admission_dead_lettered_total[10m]))` is above 0, and the dead-letter queue is not empty ([WftDeadLetterQueueNotEmpty](#wftdeadletterqueuenotempty) fires too).
-- Check first: the `intake-admission` dashboard, panel "Dead-lettered by admission, by reason", then `dlq list` for the reason and detail of each message, and the `admission` log for the job.
+- Check first: the `intake-admission` dashboard, panel "Dead-lettered by admission, by reason", then `dlq list` and `dlq show` for the reason and detail of each message.
+  Admission writes no log line when it dead-letters a message, so the log does not name the cause, and a malformed message names no job.
 - Resolve, by reason:
   - `MALFORMED` never recovers: `dlq show`, `dlq purge --reason MALFORMED --yes`, and end the named job through the control API (`POST /v1/tenants/acme/jobs/<job id>/cancel` with body `{"reason": "malformed intake message"}`).
   - `UNSUPPORTED_VERSION`: deploy a reader of that major version, then `dlq replay --reason UNSUPPORTED_VERSION`.
@@ -154,6 +155,7 @@ The rule names its own threshold, and this page never restates it beyond what an
 - Means: an intake queue has ready messages and no consumer for 10 minutes, so nothing admits the jobs of that queue.
 - Confirm: `rabbitmq_detailed_queue_consumers{queue=~"intake\\..+"} == 0` with `rabbitmq_detailed_queue_messages_ready` above 0, and `kubectl --context kind-wft -n wft-infra exec rabbitmq-0 -- rabbitmqctl list_queues name messages consumers`.
 - Check first: the admission pod (`kubectl --context kind-wft -n wft-control get deploy/admission`) and `increase(wft_admission_queue_missing_total[10m])`, which counts tries to consume a queue that the broker does not have.
+  The alert needs the broker's own queue series, so with the broker gone it cannot fire, see [WftAdmissionBreakerOpen](#wftadmissionbreakeropen) and [WftReconcilerBacklogOld](#wftreconcilerbacklogold).
 - Resolve: restart or repair admission, see [WftPodRestartUnexpected](#wftpodrestartunexpected).
   A queue the broker does not have is a topology difference, see [WftIntakePublishUnroutable](#wftintakepublishunroutable).
 
@@ -220,6 +222,8 @@ The rule names its own threshold, and this page never restates it beyond what an
   The worker exports its metrics but has no poller.
 - Confirm: the queue shows no pollers (`temporal task-queue describe`, or the task queue page of a workflow in the Temporal UI), and `kubectl --context kind-wft -n wft-control get deploy`.
 - Check first: the log of the owning service (`workflow-worker-<build id>` for `wft-workflow` and its control queue, `<pool>-worker` in `wft-workers` for a pool queue), and Temporal's own pods.
+  A worker Deployment scaled to zero removes its queue's series instead of setting it to 0, so the alert does not fire for it: read `kubectl --context kind-wft -n wft-workers get deploy` and the `placement-pools` panel "Workers available by pool".
+  When the Temporal frontend is down, the alert fires for Temporal's own queues (`default_worker_tq` and `temporal_sys_*`) and not for the queues of the platform.
 - Resolve: restart the deployment (`kubectl --context kind-wft -n wft-control rollout restart deploy/workflow-worker-<build id>`).
   A fresh cluster has no current build, so the first job waits until `just smoke` or the workflow harness makes the deployed build current.
 
@@ -239,6 +243,7 @@ The rule names its own threshold, and this page never restates it beyond what an
 - Confirm: `approximate_backlog_age_seconds{task_type="Activity"}`, and the `placement-pools` dashboard.
 - Check first: whether the pool worker is up and polling ([WftTemporalWorkerUnhealthy](#wfttemporalworkerunhealthy)), and whether the pool is saturated ([WftPoolSaturated](#wftpoolsaturated)).
   A pool runs one task at a time per node, so a backlog under load is expected.
+  A pool with no worker at all does not raise the alert, because the backlog age stayed at 0 with a task waiting for 17 minutes, so check `kubectl --context kind-wft -n wft-workers get deploy` as well.
 - Resolve: wait when the pool is busy and healthy, otherwise restore the worker.
   Pool width is the number of pool nodes of the preset, and the `soak` preset has two compile and two simulate nodes against one each in `ci`, see [the operator runbook](operator.md#presets-and-memory).
 
@@ -329,7 +334,8 @@ The rule names its own threshold, and this page never restates it beyond what an
 - Confirm: `http://127.0.0.1:19090/targets` after the forward, and `up == 0`.
 - Check first: the target's pod, `kubectl --context kind-wft -n <namespace> get pods`, and whether a NetworkPolicy blocks Prometheus (worker pools allow ingress from `wft-obs` on port 9464 only with the switch on).
 - Resolve: restore the pod.
-  A target that is down on purpose, such as a scaled-down deployment, should be restored or its deployment removed from the cluster.
+  The alert covers a pod that exists and cannot be scraped.
+  A deployment scaled to zero has no target, so nothing fires for it and `up` has no series: find it with `kubectl --context kind-wft get deploy,statefulset -A`, and for the observability modules the `stack-health` panel "Replicas available by module".
 
 ### WftWatchdog
 
@@ -346,6 +352,7 @@ The rule names its own threshold, and this page never restates it beyond what an
 - Check first: the collector, Loki and Tempo pods in `wft-obs` for restarts and memory (`stack-health`, "Memory in use against limit by module"), and [WftObsVolumeFilling](#wftobsvolumefilling).
 - Resolve: restore the backend that is slow or down, and reduce the log volume of the component if it floods.
   Lost records are not recovered.
+  The counters only rise when an export queue overflows, so a collector that is gone (scaled to zero, for example) loses its records with no count and no alert: the `telemetry` row of `just smoke` fails and the `stack-health` panel "Replicas available by module" reads 0 for the collector.
 
 ### WftObsVolumeFilling
 

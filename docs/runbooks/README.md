@@ -11,6 +11,7 @@ Start with [dev setup](../dev-setup.md) when the machine is new, then come here.
 | Which check proves what, what it costs and when to run it | [Validation matrix](validation-matrix.md) |
 | A symptom, and the dashboard and query that narrows it down | [Triage by symptom](triage.md) |
 | An alert is firing | [Alert response](alerts.md), one entry per rule |
+| What a failure looks like and how to recover, run on a cluster | [Failure drills](drills/README.md) |
 
 ## First hour
 
