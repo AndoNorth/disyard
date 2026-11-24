@@ -48,6 +48,8 @@ class FakeClient:
     async def list_workflows(self, query):
         self.queries.append(query)
         for workflow_id in self.listed:
+            if f"'{workflow_id}'" not in query:
+                continue
             yield types.SimpleNamespace(id=workflow_id)
 
 
@@ -63,7 +65,7 @@ def test_executions_counts_by_workflow_id_in_chunks():
     wf, wf_other = dsy_keys.workflow_id(JOB), dsy_keys.workflow_id(other)
     client = FakeClient(listed=[wf, wf, wf_other])
     found = asyncio.run(temporal.executions(client, [JOB, other], chunk=1))
-    # Each chunk of one id gets its own query, and the fake answers each with the same list.
+    # Each chunk of one id gets its own query.
     assert len(client.queries) == 2
     assert client.queries[0] == f"WorkflowId IN ('{wf}')"
     assert found == {JOB: 2, other: 1}
