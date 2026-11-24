@@ -1,6 +1,6 @@
 # Disyard
 
-Durable batch simulation, woven at scale.
+Dump in your jobs. Disyard runs them in order.
 
 <p align="center">
   <a href="https://github.com/AndoNorth/disyard/actions/workflows/ci.yml"><img alt="ci" src="https://github.com/AndoNorth/disyard/actions/workflows/ci.yml/badge.svg?branch=main"></a>
