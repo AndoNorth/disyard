@@ -16,12 +16,18 @@ PROBE = """
 import importlib
 import pkgutil
 
+import psycopg
 import temporalio
 import dsy_acceptance
 import dsy_broker
 import dsy_clusterkit
+import dsy_eventstore
+import dsy_jobstate
 import dsy_kernel
+import dsy_keys
 import dsy_obs
+import dsy_storecheck
+import dsy_temporal
 import dsy_workflow
 import dsy_workloads
 from dsy_acceptance.report import count_line, ok
@@ -72,10 +78,16 @@ def test_wheel_declares_the_dependency_set():
     assert sorted(project["dependencies"]) == [
         "dsy-broker",
         "dsy-clusterkit",
+        "dsy-eventstore",
+        "dsy-jobstate",
         "dsy-kernel",
+        "dsy-keys",
         "dsy-obs",
+        "dsy-storecheck",
+        "dsy-temporal",
         "dsy-workflow",
         "dsy-workloads",
+        "psycopg[binary]",
         "temporalio",
     ]
 
