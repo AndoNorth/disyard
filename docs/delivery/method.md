@@ -87,7 +87,7 @@ The lane issue template is a markdown template, not an issue form, because worke
    - `Tiltfile` loads one `deploy/<component>/Tiltfile.module` per owner.
 3. Every stub has a contract test that runs against the stub and against the real thing, so a stub cannot drift silently.
    Lane 0 writes the stub and the test, and the owning lane makes the real one pass it.
-4. `main` stays green (`nix develop -c just ci`).
+4. `main` stays green (the CI `check` job).
    There is no long-lived integration branch, and a lane that falls more than a day behind rebases.
    Within a lane, issues merge in order when the issue says `needs`, and across lanes any order works.
 5. Containers use a worker slot: project name `dsy-<slot>`, host ports `127.0.0.1:<base+slot*10+k>`, label `dsy.dev/verify-run=<run id>`.
@@ -111,7 +111,7 @@ Spikes that need a runtime but change no product file are the only work allowed 
 1. Every lane issue is closed with acceptance criteria ticked and evidence linked, as pasted output per the PR evidence section below.
 2. The exit test (spec section 7) passed from a clean export of `main`, run by a worker who did not write the lanes.
    The command output is kept in the PR and summarised in Closure.
-3. `just ci` is green on `main`, and when the epic added a CI job, one green run on `main` is linked in Closure.
+3. CI is green on `main`, and when the epic added a CI job, one green run on `main` is linked in Closure.
 4. Contracts produced are pinned at a version, and every consumer epic's spec links the version.
 5. The architecture note is refined, and diagrams are re-exported if touched (`scripts/export-diagrams.sh --check` clean).
 6. The epic issue carries a closing comment and is closed.
@@ -123,7 +123,7 @@ A pull request body follows the [template](../../.github/pull_request_template.m
 Every Test plan line is a checked box naming the exact command run, followed by a collapsed block holding the real output, response body or log lines, trimmed to the relevant part.
 Evidence is output that was captured, never a description of it, and a UI or rendered output carries a screenshot or rendered text.
 A criterion that cannot run yet says which later work it waits for.
-The local gate line names `nix develop -c just pre-pr` and pastes its `== unit tests:` and `== integration tests:` lines with the pytest summaries, or names `nix develop -c just ci` when `just pre-pr` asked for the full run.
+The local gate line names `nix develop -c just pre-pr` and pastes its `== unit tests:` and `== integration tests:` lines with the pytest summaries, or names `nix develop -c just ci --checks` and the `just ci --shard <name>` runs when `just pre-pr` asked for the full run.
 The green CI `check` run on the pull request is the full-gate evidence, linked by its run url.
 
 ## Comments
@@ -155,7 +155,7 @@ Retired on 2026-11-15 with the `verify` and `verify-clean` recipes (https://gith
 Each issue names its tests or commands, and each epic's exit test is a command checklist, run by a worker who did not write the lanes.
 Before reporting done, a worker runs `nix develop -c just pre-pr`, `just doctor` and every test or command the issue names, and reports the commit sha, each result, and what was not run and why.
 `just pre-pr` runs lint and the other checks of `just ci`, the unit tests of the changed packages and of the packages that depend on them, and the integration tests of the changed packages.
-When it prints `full run required`, the change reaches tests no package owns, and the worker runs `nix develop -c just ci` instead.
+When it prints `full run required`, the change reaches tests no package owns, and the worker runs `nix develop -c just ci --checks`, plus `just ci --shard <name>` for each shard that owns tests the change can reach (`scripts/ci-shards.sh` lists them), instead of the whole serial `just ci`.
 The pull request's CI run is the full proof, and the merge gate does not change.
 `just verify-lint`, part of `just ci` and of `just pre-pr`, still checks any `verify-<domain>` skill that exists, and passes when none does.
 
