@@ -44,7 +44,8 @@ jobs:
           sysctl fs.inotify.max_user_instances fs.inotify.max_user_watches
           sudo sysctl -w fs.inotify.max_user_instances=1280 fs.inotify.max_user_watches=655360
       - run: nix develop -c just up
-      - run: nix develop -c scripts/tilt/run.sh ci
+      - run: nix develop -c scripts/tilt/run.sh ci --timeout 12m
+        timeout-minutes: 15
       - name: Store contract script
         shell: nix develop -c bash -euo pipefail {0}
         run: |
