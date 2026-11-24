@@ -19,7 +19,8 @@ A budget is a limit the code or the workflow enforces.
 | Link check | `scripts/check-links.sh` | no relative Markdown link is dead | seconds, not measured | the flake only | after any Markdown change, `just ci` runs it |
 | Integration tests | `nix develop -c just itest [domain]` | the services against real containers started by `dsy_itest`: RabbitMQ, Postgres, the object store, Temporal | not measured, grows with the domains run | Docker, free ports (`just ports`) | before a push that touches a service, `just itest broker` limits it to one package |
 | Pre-PR gate | `nix develop -c just pre-pr` | the docs path of `just ci`, the unit tests of the changed packages and their dependents, and the integration tests of the changed packages | not measured, depends on the diff | Docker for the integration part | before opening a pull request |
-| Full CI gate | `nix develop -c just ci` | everything CI's `check` job runs: lint, links, contracts map, self-tests, every shard's unit and integration tests, and `nix flake check` | not measured, the longest local check | Docker | before a change outside `packages/`, where `just pre-pr` says `full run required` |
+| Checks gate | `nix develop -c just ci --checks` | CI's `checks` job: lint, links, contracts map, self-tests and `nix flake check` | about 30 seconds | the flake only | before a change outside `packages/`, where `just pre-pr` says `full run required` |
+| One test shard | `nix develop -c just ci --shard <name>` | one shard's unit then integration tests, as CI runs it; `scripts/ci-shards.sh` lists the shards | about 10 minutes, queues on the integration lock | Docker | after the checks gate, for the shard that owns the tests the change can reach |
 | Security scans | `nix develop -c just scan [deps \| images \| secrets]` | no high or critical finding in the locked dependencies, in each service image, or in the git history, beyond the accepted ones in `security/trivy-ignore.yaml` | not measured, `images` builds every image | `images` needs Docker, `deps` and `images` fetch the Trivy database | before a release, CI runs it on every pull request and weekly |
 | Kind smoke (CI) | the `kind-smoke` workflow: `just up`, then `just down` | a six-node cluster comes up on a clean runner for preset `ci` and goes down again | 30 min, budget of the workflow | a GitHub runner | automatic, skipped for a documentation-only pull request |
 | State modules (CI) | the `state-modules` workflow: `just up`, `scripts/tilt/run.sh ci`, then the migration check | the database, Temporal database and object store modules deploy and migrate | not measured | a GitHub runner | automatic, on a change to those paths |
@@ -76,7 +77,7 @@ With the stack on, the run also pushes its verdicts to Prometheus, and the `smok
 | Documentation only | `just lint`, `scripts/check-links.sh`, `just pre-pr` |
 | One package under `packages/` | `just test`, `just pre-pr` |
 | An alert rule or its runbook entry | the alert rule tests, `just lint` |
-| A module under `deploy/` | `just ci`, then a cluster: `just up`, `scripts/tilt/run.sh ci`, `just smoke` |
-| A preset or a node size | `just ci`, `just nuke`, `just up`, `just cluster-verify`, `scripts/cluster/canary.sh all` |
-| A contract | `just contracts-map`, `just ci` |
+| A module under `deploy/` | `just ci --checks`, `just ci --shard rest`, then a cluster: `just up`, `scripts/tilt/run.sh ci`, `just smoke` |
+| A preset or a node size | `just ci --checks`, `just nuke`, `just up`, `just cluster-verify`, `scripts/cluster/canary.sh all` |
+| A contract | `just contracts-map`, `just ci --checks` |
 | Dependencies or an image | `just scan` |

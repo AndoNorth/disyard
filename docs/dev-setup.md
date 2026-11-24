@@ -198,7 +198,7 @@ The formatters and whitespace fixers rewrite a file and fail the commit, so stag
 The lint fixtures, the byte-exact `contracts/**/vectors/` files and the generated draw.io diagrams are excluded.
 A push that changes only docs runs none of the pre-push checks, and `just pre-push` without a name runs them all.
 The pre-push gate is a subset of `just ci`, because the unit and integration tests and the flake check take minutes.
-The full `just ci` stays the CI gate.
+The CI jobs are the full gate.
 
 Bypass either stage for one command with `--no-verify`:
 
@@ -273,9 +273,19 @@ A change outside `packages/` that `scripts/ci-paths.sh` does not count as docume
 A stacked branch passes its base, as in `just pre-pr <base branch>`.
 
 `nix develop -c just ci` is the same gate as the CI jobs together, with every shard's tests in one run.
+On a full path that is the CI shards one after another on one host, about an hour of serial work against about 12 minutes of CI wall time, so it is not the local default.
+When `just pre-pr` prints `full run required`, run `nix develop -c just ci --checks` (about 30 seconds, lint, links, self-tests and the flake check) and then `just ci --shard <name>` for the shard that owns the tests the change can reach.
+The pull request's CI run covers the rest.
 It takes the docs path when every file changed against the merge base with `origin/main`, uncommitted and untracked files included, is documentation.
 `just ci --docs` and `just ci --full` force a path, and `just ci --shard <name>` runs one shard's tests as CI does.
 Lint on the workflow file is part of it, so a line over 120 columns in `ci.yml` fails before the push.
+
+Integration tests hold a host-wide lock, shared by every worktree and agent on the machine.
+`just itest`, `just ci --shard`, a full `just ci`, `just pre-pr` (its integration step) and a direct `pytest -m integration` queue on `/tmp/dsy-t1.*.lock`, while `just test`, `just ci --checks` and `just ci --docs` do not.
+Any run that includes a package with `pair` tests takes both lock files, so it excludes every other integration run on the host until its pytest process exits.
+A waiter polls for 30 minutes and then fails with `LockTimeout`, which reads like a test failure; `DSY_T1_LOCK_TIMEOUT` overrides the wait.
+A full `just ci` holds the lock for most of an hour, so another agent's integration run started meanwhile times out.
+Run one integration command at a time per host, and prefer one `--shard` over the whole run.
 
 ## Troubleshooting
 
@@ -298,8 +308,8 @@ On a clean checkout, with the host prerequisites in place:
 - [ ] `nix develop -c just doctor` exits 0, prints no `fail` line, and prints an `ok path-provenance` line saying the tools resolve first to the flake.
   A `warn memory-vs-preset` is acceptable only with `DSY_OBS=on`, see the table above.
 - [ ] `nix develop -c just --list` prints the recipe table above, one name per recipe.
-- [ ] `nix develop -c just ci` exits 0, ending with `all checks passed!` from `nix flake check`.
-  The unit and integration tests run unless only documentation changed.
+- [ ] `nix develop -c just ci --checks` exits 0, ending with `all checks passed!` from `nix flake check`.
+  The unit and integration tests run in CI, one `just ci --shard <name>` per shard.
 - [ ] The reproducibility check prints one `/nix/store/...-nix-shell.drv` path and exits 0.
   The two exports give the same path, otherwise it prints `drvPath differs` and exits 1.
 - [ ] The CI `check` job is green on the pull request.
