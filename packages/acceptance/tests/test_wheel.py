@@ -70,13 +70,13 @@ def clean_python(tmp_path_factory) -> Path:
 def test_wheel_declares_the_dependency_set():
     project = tomllib.loads((ROOT / "packages/acceptance/pyproject.toml").read_text())["project"]
     assert sorted(project["dependencies"]) == [
-        "temporalio",
         "dsy-broker",
         "dsy-clusterkit",
         "dsy-kernel",
         "dsy-obs",
         "dsy-workflow",
         "dsy-workloads",
+        "temporalio",
     ]
 
 

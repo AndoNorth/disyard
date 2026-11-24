@@ -73,12 +73,12 @@ def clean_python(tmp_path_factory) -> Path:
 def test_wheel_declares_the_dependency_set():
     project = tomllib.loads((ROOT / "packages/obs/pyproject.toml").read_text())["project"]
     assert sorted(project["dependencies"]) == [
+        "dsy-events",
         "opentelemetry-exporter-otlp-proto-http",
         "opentelemetry-sdk",
         "pyroscope-io",
         "pyyaml",
         "temporalio",
-        "dsy-events",
     ]
 
 

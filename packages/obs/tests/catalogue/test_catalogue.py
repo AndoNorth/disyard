@@ -96,7 +96,7 @@ def test_absent_lists_the_entries_with_no_sample(fake):
     sample = [{"metric": {}, "value": [0, "1"]}]
     fake.vectors["count(last_over_time(dsy_a[10m]))"] = sample
     fake.vectors["count(last_over_time(dsy_b_seconds_bucket[10m]))"] = sample
-    assert catalogue.absent(fake.url, small) == ["ext_d", "dsy_c_total"]
+    assert catalogue.absent(fake.url, small) == ["dsy_c_total", "ext_d"]
 
 
 @pytest.mark.cluster
