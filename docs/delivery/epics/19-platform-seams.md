@@ -911,10 +911,10 @@ WFL has no H2 item, because the workflow service already uses `dsy_obs.metrics.r
 - Needs: L0.
 
 **TS-3 `dsy_workflow.testing`: dev server, client, rig, builders** - L, judge
-- Scope: factories for the Temporal dev server with the parameters the 12 sites use (scope, namespace, `--db-filename`, search attributes from `naming.yaml` as a layer); `client()` with the tracing interceptor; a `Rig` skeleton (workflow worker through `workflow_worker`, a control worker, `versioning.set_current`, ordered shutdown) with plan, emit and pool script as parameters; `accepted_event(...)` and a plan builder from `workflow/tests/workflow/conftest.py:64 _plan`; one `build_id` fixture replacing the module-level `os.environ.setdefault` at 4 conftests; `make_current` replaced by `versioning.set_current`, whose `TimeoutError` is stricter (scout, C F5).
+- Scope: factories for the Temporal dev server with the parameters the 12 sites use (scope, namespace, `--db-filename`, search attributes from `naming.yaml` as a layer); `client()` with the tracing interceptor; a `Rig` skeleton (workflow worker through `workflow_worker`, a control worker, `versioning.set_current`, ordered shutdown) with plan, emit, pool script and the placer as parameters, the placer supplied by the caller and never built inside `dsy_workflow/testing`, so the one `workflow_worker(.*StaticPlacer()` line of the harness stays the only one in `packages/*/src`; `accepted_event(...)` and a plan builder from `workflow/tests/workflow/conftest.py:64 _plan`; one `build_id` fixture replacing the module-level `os.environ.setdefault` at 4 conftests; `make_current` replaced by `versioning.set_current`, whose `TimeoutError` is stricter (scout, C F5).
 - Criteria: each factory has a test in `packages/workflow/tests/`; `dsy_workflow.testing.connect(address, attempts=...)` keeps its signature (`acceptance/clients/temporal.py:11`); the fixtures are factories with a one-line wrapper per consumer, which is the default, and become an entry-point plugin only if spike S1 passes.
 - Verifier: `scripts/test.sh packages/workflow`, `scripts/itest.sh workflow`, `scripts/itest.sh acceptance`.
-- Consumes / produces: consumes `workflow_worker` and `control_worker`; produces the `dsy_workflow.testing` factories and `Rig`.
+- Consumes / produces: consumes `workflow_worker` and `control_worker`; produces the `dsy_workflow.testing` factories and a `Rig` that takes the placer as a parameter.
 - Needs: L0.
   Spike S1 only decides plugin versus wrapper, and the wrapper is the default.
 
@@ -1125,7 +1125,7 @@ The numbers in "Before" were measured with the same commands on `main` at `ee88f
 | C1 | `just up`, `DSY_BUILD_ID=exit-a scripts/tilt/run.sh ci`, `just cluster-verify`, each taking the cluster lock itself with no outer `flock`, because a script would otherwise wait on a lock its own caller holds (or all three inside one `flock /tmp/dsy-cluster.lock` with `DSY_CLUSTER_LOCK_HELD=1` exported) | exit 0 for each; the four logins applied by `just up` |
 | C2 | `just smoke`, three times in a row on the one deploy | exit 0 each, the three summary lines recorded |
 | C3 | `python -m dsy_dispatchapi.smoke --scenario pause-resume`, then `cancel-before-start`, then `restart` (the last needs the cluster free of other jobs) | each exits 0 |
-| C4 | `kubectl --context kind-dsy -n dsy-control get pods`, then `kubectl ... logs deploy/admission \| head`, then the same for `dispatch-api`, `workflow-worker`, `placement` | all Ready; no Python traceback in the start-up lines |
+| C4 | `kubectl --context kind-dsy -n dsy-control get pods`, then `kubectl --context kind-dsy -n dsy-control logs deploy/admission \| head`, then the same for `deploy/dispatch`, `deploy/workflow-worker` and `deploy/placement` | all Ready; no Python traceback in the start-up lines |
 | C5 | on the same deploy, `kubectl ... delete pod` of admission with its grace period, then `just smoke` | exit 0, which shows the shared stop code drains in a real pod |
 | C6 | `just doctor`, `just down`, `just nuke` twice | exit 0 for each, and `just nuke` repeats cleanly |
 | C7 | `just e2e`, which issue #682 delivers before this epic starts its service lanes | exit 0, and the same result as at the gate |
