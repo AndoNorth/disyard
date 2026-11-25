@@ -853,7 +853,7 @@ WFL has no H2 item, because the workflow service already uses `dsy_obs.metrics.r
 
 **DB-3 One `logins.sh`** - S, mech
 - Scope: `scripts/storage/db/logins.sh <service> [apply|check]` holds the port-forward wait loop once; each `deploy/*/logins.sh` becomes a wrapper of at most 5 lines with its path unchanged, so no `Tiltfile.module` changes.
-- Criteria: `grep -rn 'Forwarding from' deploy/*/logins.sh` prints nothing; the wrappers pass `shellcheck` through `scripts/lint.sh`; on the cluster in CP2, `just up` and the module deploy apply the four logins and `just cluster-verify` passes.
+- Criteria: `grep -rn 'Forwarding from' deploy/*/logins.sh deploy/obs/state-inputs/logins.sh` prints nothing; the wrappers pass `shellcheck` through `scripts/lint.sh`; on the cluster in CP2, `just up` and the module deploy apply the four logins and `just cluster-verify` passes.
 - Verifier: `scripts/lint.sh` and the CP2 cluster rows.
 - Consumes / produces: consumes DB-2; produces `scripts/storage/db/logins.sh`.
 - Needs: DB-2.
@@ -943,7 +943,7 @@ WFL has no H2 item, because the workflow service already uses `dsy_obs.metrics.r
 
 **RIG-W-2 The three rigs that bypass `workflow_worker`, and the seven control workers** - S, mech
 - Scope: closes #464's literal ask: `admission/tests/scan/conftest.py:326`, `admission/tests/service/conftest.py:288`, `dispatchapi/tests/control/conftest.py:196` and the seven `Worker(client, task_queue=control_queue(...)` copies, plus the `Rig`'s control worker, use `workflow_worker` and `control_worker`.
-- Criteria: `grep -rn 'place_activity(StaticPlacer())' packages/*/tests` lists only the two kept workflow files, `packages/workflow/tests/test_worker.py` and `packages/workflow/tests/test_placer_contract.py`, and `grep -rn 'place_activity(StaticPlacer())' packages/*/src` lists only files under `packages/workflow/src/dsy_workflow/testing/`, the single helper definition; `packages/workflow/tests/test_worker.py:138` still shows the placer on a `dsy-workflow-activity` thread, and a copy of that assertion runs through an admission rig.
+- Criteria: `grep -rn 'place_activity(StaticPlacer())' packages/*/tests` lists only the two kept workflow files, `packages/workflow/tests/test_worker.py` and `packages/workflow/tests/test_placer_contract.py`, and `grep -rn 'workflow_worker(.*StaticPlacer()' packages/*/src` lists exactly one line, `packages/workflow/src/dsy_workflow/harness/__init__.py:438` (the harness helper, one hit before and after); `packages/workflow/tests/test_worker.py:138` still shows the placer on a `dsy-workflow-activity` thread, and a copy of that assertion runs through an admission rig.
 - Verifier: `scripts/itest.sh admission`, `scripts/itest.sh dispatchapi`, `scripts/itest.sh workflow`.
 - Consumes / produces: consumes `workflow_worker`, `control_worker` and the `Rig`; produces nothing new.
 - Needs: TS-3, RIG-A-1, RIG-D-1 (it edits the same rigs after they migrate).
@@ -1063,6 +1063,7 @@ Both spikes write only a note under `docs/delivery/spikes/` and throwaway code b
 
 Run by a worker who did not write the lanes, on a clean `git archive` export of `main` taken outside any git repository, with Docker running and the cluster free for rows C1 to C7.
 Each command runs from the export root as `nix develop -c`, and Python commands take `uv run --frozen`.
+Inside a table cell `\|` is the Markdown escape for `|`, so it means a plain `|` (alternation or pipe) when the command is run, and the exit worker runs the unescaped command, never the raw cell text.
 Each row's real output is the evidence file `exit-test/<row>.txt` beside the export, pasted in the pull request that records the run and summarised in Closure.
 The export has no git checkout, so `DSY_BUILD_ID` is set for cluster rows (the workflow module requires it outside one), and counts use `grep -rn --include='*.py'`.
 
@@ -1110,7 +1111,7 @@ The numbers in "Before" were measured with the same commands on `main` at `ee88f
 | E-10 | `db` fixtures | `grep -rn --include='*.py' 'def db(' packages/*/tests` | 9 | at most 1 |
 | E-11 | test files that create roles | `grep -rln --include='*.py' 'CREATE ROLE' packages/*/tests` | 11 | at most 2, each named |
 | E-12 | own free-port sockets in tests | `grep -rln --include='*.py' -E 'bind\(\("127.0.0.1", 0\)\)' packages/*/tests deploy` | 16 | 0 |
-| E-13 | executors made by admission and dispatch test rigs | `grep -rn --include='*.py' 'ThreadPoolExecutor(' packages/admission/tests packages/dispatchapi/tests` | 5 | 0 |
+| E-13 | executors made by admission and dispatch test rigs | `grep -rn --include=conftest.py 'ThreadPoolExecutor(' packages/admission/tests packages/dispatchapi/tests` (the two `with ThreadPoolExecutor(1) as pool:` blocks in `packages/dispatchapi/tests/control/test_routes.py:221,242` are not rig executors and are not counted) | 3 | 0 |
 | E-14 | uncached contract readers | `grep -n -B1 -E '^def (naming\|pools)' packages/workflow/src/dsy_workflow/contract.py` | no `@cache` | `@cache` on both |
 
 ### 10.3 Epic rows
