@@ -1,8 +1,8 @@
 smoke:
     scripts/smoke.sh
 
-e2e:
-    scripts/e2e.sh
+e2e *args:
+    scripts/e2e.sh {{args}}
 
 load-test:
     scripts/load-test.sh

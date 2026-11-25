@@ -25,8 +25,17 @@ shift 5
 exec "$@"
 """,
     # The smoke driver and the suite both run through uv.
-    "uv": 'case "$*" in *dsy_acceptance.smoke*) exit "${FAKE_SMOKE_EXIT:-0}" ;; esac\n'
-    'exit "${FAKE_UV_EXIT:-0}"',
+    # FAKE_SUITE_EXITS: the suite's exit per pass, space separated, the last entry repeating.
+    "uv": """case "$*" in *dsy_acceptance.smoke*) exit "${FAKE_SMOKE_EXIT:-0}" ;; esac
+if [ -n "${FAKE_SUITE_EXITS:-}" ]; then
+    echo x >>"$FAKE_LOG.suite"
+    n=$(wc -l <"$FAKE_LOG.suite")
+    set -- $FAKE_SUITE_EXITS
+    [ "$n" -le "$#" ] || n=$#
+    exit "${!n}"
+fi
+exit "${FAKE_UV_EXIT:-0}"
+""",
 }
 
 
@@ -40,7 +49,7 @@ def bin_dir(tmp_path) -> Path:
         fake.write_text(f"#!{BASH}\n{log}\n{body}\n")
         fake.chmod(0o755)
     # What the real obs.sh and smoke.sh run on.
-    for name in ("dirname", "cat", "env", "bash"):
+    for name in ("dirname", "cat", "env", "bash", "wc"):
         (bin_dir / name).symlink_to(shutil.which(name))
     state = tmp_path / "state"
     state.mkdir()
@@ -48,12 +57,12 @@ def bin_dir(tmp_path) -> Path:
     return bin_dir
 
 
-def e2e(bin_dir: Path, **env: str) -> tuple[subprocess.CompletedProcess, list[str]]:
+def e2e(bin_dir: Path, *args: str, **env: str) -> tuple[subprocess.CompletedProcess, list[str]]:
     log = bin_dir.parent / "calls.log"
     log.touch()
     base = {k: v for k, v in os.environ.items() if not k.startswith(("DSY_", "FAKE_"))}
     result = subprocess.run(
-        [BASH, E2E],
+        [BASH, E2E, *args],
         capture_output=True,
         text=True,
         env={
@@ -153,3 +162,63 @@ def test_a_suite_killed_on_the_budget_fails_with_the_wrapper_summary(bin_dir):
     result, _ = e2e(bin_dir, FAKE_TIMEOUT_EXIT="137")
     assert result.returncode == 1
     assert result.stdout.splitlines() == ["FAIL budget", "e2e ci: budget ran out after 600 s"]
+
+
+def flocks(calls):
+    return [c for c in calls if c.split()[0] == "flock"]
+
+
+def test_a_loop_of_green_passes_takes_the_lock_once(bin_dir):
+    result, calls = e2e(bin_dir, "--loop", "3")
+    assert result.returncode == 0
+    assert result.stdout.splitlines() == [
+        "pass 1/3 ok",
+        "pass 2/3 ok",
+        "pass 3/3 ok",
+        "e2e loop: 3 ok, 0 failed",
+    ]
+    assert flocks(calls) == ["flock lock= -w 900 9"]
+    assert sum("pytest" in c and c.startswith("uv") for c in calls) == 3
+
+
+def test_a_loop_stops_at_the_first_failed_pass(bin_dir):
+    result, calls = e2e(bin_dir, "--loop", "3", FAKE_SUITE_EXITS="0 1 0")
+    assert result.returncode == 1
+    assert result.stdout.splitlines() == [
+        "pass 1/3 ok",
+        "pass 2/3 FAIL (exit 1)",
+        "e2e loop: 1 ok, 1 failed",
+    ]
+    assert len(flocks(calls)) == 1
+    assert sum("pytest" in c and c.startswith("uv") for c in calls) == 2
+
+
+def test_a_refusal_in_the_first_pass_exits_4(bin_dir):
+    result, calls = e2e(bin_dir, "--loop", "3", FAKE_KIND_OUT="other")
+    assert result.returncode == 4
+    assert result.stdout.splitlines() == ["pass 1/3 FAIL (exit 4)", "e2e loop: 0 ok, 1 failed"]
+    assert not any("pytest" in c for c in calls)
+
+
+def test_a_loop_pass_gets_the_smoke_gate_first(bin_dir):
+    result, _ = e2e(bin_dir, "--loop", "2", FAKE_SMOKE_EXIT="1")
+    assert result.returncode == 1
+    assert result.stdout.splitlines() == ["pass 1/2 FAIL (exit 1)", "e2e loop: 0 ok, 1 failed"]
+
+
+@pytest.mark.parametrize(
+    "args",
+    [
+        ("--loop",),
+        ("--loop", "0"),
+        ("--loop", "-1"),
+        ("--loop", "x"),
+        ("--loop", "2", "3"),
+        ("-x",),
+    ],
+)
+def test_a_bad_loop_argument_is_usage(bin_dir, args):
+    result, calls = e2e(bin_dir, *args)
+    assert result.returncode == 2
+    assert result.stderr.startswith("usage: e2e.sh [--loop <n>]")
+    assert calls == []
