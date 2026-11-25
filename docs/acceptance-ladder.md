@@ -122,9 +122,9 @@ The smoke gate reads none of them, and adds no row to this table.
 
 | Read | Through | Why it is not a public surface |
 | --- | --- | --- |
-| The job row and the events of a job (`events_for_job`) | a named read-only Postgres client of `dsy_acceptance`, with a read-only login | The accepted row existing before the publish is confirmed, and one job row for a repeated key, are not visible through the API |
+| The job row, the events of a job (`events_for_job`) and the compile cache entry row that names a wasm and its build-info | a named read-only Postgres client of `dsy_acceptance`, with a read-only login | The accepted row existing before the publish is confirmed, and one job row for a repeated key, are not visible through the API |
 | Workflow history and describe, search by workflow id | the Temporal client | One workflow per job, and the lifecycle events in the history |
-| The wasm objects and the compile cache entry | the object store, with the `workflow` role as an extra read-only identity (get and list on sources, components and results) | The read-only `export` identity has the results bucket only |
+| The wasm objects and their build-info | the object store, with the `workflow` role as an extra read-only identity (get and list on sources, components and results) | The read-only `export` identity has the results bucket only |
 | Stored results, `results.xml` and `summary.json`, by reference | the object store, with the `export` identity | Results are read by the references the API returns |
 | The dead-letter queue and the count of its messages | the broker client of `dsy_acceptance` and the dead-letter tool | A rejected intake message is visible only in the queue |
 | Pods of the pool and process lists | `kubectl exec` | The aggregate runs as a native task with no `wasmtime` process, which no API shows |
