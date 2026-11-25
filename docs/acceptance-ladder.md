@@ -126,7 +126,7 @@ The smoke gate reads none of them, and adds no row to this table.
 | Workflow history and describe, search by workflow id | the Temporal client | One workflow per job, and the lifecycle events in the history |
 | The wasm objects and their build-info | the object store, with the `workflow` role as an extra read-only identity (get and list on sources, components and results) | The read-only `export` identity has the results bucket only |
 | Stored results, `results.xml` and `summary.json`, by reference | the object store, with the `export` identity | Results are read by the references the API returns |
-| The dead-letter queue and the count of its messages | the broker client of `dsy_acceptance` and the dead-letter tool | A rejected intake message is visible only in the queue |
+| The dead-letter queue, its letters with their reason codes and bodies, and the purge of N4's own letters | the broker client of `dsy_acceptance` and the dead-letter tool, with the `dispatch` broker user publishing the two poison events to the intake queue | A rejected intake message is visible only in the queue, and a malformed event cannot be submitted through the API |
 | Pods of the pool and process lists | `kubectl exec` | The aggregate runs as a native task with no `wasmtime` process, which no API shows |
 | Admission replicas | `kubectl scale`, a write | Held at zero by N5 so a job stays `accepted`, and restored in a `finally` |
 
