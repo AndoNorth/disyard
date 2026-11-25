@@ -67,17 +67,17 @@ No logic lives in the justfile, and each real recipe calls `scripts/<name>.sh`.
 | `cluster-verify` | real | - | read-only checks that the cluster `dsy` matches `DSY_PRESET` (default `ci`): preset, pod slots, module budget, nodes, node limits, quotas, module readiness, live requests, pressure and loopback ports, one `ok` or `FAIL` line each |
 | `smoke` | real | - | the smoke gate: attaches to the running `ci` cluster, checks every layer and runs one job to its known answer within 300 s, see [the validation matrix](runbooks/validation-matrix.md#the-smoke-rows) |
 | `scan [deps \| images \| secrets]` | real | - | the security scans, see [Security scans](#security-scans) |
-| `e2e` | stub | acceptance | end-to-end run |
+| `e2e` | real | - | the end-to-end run: the smoke gate, then the level 4 scenarios, in a 600 s budget, see [the test ladder](acceptance-ladder.md) |
 | `load-test` | stub | load | load generation |
 | `characterize` | stub | characterization | characterization run |
 
 A stub fails the way a real failure does, so a script cannot mistake it for success:
 
 ```text
-$ nix develop -c just e2e
-scripts/e2e.sh
-not implemented: owned by #17
-error: recipe `e2e` failed on line 2 with exit code 3
+$ nix develop -c just load-test
+scripts/load-test.sh
+not implemented: owned by #14
+error: recipe `load-test` failed on line 2 with exit code 3
 ```
 
 ### Port check

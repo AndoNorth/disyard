@@ -27,6 +27,7 @@ A budget is a limit the code or the workflow enforces.
 | Node limit canaries | `nix develop -c scripts/cluster/canary.sh all` | the node limits are real: a memory hog is OOM-killed, an oversized pod stays Pending, the pool taint holds, a spinner is throttled | not measured | a running cluster | after changing a preset or a node size |
 | Cluster verify | `nix develop -c just cluster-verify` | the running cluster is the one its preset describes and every module is ready, within budget, with nothing pressured and every port on loopback | tens of seconds, 90 s limit inside `just smoke` | a running cluster with the modules deployed | after `just up` and after any host event |
 | Smoke | `nix develop -c just smoke` | every layer answers and one real job goes through and produces the known answer, see [the rows](#the-smoke-rows) | 300 s, budget | a running `ci` cluster with the modules deployed | after every deploy, and before any larger run |
+| End to end | `nix develop -c just e2e` | the smoke gate, then the level 4 scenarios of the [test ladder](../acceptance-ladder.md), which are not written yet, so a run ends `FAIL scenarios none collected` | 600 s budget after the smoke gate, a proposal until a first measured run | a running `ci` cluster with the observability stack on | before the proof of concept is called done, nightly or locally |
 | API scenarios | `uv run --frozen python -m dsy_dispatchapi.smoke --scenario <name>` | submit, cancel, pause and resume, and a pod restart in the middle of a batch, through the deployed API | not measured | a running `ci` cluster, free of other jobs for `restart` | when the dispatch or control path changed |
 | Failure drills | the steps of [a drill](drills/README.md) | an alert, a dashboard and a log show the failure that was caused, and the recovery works | 5 to 20 minutes for each drill, measured | a running `ci` cluster with the observability stack on | after changing an alert rule, a dashboard or a runbook entry |
 | Live check | [dashboards and wiring](drills/live-check.md) | every dashboard loads and each service's metrics, logs and traces reach the stack | about 15 minutes, not measured to the end | a running `ci` cluster with the observability stack on, after `just smoke` | after changing a dashboard or a service's telemetry |
@@ -38,7 +39,6 @@ These are named by recipes or presets and prove nothing today.
 
 | Check | State |
 | --- | --- |
-| `just e2e` | level 4 of the [test ladder](../acceptance-ladder.md), a stub that exits 3 with `not implemented: owned by #17`, and the ladder lists its scenarios, budget and direct reads |
 | `just load-test` | a stub that exits 3 |
 | `just characterize` | a stub that exits 3 |
 | Soak | the `soak` preset and `scripts/tilt/run.sh soak` exist, and no soak run or pass criterion does yet |

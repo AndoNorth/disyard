@@ -47,11 +47,11 @@ def skip(name: str, reason: str) -> Row:
     return Row(SKIPPED, name, reason)
 
 
-def count_line(preset: str, rows: Iterable[Row], elapsed_s: float) -> str:
-    """Every row counts in exactly one bucket."""
+def count_line(preset: str, rows: Iterable[Row], elapsed_s: float, gate: str = "smoke") -> str:
+    """Every row counts in exactly one bucket, and `gate` names the level that ran."""
     verdicts = [row.verdict for row in rows]
     return (
-        f"smoke {preset}: {verdicts.count(OK)} ok, {verdicts.count(FAILED)} failed, "
+        f"{gate} {preset}: {verdicts.count(OK)} ok, {verdicts.count(FAILED)} failed, "
         f"{verdicts.count(SKIPPED)} skipped, {elapsed_s:.0f} s"
     )
 
