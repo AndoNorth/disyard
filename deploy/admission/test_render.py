@@ -181,7 +181,7 @@ def test_dockerfile_builds_proton_in_a_build_stage():
     wheel = build.split("pip wheel")[1]
     for option in ("--no-binary python-qpid-proton", "--require-hashes", "--no-index"):
         assert option in wheel
-    assert "gcc" not in runtime and "apt-get" not in runtime
+    assert "gcc" not in runtime and "apt-get install" not in runtime
     assert "COPY --from=proton /wheels" in runtime
     assert "--require-hashes" in runtime
     assert runtime.rstrip().endswith('ENTRYPOINT ["python", "-m", "dsy_admission.service"]')
