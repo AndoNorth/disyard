@@ -1,7 +1,7 @@
 # Tenancy contract
 
 Owner epic: #7 (broker, RabbitMQ).
-Version: 3, in [VERSION](VERSION).
+Version: 4, in [VERSION](VERSION).
 The [Consumers](#consumers) section names who reads each part.
 
 This directory pins the tenants, the priority classes and the caps of each preset, in one file that the broker, admission and dispatch all read.
@@ -21,13 +21,13 @@ A runtime reads a profile through package data with `dsy_broker.tenancy.load(pro
 | `caps.open` | integer | at least `caps.global`, live and paused workflows across tenants | 2,000 (estimate) |
 | `caps.global` | integer | at least 1, live workflows across tenants | 1,000 (estimate) |
 | `caps.job_class` | map | keys equal `classes` of the same limits profile in `contracts/job/limits.yaml`, each matching the `jobclass` pattern, values at least 1 and at most `caps.global` | `short: 1000`, `long: 100` (estimates) |
-| `tenants` | map | keys match the `tenant` pattern of the event profile, at least one | `acme` |
+| `tenants` | map | keys match the `tenant` pattern of the event profile, at least one | `acme`, `e2e` |
 | `tenants.<t>.quota` | integer | at least 1 and at most `caps.global`, live workflows of the tenant | 1,000 (estimate) |
 | `tilt_profiles` | map | top level, not per profile: every profile of `deploy/tilt/profiles.yaml` to a tenancy profile | `minimal: ci`, `ci: ci`, `dev: dev`, `full: dev`, `soak: soak` |
 
 Every integer figure is written as `{value: N, estimate: true}`, so a value PR can tell which numbers it may change.
 `dev` and `soak` use the `ci` values, as the limits profiles do.
-The tenant `acme` is the tenant of every event vector, and `standard` is the one priority class of the proof of concept.
+The tenant `acme` is the tenant of every event vector, the tenant `e2e` is the tenant of the end-to-end acceptance run, and `standard` is the one priority class of the proof of concept.
 A module learns the Tilt profile from `DSY_TILT_PROFILE` and passes the mapped tenancy profile to its service as `DSY_TENANCY_PROFILE`, so the broker, admission and dispatch always read one profile.
 
 Two repository tests, in `packages/broker/tests/test_tenancy.py`, read by repository path and so stay out of the loader.

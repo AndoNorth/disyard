@@ -19,13 +19,15 @@ A budget is a limit the code or the workflow enforces.
 | Link check | `scripts/check-links.sh` | no relative Markdown link is dead | seconds, not measured | the flake only | after any Markdown change, `just ci` runs it |
 | Integration tests | `nix develop -c just itest [domain]` | the services against real containers started by `dsy_itest`: RabbitMQ, Postgres, the object store, Temporal | not measured, grows with the domains run | Docker, free ports (`just ports`) | before a push that touches a service, `just itest broker` limits it to one package |
 | Pre-PR gate | `nix develop -c just pre-pr` | the docs path of `just ci`, the unit tests of the changed packages and their dependents, and the integration tests of the changed packages | not measured, depends on the diff | Docker for the integration part | before opening a pull request |
-| Full CI gate | `nix develop -c just ci` | everything CI's `check` job runs: lint, links, contracts map, self-tests, every shard's unit and integration tests, and `nix flake check` | not measured, the longest local check | Docker | before a change outside `packages/`, where `just pre-pr` says `full run required` |
+| Checks gate | `nix develop -c just ci --checks` | CI's `checks` job: lint, links, contracts map, self-tests and `nix flake check` | about 30 seconds | the flake only | before a change outside `packages/`, where `just pre-pr` says `full run required` |
+| One test shard | `nix develop -c just ci --shard <name>` | one shard's unit then integration tests, as CI runs it; `scripts/ci-shards.sh` lists the shards | about 10 minutes, queues on the integration lock | Docker | after the checks gate, for the shard that owns the tests the change can reach |
 | Security scans | `nix develop -c just scan [deps \| images \| secrets]` | no high or critical finding in the locked dependencies, in each service image, or in the git history, beyond the accepted ones in `security/trivy-ignore.yaml` | not measured, `images` builds every image | `images` needs Docker, `deps` and `images` fetch the Trivy database | before a release, CI runs it on every pull request and weekly |
 | Kind smoke (CI) | the `kind-smoke` workflow: `just up`, then `just down` | a six-node cluster comes up on a clean runner for preset `ci` and goes down again | 30 min, budget of the workflow | a GitHub runner | automatic, skipped for a documentation-only pull request |
 | State modules (CI) | the `state-modules` workflow: `just up`, `scripts/tilt/run.sh ci`, then the migration check | the database, Temporal database and object store modules deploy and migrate | not measured | a GitHub runner | automatic, on a change to those paths |
 | Node limit canaries | `nix develop -c scripts/cluster/canary.sh all` | the node limits are real: a memory hog is OOM-killed, an oversized pod stays Pending, the pool taint holds, a spinner is throttled | not measured | a running cluster | after changing a preset or a node size |
 | Cluster verify | `nix develop -c just cluster-verify` | the running cluster is the one its preset describes and every module is ready, within budget, with nothing pressured and every port on loopback | tens of seconds, 90 s limit inside `just smoke` | a running cluster with the modules deployed | after `just up` and after any host event |
 | Smoke | `nix develop -c just smoke` | every layer answers and one real job goes through and produces the known answer, see [the rows](#the-smoke-rows) | 300 s, budget | a running `ci` cluster with the modules deployed | after every deploy, and before any larger run |
+| End to end | `nix develop -c just e2e` | the smoke gate, then the level 4 scenarios of the [test ladder](../acceptance-ladder.md), which are not written yet, so a run ends `FAIL scenarios none collected` | 600 s budget after the smoke gate, a proposal until a first measured run | a running `ci` cluster with the observability stack on | before the proof of concept is called done, nightly or locally |
 | API scenarios | `uv run --frozen python -m dsy_dispatchapi.smoke --scenario <name>` | submit, cancel, pause and resume, and a pod restart in the middle of a batch, through the deployed API | not measured | a running `ci` cluster, free of other jobs for `restart` | when the dispatch or control path changed |
 | Failure drills | the steps of [a drill](drills/README.md) | an alert, a dashboard and a log show the failure that was caused, and the recovery works | 5 to 20 minutes for each drill, measured | a running `ci` cluster with the observability stack on | after changing an alert rule, a dashboard or a runbook entry |
 | Live check | [dashboards and wiring](drills/live-check.md) | every dashboard loads and each service's metrics, logs and traces reach the stack | about 15 minutes, not measured to the end | a running `ci` cluster with the observability stack on, after `just smoke` | after changing a dashboard or a service's telemetry |
@@ -37,7 +39,6 @@ These are named by recipes or presets and prove nothing today.
 
 | Check | State |
 | --- | --- |
-| `just e2e` | level 4 of the [test ladder](../acceptance-ladder.md), a stub that exits 3 with `not implemented: owned by #17`, and the ladder lists its scenarios, budget and direct reads |
 | `just load-test` | a stub that exits 3 |
 | `just characterize` | a stub that exits 3 |
 | Soak | the `soak` preset and `scripts/tilt/run.sh soak` exist, and no soak run or pass criterion does yet |
@@ -76,7 +77,7 @@ With the stack on, the run also pushes its verdicts to Prometheus, and the `smok
 | Documentation only | `just lint`, `scripts/check-links.sh`, `just pre-pr` |
 | One package under `packages/` | `just test`, `just pre-pr` |
 | An alert rule or its runbook entry | the alert rule tests, `just lint` |
-| A module under `deploy/` | `just ci`, then a cluster: `just up`, `scripts/tilt/run.sh ci`, `just smoke` |
-| A preset or a node size | `just ci`, `just nuke`, `just up`, `just cluster-verify`, `scripts/cluster/canary.sh all` |
-| A contract | `just contracts-map`, `just ci` |
+| A module under `deploy/` | `just ci --checks`, `just ci --shard rest`, then a cluster: `just up`, `scripts/tilt/run.sh ci`, `just smoke` |
+| A preset or a node size | `just ci --checks`, `just nuke`, `just up`, `just cluster-verify`, `scripts/cluster/canary.sh all` |
+| A contract | `just contracts-map`, `just ci --checks` |
 | Dependencies or an image | `just scan` |

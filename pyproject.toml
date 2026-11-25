@@ -49,6 +49,7 @@ dsy-workloads = { workspace = true }
 dev = [
     "hypothesis",
     "pytest",
+    "pytest-xdist",
     "dsy-acceptance",
     "dsy-admission",
     "dsy-aggregate",
@@ -90,5 +91,6 @@ dev = [
 addopts = "--import-mode=importlib"
 markers = [
     "integration: needs containers started through dsy_itest",
+    "e2e: needs the running cluster, run by scripts/e2e.sh and deselected by scripts/test.sh",
     "slow: large results, deselected by scripts/test.sh and run only when selected",
 ]

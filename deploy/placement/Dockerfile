@@ -2,6 +2,8 @@
 # packages, and wheels/, the workspace packages built from the tree.
 ARG BASE
 FROM ${BASE}
+# The pinned base can lag Debian security fixes, so every shipped image takes the current patched packages.
+RUN apt-get update && apt-get upgrade -y --no-install-recommends && rm -rf /var/lib/apt/lists/*
 COPY requirements.txt /tmp/build/
 # The hash-pinned packages install from dists/, mounted rather than copied so its files add no layer, with no network.
 RUN --network=none --mount=type=bind,source=dists,target=/tmp/dists \

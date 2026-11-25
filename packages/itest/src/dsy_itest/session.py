@@ -5,6 +5,7 @@ import random
 import signal
 import socket
 import subprocess
+import sys
 import time
 from contextlib import contextmanager
 from dataclasses import dataclass
@@ -33,6 +34,9 @@ LOCK_COUNT = 2
 # publish on the same host port, whatever slot they run in.
 PORTS_PER_LOCK = PORTS_PER_SLOT // LOCK_COUNT
 LOCK_TIMEOUT_SECONDS = 30 * 60
+# The exit of a run that queued for the T1 lock files and gave up, the same refusal exit as the
+# cluster lock, so a queued gate is not mistaken for a failed one.
+REFUSED_EXIT = 4
 MEMORY_CAP = "1g"
 
 # Image keys of deploy/versions.yaml whose repository is not the key itself.
@@ -44,7 +48,20 @@ class DockerUnavailable(RuntimeError):
 
 
 class LockTimeout(RuntimeError):
-    """No T1 lock file became free within the timeout."""
+    """No T1 lock file became free within the timeout.
+
+    The message begins with `refused:` and names the holders, and is what a refusal prints.
+    """
+
+
+@contextmanager
+def refusing_on_wait():
+    """Turns a lock wait that ran out into the message on stderr and exit 4, for a command tool."""
+    try:
+        yield
+    except LockTimeout as exc:
+        print(exc, file=sys.stderr)
+        raise SystemExit(REFUSED_EXIT) from None
 
 
 class ContainerError(RuntimeError):
@@ -130,7 +147,8 @@ def _acquire_locks(run_id: str, count: int, timeout: float, poll: float = 0.5) -
             os.close(fd)
         if time.monotonic() >= deadline:
             raise LockTimeout(
-                f"waited {timeout:.0f}s for {count} free T1 lock file(s), holders: {_holders()}"
+                f"refused: waited {timeout:.0f}s for {count} free T1 lock file(s), "
+                f"holders: {_holders()}"
             )
         time.sleep(poll * random.uniform(0.5, 1.5))
 

@@ -292,7 +292,7 @@ def test_single_class_is_round_robin():
 
 def test_policy_caps_of_a_profile_take_a_lower_global_cap_only():
     profile = load("ci")
-    assert Caps.of(profile).quotas == {"acme": 1000}
+    assert Caps.of(profile).quotas == {t: 1000 for t in profile.tenants}
     assert Caps.of(profile).job_class == {"short": 1000, "long": 100}
     assert Caps.of(profile, global_cap=10).global_ == 10
     assert Caps.of(profile, global_cap=5000).global_ == 1000

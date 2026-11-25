@@ -312,13 +312,13 @@ async def _record(address: str, directory: Path, build: str) -> list[Path]:
 
 def record(release: str, root: Path = CORPUS) -> list[Path]:
     """Records every behaviour of RECORDINGS into `root/<release>/`, in one T1 container."""
-    from dsy_itest import Session
+    from dsy_itest import Session, refusing_on_wait
 
     build = build_label()
     os.environ[naming().workflow.build_id_env] = build
     directory = root / release
     directory.mkdir(parents=True)
-    with Session() as t1:
+    with refusing_on_wait(), Session() as t1:
         with t1.container(
             "temporalio/temporal",
             ports={0: 7233},

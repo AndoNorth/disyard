@@ -297,10 +297,11 @@ def main(argv: list[str]) -> int:
             args.jobs or 0,
         )
     # Imported here because only this path starts a container, and a wheel need not carry them.
-    from dsy_itest import Session
+    from dsy_itest import Session, refusing_on_wait
     from dsy_storecheck.fixtures import running
 
     with (
+        refusing_on_wait(),
         Session() as session,
         tempfile.TemporaryDirectory() as directory,
         running(session, "seaweedfs", Path(directory)) as started,

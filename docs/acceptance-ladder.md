@@ -15,7 +15,7 @@ The cluster rules are in the [operator runbook](runbooks/operator.md).
 | 1 Unit | One function or module in isolation, with no network and no containers | Each epic, for its own code | Every change, locally and in CI | `just test` | delivered |
 | 2 Integration | One component against its real dependencies, without the whole cluster: Postgres, RabbitMQ, Temporal, the object store, the real compile toolchain | Each epic, for its own component | Every change in CI, and locally for one domain | `just itest [domain]` | delivered |
 | 3 Smoke | After a deploy every layer answers and one level 0 job produces the known answer | Epic #17 owns the suite, and the cluster epic owns `just cluster-verify` as its infrastructure half | After every `just up` and deploy, and first in every higher level | `just smoke`, 300 s budget | delivered |
-| 4 End to end | The platform works on public surfaces: a level 1 job with several result blocks, the native aggregate, observability, and one canonical case of each negative and control behaviour | Epic #17, pass 2 | Nightly or locally, and before the proof of concept is called done | `just e2e`, about 10 minutes, a proposal until a first measured run | not delivered, `just e2e` exits 3 |
+| 4 End to end | The platform works on public surfaces: a level 1 job with several result blocks, the native aggregate, observability, and one canonical case of each negative and control behaviour | Epic #17, pass 2 | Nightly or locally, and before the proof of concept is called done | `just e2e`, about 10 minutes, a proposal until a first measured run | harness delivered, scenarios not, so `just e2e` fails with `FAIL scenarios none collected` |
 | 5 Failure and recovery | The guarantees hold under injected failures | Epics #15 and #18, with the [failure drills](runbooks/drills/README.md) for the observable half | On demand | The drills and #15's scripts | drills delivered |
 | 6 Load | Behaviour at saturation: caps hold, no job is lost or duplicated | #14 provides the tool and #16 owns the runs | Before the soak, on a host sized for it | `just load-test`, hours | not delivered, exits 3 |
 | 7 Performance | Numbers: throughput, latency, compile cost | #16 | On demand | `just characterize`, hours | not delivered, exits 3 |
@@ -46,24 +46,27 @@ A time here is a budget or a proposal, and a measured one lives in the [validati
 11. Counters are asserted as a change from a quiet baseline.
     The cluster lock is what makes the baseline quiet, because a job counter has no tenant label.
 12. Every run uses unique ids, a batch key of the form `e2e-<12 hex>`, under a tenant of its own, so runs cannot affect each other.
-    Preset `ci` has only the tenant `acme` today, so the `e2e` tenant is added to the tenancy profile through a separate contract-change PR with a version bump, and until it lands the batch key alone separates runs.
+    The tenancy profile of preset `ci` has the tenant `e2e` for the acceptance run, next to `acme`.
 
 ## Recipes, gates and the lock
 
 | Recipe | Does | Needs | Exit codes |
 | --- | --- | --- | --- |
 | `just test` | Unit tests of the whole tree, or `scripts/test.sh <path>` for one package | the flake | 0 or the failing test run's code |
-| `just itest [domain]` | Integration tests against containers started by `dsy_itest` | Docker | as above |
-| `just ci` | Everything CI's `check` job runs | Docker | as above |
+| `just itest [domain]` | Integration tests against containers started by `dsy_itest` | Docker | as above, 4 refused: the T1 lock wait ran out |
+| `just ci` | Everything CI's `check` job runs | Docker | as above, 4 refused: the T1 lock wait ran out |
 | `just smoke` | The smoke gate, see [the rows](runbooks/validation-matrix.md#the-smoke-rows) | a running `ci` cluster | 0 ok, 1 a row failed or the budget ran out, 2 usage, 4 refused |
-| `just e2e` | Level 4, not delivered | a running `ci` cluster with the observability stack on | will follow the smoke exit codes, today 3 |
+| `just e2e` | Level 4: the smoke gate first, then the scenarios, in a 600 s budget | a running `ci` cluster with the observability stack on | 0 ok, 1 a scenario or smoke failed or the budget ran out, 2 usage, 4 refused: no cluster, the stack off or the lock not taken |
 
 Exit 3 is what a stub returns on purpose, so a script never mistakes an undelivered level for success.
 
 Every cluster recipe takes `/tmp/dsy-cluster.lock` and waits up to 900 s for it, unless `DSY_CLUSTER_LOCK_HELD` says the caller holds it.
 A wait that runs out is a refusal (exit 4) and not a failure, so a queued gate is not mistaken for a failed one.
-`just e2e` will take the lock once, export `DSY_CLUSTER_LOCK_HELD`, and run smoke as its first step under that hold.
+`just e2e` takes the lock once, exports `DSY_CLUSTER_LOCK_HELD`, and run smoke as its first step under that hold.
 A run of about 10 minutes is under the 900 s wait of a queued lane, and a slow run can exceed it, which that lane sees as a refusal.
+
+The integration tests of `just itest` and `just ci` queue the same way for the two T1 lock files of `dsy_itest` and wait up to 1800 s.
+A wait that runs out is also a refusal (exit 4, a message beginning `refused:`), see [T1 lock](dev-setup.md#t1-lock).
 
 The gate order is: `just ci` on the change, a cluster from `just up` and the module deploy, `just cluster-verify`, `just smoke`, then `just e2e`.
 Load, performance and soak need a green smoke on the same deploy.

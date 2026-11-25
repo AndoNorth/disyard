@@ -22,7 +22,7 @@ for name in ("routes.yaml", "reasons.yaml", "control.yaml", "status.yaml", "stag
 assert "UNKNOWN_TENANT" in {r.code for r in reasons().reasons}
 assert routes() and control_table()
 profile = load("ci")
-assert list(profile.tenants) == ["acme"]
+assert "acme" in profile.tenants
 assert profile.priority_classes == ["standard"]
 gateway = FakeGateway()
 gateway.start("job")
