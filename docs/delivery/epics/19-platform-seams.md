@@ -569,10 +569,13 @@ This is a design choice flagged for the captain's review, and it is listed in th
 
 | Group | Proves | Where |
 | --- | --- | --- |
-| Boot | each of the six services starts against real containers, writes its ready file, answers its probe, and drains on SIGTERM with exit 0 and no log line at error level | the existing `tests/service/` suites of admission, dispatch, workflow, placement and worker, marked `seam` in their issues, plus the state-inputs exporter's test; reuses `dsy_servicekit.testing.spawn` in place of the 5 hand-written spawn fixtures |
-| Contract | the library edges of section 4.1 hold for all six | each service's `test_contract.py` |
-| Example module | the real example package, which nobody wrote into the workflow package, is discovered, built on the host's client and served beside `JobWorkflow`: `serve` with `exampleflow` installed completes an `EchoWorkflow` and a level 0 job in the same process; it installs from its wheel closure into a clean virtualenv with the workflow wheel and is found by entry point | `packages/exampleflow/tests/`, using the `test_wheel.py` pattern of the 22 existing wheel tests |
-| Layering | no core package imports a module, and a module imports only its public list | `packages/servicekit/tests/test_layering.py` |
+| Boot | each of the six services starts against real containers, writes its ready file, answers its probe, and drains on SIGTERM with exit 0 and no log line at error level | the existing `tests/service/` suites of admission, dispatch, workflow, placement and worker, marked `seam` by ADM-1, DIS-1, WFL-1, WRK-1 and PLC-1, plus the state-inputs exporter's test, marked by OBS-1, and the toy service's boot test, marked by L0-3; reuses `dsy_servicekit.testing.spawn` in place of the 5 hand-written spawn fixtures |
+| Contract | the library edges of section 4.1 hold for all six | each service's `test_contract.py`, marked `seam` by the adoption issue that creates it, and the three `check_*` tests of L0-2 against the toy, marked by L0-3 |
+| Example module | the real example package, which nobody wrote into the workflow package, is discovered, built on the host's client and served beside `JobWorkflow`: `serve` with `exampleflow` installed completes an `EchoWorkflow` and a level 0 job in the same process; it installs from its wheel closure into a clean virtualenv with the workflow wheel and is found by entry point | `packages/exampleflow/tests/`, marked `seam` by MOD-2, using the `test_wheel.py` pattern of the 22 existing wheel tests |
+| Layering | no core package imports a module, and a module imports only its public list | `packages/servicekit/tests/test_layering.py`, marked `seam` by L0-1 |
+
+`scripts/seam.sh` prints one summary line per group: it runs `pytest -m seam` once per group over the group's path list, times each run, and prints the total.
+The path lists are the boot suites (the `tests/service/` directories except the `test_contract.py` files, the state-inputs exporter's test and the toy's boot test), the contract files (with the toy's `check_*` tests), `packages/exampleflow/tests` and `packages/servicekit/tests/test_layering.py`.
 
 The zero-touch claim is proven in two places that do not depend on each other:
 at review time, the example's pull request (issue MOD-2) must show `git diff --name-only origin/main...HEAD` limited to `packages/exampleflow/`, two lines in the root `pyproject.toml` (the workspace source and the dev group) and `uv.lock`;
@@ -635,6 +638,7 @@ Shared-file rules:
   A lock conflict is never resolved by hand, `uv lock` is rerun after rebase, and a dependency lands in the pull request that needs it.
   Each adopter adds only its own two lines to its package's `pyproject.toml`: `dsy-servicekit` under `[project] dependencies` and `dsy-servicekit = { workspace = true }` under `[tool.uv.sources]`.
   The root `pyproject.toml` takes two lines from L0-1 (the `dsy-servicekit` workspace source and dev group entry), the `seam` marker line from L0-3, two lines from MOD-2 (the `exampleflow` workspace source and dev group entry), and the marker block of `pair`, `isolated` and `cluster` and `--strict-markers` from RIG-R-3.
+- Marking tests `seam`: each adoption issue marks its package's existing `tests/service/` boot suite, the one edit a service lane makes to an existing test file there, and the RIG lanes migrate those files afterwards; every other `seam` mark is made by the issue that creates the test (section 5.4).
 - `justfile` (root): L0-3 adds the one `import 'just/seam.just'` line and nothing else.
 - `docs/acceptance-ladder.md`: this epic owns the row 3a and a section "Seams"; #17 pass 2 owns every e2e row and the direct-reads table.
   Whoever lands second rebases.
@@ -660,7 +664,7 @@ After approval these blocks are replaced by `#NNN` links.
 ### Lane L0: the library
 
 **L0-1 `dsy_servicekit` core: config, lifecycle, pg** - M, judge (the public surface)
-- Scope: the package of section 3.2 without the test kit, with the toy service of `tests/toy/`, and the two root `pyproject.toml` lines that make it a workspace member (`dsy-servicekit = { workspace = true }` under `[tool.uv.sources]` and the entry in the dev dependency group).
+- Scope: the package of section 3.2 without the test kit, with the toy service of `tests/toy/`, and the two root `pyproject.toml` lines that make it a workspace member (`dsy-servicekit = { workspace = true }` under `[tool.uv.sources]` and the entry in the dev dependency group); the layering test is marked `seam`.
 - Criteria: `scripts/test.sh packages/servicekit` passes with no skip and covers each public name; `pg.connect` with `connect_timeout=2` against a blackhole socket raises inside 3 s, and a value below 2 is raised to 2; the package has no import of another `dsy_*` (layering test); `__all__` equals the list in the README.
 - Verifier: `packages/servicekit/tests/`, and `uv lock --check`.
 - Consumes / produces: consumes `psycopg`; produces `dsy_servicekit.config`, `dsy_servicekit.lifecycle` and `dsy_servicekit.pg`.
@@ -677,8 +681,8 @@ After approval these blocks are replaced by `#NNN` links.
 - Gate: decision Q5 (only L0 starts before the e2e gate).
 
 **L0-3 The `seam` marker, `just seam`, ladder level 3a, architecture note** - S, mech
-- Scope: register marker `seam`; `just/seam.just` with `seam` forwarding to `scripts/seam.sh` (`pytest -m seam`, budget timer, exit 5 as success like `scripts/itest.sh`) and the one added `import 'just/seam.just'` line in the root `justfile`; the ladder row and section; `docs/architecture/21-domains-and-access.md` with the domain map of section 2.1, its draw.io diagram, and the kind C touch list of section 5.1 copied into its "seams that remain".
-- Criteria: `nix develop -c just seam` exits 0 and runs the toy's seam tests; `scripts/check-links.sh` and `scripts/export-diagrams.sh --check` clean; `scripts/check-contracts-map.sh` unchanged; `git diff --stat origin/main -- contracts/` empty.
+- Scope: register marker `seam`; `just/seam.just` with `seam` forwarding to `scripts/seam.sh` (`pytest -m seam`, budget timer, exit 5 as success like `scripts/itest.sh`) and the one added `import 'just/seam.just'` line in the root `justfile`; `scripts/seam.sh` runs `pytest -m seam` once per group over the path lists of section 5.4 and prints one summary line per group and the total seconds; it marks the toy's boot test and the three `check_*` tests of L0-2 `seam` and names them in the pull request; the ladder row and section; `docs/architecture/21-domains-and-access.md` with the domain map of section 2.1, its draw.io diagram, and the kind C touch list of section 5.1 copied into its "seams that remain".
+- Criteria: `nix develop -c just seam` exits 0, runs the toy's seam tests and prints one summary line per group that has tests, with the total seconds; `scripts/check-links.sh` and `scripts/export-diagrams.sh --check` clean; `scripts/check-contracts-map.sh` unchanged; `git diff --stat origin/main -- contracts/` empty.
 - Verifier: the commands above.
 - Consumes / produces: consumes L0-2; produces `just seam`, the marker `seam`, ladder row 3a and the architecture note.
 - Needs: L0-2.
@@ -697,7 +701,7 @@ After approval these blocks are replaced by `#NNN` links.
 ### Lane ADM: admission, the pathfinder
 
 **ADM-1 Admission adopts the config and lifecycle helpers** - S, mech
-- Scope: `ConfigError` becomes the alias of the kit's; `if missing :=` becomes `require`; the exit-2 block becomes `exiting_on_config_error`; `READY_ENV` handling becomes `ReadyFile`; the asyncio signal block becomes `stopping`; `dsy-servicekit` is added to `packages/admission/pyproject.toml` under `[project] dependencies` and `[tool.uv.sources]`.
+- Scope: `ConfigError` becomes the alias of the kit's; `if missing :=` becomes `require`; the exit-2 block becomes `exiting_on_config_error`; `READY_ENV` handling becomes `ReadyFile`; the asyncio signal block becomes `stopping`; `dsy-servicekit` is added to `packages/admission/pyproject.toml` under `[project] dependencies` and `[tool.uv.sources]`; its service boot test (`tests/service/`, for obs the exporter's test) and the `test_contract.py` it creates are marked `seam`.
   The drain, `DRAIN_S`, the held-delivery release and the order of `_run`'s `finally` do not change.
 - Criteria: `scripts/test.sh packages/admission` and `scripts/itest.sh admission` pass unchanged; `grep -rn 'if missing :=' packages/admission/src` and `grep -rn add_signal_handler packages/admission/src` print nothing; the new `tests/service/test_contract.py` passes (exit 2, ready file lifecycle, SIGTERM exit 0 under 25 s); `pytest deploy/admission -q` passes unmodified; `uv export --frozen --no-dev --package dsy-admission | grep servicekit` prints a line, because images are built from that export.
 - Verifier: the commands above; `scripts/affected.py` lists `admission` for a change to `packages/servicekit/`.
@@ -731,7 +735,7 @@ After approval these blocks are replaced by `#NNN` links.
 ### Lane DIS: dispatch
 
 **DIS-1 Dispatch adopts the config and lifecycle helpers** - S, mech
-- Scope: `ConfigError` (defined in `limits.py:19`) aliases the kit's; `require` replaces `if missing :=` (`:129`); `ThreadStop` replaces `signal.signal` at `:312`; no ready file (dispatch uses `/readyz`); `dsy-servicekit` is added to `packages/dispatchapi/pyproject.toml` under `[project] dependencies` and `[tool.uv.sources]`.
+- Scope: `ConfigError` (defined in `limits.py:19`) aliases the kit's; `require` replaces `if missing :=` (`:129`); `ThreadStop` replaces `signal.signal` at `:312`; no ready file (dispatch uses `/readyz`); `dsy-servicekit` is added to `packages/dispatchapi/pyproject.toml` under `[project] dependencies` and `[tool.uv.sources]`; its service boot test (`tests/service/`, for obs the exporter's test) and the `test_contract.py` it creates are marked `seam`.
 - Criteria: as ADM-1 for dispatch, including the `uv export` line; `tests/service/test_contract.py` checks exit 2 and SIGTERM exit 0 under 25 s and does not check a ready file.
 - Verifier: `scripts/test.sh packages/dispatchapi`, `scripts/itest.sh dispatchapi`, `pytest deploy/dispatchapi -q`.
 - Consumes / produces: consumes `dsy_servicekit.config` and `dsy_servicekit.lifecycle`; produces `packages/dispatchapi/tests/service/test_contract.py`.
@@ -766,7 +770,7 @@ After approval these blocks are replaced by `#NNN` links.
 WFL has no H2 item, because the workflow service already uses `dsy_obs.metrics.runtime`.
 
 **WFL-1 Cache `naming()` and `pools()`; the workflow service adopts config and lifecycle** - S, mech
-- Scope: `@cache` on `contract.py:106,110`; `MissingEnv` aliases the kit's error and `require` replaces the check (`:118`); `ReadyFile` and `stopping` replace the file and signal lines (`:198-199,257-263`, `:202-203,250-251`); the drain constant and the supervision and fail-fast logic of `_run_until` (`FIRST_COMPLETED` wait, shutdown, gather) do not change, so the built-in workers stay fail-fast, while its ready-file touch and unlink lines and the `ready_file` parameter type move to `ReadyFile`; `dsy-servicekit` is added to `packages/workflow/pyproject.toml` under `[project] dependencies` and `[tool.uv.sources]`.
+- Scope: `@cache` on `contract.py:106,110`; `MissingEnv` aliases the kit's error and `require` replaces the check (`:118`); `ReadyFile` and `stopping` replace the file and signal lines (`:198-199,257-263`, `:202-203,250-251`); the drain constant and the supervision and fail-fast logic of `_run_until` (`FIRST_COMPLETED` wait, shutdown, gather) do not change, so the built-in workers stay fail-fast, while its ready-file touch and unlink lines and the `ready_file` parameter type move to `ReadyFile`; `dsy-servicekit` is added to `packages/workflow/pyproject.toml` under `[project] dependencies` and `[tool.uv.sources]`; its service boot test (`tests/service/`, for obs the exporter's test) and the `test_contract.py` it creates are marked `seam`.
 - Criteria: a new test shows two calls to `naming()` return the same object and read the file once (monkeypatch `_read`); the existing suites pass (`scripts/test.sh packages/workflow`, `scripts/itest.sh workflow`), and the tests that rewrite `naming.yaml` are listed in the pull request with what each does about the cache (scout: check first); `tests/service/test_contract.py` passes; `uv export --frozen --no-dev --package dsy-workflow | grep servicekit` prints a line.
 - Verifier: the commands above.
 - Consumes / produces: consumes `dsy_servicekit.config` and `dsy_servicekit.lifecycle`; produces `packages/workflow/tests/service/test_contract.py` and the cached loaders.
@@ -790,7 +794,7 @@ WFL has no H2 item, because the workflow service already uses `dsy_obs.metrics.r
 ### Lane WRK: pool worker
 
 **WRK-1 The worker adopts the helpers and `dsy_temporal.connect`** - S, mech
-- Scope: `ConfigError` alias, `require` for `config.py:57`, `ReadyFile` (required there, so `ReadyFile` is constructed with a path), `stopping` for `service.py:55`, `dsy_temporal.connect(..., check_namespace=True)` for `service.py:59-67`; `dsy-servicekit` is added to `packages/worker/pyproject.toml` under `[project] dependencies` and `[tool.uv.sources]`.
+- Scope: `ConfigError` alias, `require` for `config.py:57`, `ReadyFile` (required there, so `ReadyFile` is constructed with a path), `stopping` for `service.py:55`, `dsy_temporal.connect(..., check_namespace=True)` for `service.py:59-67`; `dsy-servicekit` is added to `packages/worker/pyproject.toml` under `[project] dependencies` and `[tool.uv.sources]`; its service boot test (`tests/service/`, for obs the exporter's test) and the `test_contract.py` it creates are marked `seam`.
   The worker calls `load()` before `setup()` today (`__main__.py:22-23`), so a config error is the one line not in the JSON log; the order is kept.
 - Criteria: as ADM-1 for the worker, including the `uv export` line, with SIGTERM exit 0 under 70 s (grace 75 s minus 5 s).
 - Verifier: `scripts/test.sh packages/worker`, `scripts/itest.sh worker`, `pytest deploy/workers -q`.
@@ -808,7 +812,7 @@ WFL has no H2 item, because the workflow service already uses `dsy_obs.metrics.r
 ### Lane PLC: placement
 
 **PLC-1 Placement adopts config and lifecycle** - S, mech
-- Scope: `BadEnv` aliases the kit's error; `require` and `positive` and `host_port` replace the local parsers (`service.py:55-58,72-82`, the same host:port parse as dispatch's `_address`); `ReadyFile` replaces `:193-199`; the `SystemExit` signal handler (the SIGTERM and SIGINT registrations, two lines) stays, because placement has no drain by design (a documented trade: the workflow retries placement across the gap, `deploy/placement/Tiltfile.module:62`); `dsy-servicekit` is added to `packages/placement/pyproject.toml` under `[project] dependencies` and `[tool.uv.sources]`.
+- Scope: `BadEnv` aliases the kit's error; `require` and `positive` and `host_port` replace the local parsers (`service.py:55-58,72-82`, the same host:port parse as dispatch's `_address`); `ReadyFile` replaces `:193-199`; the `SystemExit` signal handler (the SIGTERM and SIGINT registrations, two lines) stays, because placement has no drain by design (a documented trade: the workflow retries placement across the gap, `deploy/placement/Tiltfile.module:62`); `dsy-servicekit` is added to `packages/placement/pyproject.toml` under `[project] dependencies` and `[tool.uv.sources]`; its service boot test (`tests/service/`, for obs the exporter's test) and the `test_contract.py` it creates are marked `seam`.
 - Criteria: as ADM-1 for placement, including the `uv export` line, with the SIGTERM check expecting exit 0 and no drain.
 - Verifier: `scripts/test.sh packages/placement`, `scripts/itest.sh placement`, `pytest deploy/placement -q`.
 - Consumes / produces: consumes `dsy_servicekit`; produces `packages/placement/tests/service/test_contract.py`.
@@ -817,7 +821,7 @@ WFL has no H2 item, because the workflow service already uses `dsy_obs.metrics.r
 ### Lane OBS: state-inputs
 
 **OBS-1 The exporter adopts config, lifecycle and the connect helper** - S, mech
-- Scope: the inline DSN check becomes `require`; `ReadyFile` keeps the exporter's present behaviour (touched after the first database pass, not removed on stop, which OBS-2 changes); `ThreadStop`; `exporter.py:55` uses `pg.connect(dsn, connect_timeout=5, statement_timeout=...)` with the options it has today, so its behaviour is unchanged; `dsy-servicekit` is added to `packages/obs/pyproject.toml` under `[project] dependencies` and `[tool.uv.sources]`.
+- Scope: the inline DSN check becomes `require`; `ReadyFile` keeps the exporter's present behaviour (touched after the first database pass, not removed on stop, which OBS-2 changes); `ThreadStop`; `exporter.py:55` uses `pg.connect(dsn, connect_timeout=5, statement_timeout=...)` with the options it has today, so its behaviour is unchanged; `dsy-servicekit` is added to `packages/obs/pyproject.toml` under `[project] dependencies` and `[tool.uv.sources]`; its service boot test (`tests/service/`, for obs the exporter's test) and the `test_contract.py` it creates are marked `seam`.
 - Criteria: as ADM-1 for the exporter, including the `uv export` line, with `tests/inputs/test_contract.py` checking exit 2 and SIGTERM exit 0 and not the ready file removal.
 - Verifier: `scripts/test.sh packages/obs`, `scripts/itest.sh obs`, `pytest deploy/obs -q -k state`.
 - Consumes / produces: consumes `dsy_servicekit`; produces `packages/obs/tests/inputs/test_contract.py`.
@@ -939,7 +943,7 @@ WFL has no H2 item, because the workflow service already uses `dsy_obs.metrics.r
 
 **RIG-W-2 The three rigs that bypass `workflow_worker`, and the seven control workers** - S, mech
 - Scope: closes #464's literal ask: `admission/tests/scan/conftest.py:326`, `admission/tests/service/conftest.py:288`, `dispatchapi/tests/control/conftest.py:196` and the seven `Worker(client, task_queue=control_queue(...)` copies, plus the `Rig`'s control worker, use `workflow_worker` and `control_worker`.
-- Criteria: `grep -rn 'place_activity(StaticPlacer())' packages/*/tests` lists only `dsy_workflow.testing`; `packages/workflow/tests/test_worker.py:138` still shows the placer on a `dsy-workflow-activity` thread, and a copy of that assertion runs through an admission rig.
+- Criteria: `grep -rn 'place_activity(StaticPlacer())' packages/*/tests` lists only the two kept workflow files, `packages/workflow/tests/test_worker.py` and `packages/workflow/tests/test_placer_contract.py`, and `grep -rn 'place_activity(StaticPlacer())' packages/*/src` lists only files under `packages/workflow/src/dsy_workflow/testing/`, the single helper definition; `packages/workflow/tests/test_worker.py:138` still shows the placer on a `dsy-workflow-activity` thread, and a copy of that assertion runs through an admission rig.
 - Verifier: `scripts/itest.sh admission`, `scripts/itest.sh dispatchapi`, `scripts/itest.sh workflow`.
 - Consumes / produces: consumes `workflow_worker`, `control_worker` and the `Rig`; produces nothing new.
 - Needs: TS-3, RIG-A-1, RIG-D-1 (it edits the same rigs after they migrate).
@@ -977,15 +981,15 @@ WFL has no H2 item, because the workflow service already uses `dsy_obs.metrics.r
 - Needs: WFL, TS-3.
 
 **MOD-2 `packages/exampleflow`** - S, mech
-- Scope: section 5.3.
+- Scope: section 5.3; the example module's tests are marked `seam`.
 - Criteria: `scripts/itest.sh exampleflow` serves the host with `exampleflow` installed and completes an `EchoWorkflow` and a level 0 job in the same process; the wheel test installs the example's wheel closure into a clean virtualenv and finds the entry point; `git diff --name-only origin/main...HEAD` prints only paths under `packages/exampleflow/`, the root `pyproject.toml` (the workspace source and the dev group, two lines) and `uv.lock`.
 - Verifier: the commands above, the diff output pasted.
 - Consumes / produces: consumes `dsy_workflow.modules`; produces `packages/exampleflow`.
 - Needs: MOD-1.
 
 **MOD-3 Seam smoke wiring and the measured budget** - S, mech
-- Scope: mark the service boot tests of the six services `seam`; `scripts/seam.sh` timer set from one measured run; the ladder row's budget replaced by the measurement.
-- Criteria: `nix develop -c just seam` exits 0 and prints one summary line per group (boot, contract, example module, layering) with the total seconds; the same tests still run inside `just itest <domain>`.
+- Scope: no test file is touched, because every `seam` mark is owned by the issue that creates or adopts the test; `scripts/seam.sh` timer set from one measured run; the ladder row's budget replaced by the measurement.
+- Criteria: `nix develop -c just seam` exits 0 and prints one summary line per group (boot, contract, example module, layering) with the total seconds, as built in L0-3; the same tests still run inside `just itest <domain>`.
 - Verifier: `nix develop -c just seam`, output pasted.
 - Consumes / produces: consumes `just seam` and the service boot tests; produces the measured budget.
 - Needs: MOD-2, every service lane merged.
@@ -1075,7 +1079,7 @@ git -C <repo> archive origin/main | tar -x -C "$EXPORT"
 | X-L0 | L0 | `uv sync --frozen && uv lock --check`; `pytest packages/servicekit -q -rs`; `pytest packages/servicekit/tests/test_layering.py -q`; `scripts/check-contracts-map.sh`; `scripts/check-links.sh`; `scripts/export-diagrams.sh --check`; `just seam` | each exit 0, no `SKIPPED` line, `just seam` runs the toy's seam tests |
 | X-L1 | L1 | `pytest packages/temporal -q -k client`; `scripts/itest.sh temporal` | pass; the integration run shows converter, interceptor and SDK request metrics on the passed runtime |
 | X-ADM | ADM | `pytest packages/admission -q -rs`; `scripts/itest.sh admission`; `pytest deploy/admission -q`; `pytest packages/admission/tests/service/test_contract.py -v`; `grep -rn --include='*.py' -E "if missing :=\|add_signal_handler\|PrometheusConfig\|Client.connect\(" packages/admission/src` | tests pass with no skip; the grep prints nothing |
-| X-DIS | DIS | the same four test commands for `dispatchapi`; `grep -rn --include='*.py' -E "if missing :=\|signal.signal\|PrometheusConfig\|Client.connect\(" packages/dispatchapi/src`; `grep -rnw 9090 deploy/dispatchapi docs/runbooks \| grep -v '19090:9090'` | tests pass; the greps print nothing (the last only if H5 shipped; the closed epics 13 and 18 are history and are not searched) |
+| X-DIS | DIS | the same four test commands for `dispatchapi`; `grep -rn --include='*.py' -E "if missing :=\|signal.signal\|PrometheusConfig" packages/dispatchapi/src`; `grep -n 'Client.connect(' packages/dispatchapi/src/dsy_dispatchapi/gateway.py`; `grep -rnw 9090 deploy/dispatchapi docs/runbooks \| grep -v '19090:9090'` | tests pass; the greps print nothing (`Client.connect(` is searched in `gateway.py` only, as E-3 does, because the smoke driver `smoke/__init__.py:446,481` keeps its own client by design, section 13; the last only if H5 shipped; the closed epics 13 and 18 are history and are not searched) |
 | X-WFL | WFL | the same test commands for `workflow` and `artifactreaper`; `grep -rn --include='*.py' -E "if missing :=\|add_signal_handler\|Client.connect\(" packages/workflow/src/dsy_workflow/service` | pass; nothing printed; `naming()` read once per process (the cache test) |
 | X-WRK | WRK | the same for `worker`; `grep -rn 'DSY_NAMESPACE\b' packages deploy` | pass; the grep prints nothing after H4 (`DSY_TEMPORAL_NAMESPACE` does not match it) |
 | X-PLC | PLC | the same for `placement` | pass |
@@ -1084,7 +1088,7 @@ git -C <repo> archive origin/main | tar -x -C "$EXPORT"
 | X-TOOL | TOOL | `pytest packages/acceptance/tests/test_wrapper.py -q`; `scripts/doctor.test.sh`; `grep -rn 'exec 9>' scripts`; `grep -rn DSY_CONTEXT scripts`; `grep -rn DSY_CONTEXT docs --exclude=19-platform-seams.md` | pass; `lock.sh` is the one hit of the third; the fourth and fifth print nothing |
 | X-TS | TS | `pytest packages/migrate packages/storecheck packages/obs packages/workflow packages/clusterkit -q`; `scripts/itest.sh migrate`; `scripts/itest.sh storecheck` | pass |
 | X-RIG | RIG | the copy ledger rows of section 10.2 for tests; `scripts/itest.sh admission`; `scripts/itest.sh dispatchapi`; `scripts/itest.sh workflow` | pass with the recorded test counts |
-| X-MOD | MOD | `pytest packages/workflow/tests/test_modules.py -v`; `scripts/itest.sh exampleflow`; `pytest packages/exampleflow -q -k wheel`; `just seam` | pass; `just seam` prints its summary and total seconds |
+| X-MOD | MOD | `pytest packages/workflow/tests/test_modules.py -v`; `scripts/itest.sh exampleflow`; `pytest packages/exampleflow -q -k wheel`; `just seam` | pass; `just seam` prints one summary line per group and the total seconds |
 
 ### 10.2 The copy ledger
 
