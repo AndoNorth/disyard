@@ -5,11 +5,13 @@ license = "Apache-2.0"
 requires-python = ">=3.13,<3.14"
 dependencies = [
     "dsy-obs",
+    "dsy-servicekit",
     "dsy-workflow",
 ]
 
 [tool.uv.sources]
 dsy-obs = { workspace = true }
+dsy-servicekit = { workspace = true }
 dsy-workflow = { workspace = true }
 
 [build-system]

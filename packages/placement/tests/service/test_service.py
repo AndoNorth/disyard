@@ -151,6 +151,7 @@ def test_config_refused_exits_2(changes, named):
         service.Config.from_env(ENV | changes)
 
 
+@pytest.mark.seam
 def test_config_refused_exits_2_from_the_command():
     result = subprocess.run(
         [sys.executable, "-m", "dsy_placement"],
@@ -160,7 +161,7 @@ def test_config_refused_exits_2_from_the_command():
     )
     assert result.returncode == 2
     assert result.stdout == ""
-    assert result.stderr == "dsy_placement: DSY_SNAPSHOT_EVERY_S='soon' is not a positive number\n"
+    assert result.stderr == "dsy_placement: DSY_SNAPSHOT_EVERY_S is 'soon', not a positive number\n"
 
 
 def test_config_defaults():
@@ -175,6 +176,7 @@ def test_config_defaults():
     assert ipv6.api_url == "https://[fd00::1]:443"
 
 
+@pytest.mark.seam
 def test_ready_after_listen(ci_api, spawn, tmp_path, until):
     # A ready file left by a killed process is replaced, not taken as this one's.
     (tmp_path / "ready").write_text("stale")

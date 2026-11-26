@@ -12,7 +12,6 @@ import logging
 import os
 import re
 import signal
-import sys
 import time
 from collections.abc import Mapping
 from dataclasses import dataclass
@@ -21,6 +20,14 @@ from pathlib import Path
 
 from dsy_obs import metrics as obs_metrics
 from dsy_obs.setup import setup
+from dsy_servicekit.config import (
+    ConfigError,
+    exiting_on_config_error,
+    host_port,
+    positive,
+    require,
+)
+from dsy_servicekit.lifecycle import ReadyFile
 from dsy_workflow import contract, placement
 from dsy_workflow.placement import PlaceCall, PlaceResult
 from pydantic import ValidationError
@@ -48,14 +55,7 @@ MAX_BODY = 64 * 1024
 PLAIN = re.compile(r"[\w.:/,-]+")
 
 
-class BadEnv(Exception):
-    pass
-
-
-def _port(text: str, name: str) -> int:
-    if not text.isdigit() or not 0 <= int(text) <= 65535:
-        raise BadEnv(f"{name}={text!r} is not a port")
-    return int(text)
+BadEnv = ConfigError
 
 
 @dataclass(frozen=True)
@@ -69,24 +69,15 @@ class Config:
     @classmethod
     def from_env(cls, environ: Mapping[str, str]) -> "Config":
         """The configuration of `environ`, or BadEnv naming the first variable that is wrong."""
-        listen = environ.get(ENV["listen"]) or LISTEN
-        host, _, port = listen.rpartition(":")
-        if not host:
-            raise BadEnv(f"{ENV['listen']}={listen!r} is not host:port")
-        every = environ.get(ENV["snapshot_every_s"]) or str(SNAPSHOT_EVERY_S)
-        try:
-            every_s = float(every)
-        except ValueError:
-            every_s = 0.0
-        if not 0 < every_s < float("inf"):
-            raise BadEnv(f"{ENV['snapshot_every_s']}={every!r} is not a positive number")
-        api_host = environ.get(ENV["api_host"])
-        if not api_host:
-            raise BadEnv(f"{ENV['api_host']} is unset, so the service is not in a pod")
-        api_port = _port(environ.get(ENV["api_port"]) or "443", ENV["api_port"])
+        listen = host_port(environ.get(ENV["listen"]) or LISTEN, ENV["listen"])
+        every_s = positive(environ, ENV["snapshot_every_s"], SNAPSHOT_EVERY_S)
+        api_host = require(environ, {"api_host": ENV["api_host"]})["api_host"]
+        api_port = host_port(
+            f"{api_host}:{environ.get(ENV['api_port']) or '443'}", ENV["api_port"]
+        )[1]
         ready = environ.get(ENV["ready_file"])
         return cls(
-            listen=(host, _port(port, ENV["listen"])),
+            listen=listen,
             snapshot_every_s=every_s,
             ready_file=Path(ready) if ready else None,
             metrics_address=environ.get(ENV["metrics_address"]) or METRICS_ADDRESS,
@@ -190,13 +181,12 @@ class Service:
 
     def serve(self, ready_file: Path | None = None) -> None:
         """Serves until `stop()`, with `ready_file` present while it does."""
-        if ready_file:
-            ready_file.touch()
+        ready = ReadyFile(ready_file)
+        ready.set()
         try:
             self.server.serve_forever()
         finally:
-            if ready_file:
-                ready_file.unlink(missing_ok=True)
+            ready.clear()
             self.server.server_close()
 
     def stop(self) -> None:
@@ -243,14 +233,10 @@ def main(environ: Mapping[str, str] = os.environ, account: Path = ACCOUNT) -> in
     """Serves until SIGTERM or SIGINT, reading the API with the service account under `account`.
     Exit 2 when the configuration is refused."""
     setup("placement")
-    try:
+    with exiting_on_config_error("dsy_placement"):
         config = Config.from_env(environ)
-    except BadEnv as error:
-        print(f"dsy_placement: {error}", file=sys.stderr)
-        return 2
-    if config.ready_file:
-        # A file left by a killed process must not claim a server that is not listening yet.
-        config.ready_file.unlink(missing_ok=True)
+    # A file left by a killed process must not claim a server that is not listening yet.
+    ReadyFile(config.ready_file).arm()
     reader = kube.Reader(config.api_url, str(account / "token"), str(account / "ca.crt"))
     first = True
 
