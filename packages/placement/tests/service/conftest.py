@@ -1,7 +1,6 @@
 """The service in process over the fake Kubernetes API of the reader's tests, serving the `ci`
 cluster of the policy tests, with its decision log captured."""
 
-import importlib.util
 import json
 import logging
 import os
@@ -16,18 +15,6 @@ from dsy_placement import kube, service
 from dsy_servicekit.testing import free_port
 
 TESTS = Path(__file__).parents[1]
-
-
-def _load(name: str, path: Path):
-    spec = importlib.util.spec_from_file_location(name, path)
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
-
-
-fake_api = _load("placement_fake_api", TESTS / "kube/conftest.py")
-# The fixtures of the fake API, served to this directory's tests.
-tls, api, token = fake_api.tls, fake_api.api, fake_api.token
 
 
 def ci_cluster() -> tuple[dict, dict]:

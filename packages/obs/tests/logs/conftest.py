@@ -4,7 +4,7 @@ import pytest
 
 
 @pytest.fixture
-def root():
+def root_logger():
     """Restores the root logger the test's `install` replaced, closing what it installed."""
     logger = logging.getLogger()
     saved, level = list(logger.handlers), logger.level

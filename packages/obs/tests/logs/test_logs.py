@@ -20,7 +20,7 @@ ALLOWED = set(logs.CORE) | set(logs.FIELDS)
 
 
 @pytest.fixture
-def lines(root, monkeypatch):
+def lines(root_logger, monkeypatch):
     """Installs the stdout handler alone into a buffer and returns a reader of its JSON lines."""
     monkeypatch.delenv(logs.ENDPOINT, raising=False)
     out = io.StringIO()
@@ -28,8 +28,8 @@ def lines(root, monkeypatch):
     return lambda: [json.loads(line) for line in out.getvalue().splitlines()]
 
 
-def otlp_handler(root) -> logs.OtlpHandler | None:
-    return next((h for h in root.handlers if isinstance(h, logs.OtlpHandler)), None)
+def otlp_handler(root_logger) -> logs.OtlpHandler | None:
+    return next((h for h in root_logger.handlers if isinstance(h, logs.OtlpHandler)), None)
 
 
 def test_each_line_is_one_json_object_with_the_contract_fields(lines):
@@ -108,21 +108,21 @@ def test_an_exception_is_kept_in_msg(lines):
     assert line["msg"].startswith("failed\n") and "ValueError: boom" in line["msg"]
 
 
-def test_with_the_endpoint_unset_no_exporter_is_created(root, monkeypatch):
+def test_with_the_endpoint_unset_no_exporter_is_created(root_logger, monkeypatch):
     monkeypatch.delenv(logs.ENDPOINT, raising=False)
     created = []
     monkeypatch.setattr(logs.OtlpHandler, "__init__", lambda *a, **k: created.append(a))
     logs.install("dispatch", stream=io.StringIO())
-    assert not created and otlp_handler(root) is None
+    assert not created and otlp_handler(root_logger) is None
 
 
-def test_a_refusing_endpoint_never_blocks_and_counts_the_drops(monkeypatch, root):
-    """`monkeypatch` comes first so the short close still applies when `root` closes the handler."""
+def test_a_refusing_endpoint_never_blocks_and_counts_the_drops(monkeypatch, root_logger):
+    """`monkeypatch` comes first so the short close still applies when `root_logger` closes it."""
     monkeypatch.setenv(logs.ENDPOINT, f"http://127.0.0.1:{free_port()}")
     monkeypatch.setattr(logs, "CLOSE_SECONDS", 0.1)
     out = io.StringIO()
     logs.install("dispatch", stream=out)
-    assert otlp_handler(root) is not None
+    assert otlp_handler(root_logger) is not None
     before = logs.dropped()
     counted = registry.count("dsy_obs_log_dropped_total", component="dispatch")
     log = logging.getLogger("dsy.test")
@@ -164,13 +164,13 @@ class Receiver(ThreadingHTTPServer):
         threading.Thread(target=self.serve_forever, daemon=True).start()
 
 
-def test_the_push_carries_service_name_and_the_fields_as_attributes(root, monkeypatch):
+def test_the_push_carries_service_name_and_the_fields_as_attributes(root_logger, monkeypatch):
     with Receiver() as receiver:
         monkeypatch.setenv(logs.ENDPOINT, f"http://127.0.0.1:{receiver.server_address[1]}")
         logs.install("admission", stream=io.StringIO())
         with logs.bind(job_id="j1", traceparent=TRACEPARENT):
             logging.getLogger("dsy.test").info("pushed", extra={"user": "u", "pool": "compile"})
-        otlp_handler(root).close()
+        otlp_handler(root_logger).close()
         receiver.shutdown()
     [(path, request)] = receiver.requests
     assert path == "/v1/logs"
@@ -189,12 +189,12 @@ def test_the_push_carries_service_name_and_the_fields_as_attributes(root, monkey
     }
 
 
-def test_records_of_the_export_path_are_not_pushed(root, monkeypatch):
+def test_records_of_the_export_path_are_not_pushed(root_logger, monkeypatch):
     with Receiver() as receiver:
         monkeypatch.setenv(logs.ENDPOINT, f"http://127.0.0.1:{receiver.server_address[1]}")
         logs.install("admission", stream=io.StringIO())
         logging.getLogger("opentelemetry.exporter").warning("retrying")
         logging.getLogger("urllib3.connectionpool").warning("retrying")
-        otlp_handler(root).close()
+        otlp_handler(root_logger).close()
         receiver.shutdown()
     assert receiver.requests == []
