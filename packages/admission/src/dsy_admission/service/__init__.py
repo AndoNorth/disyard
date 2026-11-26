@@ -31,7 +31,7 @@ from dsy_obs import logs
 from dsy_obs.metrics import export_registry
 from dsy_servicekit.config import ConfigError, require
 from dsy_servicekit.lifecycle import ReadyFile, stopping
-from dsy_temporal import event_data_converter, tracing_interceptor
+from dsy_temporal.client import connect as connect_temporal
 from dsy_workflow.contract import naming
 from dsy_workflow.models import QUEUE
 from temporalio.client import Client
@@ -284,13 +284,8 @@ async def serve(
     ready.arm()
     with nullcontext(stop) if stop else stopping() as stop:
         runtime = runtime or prometheus(config.metrics_address)
-        client = await Client.connect(
-            config.temporal_address,
-            namespace=config.namespace,
-            data_converter=event_data_converter,
-            interceptors=[tracing_interceptor()],
-            runtime=runtime,
-            lazy=True,
+        client = await connect_temporal(
+            config.temporal_address, config.namespace, runtime=runtime, lazy=True
         )
         connect_broker = connect_broker or (
             lambda: connect(config.broker_address, Credentials(BROKER_USER, config.broker_password))
