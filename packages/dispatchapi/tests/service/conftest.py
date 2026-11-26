@@ -84,10 +84,11 @@ def start(tenancy, store, tmp_path):
         service.stop(drain_s=5)
 
 
-@contextmanager
-def process(env: dict[str, str], store_dir: Path, log: Path):
-    """The service in a process of its own, logging to `log`, ready, with its URLs, and stopped by
-    SIGTERM after."""
+PORT_KEYS = ("DSY_METRICS_ADDRESS", "DSY_DISPATCH_API_LISTEN", "DSY_CONTROL_API_LISTEN")
+START_ATTEMPTS = 5
+
+
+def _launch(env: dict[str, str], store_dir: Path, log: Path) -> tuple[subprocess.Popen, dict]:
     full = {**os.environ, **env, STORE_ENV: str(store_dir)}
     with open(log, "ab") as out:
         proc = subprocess.Popen([sys.executable, str(SERVE)], env=full, stdout=out, stderr=out)
@@ -96,22 +97,47 @@ def process(env: dict[str, str], store_dir: Path, log: Path):
         "control": f"http://{env['DSY_CONTROL_API_LISTEN']}",
         "metrics": f"http://{env['DSY_METRICS_ADDRESS']}/metrics",
     }
-    running = SimpleNamespace(proc=proc, **urls)
-    try:
-        deadline = time.monotonic() + READY_S
-        while status(running.dispatch + "/readyz") != 200:
-            assert proc.poll() is None, log.read_text()
-            assert time.monotonic() < deadline, f"the service is not ready in {READY_S} s"
-            time.sleep(0.2)
-        yield running
-    finally:
-        if proc.poll() is None:
-            proc.send_signal(signal.SIGTERM)
+    return proc, urls
+
+
+def _wait_ready(proc: subprocess.Popen, dispatch: str, log: Path, offset: int) -> bool:
+    """True once ready. False when the service exited because a port was taken in the gap between
+    choosing it and binding it, so the caller starts again on fresh ports."""
+    deadline = time.monotonic() + READY_S
+    while status(dispatch + "/readyz") != 200:
+        if proc.poll() is not None:
+            text = log.read_bytes()[offset:].decode(errors="replace")
+            if "Address already in use" in text:
+                return False
+            raise AssertionError(text)
+        assert time.monotonic() < deadline, f"the service is not ready in {READY_S} s"
+        time.sleep(0.2)
+    return True
+
+
+@contextmanager
+def process(env: dict[str, str], store_dir: Path, log: Path):
+    """The service in a process of its own, logging to `log`, ready, with its URLs, and stopped by
+    SIGTERM after. A start that loses a listener port to another process is retried on fresh
+    ports."""
+    env = dict(env)
+    for attempt in range(START_ATTEMPTS):
+        offset = log.stat().st_size if log.exists() else 0
+        proc, urls = _launch(env, store_dir, log)
         try:
-            proc.wait(60)
-        except subprocess.TimeoutExpired:
-            proc.kill()
-            proc.wait()
+            if _wait_ready(proc, urls["dispatch"], log, offset):
+                yield SimpleNamespace(proc=proc, **urls)
+                return
+            assert attempt + 1 < START_ATTEMPTS, log.read_text()
+            env.update({key: f"127.0.0.1:{free_port()}" for key in PORT_KEYS})
+        finally:
+            if proc.poll() is None:
+                proc.send_signal(signal.SIGTERM)
+            try:
+                proc.wait(60)
+            except subprocess.TimeoutExpired:
+                proc.kill()
+                proc.wait()
 
 
 @pytest.fixture
