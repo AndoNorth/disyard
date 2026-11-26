@@ -50,7 +50,8 @@ def results_of(status: dict) -> set[str]:
 
 
 def finished(events: Sequence, task: str) -> bool:
-    return bool(of(events, "task.succeeded", task))
+    """Succeeded, or skipped for a compile cache hit, which a second run on one deploy meets."""
+    return bool(of(events, "task.succeeded", task) or of(events, "task.skipped", task))
 
 
 def ended_once(events: Sequence, task: str, reason_class: str) -> None:

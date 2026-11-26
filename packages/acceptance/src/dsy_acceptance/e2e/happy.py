@@ -323,7 +323,11 @@ def result_of(status: dict, task: str, kind: str) -> dict:
 
 
 def fetched(platform: Platform, reference: dict) -> bytes:
-    data = platform.fetch(reference["uri"], EXPORT_ROLE)
+    return fetched_from(platform, reference, EXPORT_ROLE)
+
+
+def fetched_from(platform: Platform, reference: dict, identity: str) -> bytes:
+    data = platform.fetch(reference["uri"], identity)
     if hashlib.sha256(data).hexdigest() != reference["sha256"]:
         raise Failed(f"{reference['uri']} does not hash to {reference['sha256']}")
     return data
@@ -373,9 +377,13 @@ def check_aggregate(platform: Platform, run: Run, events: list) -> None:
         if started < done:
             raise Failed(f"agg started at {started}, before {chain}-sim ended at {done}")
     inputs = one(events, "task.requested", "agg").data["inputs"]
+    if [i["kind"] for i in inputs] != ["index"]:
+        raise Failed(f"agg reads {inputs}, want one index of the results")
+    index = fetched_from(platform, inputs[0], WORKFLOW_ROLE).decode().splitlines()
+    listed = {line["reference"]["uri"] for line in map(json.loads, index) if "reference" in line}
     wanted = {result_of(run.ended, f"{c}-sim", "result")["uri"] for c in run.chains}
-    if {i["uri"] for i in inputs} != wanted:
-        raise Failed(f"agg reads {sorted(i['uri'] for i in inputs)}, want {sorted(wanted)}")
+    if listed != wanted:
+        raise Failed(f"agg reads {sorted(listed)}, want {sorted(wanted)}")
     pods = platform.aggregate_processes()
     if not pods:
         raise Failed("no pod of the aggregate pool to probe")

@@ -129,7 +129,10 @@ class World:
             task = f"{chain}-sim" if chain else "sim"
             results.append(self.result(job, task, seed, results_xml(seed), "results.xml", "result"))
         if len(chains) == 2:
-            self.event(job, "task.requested", "agg", inputs=[{"uri": r["uri"]} for r in results])
+            lines = [{"schema": "dsy.artifact.index/1", "task": "agg"}]
+            lines += [{"reference": r, "task": r["producer"]["task"]} for r in results]
+            index = self.store("\n".join(json.dumps(line) for line in lines).encode())
+            self.event(job, "task.requested", "agg", inputs=[{**index, "kind": "index"}])
             self.event(job, "task.placed", "agg", queue=naming().pools["aggregate"])
             self.event(job, "task.started", "agg", 1)
             self.event(job, "task.succeeded", "agg", 1)
