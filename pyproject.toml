@@ -90,10 +90,13 @@ dev = [
 
 [tool.pytest.ini_options]
 # Several packages have a tests/test_vectors.py, so test modules are imported by path and not by basename.
-addopts = "--import-mode=importlib"
+addopts = "--import-mode=importlib --strict-markers"
 markers = [
     "integration: needs containers started through dsy_itest",
     "e2e: needs the running cluster, run by scripts/e2e.sh and deselected by scripts/test.sh",
     "seam: the seam smoke level, the toy service and the layering rules, run by `just seam`",
+    "pair: needs a store and a database in one session, which holds two containers",
+    "isolated: starts containers of its own, runs only under `-m isolated` and holds at most two containers",
+    "cluster: reads a real backend of a running stack",
     "slow: large results, deselected by scripts/test.sh and run only when selected",
 ]

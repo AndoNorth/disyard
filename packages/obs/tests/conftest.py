@@ -5,10 +5,6 @@ import pytest
 from dsy_obs.testing import FakeObs
 
 
-def pytest_configure(config):
-    config.addinivalue_line("markers", "cluster: reads a real backend of a running stack")
-
-
 def pytest_collection_modifyitems(config, items):
     if "cluster" in (config.option.markexpr or ""):
         return
