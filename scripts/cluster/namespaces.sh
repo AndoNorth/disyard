@@ -21,7 +21,7 @@ mode=apply
 [ $# -eq 1 ] && [ -f "deploy/presets/$1.yaml" ] && [[ $mode =~ ^(apply|render|check)$ ]] ||
     { echo "usage: namespaces.sh [apply|render|check] <preset>" >&2; exit 2; }
 sized=$(scripts/cluster/obs.sh preset "$1") || exit $?
-context=${DSY_CONTEXT:-kind-dsy}
+context=kind-dsy
 k() { kubectl --context "$context" "$@"; }
 
 # The pools whose nodes each namespace runs on. Control pods share the infra pool.

@@ -16,7 +16,7 @@ source scripts/verify/cluster/lib/tools.sh
 
 which=${1:-all}
 case $which in memory | schedule | pool | cpu | all) ;; *) echo "usage: canary.sh [memory|schedule|pool|cpu|all]" >&2; exit 2 ;; esac
-context=${DSY_CONTEXT:-kind-dsy}
+context=kind-dsy
 ns=dsy-canary
 k() { kubectl --context "$context" "$@"; }
 # Pod manifests carry the pool, so the node is found by the same label.
