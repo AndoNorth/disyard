@@ -27,6 +27,7 @@ import pytest
 from dsy_broker.testing import FakeBroker
 from dsy_compile import bundle
 from dsy_dispatchapi.service import Config, Service
+from dsy_servicekit.testing import free_port
 
 SERVE = Path(__file__).with_name("serve.py")
 SERVE_TOOLS = runpy.run_path(str(SERVE))
@@ -35,12 +36,6 @@ STORE_ENV = SERVE_TOOLS["STORE_ENV"]
 READY_S = 60
 # Any DSN of a login, for a test that never reaches the database.
 NOWHERE = "postgresql://nobody:none@127.0.0.1:1/none?connect_timeout=1"
-
-
-def free_port() -> int:
-    with socket.socket() as sock:
-        sock.bind(("127.0.0.1", 0))
-        return sock.getsockname()[1]
 
 
 def environment(logins: dict[str, str], temporal: str, **limits) -> dict[str, str]:

@@ -2,14 +2,11 @@
 accepted job, in the trace of the job, pushed by OTLP HTTP to a receiver of the test, and the
 `job_id` and trace ids on the line that names a job in the publisher."""
 
-import gzip
 import json
 import logging
 import re
-import threading
 import urllib.request
 from datetime import UTC, datetime
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from types import SimpleNamespace
 
 import dsy_obs.setup as obs_setup
@@ -23,9 +20,9 @@ from dsy_events import build_event
 from dsy_events.metrics import registry
 from dsy_obs import logs, traces
 from dsy_obs.setup import setup
+from dsy_obs.testing.otlp import OtlpReceiver
 from dsy_temporal import new_traceparent, trace_id_of
 from opentelemetry import trace
-from opentelemetry.proto.collector.trace.v1.trace_service_pb2 import ExportTraceServiceRequest
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.util._once import Once
 
@@ -34,49 +31,10 @@ pytestmark = pytest.mark.integration
 COUNT = 3
 
 
-class Receiver:
-    """An OTLP HTTP server on a free loopback port that keeps every span it is sent, whatever
-    the signal, and answers each push with an empty success."""
-
-    def __init__(self):
-        self.spans: list[tuple[dict, object]] = []
-        outer = self
-
-        class Handler(BaseHTTPRequestHandler):
-            def do_POST(self):
-                data = self.rfile.read(int(self.headers.get("Content-Length", 0)))
-                if self.headers.get("Content-Encoding") == "gzip":
-                    data = gzip.decompress(data)
-                if self.path == "/v1/traces":
-                    outer._keep(data)
-                self.send_response(200)
-                self.send_header("Content-Length", "0")
-                self.end_headers()
-
-            def log_message(self, *_):
-                pass
-
-        self.httpd = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
-        self.url = f"http://127.0.0.1:{self.httpd.server_address[1]}"
-        threading.Thread(target=self.httpd.serve_forever, daemon=True).start()
-
-    def _keep(self, data: bytes) -> None:
-        request = ExportTraceServiceRequest.FromString(data)
-        for resource_spans in request.resource_spans:
-            resource = {a.key: a.value.string_value for a in resource_spans.resource.attributes}
-            for scope in resource_spans.scope_spans:
-                self.spans += [(resource, span) for span in scope.spans]
-
-    def stop(self) -> None:
-        self.httpd.shutdown()
-        self.httpd.server_close()
-
-
 @pytest.fixture
 def receiver():
-    made = Receiver()
-    yield made
-    made.stop()
+    with OtlpReceiver() as made:
+        yield made
 
 
 @pytest.fixture
