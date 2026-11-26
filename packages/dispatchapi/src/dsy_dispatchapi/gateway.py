@@ -14,7 +14,7 @@ from datetime import timedelta
 from typing import Any
 
 from dsy_keys import workflow_id
-from dsy_temporal import event_data_converter, tracing_interceptor
+from dsy_temporal.client import connect
 from dsy_workflow.contract import naming
 from dsy_workflow.models import ControlSignal, StatusQuery
 from temporalio.client import Client, WorkflowQueryFailedError
@@ -47,13 +47,7 @@ class TemporalGateway:
         )
         self._thread.start()
         self._client: Client = self._run(
-            Client.connect(
-                address,
-                namespace=naming().namespace,
-                data_converter=event_data_converter,
-                interceptors=[tracing_interceptor()],
-                lazy=True,
-            ),
+            connect(address, naming().namespace, lazy=True),
             self.call_timeout,
         )
 
