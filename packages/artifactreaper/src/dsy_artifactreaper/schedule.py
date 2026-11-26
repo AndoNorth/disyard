@@ -51,6 +51,8 @@ RETRY = RetryPolicy(
     maximum_attempts=5,
 )
 TRIGGER_TIMEOUT = timedelta(seconds=30)
+# A pass in flight at shutdown gets this long to finish, inside the worker grace period.
+DRAIN = timedelta(seconds=60)
 
 ENV_DSN = "DSY_REAPER_DSN"
 ENV_ENDPOINT = "DSY_REAPER_ENDPOINT"
@@ -88,13 +90,13 @@ def default_pass() -> RunPass:
     dsn, endpoint, credentials = (os.environ[k] for k in (ENV_DSN, ENV_ENDPOINT, ENV_CREDENTIALS))
 
     def run_pass(heartbeat: Callable[[], None]) -> dict[str, Any]:
-        import psycopg
+        from dsy_servicekit import pg
         from dsy_storecheck.s3 import client as s3_client
         from dsy_storecheck.s3 import load_credentials
 
         from .reap import ROLE, load_windows, reap_once
 
-        with psycopg.connect(dsn, autocommit=True) as conn:
+        with pg.connect(dsn, autocommit=True) as conn:
             report = reap_once(
                 conn,
                 s3_client(endpoint, load_credentials(credentials)[ROLE]),
@@ -123,6 +125,7 @@ def build_worker(client: Client, run_pass: RunPass, executor: ThreadPoolExecutor
         activities=[reap_activity(run_pass)],
         activity_executor=executor,
         max_concurrent_activities=1,
+        graceful_shutdown_timeout=DRAIN,
     )
 
 
@@ -168,14 +171,18 @@ async def trigger_schedule(client: Client) -> dict[str, Any] | None:
 
 def ensure(temporal_address: str, namespace: str = NAMESPACE) -> None:
     async def run() -> None:
-        await ensure_schedule(await Client.connect(temporal_address, namespace=namespace))
+        from dsy_temporal.client import connect
+
+        await ensure_schedule(await connect(temporal_address, namespace))
 
     asyncio.run(run())
 
 
 def trigger(temporal_address: str, namespace: str = NAMESPACE) -> dict[str, Any] | None:
     async def run() -> dict[str, Any] | None:
-        return await trigger_schedule(await Client.connect(temporal_address, namespace=namespace))
+        from dsy_temporal.client import connect
+
+        return await trigger_schedule(await connect(temporal_address, namespace))
 
     return asyncio.run(run())
 
@@ -185,7 +192,9 @@ def worker(temporal_address: str, namespace: str = NAMESPACE) -> None:
     run_pass = default_pass()
 
     async def run() -> None:
-        client = await Client.connect(temporal_address, namespace=namespace)
+        from dsy_temporal.client import connect
+
+        client = await connect(temporal_address, namespace)
         with ThreadPoolExecutor(max_workers=1) as executor:
             await build_worker(client, run_pass, executor).run()
 

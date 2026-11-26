@@ -9,13 +9,17 @@ dependencies = [
     "temporalio",
     "dsy-artifactclient",
     "dsy-artifactindex",
+    "dsy-servicekit",
     "dsy-storecheck",
+    "dsy-temporal",
 ]
 
 [tool.uv.sources]
 dsy-artifactclient = { workspace = true }
 dsy-artifactindex = { workspace = true }
+dsy-servicekit = { workspace = true }
 dsy-storecheck = { workspace = true }
+dsy-temporal = { workspace = true }
 
 [build-system]
 requires = ["hatchling"]
