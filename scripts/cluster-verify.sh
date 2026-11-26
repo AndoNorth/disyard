@@ -30,7 +30,7 @@ refuse() { echo "refused: $*" >&2; exit 4; }
 
 # shellcheck source=/dev/null
 source scripts/cluster/lock.sh
-cluster_lock 1
+cluster_lock 4
 
 kind get clusters 2>/dev/null | grep -qx dsy || refuse "no kind cluster named dsy, start one with: just up"
 started=$(cat "$state/cluster.owner" 2>/dev/null || true)
