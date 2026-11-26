@@ -5,10 +5,9 @@
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
-if [ -z "${DSY_CLUSTER_LOCK_HELD:-}" ]; then
-    exec 9>/tmp/dsy-cluster.lock
-    flock -w 900 9 || { echo "could not take /tmp/dsy-cluster.lock" >&2; exit 1; }
-fi
+# shellcheck source=/dev/null
+source scripts/cluster/lock.sh
+cluster_lock 1
 
 running=$(docker ps -q --filter label=io.x-k8s.kind.cluster=dsy)
 if [ -z "$running" ]; then

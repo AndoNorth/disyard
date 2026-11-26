@@ -26,10 +26,9 @@ context=kind-dsy
 k() { kubectl --context "$context" "$@"; }
 refuse() { echo "refused: $*" >&2; exit 4; }
 
-if [ -z "${DSY_CLUSTER_LOCK_HELD:-}" ]; then
-    exec 9>/tmp/dsy-cluster.lock
-    flock -w 900 9 || { echo "could not take /tmp/dsy-cluster.lock" >&2; exit 1; }
-fi
+# shellcheck source=/dev/null
+source scripts/cluster/lock.sh
+cluster_lock 1
 
 kind get clusters 2>/dev/null | grep -qx dsy || refuse "no kind cluster named dsy, start one with: just up"
 started=$(cat "$state/cluster.owner" 2>/dev/null || true)
