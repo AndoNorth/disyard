@@ -14,6 +14,7 @@ from datetime import UTC, datetime
 
 import psycopg
 from botocore.exceptions import BotoCoreError, ClientError
+from dsy_servicekit import pg
 from dsy_storecheck.s3 import client as s3_client
 from dsy_storecheck.s3 import load_credentials
 from temporalio.client import WorkflowFailureError
@@ -53,7 +54,7 @@ def run_once(args: argparse.Namespace) -> int:
         print(f"usage: {type(error).__name__}: {error}", file=sys.stderr)
         return USAGE
     try:
-        conn = psycopg.connect(args.dsn, autocommit=True)
+        conn = pg.connect(args.dsn, autocommit=True)
     except psycopg.OperationalError as error:
         print(f"database: {error}", file=sys.stderr)
         return UNREACHABLE

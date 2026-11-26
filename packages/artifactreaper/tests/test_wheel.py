@@ -38,8 +38,11 @@ def clean_python(tmp_path_factory) -> Path:
         "dsy-artifactindex",
         "dsy-compat",
         "dsy-events",
+        "dsy-itest",
         "dsy-keys",
+        "dsy-servicekit",
         "dsy-storecheck",
+        "dsy-temporal",
     ):
         run("uv", "build", "--wheel", "--package", package, "-o", str(wheels), cwd=ROOT)
     venv = work / "venv"

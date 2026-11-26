@@ -4,8 +4,7 @@ reaper's Schedule worker in one process, on a client of one namespace.
 `python -m dsy_workflow.service` reads its configuration from the environment only, the names of
 ENV and REAPER_ENV, serves the SDK's Prometheus metrics, which carry the workflow's own metrics,
 on the address of DSY_METRICS_ADDRESS, and drains on SIGTERM or SIGINT: it stops polling, gives
-the workflow and control tasks in flight DRAIN to finish and report, and returns. The reaper worker
-keeps the shutdown of dsy_artifactreaper.schedule, whose pass is retried by its own policy.
+the workflow, control and reaper tasks in flight DRAIN to finish and report, and returns.
 When READY_ENV names a file, the service creates it once Temporal answers for its namespace and
 its workers have started, and removes it when it starts to drain, so a readiness probe can test
 for it. A file left by a killed process is removed before the service connects.
@@ -18,7 +17,6 @@ from collections.abc import Callable, Mapping
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import nullcontext
 from dataclasses import dataclass, field
-from datetime import timedelta
 from pathlib import Path
 
 from dsy_artifactreaper import schedule
@@ -41,7 +39,7 @@ from ..worker import THREADS, control_worker, workflow_worker
 log = logging.getLogger(__name__)
 
 # How long the tasks in flight have to finish after a stop, below the pod's grace period.
-DRAIN = timedelta(seconds=60)
+DRAIN = schedule.DRAIN
 # The workflow tasks run at once. A task takes tens of milliseconds of CPU, so on the pod's half
 # core more of them at once only queue inside the process until they pass their timeout.
 WORKFLOW_TASKS = 8
