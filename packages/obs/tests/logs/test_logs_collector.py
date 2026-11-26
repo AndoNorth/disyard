@@ -53,7 +53,7 @@ def attributes(pairs: list[dict]) -> dict[str, str]:
     return {a["key"]: a["value"]["stringValue"] for a in pairs}
 
 
-def test_a_record_reaches_the_collector(t1, tmp_path, root, monkeypatch):
+def test_a_record_reaches_the_collector(t1, tmp_path, root_logger, monkeypatch):
     config = tmp_path / "collector.yaml"
     config.write_text(CONFIG)
     config.chmod(0o644)
@@ -68,7 +68,7 @@ def test_a_record_reaches_the_collector(t1, tmp_path, root, monkeypatch):
         logs.install("workflow")
         with logs.bind(job_id="j1", traceparent=f"00-{TRACE_ID}-{SPAN_ID}-01"):
             logging.getLogger("dsy.test").info("through the collector", extra={"pool": "compile"})
-        next(h for h in root.handlers if isinstance(h, logs.OtlpHandler)).close()
+        next(h for h in root_logger.handlers if isinstance(h, logs.OtlpHandler)).close()
         deadline = time.monotonic() + 30
         while not (records := exported(collector.id)) and time.monotonic() < deadline:
             time.sleep(0.2)
