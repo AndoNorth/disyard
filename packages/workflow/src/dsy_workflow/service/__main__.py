@@ -2,6 +2,7 @@
 names, configured from the environment. Exit 2 when a variable is missing."""
 
 import asyncio
+import logging
 import os
 import sys
 from pathlib import Path
@@ -12,6 +13,16 @@ from dsy_servicekit.config import exiting_on_config_error
 from dsy_servicekit.lifecycle import ReadyFile
 
 from . import READY_ENV, Config, real_control, serve
+
+
+def leave(code: int) -> None:
+    """Ends the process without interpreter finalization. Finalization drops the Temporal runtime
+    with the GIL held, and the drop waits for a runtime thread that is inside a result callback
+    and needs the GIL, so the process can hang after a clean drain, for as long as it is left."""
+    logging.shutdown()
+    sys.stdout.flush()
+    sys.stderr.flush()
+    os._exit(code)
 
 
 def main() -> int:
@@ -31,6 +42,7 @@ def main() -> int:
             ready_file=ready,
         )
     )
+    leave(0)
     return 0
 
 
