@@ -86,25 +86,30 @@ def test_an_unreachable_database_counts_an_error_for_every_input(served):
     assert exporter.errors == {i.name: 1 for i in EXPORTED}
 
 
-def test_serve_marks_ready_after_a_pass_that_reached_the_database(tmp_path):
+def test_serve_marks_ready_after_a_pass_that_reached_the_database_and_clears_on_stop(tmp_path):
     ready, stop = tmp_path / "ready", threading.Event()
+    seen: list[bool] = []
 
     class Pass:
         def __init__(self, reads: list[int]):
             self.reads = reads
 
         def run_once(self) -> int:
+            seen.append(ready.exists())
             reads = self.reads.pop(0)
             if not self.reads:
                 stop.set()
             return reads
 
     serve(Pass([0]), stop, ready, 0)
+    assert seen == [False]
     assert not ready.exists()
 
     stop.clear()
-    serve(Pass([0, 3]), stop, ready, 0)
-    assert ready.exists()
+    seen.clear()
+    serve(Pass([0, 3, 0]), stop, ready, 0)
+    assert seen == [False, False, True]
+    assert not ready.exists()
 
 
 @pytest.mark.integration
