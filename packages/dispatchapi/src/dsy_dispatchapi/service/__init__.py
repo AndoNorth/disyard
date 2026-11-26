@@ -12,7 +12,6 @@ job in hand and each then answers an ErrorLine, and the loops end, within DRAIN_
 
 import logging
 import os
-import signal
 import sys
 import threading
 import time
@@ -35,6 +34,8 @@ from dsy_jobdoc.profile import LimitsFile, LimitsProfile, PoolTable, Slot
 from dsy_jobstate.models import CONTRACT as JOBSTATE_CONTRACT
 from dsy_obs.metrics import export_registry
 from dsy_obs.setup import setup
+from dsy_servicekit.config import exiting_on_config_error, require
+from dsy_servicekit.lifecycle import ThreadStop
 from dsy_storecheck.s3 import load_credentials
 from dsy_workflow.contract import pools
 from temporalio.runtime import PrometheusConfig, Runtime, TelemetryConfig
@@ -126,14 +127,13 @@ class Config:
     def from_env(cls, environ: Mapping[str, str]) -> "Config":
         """The configuration of `environ`, or ConfigError naming every variable that is unset or
         empty, or the first one that is refused."""
-        if missing := [name for name in ENV.values() if not environ.get(name)]:
-            raise ConfigError(f"missing environment: {', '.join(missing)}")
+        required = require(environ, ENV)
         listen = {
             listener: _address(environ.get(name) or LISTEN[listener], name)
             for listener, name in LISTEN_ENV.items()
         }
         return cls(
-            **{key: environ[name] for key, name in ENV.items()},
+            **required,
             listen=listen,
             limits=Limits.from_env(environ),
         )
@@ -307,11 +307,10 @@ def build(config: Config, tenancy: TenancyProfile) -> Service:
 
 def run(service: Service) -> None:
     """Serves until SIGTERM or SIGINT, then stops."""
-    stop = threading.Event()
-    for signum in (signal.SIGTERM, signal.SIGINT):
-        signal.signal(signum, lambda *_: stop.set())
+    stop = ThreadStop()
+    stop.install()
     service.start()
-    while not stop.wait(1.0):
+    while not stop.event.wait(1.0):
         pass
     log.info("stopping, draining for at most %s s", DRAIN_S)
     service.stop()
@@ -320,11 +319,8 @@ def run(service: Service) -> None:
 def main(environ: Mapping[str, str] = os.environ) -> int:
     """Exit 2 when the configuration is refused, and 1 when the tenancy profile is."""
     setup("dispatch")
-    try:
+    with exiting_on_config_error("dsy_dispatchapi.service"):
         config = Config.from_env(environ)
-    except ConfigError as error:
-        print(f"dsy_dispatchapi.service: {error}", file=sys.stderr)
-        return 2
     try:
         tenancy = load(config.tenancy_profile)
     except KeyError as error:
