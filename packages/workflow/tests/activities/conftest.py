@@ -6,18 +6,14 @@ login is a fresh member of `dsy_workflow` or `dsy_artifacts`. The superuser only
 rows, and the clients of the other store roles write what a worker or the dispatch API would.
 """
 
-import time
 import uuid
 
-import psycopg
 import pytest
 from dsy_artifactclient.client import ArtifactClient, RetryPolicy
 from dsy_artifactclient.keys import split_uri
 from dsy_events import from_bytes
 from dsy_jobstate import JobRow, insert_accepted, transition
 from dsy_storecheck.s3 import client as s3_client
-from psycopg import sql
-from psycopg.conninfo import make_conninfo
 
 NO_WAIT = RetryPolicy(sleep=lambda seconds: None)
 STARTED = "contracts/events/vectors/golden/job.started/1.0.json"
@@ -29,33 +25,6 @@ def shelf(store_session):
     session holds two containers whichever other module holds the session's store."""
     store_session.store().create_buckets()
     return store_session
-
-
-@pytest.fixture
-def db(appdb):
-    with psycopg.connect(appdb, autocommit=True) as connection:
-        yield connection
-
-
-@pytest.fixture
-def login(appdb, db):
-    """The DSN of a fresh login user in a group role, dropped after the test."""
-    users: list[str] = []
-
-    def dsn(group: str) -> str:
-        user = f"standin_{group}_{time.time_ns()}"
-        db.execute(
-            sql.SQL("CREATE ROLE {} LOGIN PASSWORD 'standin' IN ROLE {}").format(
-                sql.Identifier(user), sql.Identifier(group)
-            )
-        )
-        users.append(user)
-        return make_conninfo(appdb, user=user, password="standin")
-
-    yield dsn
-    for user in users:
-        db.execute(sql.SQL("DROP OWNED BY {}").format(sql.Identifier(user)))
-        db.execute(sql.SQL("DROP ROLE {}").format(sql.Identifier(user)))
 
 
 @pytest.fixture

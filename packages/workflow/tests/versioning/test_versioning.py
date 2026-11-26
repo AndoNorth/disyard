@@ -8,7 +8,6 @@ and FakePool workers, so all builds share the control queue of the environment's
 """
 
 import asyncio
-import socket
 import time
 import uuid
 from collections import defaultdict
@@ -21,12 +20,14 @@ from dsy_events import Event, build_event
 from dsy_events.models import JobParams
 from dsy_jobdoc.plan_models import Plan
 from dsy_keys import workflow_id
-from dsy_workflow import versioning
+from dsy_servicekit.testing import free_port
+from dsy_workflow import service, versioning
 from dsy_workflow.contract import naming
 from dsy_workflow.job import JobWorkflow
 from dsy_workflow.placement import StaticPlacer
 from dsy_workflow.service import Config, serve
-from dsy_workflow.testing import Fail, FakeControl, FakePool, Succeed, connect
+from dsy_workflow.testing import Fail, FakeControl, FakePool, Succeed, connect, dev_server
+from dsy_workflow.testing import control_worker as control_worker_of
 from dsy_workflow.testing.control import Emit, Emitted, LoadedPlan
 from dsy_workflow.worker import workflow_worker
 from temporalio import activity, workflow
@@ -49,21 +50,8 @@ HASH = "a" * 64
 @pytest.fixture
 def server(t1) -> str:
     """The address of a fresh dev server with the namespace of naming.yaml."""
-    with t1.container(
-        "temporalio/temporal",
-        ports={0: 7233},
-        command=(
-            "server",
-            "start-dev",
-            "--ip",
-            "0.0.0.0",
-            "--headless",
-            "--namespace",
-            naming().namespace,
-        ),
-    ) as container:
-        container.wait_ready(0)
-        yield f"127.0.0.1:{container.host_ports[0]}"
+    with dev_server(t1) as address:
+        yield address
 
 
 @pytest.fixture(autouse=True)
@@ -171,11 +159,7 @@ async def running(*workers):
 
 
 def control_worker(client: Client, control: FakeControl) -> Worker:
-    return Worker(
-        client,
-        task_queue=naming().control_queue.replace("<build id>", CONTROL_BUILD),
-        activities=control.control_activities(),
-    )
+    return control_worker_of(client, control, CONTROL_BUILD)
 
 
 async def start_job(client: Client, control: FakeControl, job_plan: Plan) -> WorkflowHandle:
@@ -491,12 +475,6 @@ def test_override_procedure(server):
     )
 
 
-def _free_port() -> int:
-    with socket.socket() as probe:
-        probe.bind(("127.0.0.1", 0))
-        return probe.getsockname()[1]
-
-
 async def _pollers(client: Client, queue: str, kind: int, wait_s: float = 30) -> list:
     request = DescribeTaskQueueRequest(
         namespace=client.namespace, task_queue=TaskQueue(name=queue), task_queue_type=kind
@@ -513,13 +491,13 @@ def test_only_workflow_queue_versioned(server, monkeypatch):
     """The server sees deployment options on the pollers of the service's workflow queue only: its
     control and reaper workers poll unversioned."""
     build_id = "exit-a"
-    control_queue = naming().control_queue.replace("<build id>", build_id)
+    control_queue = service.control_queue(build_id)
     monkeypatch.setenv(naming().workflow.build_id_env, build_id)
     config = Config(
         temporal_address=server,
         namespace=naming().namespace,
         build_id=build_id,
-        metrics_address=f"127.0.0.1:{_free_port()}",
+        metrics_address=f"127.0.0.1:{free_port()}",
         workflow_dsn="postgresql://unused",
         artifacts_dsn="postgresql://unused",
         store_endpoint="http://127.0.0.1:1",

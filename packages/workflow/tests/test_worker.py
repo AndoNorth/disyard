@@ -17,11 +17,9 @@ from dsy_workflow import versioning
 from dsy_workflow.contract import naming
 from dsy_workflow.job import JobWorkflow
 from dsy_workflow.placement import StaticPlacer, place_activity
-from dsy_workflow.taskpath import control_queue
-from dsy_workflow.testing import FakeControl, FakePool, Succeed, connect
+from dsy_workflow.testing import FakeControl, FakePool, Succeed, connect, control_worker
 from dsy_workflow.testing.control import LoadedPlan
 from dsy_workflow.worker import THREAD_PREFIX, workflow_worker
-from temporalio.worker import Worker
 
 BUILD = "worker-test"
 LIMIT_S = 120
@@ -118,7 +116,7 @@ def test_workflow_worker_owns_the_executor(temporal, monkeypatch):
         )
         workers = [
             workflow_worker(client, BUILD, placer, control.emit),
-            Worker(client, task_queue=control_queue(), activities=control.control_activities()),
+            control_worker(client, control),
             *(FakePool(client, pool, lambda task: Succeed()) for pool in naming().pools),
         ]
         async with AsyncExitStack() as stack:

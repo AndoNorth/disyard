@@ -2,7 +2,6 @@
 control activities' database and store, a fake reaper pass, and a FakePool on the compile queue."""
 
 import asyncio
-import socket
 import uuid
 from contextlib import asynccontextmanager
 from datetime import UTC, datetime
@@ -13,6 +12,7 @@ from dsy_events.models import JobParams
 from dsy_jobdoc.plan_models import Plan
 from dsy_keys import workflow_id
 from dsy_servicekit.lifecycle import stopping
+from dsy_servicekit.testing import free_port
 from dsy_workflow.contract import naming
 from dsy_workflow.job import JobWorkflow
 from dsy_workflow.service import Config, serve
@@ -64,12 +64,6 @@ REAP_REPORT = {"ran": True, "objects": 0}
 def fake_pass(heartbeat) -> dict:
     heartbeat()
     return REAP_REPORT
-
-
-def free_port() -> int:
-    with socket.socket() as probe:
-        probe.bind(("127.0.0.1", 0))
-        return probe.getsockname()[1]
 
 
 @pytest.fixture

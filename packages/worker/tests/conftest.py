@@ -9,23 +9,10 @@ from dsy_worker.testing import contract_cases
 def temporal(t1) -> str:
     """The address of a dev server with the namespace of naming.yaml, one per test module, which
     is gone before the next module runs."""
-    from dsy_workflow.contract import naming
+    from dsy_workflow.testing import dev_server
 
-    with t1.container(
-        "temporalio/temporal",
-        ports={0: 7233},
-        command=(
-            "server",
-            "start-dev",
-            "--ip",
-            "0.0.0.0",
-            "--headless",
-            "--namespace",
-            naming().namespace,
-        ),
-    ) as container:
-        container.wait_ready(0)
-        yield f"127.0.0.1:{container.host_ports[0]}"
+    with dev_server(t1) as address:
+        yield address
 
 
 @pytest.fixture(scope="module")

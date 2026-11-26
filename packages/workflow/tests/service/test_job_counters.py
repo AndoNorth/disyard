@@ -1,20 +1,18 @@
 """The job-end counter is served for every job class and terminal status before any job ends."""
 
 import re
-import socket
 import urllib.request
 
 from dsy_jobstate import status_vocabulary
 from dsy_obs import metrics
+from dsy_servicekit.testing import free_port
 from dsy_workflow.service import BUCKETS, start_job_counters
 
 CLASSES = ("short", "long")
 
 
 def test_every_job_end_series_is_served_at_zero_before_any_job_ends():
-    with socket.socket() as probe:
-        probe.bind(("127.0.0.1", 0))
-        port = probe.getsockname()[1]
+    port = free_port()
     runtime = metrics.runtime(f"127.0.0.1:{port}", BUCKETS)
 
     start_job_counters(runtime.metric_meter, "dsy")
