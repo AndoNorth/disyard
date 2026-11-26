@@ -234,11 +234,11 @@ def test_describe_skips_remembered_rows(admission_db, seed, age, client):
 
 
 def test_scan_and_message_race_once(
-    login, seed, resume_before_start, admitted_events, status, client
+    connected, seed, resume_before_start, admitted_events, status, client
 ):
     job_id = seed()
     resume_before_start(job_id)
-    with login() as scan_db, login() as message_db:
+    with connected() as scan_db, connected() as message_db:
         [grant] = Scanner().snapshot(scan_db, scans=True).readmissions
         barrier = threading.Barrier(2)
         outcomes = []

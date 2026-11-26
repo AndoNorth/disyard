@@ -2,46 +2,26 @@
 server that knows the search attributes of naming.yaml, and a rig that runs the job workflow on it,
 whose `emit` writes the real job row, so a job pauses and resumes in the row admission reads."""
 
-import asyncio
-import os
-import time
 import uuid
-from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime, timedelta
 
 import psycopg
 import pytest
+from admission_tests_support import MANIFEST, GatedEmitter, manifest, row_of
 from dsy_events import build_event
 from dsy_eventstore import insert_events
 from dsy_jobdoc.plan_models import Plan
-from dsy_jobstate import JobRow, insert_accepted, mark_published, request_action, transition
-from dsy_temporal import event_data_converter, new_traceparent, tracing_interceptor
+from dsy_jobstate import insert_accepted, mark_published, request_action, transition
+from dsy_temporal import new_traceparent
 from dsy_workflow import versioning
-from dsy_workflow.activities import Emitter
-from dsy_workflow.contract import naming
-from dsy_workflow.placement import StaticPlacer, place_activity
-from dsy_workflow.service import control_queue
-from dsy_workflow.testing import Fail, FakeControl, FakePool, Succeed, connect
-from dsy_workflow.testing.control import Emit, Emitted, LoadedPlan
-from psycopg import sql
-from psycopg.conninfo import make_conninfo
-from temporalio import activity
-from temporalio.api.enums.v1 import IndexedValueType
-from temporalio.api.operatorservice.v1 import AddSearchAttributesRequest
+from dsy_workflow.placement import StaticPlacer
+from dsy_workflow.testing import Fail, FakeControl, FakePool, Succeed, build_id, control_worker
+from dsy_workflow.testing.control import LoadedPlan
+from dsy_workflow.worker import workflow_worker
 from temporalio.client import Client
-from temporalio.common import WorkerDeploymentVersion
-from temporalio.worker import Worker, WorkerDeploymentConfig
 
-os.environ.setdefault(naming().workflow.build_id_env, "admission-test")
-BUILD_ID = os.environ[naming().workflow.build_id_env]
+BUILD_ID = build_id()
 
-from dsy_workflow.job import JobWorkflow  # noqa: E402
-
-SHA = "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08"
-TYPES = {
-    "keyword": IndexedValueType.INDEXED_VALUE_TYPE_KEYWORD,
-    "datetime": IndexedValueType.INDEXED_VALUE_TYPE_DATETIME,
-}
 # The moves that take a freshly claimed row to each status, made as the workflow and control would.
 MOVES = {
     "admitted": [],
@@ -56,17 +36,6 @@ MOVES = {
 }
 
 
-def manifest(sha256: str) -> dict:
-    return {
-        "uri": f"s3://dsy-sources/sha256/{sha256[:2]}/{sha256}",
-        "sha256": sha256,
-        "size": 2048,
-        "name": "manifest.json",
-        "kind": "manifest",
-    }
-
-
-MANIFEST = manifest(SHA)
 # The manifest of a patch, whose simulate task runs other args.
 PATCH = manifest("b" * 64)
 SIMULATE = {"workload": "pi", "args": {"n": 1000}, "seed": 7}
@@ -122,54 +91,15 @@ def accepted_event(job_id: str, tenant: str = "acme", job_class: str = "short"):
     )
 
 
-def row_of(event) -> JobRow:
-    return JobRow(
-        job_id=event.jobid,
-        tenant=event.tenant,
-        submission_key=event.data["submission_key"],
-        batch_id=event.data["batch_id"],
-        priority_class=event.priorityclass,
-        job_class=event.jobclass,
-        manifest_ref=event.data["manifest"],
-        schema_version=event.dataschema,
-        traceparent=event.traceparent,
-        tracestate=event.tracestate,
-        seed=7,
-        parameters={"n": 3},
-        fingerprint=SHA,
-    )
-
-
 @pytest.fixture
-def db(appdb):
-    with psycopg.connect(appdb, autocommit=True) as connection:
-        yield connection
-
-
-@pytest.fixture
-def login(appdb, db):
+def connected(login):
     """Connects fresh logins in `dsy_admission`, the group of admission's service login."""
-    users = []
-
-    def connected() -> psycopg.Connection:
-        user = f"admission_{time.time_ns()}"
-        db.execute(
-            sql.SQL("CREATE ROLE {} LOGIN PASSWORD 'standin' IN ROLE dsy_admission").format(
-                sql.Identifier(user)
-            )
-        )
-        users.append(user)
-        return psycopg.connect(make_conninfo(appdb, user=user, password="standin"), autocommit=True)
-
-    yield connected
-    for user in users:
-        db.execute(sql.SQL("DROP OWNED BY {}").format(sql.Identifier(user)))
-        db.execute(sql.SQL("DROP ROLE {}").format(sql.Identifier(user)))
+    return lambda: psycopg.connect(login("dsy_admission"), autocommit=True)
 
 
 @pytest.fixture
-def admission_db(login):
-    with login() as connection:
+def admission_db(connected):
+    with connected() as connection:
         yield connection
 
 
@@ -236,70 +166,11 @@ def age(db):
 
 
 @pytest.fixture
-def status(db):
-    return lambda job_id: db.execute(
-        "SELECT status FROM accepted_job WHERE job_id = %s", (job_id,)
-    ).fetchone()[0]
-
-
-@pytest.fixture
 def admitted_events(db):
     return lambda job_id: db.execute(
         "SELECT count(*) FROM event WHERE job_id = %s AND type = 'dev.dsy.job.admitted.v1'",
         (job_id,),
     ).fetchone()[0]
-
-
-@pytest.fixture(scope="module")
-def server(temporal) -> str:
-    """The dev server's address, once it knows the search attributes of naming.yaml."""
-
-    async def register():
-        client = await connect(temporal)
-        await client.operator_service.add_search_attributes(
-            AddSearchAttributesRequest(
-                namespace=naming().namespace,
-                search_attributes={
-                    name: TYPES[kind] for name, kind in naming().search_attributes.items()
-                },
-            )
-        )
-
-    asyncio.run(register())
-    return temporal
-
-
-@pytest.fixture
-def client(server):
-    """Connects a client set up as the admission service sets it up, inside the test's loop."""
-
-    async def connected() -> Client:
-        await connect(server)
-        return await Client.connect(
-            server,
-            namespace=naming().namespace,
-            data_converter=event_data_converter,
-            interceptors=[tracing_interceptor()],
-        )
-
-    return connected
-
-
-class GatedEmitter(Emitter):
-    """The real `emit`, except that while `held` is set the move from `resume-pending` to
-    `running` loses as if the row were still `paused`, so a workflow that applied a resume keeps
-    its row at `resume-pending` and tries the move again after its backoff."""
-
-    def __init__(self, dsn: str):
-        super().__init__(dsn)
-        self.held = False
-
-    @activity.defn(name="emit")
-    def emit(self, request: Emit) -> Emitted:
-        move = request.transition
-        if self.held and move and (move.expected, move.to) == ("resume-pending", "running"):
-            return Emitted(inserted=0, lost="paused")
-        return Emitter.emit(self, request)
 
 
 class Rig:
@@ -320,25 +191,10 @@ class Rig:
             "simulate",
             lambda task: Fail("timeout", checkpoint=True) if task.task_attempt == 1 else Succeed(),
         )
-        self.executor = ThreadPoolExecutor(4)
         self.client = client
         self.workers = [
-            Worker(
-                client,
-                task_queue=naming().workflow.queue,
-                workflows=[JobWorkflow],
-                activities=[place_activity(StaticPlacer()), self.emitter.emit],
-                activity_executor=self.executor,
-                deployment_config=WorkerDeploymentConfig(
-                    version=WorkerDeploymentVersion(naming().workflow.deployment, BUILD_ID),
-                    use_worker_versioning=True,
-                ),
-            ),
-            Worker(
-                client,
-                task_queue=control_queue(BUILD_ID),
-                activities=self.control.control_activities(),
-            ),
+            workflow_worker(client, BUILD_ID, StaticPlacer(), self.emitter.emit),
+            control_worker(client, self.control, BUILD_ID),
             self.pool,
         ]
 
@@ -351,7 +207,6 @@ class Rig:
     async def __aexit__(self, *exc) -> None:
         for worker in reversed(self.workers):
             await worker.__aexit__(*exc)
-        self.executor.shutdown()
 
 
 @pytest.fixture
