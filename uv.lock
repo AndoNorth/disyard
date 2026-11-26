@@ -489,11 +489,15 @@ name = "dsy-clusterkit"
 version = "0.0.0"
 source = { editable = "packages/clusterkit" }
 dependencies = [
+    { name = "dsy-servicekit" },
     { name = "dsy-storecheck" },
 ]
 
 [package.metadata]
-requires-dist = [{ name = "dsy-storecheck", editable = "packages/storecheck" }]
+requires-dist = [
+    { name = "dsy-servicekit", editable = "packages/servicekit" },
+    { name = "dsy-storecheck", editable = "packages/storecheck" },
+]
 
 [[package]]
 name = "dsy-compat"
