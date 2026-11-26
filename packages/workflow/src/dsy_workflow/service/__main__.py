@@ -8,26 +8,27 @@ from pathlib import Path
 
 from dsy_artifactreaper import schedule
 from dsy_obs.setup import setup
+from dsy_servicekit.config import exiting_on_config_error
+from dsy_servicekit.lifecycle import ReadyFile
 
-from . import READY_ENV, Config, MissingEnv, real_control, serve
+from . import READY_ENV, Config, real_control, serve
 
 
 def main() -> int:
     setup("workflow")
-    try:
+    path = os.environ.get(READY_ENV)
+    ready = Path(path) if path else None
+    ReadyFile(ready).arm()
+    with exiting_on_config_error("dsy_workflow.service"):
         config = Config.from_env(os.environ)
-    except MissingEnv as error:
-        print(f"dsy_workflow.service: {error}", file=sys.stderr)
-        return 2
     activities, emit = real_control(config)
-    ready = os.environ.get(READY_ENV)
     asyncio.run(
         serve(
             config,
             activities,
             emit,
             schedule.default_pass(),
-            ready_file=Path(ready) if ready else None,
+            ready_file=ready,
         )
     )
     return 0

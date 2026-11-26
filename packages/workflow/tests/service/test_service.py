@@ -196,6 +196,7 @@ def test_metrics_endpoint(temporal, config, running, start_job):
 
 
 @pytest.mark.integration
+@pytest.mark.seam
 def test_ready_file_while_polling(temporal, config, tmp_path):
     """The ready file exists once the workers poll and is gone once the service stops, and a
     namespace the server does not know fails the start without it, even when a killed process
@@ -235,6 +236,7 @@ def test_ready_file_while_polling(temporal, config, tmp_path):
     assert not ready.exists()
 
 
+@pytest.mark.seam
 def test_missing_env_refused():
     """The service names every missing variable and exits 2 before it connects anywhere."""
     environ = {k: v for k, v in os.environ.items() if not k.startswith("DSY_")}

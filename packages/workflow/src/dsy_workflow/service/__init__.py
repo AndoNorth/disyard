@@ -14,9 +14,9 @@ for it. A file left by a killed process is removed before the service connects.
 import asyncio
 import logging
 import os
-import signal
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Callable, Mapping
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import nullcontext
 from dataclasses import dataclass, field
 from datetime import timedelta
 from pathlib import Path
@@ -25,6 +25,8 @@ from dsy_artifactreaper import schedule
 from dsy_artifactreaper.schedule import RunPass
 from dsy_jobstate import status_vocabulary
 from dsy_obs import metrics
+from dsy_servicekit.config import ConfigError, require
+from dsy_servicekit.lifecycle import ReadyFile, stopping
 from dsy_temporal import event_data_converter, tracing_interceptor
 from temporalio.api.workflowservice.v1 import DescribeNamespaceRequest
 from temporalio.client import Client
@@ -90,10 +92,7 @@ REAPER_ENV = (schedule.ENV_DSN, schedule.ENV_ENDPOINT, schedule.ENV_CREDENTIALS)
 READY_ENV = "DSY_READY_FILE"
 
 
-class MissingEnv(Exception):
-    def __init__(self, names: Sequence[str]):
-        super().__init__(f"missing environment: {', '.join(names)}")
-        self.names = list(names)
+MissingEnv = ConfigError
 
 
 @dataclass(frozen=True)
@@ -114,10 +113,12 @@ class Config:
     def from_env(cls, environ: Mapping[str, str]) -> "Config":
         """The configuration of `environ`, or MissingEnv naming every variable that is unset or
         empty, the reaper's included and the optional ones left out, before anything connects."""
-        required = [name for key, name in ENV.items() if key not in OPTIONAL]
-        if missing := [name for name in [*required, *REAPER_ENV] if not environ.get(name)]:
-            raise MissingEnv(missing)
-        return cls(**{key: environ.get(name) or None for key, name in ENV.items()})
+        required = {key: name for key, name in ENV.items() if key not in OPTIONAL}
+        found = require(environ, {**required, **{name: name for name in REAPER_ENV}})
+        return cls(
+            **{key: found[key] for key in required},
+            placement_url=environ.get(ENV["placement_url"]) or None,
+        )
 
     def placer(self) -> Placer:
         return ServicePlacer(self.placement_url) if self.placement_url else StaticPlacer()
@@ -195,16 +196,12 @@ async def serve(
     """
     if (env_build := os.environ.get(naming().workflow.build_id_env)) != config.build_id:
         raise ValueError(f"build id {config.build_id} is not the environment's {env_build}")
-    if ready_file:
-        ready_file.unlink(missing_ok=True)
-    stop = stop or asyncio.Event()
-    loop = asyncio.get_running_loop()
-    for signum in (signal.SIGTERM, signal.SIGINT):
-        loop.add_signal_handler(signum, stop.set)
-    runtime = runtime or prometheus(config.metrics_address)
-    metrics.export_registry(runtime.metric_meter, "workflow")
-    start_job_counters(runtime.metric_meter, config.namespace)
-    try:
+    ready = ReadyFile(ready_file)
+    ready.arm()
+    with nullcontext(stop) if stop else stopping() as stop:
+        runtime = runtime or prometheus(config.metrics_address)
+        metrics.export_registry(runtime.metric_meter, "workflow")
+        start_job_counters(runtime.metric_meter, config.namespace)
         client = await Client.connect(
             config.temporal_address,
             namespace=config.namespace,
@@ -245,22 +242,17 @@ async def serve(
                 control_queue(config.build_id),
                 schedule.TASK_QUEUE,
             )
-            await _run_until(workers, stop, ready_file)
-    finally:
-        for signum in (signal.SIGTERM, signal.SIGINT):
-            loop.remove_signal_handler(signum)
+            await _run_until(workers, stop, ready)
 
 
-async def _run_until(workers: list[Worker], stop: asyncio.Event, ready_file: Path | None) -> None:
+async def _run_until(workers: list[Worker], stop: asyncio.Event, ready: ReadyFile) -> None:
     runs = [asyncio.create_task(worker.run()) for worker in workers]
     stopped = asyncio.create_task(stop.wait())
-    if ready_file:
-        ready_file.touch()
+    ready.set()
     try:
         await asyncio.wait([*runs, stopped], return_when=asyncio.FIRST_COMPLETED)
     finally:
-        if ready_file:
-            ready_file.unlink(missing_ok=True)
+        ready.clear()
     stopped.cancel()
     log.info("draining for at most %s", DRAIN)
     await asyncio.gather(*(worker.shutdown() for worker in workers))

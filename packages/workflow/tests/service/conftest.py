@@ -12,6 +12,7 @@ from dsy_events import build_event
 from dsy_events.models import JobParams
 from dsy_jobdoc.plan_models import Plan
 from dsy_keys import workflow_id
+from dsy_servicekit.lifecycle import stopping
 from dsy_workflow.contract import naming
 from dsy_workflow.job import JobWorkflow
 from dsy_workflow.service import Config, serve
@@ -97,15 +98,16 @@ def config(temporal, monkeypatch):
 @asynccontextmanager
 async def _running(config: Config, control: FakeControl):
     """The service in a task of this loop, stopped and drained on exit, yielding the task."""
-    stop = asyncio.Event()
-    task = asyncio.create_task(
-        serve(config, control.control_activities(), control.emit, fake_pass, stop=stop)
-    )
-    try:
-        yield task
-    finally:
-        stop.set()
-        await task
+    # serve leaves the signals to its caller when given a stop, so the fixture takes them.
+    with stopping() as stop:
+        task = asyncio.create_task(
+            serve(config, control.control_activities(), control.emit, fake_pass, stop=stop)
+        )
+        try:
+            yield task
+        finally:
+            stop.set()
+            await task
 
 
 async def _start_job(client: Client, control: FakeControl, build_id: str) -> WorkflowHandle:
