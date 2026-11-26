@@ -19,11 +19,11 @@ import time
 from collections.abc import Callable
 from dataclasses import dataclass
 
-import psycopg
 from dsy_events import from_bytes
 from dsy_eventstore import insert_events
 from dsy_jobstate import JobRow, lock_job, mark_delivered, transition
 from dsy_keys import cloudevent_id
+from dsy_servicekit import pg
 from dsy_workflow.models import ControlSignal
 from psycopg import Connection
 
@@ -57,6 +57,10 @@ WHERE requested_action = 'resume' AND status = 'resume-pending'
 AND (%(after)s::uuid IS NULL OR job_id > %(after)s::uuid)
 ORDER BY job_id LIMIT %(limit)s
 """
+# The longest a pass waits to connect. Each pass opens its own connections and the next one retries,
+# so a short bound only makes an outage show sooner.
+CONNECT_TIMEOUT_S = 2
+
 SELECT_EVENT = "SELECT body FROM event WHERE job_id = %s::uuid AND event_id = %s"
 
 
@@ -111,8 +115,12 @@ class Retrier:
         waiting = [job for job, wait in self.backoff.items() if wait.due > now]
         done = 0
         with (
-            psycopg.connect(self.control_dsn, autocommit=True) as conn,
-            psycopg.connect(self.reader_dsn, autocommit=True) as reader,
+            pg.connect(
+                self.control_dsn, autocommit=True, connect_timeout=CONNECT_TIMEOUT_S
+            ) as conn,
+            pg.connect(
+                self.reader_dsn, autocommit=True, connect_timeout=CONNECT_TIMEOUT_S
+            ) as reader,
         ):
             rows = conn.execute(
                 SELECT_UNDELIVERED,
@@ -171,7 +179,9 @@ class Retrier:
         again once the end is reached, and returns how many it returned to `accepted`. The first
         Temporal outage ends the pass, which the next one starts from the same row."""
         done = 0
-        with psycopg.connect(self.control_dsn, autocommit=True) as conn:
+        with pg.connect(
+            self.control_dsn, autocommit=True, connect_timeout=CONNECT_TIMEOUT_S
+        ) as conn:
             rows = conn.execute(
                 SELECT_RESUME_PENDING, {"after": self.after, "limit": self.batch}
             ).fetchall()

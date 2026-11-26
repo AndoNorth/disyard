@@ -28,6 +28,7 @@ INPUTS = [
     "contracts/tenancy/tenancy.yaml",
     "scripts/storage/store/identities.sh",
     "scripts/lib/state.sh",
+    "deploy/tilt/obs.star",
 ]
 DEPENDS = ["appdb-migrate", "objectstore-bootstrap", "temporal-bootstrap", "rabbitmq"]
 ENV_SECRETS = ["dispatch-logins", "dispatch-broker"]
@@ -280,3 +281,8 @@ def test_drops_every_capability_under_the_runtime_seccomp_profile(rendered):
     assert pod["securityContext"]["seccompProfile"] == {"type": "RuntimeDefault"}
     assert container["securityContext"]["capabilities"] == {"drop": ["ALL"]}
     assert container["securityContext"]["readOnlyRootFilesystem"] is True
+
+
+def test_metrics_port_is_the_one_of_the_other_services(rendered):
+    _, objects, _ = rendered
+    assert env_of(objects)["DSY_METRICS_ADDRESS"] == "0.0.0.0:9464"

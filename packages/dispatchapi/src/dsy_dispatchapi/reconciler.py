@@ -17,9 +17,11 @@ import psycopg
 from dsy_eventstore import insert_events
 from dsy_jobstate import JobRow
 from dsy_jobstate.jobs import READ_COLUMNS
+from dsy_servicekit import pg
 from psycopg.rows import dict_row
 
 from .publish import Publisher
+from .retrier import CONNECT_TIMEOUT_S
 from .submit import accepted_event
 
 GRACE = timedelta(seconds=10)
@@ -74,7 +76,7 @@ class Reconciler:
         """Runs a pass every `interval_s` until stop() or until the publisher stops."""
         while not self._stop.is_set() and not self.publisher.stopped:
             try:
-                with psycopg.connect(dsn, autocommit=True) as conn:
+                with pg.connect(dsn, autocommit=True, connect_timeout=CONNECT_TIMEOUT_S) as conn:
                     self.run_pass(conn)
             except psycopg.OperationalError as error:
                 log.warning("the reconciler pass failed, the next one retries: %s", error)
