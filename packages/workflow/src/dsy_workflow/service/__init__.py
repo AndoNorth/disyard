@@ -27,9 +27,7 @@ from dsy_jobstate import status_vocabulary
 from dsy_obs import metrics
 from dsy_servicekit.config import ConfigError, require
 from dsy_servicekit.lifecycle import ReadyFile, stopping
-from dsy_temporal import event_data_converter, tracing_interceptor
-from temporalio.api.workflowservice.v1 import DescribeNamespaceRequest
-from temporalio.client import Client
+from dsy_temporal.client import connect
 from temporalio.common import MetricMeter
 from temporalio.runtime import Runtime
 from temporalio.worker import Worker
@@ -38,7 +36,7 @@ from ..activities.plan import limits
 from ..contract import naming
 from ..job import JOBS_TOTAL_HELP, JobWorkflow
 from ..placement import Placer, ServicePlacer, StaticPlacer
-from ..worker import THREADS, workflow_worker
+from ..worker import THREADS, control_worker, workflow_worker
 
 log = logging.getLogger(__name__)
 
@@ -202,15 +200,8 @@ async def serve(
         runtime = runtime or prometheus(config.metrics_address)
         metrics.export_registry(runtime.metric_meter, "workflow")
         start_job_counters(runtime.metric_meter, config.namespace)
-        client = await Client.connect(
-            config.temporal_address,
-            namespace=config.namespace,
-            data_converter=event_data_converter,
-            interceptors=[tracing_interceptor()],
-            runtime=runtime,
-        )
-        await client.workflow_service.describe_namespace(
-            DescribeNamespaceRequest(namespace=config.namespace)
+        client = await connect(
+            config.temporal_address, config.namespace, runtime=runtime, check_namespace=True
         )
         with ThreadPoolExecutor(THREADS) as control, ThreadPoolExecutor(1) as reaper:
             workers = [
@@ -223,12 +214,11 @@ async def serve(
                     max_concurrent_workflow_tasks=WORKFLOW_TASKS,
                     graceful_shutdown_timeout=DRAIN,
                 ),
-                Worker(
+                control_worker(
                     client,
-                    task_queue=control_queue(config.build_id),
-                    activities=control_activities,
-                    activity_executor=control,
-                    max_concurrent_activities=THREADS,
+                    config.build_id,
+                    control_activities,
+                    control,
                     graceful_shutdown_timeout=DRAIN,
                 ),
                 schedule.build_worker(client, run_pass, reaper),

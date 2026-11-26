@@ -1,8 +1,8 @@
 """The workflow worker of one build, built the same way wherever it runs: the service, the harness
 and the test rigs."""
 
-from collections.abc import Callable
-from concurrent.futures import ThreadPoolExecutor
+from collections.abc import Callable, Sequence
+from concurrent.futures import Executor, ThreadPoolExecutor
 from functools import cache
 
 from temporalio.client import Client
@@ -45,4 +45,20 @@ def workflow_worker(
             version=WorkerDeploymentVersion(naming().workflow.deployment, build_id),
             use_worker_versioning=True,
         ),
+    )
+
+
+def control_worker(
+    client: Client, build_id: str, activities: Sequence[Callable], executor: Executor, **options
+) -> Worker:
+    """The worker of build `build_id`'s control queue, running the control `activities` on
+    `executor`, one at a time per thread of it. Every other Worker option passes through `options`.
+    """
+    return Worker(
+        client,
+        task_queue=naming().control_queue.replace("<build id>", build_id),
+        activities=activities,
+        activity_executor=executor,
+        max_concurrent_activities=THREADS,
+        **options,
     )
