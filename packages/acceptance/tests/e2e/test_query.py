@@ -7,6 +7,7 @@ come from the `acceptance_job` fixture that holds H1's job for the later scenari
 """
 
 import asyncio
+from concurrent.futures import ThreadPoolExecutor
 from contextlib import ExitStack
 
 import pytest
@@ -32,6 +33,8 @@ def test_query_step(acceptance_job: dict, client: api.Api) -> None:
         tempo = f"http://{address(OBS_NAMESPACE, 'svc/tempo', 3200)}"
         loki = f"http://{address(OBS_NAMESPACE, 'svc/loki', 3100)}"
         conn = stack.enter_context(postgres.connect(appdb))
+        # query.run polls inside an event loop, so the async history read gets a thread of its own.
+        pool = stack.enter_context(ThreadPoolExecutor(max_workers=1))
         job_id = job.job_id
 
         async def fetch_history() -> list:
@@ -41,7 +44,7 @@ def test_query_step(acceptance_job: dict, client: api.Api) -> None:
             job,
             status=lambda: client.status(job_id),
             rows=lambda: postgres.events(conn, job_id),
-            history=lambda: asyncio.run(fetch_history()),
+            history=lambda: pool.submit(asyncio.run, fetch_history()).result(),
             tempo=tempo,
             loki=loki,
         )
