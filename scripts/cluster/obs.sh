@@ -10,7 +10,9 @@ set -euo pipefail
 root=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
 cd "$root"
 
-state=${DSY_STATE_DIR:-${XDG_STATE_HOME:-$HOME/.local/state}/disyard}
+# shellcheck source=/dev/null
+source scripts/lib/state.sh
+state=$(state_dir)
 
 if [ $# -eq 0 ]; then
     recorded=$(cat "$state/cluster.obs" 2>/dev/null || true)

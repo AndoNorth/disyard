@@ -8,16 +8,13 @@
 # Usage: secrets.sh [render|password]. Exit 0 ok, 2 usage.
 set -euo pipefail
 
-state=${DSY_STATE_DIR:-${XDG_STATE_HOME:-$HOME/.local/state}/disyard}
-file=$state/grafana.credential
+# shellcheck source=/dev/null
+source "$(dirname "${BASH_SOURCE[0]}")/../../../scripts/lib/state.sh"
 mode=${1:-render}
 
 case $mode in render | password) ;; *) echo "usage: secrets.sh [render|password]" >&2; exit 2 ;; esac
 
-if [ ! -s "$file" ]; then
-    mkdir -p "$state"
-    (umask 077 && head -c 32 /dev/urandom | base64 | tr -d '=+/\n' >"$file")
-fi
+file=$(ensure_credential grafana.credential 32)
 
 value=$(cat "$file")
 case $mode in

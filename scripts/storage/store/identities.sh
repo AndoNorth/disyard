@@ -10,7 +10,9 @@ cd "$(dirname "${BASH_SOURCE[0]}")/../../.."
 mode=${1:-render}
 case $mode in render | path) ;; *) echo "usage: identities.sh [render|path]" >&2; exit 2 ;; esac
 
-state=${DSY_STATE_DIR:-${XDG_STATE_HOME:-$HOME/.local/state}/disyard}
+# shellcheck source=/dev/null
+source scripts/lib/state.sh
+state=$(state_dir)
 file=$state/objectstore.credentials.json
 
 if [ ! -s "$file" ]; then

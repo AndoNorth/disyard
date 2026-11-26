@@ -13,7 +13,9 @@ cd "$(dirname "${BASH_SOURCE[0]}")/.."
 source scripts/verify/cluster/lib/tools.sh
 
 preset=${DSY_PRESET:-ci}
-state=${DSY_STATE_DIR:-${XDG_STATE_HOME:-$HOME/.local/state}/disyard}
+# shellcheck source=/dev/null
+source scripts/lib/state.sh
+state=$(state_dir)
 context=kind-dsy
 
 obs=${DSY_OBS:-off}

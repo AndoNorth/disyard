@@ -7,13 +7,10 @@ set -euo pipefail
 [ $# -eq 2 ] || { echo "usage: secret.sh <name> <namespace>" >&2; exit 2; }
 name=$1
 namespace=$2
-state=${DSY_STATE_DIR:-${XDG_STATE_HOME:-$HOME/.local/state}/disyard}
-file=$state/$name.password
+# shellcheck source=/dev/null
+source "$(dirname "${BASH_SOURCE[0]}")/../../lib/state.sh"
 
-if [ ! -s "$file" ]; then
-    mkdir -p "$state"
-    (umask 077 && head -c 24 /dev/urandom | base64 | tr -d '=+/\n' >"$file")
-fi
+file=$(ensure_credential "$name.password" 24)
 
 cat <<MANIFEST
 apiVersion: v1
