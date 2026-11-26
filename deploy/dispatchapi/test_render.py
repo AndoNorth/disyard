@@ -27,6 +27,7 @@ INPUTS = [
     "contracts/topology/topology.yaml",
     "contracts/tenancy/tenancy.yaml",
     "scripts/storage/store/identities.sh",
+    "scripts/lib/state.sh",
 ]
 DEPENDS = ["appdb-migrate", "objectstore-bootstrap", "temporal-bootstrap", "rabbitmq"]
 ENV_SECRETS = ["dispatch-logins", "dispatch-broker"]

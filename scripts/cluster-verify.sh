@@ -21,7 +21,9 @@ source scripts/verify/cluster/lib/tools.sh
 preset=${DSY_PRESET:-ci}
 file=deploy/presets/$preset.yaml
 [ -f "$file" ] || { echo "usage: no preset $file" >&2; exit 2; }
-state=${DSY_STATE_DIR:-${XDG_STATE_HOME:-$HOME/.local/state}/disyard}
+# shellcheck source=/dev/null
+source scripts/lib/state.sh
+state=$(state_dir)
 context=kind-dsy
 k() { kubectl --context "$context" "$@"; }
 refuse() { echo "refused: $*" >&2; exit 4; }

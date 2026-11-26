@@ -25,6 +25,7 @@ INPUTS = [
     "contracts/topology/topology.yaml",
     "contracts/temporal/naming.yaml",
     "scripts/storage/store/identities.sh",
+    "scripts/lib/state.sh",
     "nix/wasm-tools.nix",
     "deploy/tilt/obs.star",
 ]
