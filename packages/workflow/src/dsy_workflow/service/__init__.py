@@ -33,6 +33,7 @@ from temporalio.worker import Worker
 from ..activities.plan import limits
 from ..contract import naming
 from ..job import JOBS_TOTAL_HELP, JobWorkflow
+from ..modules import Context, load
 from ..placement import Placer, ServicePlacer, StaticPlacer
 from ..worker import THREADS, control_worker, workflow_worker
 
@@ -221,6 +222,7 @@ async def serve(
                 ),
                 schedule.build_worker(client, run_pass, reaper),
             ]
+            modules = build_modules(Context(client, config.build_id, DRAIN))
             log.info(
                 "polling in namespace %s: %s as build %s of %s, %s and %s",
                 config.namespace,
@@ -230,7 +232,46 @@ async def serve(
                 control_queue(config.build_id),
                 schedule.TASK_QUEUE,
             )
-            await _run_until(workers, stop, ready)
+            await _run_with_modules(modules, workers, stop, ready)
+
+
+def build_modules(ctx: Context) -> list[tuple[str, Worker]]:
+    """The workers of every module that loads and builds, named by their module. A module that
+    raises while it builds its workers is logged and left out."""
+    built = []
+    for name, workers in load():
+        try:
+            built += [(name, worker) for worker in workers(ctx)]
+        except Exception:
+            log.exception("module %s is skipped: it failed to build its workers", name)
+    return built
+
+
+async def _supervise(name: str, worker: Worker) -> None:
+    try:
+        await worker.run()
+    except Exception:
+        log.exception("worker of module %s died, the service goes on without it", name)
+
+
+async def _run_with_modules(
+    modules: list[tuple[str, Worker]],
+    workers: list[Worker],
+    stop: asyncio.Event,
+    ready: ReadyFile,
+) -> None:
+    """Runs the built-in `workers` under _run_until and each module worker under its own
+    supervisor, and shuts the module workers down as soon as the built-in ones start to drain."""
+    supervisors = [asyncio.create_task(_supervise(name, worker)) for name, worker in modules]
+    builtin = asyncio.create_task(_run_until(workers, stop, ready))
+    stopped = asyncio.create_task(stop.wait())
+    try:
+        await asyncio.wait([builtin, stopped], return_when=asyncio.FIRST_COMPLETED)
+    finally:
+        stopped.cancel()
+        await asyncio.gather(*(worker.shutdown() for _, worker in modules), return_exceptions=True)
+        await asyncio.gather(*supervisors)
+    await builtin
 
 
 async def _run_until(workers: list[Worker], stop: asyncio.Event, ready: ReadyFile) -> None:
