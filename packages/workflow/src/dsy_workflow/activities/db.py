@@ -6,22 +6,17 @@ import psycopg
 from dsy_artifactclient.commit import CommitRefused
 from dsy_artifactclient.errors import ArtifactError
 from dsy_artifactindex import InvalidReference
+from dsy_servicekit import pg
 
 from ..testing.control import control_error
 
-CONNECT_TIMEOUT_S = 10
 LOCK_TIMEOUT = "10s"
 
 
 def connect(dsn: str, autocommit: bool = False) -> psycopg.Connection:
     """A connection whose lock waits are bounded, so a lock held elsewhere fails the attempt, which
     the activity's retry sends again."""
-    return psycopg.connect(
-        dsn,
-        autocommit=autocommit,
-        connect_timeout=CONNECT_TIMEOUT_S,
-        options=f"-c lock_timeout={LOCK_TIMEOUT}",
-    )
+    return pg.connect(dsn, autocommit=autocommit, lock_timeout=LOCK_TIMEOUT)
 
 
 @contextmanager
