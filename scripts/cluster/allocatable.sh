@@ -10,7 +10,7 @@ cd "$root"
 source scripts/verify/cluster/lib/tools.sh
 
 [ $# -eq 1 ] && [ -f "$1" ] || { echo "usage: allocatable.sh <limits.yaml>" >&2; exit 2; }
-context=${DSY_CONTEXT:-kind-dsy}
+context=kind-dsy
 cpu_reserved_milli=100
 
 # The API prints a quantity as Ki, Mi, Gi or plain bytes depending on divisibility.
