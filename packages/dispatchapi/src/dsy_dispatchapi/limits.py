@@ -11,13 +11,11 @@ from collections.abc import Iterator, Mapping
 from contextlib import contextmanager
 from dataclasses import dataclass, fields
 
+from dsy_servicekit.config import ConfigError
+
 from dsy_dispatchapi.models import ENTRIES_MAX, ENTRY_LINE_MAX_BYTES, HEADER_LINE_MAX_BYTES
 
 ENV_PREFIX = "DSY_DISPATCH_"
-
-
-class ConfigError(Exception):
-    pass
 
 
 class TooManyCalls(Exception):
