@@ -184,6 +184,7 @@ def test_the_process_serves_the_inputs_and_stops_on_sigterm(reader, tmp_path):
         process.stdout.close()
 
 
+@pytest.mark.seam
 def test_the_process_without_a_dsn_exits_2(tmp_path):
     env = {k: v for k, v in os.environ.items() if not k.startswith(("OTEL_", "DSY_"))}
     command = [sys.executable, "-m", "dsy_obs.inputs"]

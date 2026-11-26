@@ -6,11 +6,12 @@ Exit 2 when the DSN is missing, 0 after SIGTERM or SIGINT.
 """
 
 import os
-import signal
 import sys
 import threading
 from pathlib import Path
 
+from dsy_servicekit.config import exiting_on_config_error, require
+from dsy_servicekit.lifecycle import ReadyFile, ThreadStop
 from dsy_stateops.inputs import load
 
 from dsy_obs import metrics
@@ -27,27 +28,24 @@ INTERVAL_SECONDS = 60
 
 def serve(exporter: Exporter, stop: threading.Event, ready: Path | None, interval: float) -> None:
     """Runs a pass, then another each `interval` seconds, until `stop` is set."""
-    if ready:
-        ready.unlink(missing_ok=True)
+    mark = ReadyFile(ready)
+    mark.arm()
     while not stop.is_set():
-        if exporter.run_once() and ready:
-            ready.touch()
+        if exporter.run_once():
+            mark.set()
         stop.wait(interval)
 
 
 def main() -> int:
     setup("state-inputs")
-    dsn = os.environ.get(DSN_ENV)
-    if not dsn:
-        print(f"dsy_obs.inputs: {DSN_ENV} is not set", file=sys.stderr)
-        return 2
+    with exiting_on_config_error("dsy_obs.inputs"):
+        dsn = require(os.environ, {"dsn": DSN_ENV})["dsn"]
     runtime = metrics.runtime(os.environ.get(ADDRESS_ENV, DEFAULT_ADDRESS), {})
     metrics.export_registry(runtime.metric_meter, "state-inputs")
-    stop = threading.Event()
-    for number in (signal.SIGTERM, signal.SIGINT):
-        signal.signal(number, lambda *_: stop.set())
+    stopper = ThreadStop()
+    stopper.install()
     ready = Path(os.environ[READY_ENV]) if os.environ.get(READY_ENV) else None
-    serve(Exporter(runtime.metric_meter, dsn, load()), stop, ready, INTERVAL_SECONDS)
+    serve(Exporter(runtime.metric_meter, dsn, load()), stopper.event, ready, INTERVAL_SECONDS)
     return 0
 
 
