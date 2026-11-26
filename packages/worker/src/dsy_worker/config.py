@@ -12,7 +12,7 @@ from dsy_workflow.models import QUEUE
 
 ENV = {
     "temporal_address": "DSY_TEMPORAL_ADDRESS",
-    "namespace": "DSY_NAMESPACE",
+    "namespace": "DSY_TEMPORAL_NAMESPACE",
     "store_endpoint": "DSY_STORE_ENDPOINT",
     # A credentials file of dsy_storecheck.s3.load_credentials holding the pool's own store role.
     "store_credentials": "DSY_STORE_CREDENTIALS",
