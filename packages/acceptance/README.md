@@ -36,12 +36,12 @@ The clients and the gate are delivered, each under `src/dsy_acceptance/`:
 - `bundles.variant(name)` and `bundles.missing_entry()`: the workload library bundle of a variant, and a bundle whose entry module `MISSING_ENTRY` has no `Run` class, which the compile task refuses as `compile_failed`.
 - `jobs.two_chains`, `jobs.failing_second_chain` and `jobs.two_seed_summary`: two compile then simulate chains under one `digest_list` aggregate, the same with chain `b` failing its compile, and the summary a host expects over two seeds.
 
-`dsy_acceptance.e2e` is the harness of the e2e suite of the [test ladder](../../docs/acceptance-ladder.md), and the scenarios are not written yet:
+`dsy_acceptance.e2e` is the harness and the scenario logic of the e2e suite of the [test ladder](../../docs/acceptance-ladder.md), with one module for each of H1 and N6, H2, N1 to N5 and C1, whose checks run against fakes in `tests/` and against the cluster in `tests/e2e/`:
 
 - `e2e`: `TENANT`, `ORDER` (the run order of the scenario ids), `batch_key()` (`e2e-<12 hex>`) and `wait(check, timeout_s, what)`, which polls until a truthy value and never sleeps a fixed time.
 - `e2e.baseline.Baseline`: a counter read before a scenario and the change after it, asserted from a quiet baseline.
 - `e2e.summary.Summary`: one `ok|FAIL|skip <scenario> <detail>` line per scenario and a count line, in the smoke row format.
-- `tests/e2e/conftest.py`: the `@pytest.mark.scenario("<id>")` marker, the run order, and the fixtures `client`, `batches` (a fresh batch key per call, cancelled when the test fails), `prometheus` and `baseline`.
+- `tests/e2e/conftest.py`: the `@pytest.mark.scenario("<id>")` marker, the run order, and the fixtures `client`, `batches` (a fresh batch key per call, cancelled when the test fails), `prometheus`, `baseline` and `acceptance_job`, which holds H1's job for H2 and N6.
   Its tests are marked `e2e` and `scripts/test.sh` leaves them out.
 - Every direct read the suite makes is listed in the ladder's [direct reads](../../docs/acceptance-ladder.md#direct-reads).
 

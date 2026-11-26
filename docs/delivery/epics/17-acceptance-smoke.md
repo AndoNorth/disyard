@@ -302,4 +302,95 @@ Departures and failures on the way, none in the gate:
 
 Closure addenda, one dated line each, added after close when a `revisit` child issue is filed against this epic:
 
-- none yet
+- 2026-11-26: pass 2 closed its exit test, see [section 10](#10-pass-2-closure).
+
+## 10. Pass 2 closure
+
+Pass 2 delivered level 4, `just e2e`, and the [test ladder](../../acceptance-ladder.md).
+The exit test was run on 2026-11-25 and 2026-11-26 by the worker of the live validation task, under `/tmp/dsy-cluster.lock`, on a host with 20,002 MiB `MemTotal` and 8 CPUs, with preset `ci` and `DSY_OBS=on`.
+The captain closes epic #17 when this closure is accepted, and it is not closed by this document.
+
+### Baseline B0 (before the live validation)
+
+Recorded on a clean `git archive` export of `main` at `5d6853f2f6353c985f0e2a7394beb08df05d7332`, with `DSY_BUILD_ID=exit-a`.
+
+| Step | Result |
+| --- | --- |
+| `just ci` | exit 0, 3,182 s |
+| `just nuke`, `DSY_OBS=on just up`, `scripts/tilt/run.sh ci` | 13 s, 58 s, 308 s, Tilt `SUCCESS. All workloads are healthy.` |
+| `just cluster-verify` | exit 0, 10 `ok`, 0 failed, 27 s |
+| `just smoke` three times | exit 0 each, 11 `ok`, `smoke ci:` 75, 27 and 27 s (wall 80, 38, 38 s). The second and third show `build hit the cache (attempt 0)`, and row 11 reads `4 scrape jobs up, logs of 5 services, trace of 3 services, 7 profiles` |
+| `pytest packages/obs/tests/catalogue -m cluster` | 1 passed with `DSY_OBS_PROMETHEUS_URL` set to a forward of Prometheus, and 1 skipped without it |
+| Prometheus `ALERTS{alertstate="firing"}` | only `DsyWatchdog` |
+
+The smoke gate prints a total and no seconds for each row, so the record holds totals.
+`just up` failed once before this, in 12 s, because an orphan RabbitMQ container of an integration run (`dsy-20261124T185046Z-0-833639-16`, 28 hours old, its owner process gone) held the ports 19000 and 19001.
+It was removed and `just up` was run again.
+
+### Defects the live run found in the merged scenario code
+
+The first live `just e2e` on B0 ended with 6 of 9 scenarios ok, H1 and H2 failed and N6 skipped.
+Each of these was invisible to the fake driven tests, which had modelled the platform as the code assumed it was.
+
+1. H2 could not see H1's job: the `acceptance_job` fixture lived in `test_happy.py`, and H2 also took a counter baseline that nothing produced. The fixture moved to `conftest.py` and H1 takes the baseline before it runs.
+2. H1 asserted that polling saw every status, but `admitted` lasts under a poll. The stored lifecycle events prove each state, and the samples now only have to follow the lifecycle in order.
+3. H1 and the aggregate check read `task.requested` events from the event table, which does not store them: the event is the input of the `run_task` activity, so the live platform reads it from the Temporal history. The aggregate reads one `index` input and not the results, so the check reads the index and compares the result references in it.
+4. N1 asserted `task.succeeded` for chain a's compile, which a second run on one deploy meets as a compile cache hit (`task.skipped`).
+5. H2 asserted a result ready event in the workflow history, where the history carries the task requests and `job.accepted`, and the result ready events only reach the event table. It now asserts a task request in the history for each simulate and for the aggregate. Its history read also called `asyncio.run` inside the polling loop and now runs in a thread of its own.
+
+The fixes are in the branch of this pull request and are the only code changes of the exit test.
+
+### Exit test
+
+Run on the export of the branch at `11f4def3dbcdf188cf5266d92c897f5884b4259a` (`main` at `5d6853f` plus the fixes above), which is why the export is not `main` itself.
+
+| Step | Result |
+| --- | --- |
+| `just ci` | exit 0, 3,143 s |
+| First cycle: `just nuke`, `DSY_OBS=on just up`, `scripts/tilt/run.sh ci` (`DSY_BUILD_ID=exit-d`), `just cluster-verify` | 24 s, 55 s, 278 s, 25 s, Tilt `SUCCESS`, 10 `ok` |
+| `just smoke` | exit 0, 11 `ok`, 73 s, `build ran (attempt 1)` |
+| `just e2e` | exit 0, 9 `ok`, scenarios 319 s, wall 360 s |
+| `just e2e --loop 10` | ten passes `ok` on one deploy and one lock hold, 2,055 s, `e2e loop: 10 ok, 0 failed` |
+| Second cycle: `just nuke`, `just up`, Tilt (`exit-d2`), `just cluster-verify`, `just smoke`, `just e2e` | 22 s, 48 s, 264 s, 25 s, smoke 11 `ok` in 73 s, `just e2e` 9 `ok`, scenarios 316 s, wall 349 s |
+
+The seconds of each scenario are in [the ladder](../../acceptance-ladder.md#measured), and the budget of 600 s for the scenarios stays.
+Before the exit test, a full `just e2e` on the B0 deploy after the fixes also passed once (9 `ok`, scenarios 173 s).
+
+### Cost of the sessions
+
+Sampled every 5 s on the host for the whole run, which is about 4 hours of lock.
+Memory is the host `used` figure of `free`, which includes the kind node containers.
+
+| Phase | Wall seconds | Peak host memory used (MiB) | Lowest `MemAvailable` (MiB) | Peak CPU of 8 cores | Peak load average (1 min) |
+| --- | --- | --- | --- | --- | --- |
+| `just ci` (twice) | 3,182 and 3,143 | 4,602 and 4,544 | 15,399 and 15,457 | 99 percent | 13.3 and 10.9 |
+| `just up` | 58 and 55 | 3,443 and 3,216 | 16,558 and 16,785 | 50 percent | 4.2 and 3.1 |
+| `scripts/tilt/run.sh ci` | 308 and 278 | 5,607 and 5,599 | 14,395 and 14,402 | 66 percent | 6.1 and 5.3 |
+| `just smoke` | 77 to 80 | 6,038 | 13,963 | 29 percent | 3.2 |
+| `just e2e`, one run | 173 to 360 | 6,305 to 6,659 | 13,342 to 13,696 | 41 percent | 2.3 to 3.5 |
+| the ten pass loop | 2,055 | 6,683 | 13,318 | 35 percent | 3.6 |
+
+- The whole run peaked at 6,683 MiB used and never went below 13,318 MiB available of 20,002 MiB.
+  The 15,488 MiB that `ci` with the stack needs is the preset's host requirement, and the measured use of the host while it ran was less than half of it.
+- Swap use grew from 1,037 to 1,240 MiB over the run, and mean CPU over any phase was 11 to 38 percent.
+- Disk use of the host volume grew from 360 to 388 GiB over the run, which includes the image pulls of three bring-ups and the Nix store builds of two `just ci` runs.
+- The raw samples and the output of every step are with the task record, not in the repository.
+
+### What was learned
+
+- The e2e is flake free over the 10 passes: no scenario failed, and the one pass time spread was 172 to 179 s of scenarios.
+- N1, N4 and C1 cost about three times as much on a fresh deploy, and the same on a second fresh cycle, so the fresh deploy numbers are the ones a first run meets.
+- `DsyAdmissionDeadLettered` fires after `just e2e`, because N4 dead letters two poison events on purpose and the rule is an increase over 10 minutes. It resolves by itself, so the "only the watchdog is firing" check belongs before the e2e and not after it.
+- The catalogue test is skipped without `DSY_OBS_PROMETHEUS_URL`, and a run that does not set it passes by skipping.
+
+### CI decision
+
+No CI job runs the e2e, from the numbers above and the captain's decision Q9, recorded in [the ladder](../../acceptance-ladder.md#where-it-runs).
+A nightly job on `ci` with the stack off that skips H2 is the one option left open and needs the captain's answer before any workflow changes.
+
+### Not covered
+
+- Two compile pods on different nodes with overlapping attempts (decision Q1): `ci` has one compile node, so it is for a local fixture or the load test of #14 and #16.
+- Finishing from the checkpoint after a pause, and a resume with a patched bundle: waits for the checkpoint epic #18.
+- Row 4 of the observability exit test (the worker probes), and its rows 2, 3, 8 to 16, which this run did not exercise, see section 9 of [the observability epic](18-observability.md).
+- Every defect above was found by the live run and not by a lower level: the fake driven tests of the scenarios now model the stored events as they are, but a contract test that the event table holds no `task.requested` event does not exist.

@@ -7,6 +7,7 @@ come from the `acceptance_job` fixture that holds H1's job for the later scenari
 """
 
 import asyncio
+from concurrent.futures import ThreadPoolExecutor
 from contextlib import ExitStack
 
 import pytest
@@ -18,7 +19,10 @@ from .conftest import OBS_NAMESPACE
 
 
 @pytest.mark.scenario("H2")
-def test_query_step(acceptance_job: query.Job, client: api.Api) -> None:
+def test_query_step(acceptance_job: dict, client: api.Api) -> None:
+    if "query" not in acceptance_job:
+        pytest.skip("H1 did not produce a job to query")
+    job: query.Job = acceptance_job["query"]
     with ExitStack() as stack:
 
         def address(namespace: str, resource: str, port: int) -> str:
@@ -29,16 +33,18 @@ def test_query_step(acceptance_job: query.Job, client: api.Api) -> None:
         tempo = f"http://{address(OBS_NAMESPACE, 'svc/tempo', 3200)}"
         loki = f"http://{address(OBS_NAMESPACE, 'svc/loki', 3100)}"
         conn = stack.enter_context(postgres.connect(appdb))
-        job_id = acceptance_job.job_id
+        # query.run polls inside an event loop, so the async history read gets a thread of its own.
+        pool = stack.enter_context(ThreadPoolExecutor(max_workers=1))
+        job_id = job.job_id
 
         async def fetch_history() -> list:
             return await temporal.history(await temporal.connect(frontend), job_id)
 
         query.run(
-            acceptance_job,
+            job,
             status=lambda: client.status(job_id),
             rows=lambda: postgres.events(conn, job_id),
-            history=lambda: asyncio.run(fetch_history()),
+            history=lambda: pool.submit(asyncio.run, fetch_history()).result(),
             tempo=tempo,
             loki=loki,
         )

@@ -22,6 +22,7 @@ from . import wait
 from .baseline import Baseline
 
 RESULT_READY = "dev.dsy.task.result.ready.v1"
+TASK_REQUESTED = "dev.dsy.task.requested.v1"
 # The metric the completed job counter is read from, which has no tenant label.
 COMPLETED = 'dsy_workflow_jobs_total{outcome="succeeded"}'
 # How long each backend gets to show what the job produced.
@@ -92,6 +93,14 @@ def ready_gaps(events: list[dict], wanted: Iterable[str]) -> list[str]:
     """The tasks among `wanted` with no result ready event."""
     have = {e.get("taskid") for e in events if e["type"] == RESULT_READY}
     return [f"no result ready event of {task}" for task in wanted if task not in have]
+
+
+def requested_gaps(events: list[dict], wanted: Iterable[str]) -> list[str]:
+    """The tasks among `wanted` whose request is not in the history. The history carries the input
+    of each task activity as a task.requested event, and the result ready events only reach the
+    event table."""
+    have = {e.get("taskid") for e in events if e["type"] == TASK_REQUESTED}
+    return [f"no task request of {task}" for task in wanted if task not in have]
 
 
 def _payloads(node: Any) -> Iterable[bytes]:
@@ -186,7 +195,9 @@ def run(
     job.completed.rose_by(1, SETTLE_S)
     settled(lambda: ready_gaps(stored_events(rows()), job.results), SETTLE_S, "events in Postgres")
     settled(
-        lambda: ready_gaps(history_events(history()), job.results), SETTLE_S, "events in history"
+        lambda: requested_gaps(history_events(history()), job.results),
+        SETTLE_S,
+        "task requests in history",
     )
     settled(lambda: trace_gaps(tempo, seen["trace_id"]), SETTLE_S, "spans of the job's trace")
     settled(lambda: log_gaps(loki, job, time.time()), SETTLE_S, "log lines of the job")

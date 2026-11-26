@@ -52,6 +52,16 @@ def history_event(carried: dict) -> HistoryEvent:
 STORED = [golden("job.started"), *map(ready, RESULTS)]
 
 
+def requested(task: str) -> dict:
+    event = deepcopy(golden("task.requested"))
+    event["taskid"], event["subject"] = task, f"{JOB}/{task}"
+    event["id"] = f"requested-{task}"
+    return event
+
+
+CARRIED = [golden("job.started"), *map(requested, RESULTS)]
+
+
 def span_trace(services) -> dict:
     return {
         "batches": [
@@ -92,7 +102,7 @@ def job(completed: Baseline | None = None) -> query.Job:
     return query.Job(JOB, RESULTS, 0.0, True, completed or counter(6))
 
 
-def drive(obs, scenario=None, stored=STORED, carried=STORED, status=None):
+def drive(obs, scenario=None, stored=STORED, carried=CARRIED, status=None):
     query.run(
         scenario or job(),
         status=lambda: status or {"status": "succeeded", "trace_id": TRACE},
@@ -125,10 +135,10 @@ def test_an_event_that_fails_its_schema_names_the_row(obs):
 
 
 def test_an_event_in_the_history_that_fails_its_schema_names_the_position(obs):
-    broken = deepcopy(STORED[1])
+    broken = deepcopy(CARRIED[1])
     broken["dataschema"] = "urn:dsy:schema:job.started:1.0"
     with pytest.raises(AssertionError, match="event in history event 2 is not a valid CloudEvent"):
-        drive(obs, carried=[STORED[0], broken])
+        drive(obs, carried=[CARRIED[0], broken])
 
 
 def test_a_missing_result_ready_event_is_named(obs):
@@ -136,9 +146,9 @@ def test_a_missing_result_ready_event_is_named(obs):
         drive(obs, stored=[e for e in STORED if e.get("taskid") != "agg"])
 
 
-def test_a_result_ready_event_missing_from_the_history_is_named(obs):
-    with pytest.raises(AssertionError, match="events in history still missing: no result ready"):
-        drive(obs, carried=STORED[:2])
+def test_a_task_request_missing_from_the_history_is_named(obs):
+    with pytest.raises(AssertionError, match="task requests in history still missing: no task"):
+        drive(obs, carried=CARRIED[:2])
 
 
 def test_a_trace_without_the_dispatch_span_is_named(obs):
@@ -176,7 +186,7 @@ def test_a_lagging_backend_is_polled_until_it_shows_the_job(obs):
         job(),
         status=lambda: {"status": "succeeded", "trace_id": TRACE},
         rows=lambda: [row(e) for e in next(asked, STORED)],
-        history=lambda: [history_event(e) for e in STORED],
+        history=lambda: [history_event(e) for e in CARRIED],
         tempo=obs.url,
         loki=obs.url,
     )

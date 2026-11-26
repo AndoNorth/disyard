@@ -129,6 +129,12 @@ def prometheus() -> Iterator[str]:
         yield f"http://{address}"
 
 
+@pytest.fixture(scope="session")
+def acceptance_job() -> dict:
+    """H1's job, held for the scenarios after it: H2 reads its history and N6 reuses its bundle."""
+    return {}
+
+
 @pytest.fixture
 def baseline(prometheus: str) -> Callable[[str, str], Baseline]:
     """`baseline(name, promql)` reads the sum of the expression, 0 while it has no series, and has

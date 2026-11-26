@@ -129,7 +129,10 @@ class World:
             task = f"{chain}-sim" if chain else "sim"
             results.append(self.result(job, task, seed, results_xml(seed), "results.xml", "result"))
         if len(chains) == 2:
-            self.event(job, "task.requested", "agg", inputs=[{"uri": r["uri"]} for r in results])
+            lines = [{"schema": "dsy.artifact.index/1", "task": "agg"}]
+            lines += [{"reference": r, "task": r["producer"]["task"]} for r in results]
+            index = self.store("\n".join(json.dumps(line) for line in lines).encode())
+            self.event(job, "task.requested", "agg", inputs=[{**index, "kind": "index"}])
             self.event(job, "task.placed", "agg", queue=naming().pools["aggregate"])
             self.event(job, "task.started", "agg", 1)
             self.event(job, "task.succeeded", "agg", 1)
@@ -365,12 +368,20 @@ def test_a_job_that_did_not_succeed_fails(world):
     broken(world, "ended failed", failed)
 
 
-def test_a_status_that_skipped_the_lifecycle_fails(world):
-    def skipped(w):
+def test_a_status_out_of_lifecycle_order_fails(world):
+    def reordered(w):
         seen, results = w.statuses[w.job]
-        w.statuses[w.job] = (["succeeded"], results)
+        w.statuses[w.job] = (["running", "accepted", "succeeded"], results)
 
-    broken(world, "left out part of the lifecycle", skipped)
+    broken(world, "not in lifecycle order", reordered)
+
+
+def test_a_status_poll_that_missed_a_short_state_passes(world):
+    def coarse(w):
+        seen, results = w.statuses[w.job]
+        w.statuses[w.job] = (["accepted", "running", "succeeded"], results)
+
+    happy.h1(after_submit(world, coarse))
 
 
 def test_two_workflows_for_one_job_fail(world):

@@ -2,8 +2,8 @@
 
 The levels of testing, the rules that keep each behaviour at one level, the recipe and budget of each level, and the order in which they gate each other.
 The ladder is owned by epic #17.
-The unit, integration and smoke levels are delivered.
-Level 4, the end-to-end acceptance suite, is being delivered in pass 2, and this page states what it will hold so each piece is built against one description.
+The unit, integration, smoke and end-to-end levels are delivered.
+Level 4 was proven on a fresh cluster in the exit test of pass 2, see the closure in [the epic](delivery/epics/17-acceptance-smoke.md#10-pass-2-closure).
 
 Which check to run for a change is in the [validation matrix](runbooks/validation-matrix.md).
 The cluster rules are in the [operator runbook](runbooks/operator.md).
@@ -15,14 +15,14 @@ The cluster rules are in the [operator runbook](runbooks/operator.md).
 | 1 Unit | One function or module in isolation, with no network and no containers | Each epic, for its own code | Every change, locally and in CI | `just test` | delivered |
 | 2 Integration | One component against its real dependencies, without the whole cluster: Postgres, RabbitMQ, Temporal, the object store, the real compile toolchain | Each epic, for its own component | Every change in CI, and locally for one domain | `just itest [domain]` | delivered |
 | 3 Smoke | After a deploy every layer answers and one level 0 job produces the known answer | Epic #17 owns the suite, and the cluster epic owns `just cluster-verify` as its infrastructure half | After every `just up` and deploy, and first in every higher level | `just smoke`, 300 s budget | delivered |
-| 4 End to end | The platform works on public surfaces: a level 1 job with several result blocks, the native aggregate, observability, and one canonical case of each negative and control behaviour | Epic #17, pass 2 | Nightly or locally, and before the proof of concept is called done | `just e2e`, about 10 minutes, a proposal until a first measured run | harness delivered, scenarios not, so `just e2e` fails with `FAIL scenarios none collected` |
+| 4 End to end | The platform works on public surfaces: a level 1 job with several result blocks, the native aggregate, observability, and one canonical case of each negative and control behaviour | Epic #17, pass 2 | Nightly or locally, and before the proof of concept is called done | `just e2e`, 600 s budget, measured at 174 s of scenarios on a warm deploy and 319 s on a fresh one, plus the smoke gate | delivered |
 | 5 Failure and recovery | The guarantees hold under injected failures | Epics #15 and #18, with the [failure drills](runbooks/drills/README.md) for the observable half | On demand | The drills and #15's scripts | drills delivered |
 | 6 Load | Behaviour at saturation: caps hold, no job is lost or duplicated | #14 provides the tool and #16 owns the runs | Before the soak, on a host sized for it | `just load-test`, hours | not delivered, exits 3 |
 | 7 Performance | Numbers: throughput, latency, compile cost | #16 | On demand | `just characterize`, hours | not delivered, exits 3 |
 | 8 Soak | Durability and correctness over days | #16 | A weekend run | Days | not delivered |
 
 Each budget is enforced by a timer in the recipe, so a slow level fails loudly and is not skipped.
-A time here is a budget or a proposal, and a measured one lives in the [validation matrix](runbooks/validation-matrix.md).
+A time here is a budget, and a measured one lives in the [validation matrix](runbooks/validation-matrix.md) and in [Measured](#measured).
 
 ## The rules
 
@@ -83,9 +83,35 @@ The e2e needs the observability stack for its query step, so its home is preset 
 Nothing else may use memory heavily during a run, and a `just itest` beside the cluster risks an out-of-memory kill of a node.
 Changing the preset or the stack value costs a `just nuke`, a `just up` and a module deploy, so a session does not alternate configurations.
 
-No CI job runs the e2e.
-The stack is never deployed on a hosted runner, and `ci` alone is 12,032 MiB on a runner of about 15,983 MiB.
-It runs nightly or locally, and the decision is taken again from the measured local run.
+No CI job runs the e2e, and this is decided from the measured run, see [Measured](#measured).
+The inputs are a pass of about 205 s on a warm deploy (smoke gate 27 s, scenarios 174 s) and about 6 minutes on a fresh one, after a bring-up of about 5.5 minutes (`just up` 48 to 58 s, then Tilt 264 to 308 s).
+The preset needs 15,488 MiB of host memory with the stack on and 12,032 MiB with it off, on a hosted runner of about 15,983 MiB, and the stack is never deployed on a hosted runner (decision 22 of [the observability epic](delivery/epics/18-observability.md)).
+No runner has deployed the services, and the measured run does not change that: the bring-up alone is about 6 minutes of a runner that has nothing else to do, and the query step needs the stack.
+It runs nightly or locally.
+A nightly job on `ci` with the stack off that skips H2 is the one option the numbers leave open, and nothing is added to the workflows until the captain asks for it.
+
+## Measured
+
+The exit test of pass 2 (2026-11-26, host with 20,002 MiB `MemTotal` and 8 CPUs, preset `ci`, `DSY_OBS=on`, one named commit of the export) gave these seconds for each scenario.
+A fresh deploy is the first `just e2e` after `just up` and the module deploy, and a warm one is a later pass of the ten pass loop.
+
+| Scenario | Fresh deploy, first cycle | Warm, loop pass 2 | Fresh deploy, second cycle |
+| --- | --- | --- | --- |
+| H1 | 85 | 85 | 84 |
+| H2 | 3 | 2 | 3 |
+| N6 | 3 | 3 | 4 |
+| N1 | 57 | 20 | 56 |
+| N2 | 4 | 3 | 3 |
+| N3 | 2 | 2 | 2 |
+| N4 | 55 | 5 | 56 |
+| C1 | 99 | 42 | 98 |
+| N5 | 11 | 11 | 10 |
+| Scenarios in total | 319 | 174 | 316 |
+
+H1 compiles two bundles that are new every run, so it costs the same on every pass.
+N1, N4 and C1 cost about three times as much on a fresh deploy, and no scenario is slower on a later pass.
+The budget of 600 s covers the scenarios and not the smoke gate, so the slowest measured run uses 53 percent of it, and it stays at 600 s.
+A whole pass with the smoke gate took 205 s on average over the loop (2,055 s for ten passes, one lock hold), and 360 s and 349 s on the two fresh deploys.
 
 ## Scenarios of level 4
 
@@ -95,7 +121,7 @@ A scenario that changes shared state restores it in a `finally`, and runs last, 
 | Id | Scenario | One canonical assertion | Lower level proof of the variants |
 | --- | --- | --- | --- |
 | H1 | The acceptance job: two chains of compile then simulate, and one native aggregate that waits for both, over level 1 workloads with distinct seeds | Status runs accepted, admitted, running, succeeded. A and B are two distinct bundles and both cache misses. Each wasm sits under its own sha256 and equals the hash in its `build-info.json`. Parsed blocks equal the blocks the host recomputes for that seed. The `summary.json` equals the summary the host computes from both seeds | the workflow and aggregate suites of `just itest` |
-| H2 | Query: status and Temporal history after H1, with the stack on | The completed counter rose by one from a quiet baseline. Every lifecycle event in the history is a valid CloudEvent matching its `dataschema`, and a result ready event exists per simulate and for the aggregate. One trace holds spans from the CLI, dispatch, admission and the workflow start. Logs for the job id exist from each component | the catalogue contract test and the [live check](runbooks/drills/live-check.md) |
+| H2 | Query: status and Temporal history after H1, with the stack on | The completed counter rose by one from a quiet baseline. Every CloudEvent in the workflow history is valid and matches its `dataschema`, and the history holds a task request for each simulate and for the aggregate. Every stored event is valid, and a result ready event exists per simulate and for the aggregate. One trace holds spans from the CLI, dispatch, admission and the workflow start. Logs for the job id exist from each component | the catalogue contract test and the [live check](runbooks/drills/live-check.md) |
 | N6 | Compile cache hit: H1's bundle again as a new job with another seed | No compile attempt, the simulate uses the same wasm hash, and the blocks are those of the new seed | the cache tests of the compile and workflow packages |
 | N1 | Failing compile as chain B, and a variant that allows partial results | Chain B stops without a retry, chain A finishes, partial results are kept, aggregate does not run, and the job ends `failed` with a typed reason. The variant runs aggregate on A and ends `partial` | the workflow failure tests |
 | N2 | A simulate that writes a result block outside the schema, through the `bad_block` fault mode | The aggregate fails with `aggregate_parse_failed`, which is not retried and names its input, and the job ends `failed` with a typed reason | `packages/aggregate/tests/test_hardening.py` |
@@ -123,7 +149,7 @@ The smoke gate reads none of them, and adds no row to this table.
 | Read | Through | Why it is not a public surface |
 | --- | --- | --- |
 | The job row, the events of a job (`events_for_job`) and the compile cache entry row that names a wasm and its build-info | a named read-only Postgres client of `dsy_acceptance`, with a read-only login | The accepted row existing before the publish is confirmed, and one job row for a repeated key, are not visible through the API |
-| Workflow history and describe, search by workflow id | the Temporal client | One workflow per job, and the lifecycle events in the history |
+| Workflow history and describe, search by workflow id | the Temporal client | One workflow per job. The history holds the input of each task, the `task.requested` event, which the event table does not store, and the CloudEvents it carries |
 | The wasm objects and their build-info | the object store, with the `workflow` role as an extra read-only identity (get and list on sources, components and results) | The read-only `export` identity has the results bucket only |
 | Stored results, `results.xml` and `summary.json`, by reference | the object store, with the `export` identity | Results are read by the references the API returns |
 | The dead-letter queue, its letters with their reason codes and bodies, and the purge of N4's own letters | the broker client of `dsy_acceptance` and the dead-letter tool, with the `dispatch` broker user publishing the two poison events to the intake queue | A rejected intake message is visible only in the queue, and a malformed event cannot be submitted through the API |

@@ -13,11 +13,14 @@ aggregate pods' process lists (`kubectl exec`).
 import asyncio
 import contextlib
 import json
+import time
 from collections.abc import Iterator
+from datetime import datetime
+from types import SimpleNamespace
 
 import pytest
 from dsy_acceptance.clients import api, pod, postgres, store, temporal
-from dsy_acceptance.e2e import CONTEXT, happy
+from dsy_acceptance.e2e import CONTEXT, happy, query
 from dsy_acceptance.smoke import forwarded
 from dsy_clusterkit import INFRA, WORKERS, kubectl
 
@@ -55,13 +58,33 @@ def platform(client: api.Api) -> Iterator[happy.Platform]:
             ]
             return [pod.process_names(CONTEXT, WORKERS, name) for name in names]
 
+        def requests(job_id: str) -> list:
+            """The task.requested events of a job. They are the input of each task activity, so
+            Temporal's history holds them and the event table does not."""
+            found = []
+            for event in loop.run_until_complete(temporal.history(workflows, job_id)):
+                scheduled = event.activity_task_scheduled_event_attributes
+                if scheduled.activity_type.name != "run_task":
+                    continue
+                request = json.loads(scheduled.input.payloads[0].data)["request"]
+                found.append(
+                    SimpleNamespace(
+                        type=request["type"],
+                        task_id=request["taskid"],
+                        attempt=None,
+                        event_time=datetime.fromisoformat(request["time"]),
+                        body=json.dumps(request),
+                    )
+                )
+            return found
+
         yield happy.Platform(
             upload=client.upload_source,
             submit=lambda document, key: happy.accepted(client, document, key),
             status=client.status,
             cancel=lambda key: client.cancel_batch(key, "e2e"),
             row=lambda job_id: postgres.job(conn, job_id),
-            events=lambda job_id: postgres.events(conn, job_id),
+            events=lambda job_id: postgres.events(conn, job_id) + requests(job_id),
             executions=lambda job_id: loop.run_until_complete(
                 temporal.executions(workflows, [job_id])
             )[job_id],
@@ -72,15 +95,19 @@ def platform(client: api.Api) -> Iterator[happy.Platform]:
     loop.close()
 
 
-# H1's job, held for the scenarios after it: H2 reads its history and N6 reuses its bundle.
-@pytest.fixture(scope="session")
-def acceptance_job() -> dict[str, happy.Run]:
-    return {}
-
-
 @pytest.mark.scenario("H1")
-def test_acceptance_job(platform, acceptance_job):
-    acceptance_job["h1"] = happy.h1(platform)
+def test_acceptance_job(platform, acceptance_job, baseline):
+    completed = baseline("completed jobs", query.COMPLETED)
+    since = time.time()
+    run = happy.h1(platform)
+    acceptance_job["h1"] = run
+    acceptance_job["query"] = query.Job(
+        job_id=run.job_id,
+        results=("a-sim", "b-sim", "agg"),
+        since=since,
+        compiled=True,
+        completed=completed,
+    )
 
 
 @pytest.mark.scenario("N6")
