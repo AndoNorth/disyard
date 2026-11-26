@@ -6,7 +6,7 @@
 # A second run with nothing changed leaves every container as it was.
 # Exit 0 every node Ready, 1 the cluster did not come up, 2 usage (DSY_OBS=on on a preset without obs_stack or under
 # GitHub Actions), 4 refused: the preset needs more memory than the host has, or the cluster dsy is one this script did
-# not start (or started for another preset, or with the other switch value).
+# not start (or started for another preset, or with the other switch value), or the cluster lock was not taken in time.
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 # shellcheck source=/dev/null
@@ -27,7 +27,7 @@ scripts/cluster/obs.sh preset "$preset" >/dev/null || exit $?
 # Every recipe that touches the cluster holds one lock, unless a caller already holds it for a longer sequence.
 # shellcheck source=/dev/null
 source scripts/cluster/lock.sh
-cluster_lock 1
+cluster_lock 4
 
 if [ -f "$state/cluster.owner" ] && kind get clusters 2>/dev/null | grep -qx dsy; then
     recorded=$(scripts/cluster/obs.sh)

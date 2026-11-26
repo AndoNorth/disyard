@@ -14,7 +14,7 @@ preset=${DSY_PRESET:-$(cat "$state/cluster.owner" 2>/dev/null || echo ci)}
 
 # shellcheck source=/dev/null
 source scripts/cluster/lock.sh
-cluster_lock 1
+cluster_lock 4
 
 expand() { local d=$1; echo "${d/#\~/$HOME}"; }
 data_dir=${DSY_DATA_DIR:-$(expand "$(yq '.host.data_dir' "deploy/presets/$preset.yaml")")}

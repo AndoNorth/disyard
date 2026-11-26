@@ -36,11 +36,9 @@ for tool in kind kubectl flock timeout uv; do
 done
 
 # A lock wait that runs out is a refusal, so a queued run is not mistaken for a failed one.
-if [ -z "${DSY_CLUSTER_LOCK_HELD:-}" ]; then
-    exec 9>/tmp/dsy-cluster.lock
-    flock -w 900 9 || { echo "refused: could not take /tmp/dsy-cluster.lock in 900 s" >&2; exit 4; }
-fi
-export DSY_CLUSTER_LOCK_HELD=1
+# shellcheck source=/dev/null
+source scripts/cluster/lock.sh
+cluster_lock 4
 
 # One pass in a subshell, so its exits end the pass and not the loop.
 run_pass() {

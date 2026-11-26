@@ -7,7 +7,7 @@
 # An OOM is detected by exit code 137 and the node's memory.events, never by the OOMKilled reason, which a pod at the
 # limit does not always carry. memory.events max is reported next to oom_kill, because a process stalled at the limit
 # raises max without a kill.
-# Usage: canary.sh [memory|schedule|pool|cpu|all]. Exit 0 every requested canary passed, 1 one failed, 2 usage.
+# Usage: canary.sh [memory|schedule|pool|cpu|all]. Exit 0 every requested canary passed, 1 one failed, 2 usage, 4 refused: the cluster lock was not taken.
 set -euo pipefail
 root=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
 cd "$root"
@@ -16,6 +16,9 @@ source scripts/verify/cluster/lib/tools.sh
 
 which=${1:-all}
 case $which in memory | schedule | pool | cpu | all) ;; *) echo "usage: canary.sh [memory|schedule|pool|cpu|all]" >&2; exit 2 ;; esac
+# shellcheck source=/dev/null
+source scripts/cluster/lock.sh
+cluster_lock 4
 context=kind-dsy
 ns=dsy-canary
 k() { kubectl --context "$context" "$@"; }

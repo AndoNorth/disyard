@@ -12,14 +12,14 @@ This page does not repeat them.
 | Rule | Why | How it is enforced |
 | --- | --- | --- |
 | One cluster at a time | the kind cluster is always named `dsy`, and it binds fixed ports on `127.0.0.1` | `just up` refuses (exit 4) a cluster it did not start, or one started for another preset or observability value |
-| The cluster lock | two recipes touching the cluster at once corrupt a run | every cluster recipe takes `/tmp/dsy-cluster.lock` and waits up to 900 s, unless the caller already holds it (`DSY_CLUSTER_LOCK_HELD`) |
+| The cluster lock | two recipes touching the cluster at once corrupt a run | every cluster recipe takes `/tmp/dsy-cluster.lock` and waits up to 900 s, unless the caller already holds it (`DSY_CLUSTER_LOCK_HELD`); `tilt/run.sh` locks for `ci` and `soak`, and `dev` stays unlocked |
 | Enough memory | the nodes are containers inside the WSL VM, and a short host gets nodes OOM-killed | `just up` refuses (exit 4) when the preset needs more memory than the host has |
 | One preset per cluster | node sizes are fixed when kind creates a node | `just nuke` first, then `just up` for another preset |
 | One observability value per cluster | the observability node is sized at creation | `just nuke` first, then `just up` with the other `DSY_OBS` |
 | Loopback only | no published port may be reachable from the network | `just cluster-verify` checks every host port listens on `127.0.0.1` |
 
 The lock is released when a recipe ends, so `just up`, `just cluster-verify` and `just smoke` can follow each other.
-Another person's or agent's recipe holding the lock makes yours wait, and a wait that runs out exits 1 (`just smoke` exits 4).
+Another person's or agent's recipe holding the lock makes yours wait, and a wait that runs out exits 4.
 Check who holds it before assuming a hang, which prints nothing when the lock is free:
 
 ```sh
