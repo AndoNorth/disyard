@@ -23,6 +23,7 @@ members = [
     "dsy-dispatchapi",
     "dsy-events",
     "dsy-eventstore",
+    "dsy-exampleflow",
     "dsy-itest",
     "dsy-jobcheck",
     "dsy-jobdoc",
@@ -215,6 +216,7 @@ dev = [
     { name = "dsy-dispatchapi" },
     { name = "dsy-events" },
     { name = "dsy-eventstore" },
+    { name = "dsy-exampleflow" },
     { name = "dsy-itest" },
     { name = "dsy-jobcheck" },
     { name = "dsy-jobdoc" },
@@ -259,6 +261,7 @@ dev = [
     { name = "dsy-dispatchapi", editable = "packages/dispatchapi" },
     { name = "dsy-events", editable = "packages/events" },
     { name = "dsy-eventstore", editable = "packages/eventstore" },
+    { name = "dsy-exampleflow", editable = "packages/exampleflow" },
     { name = "dsy-itest", editable = "packages/itest" },
     { name = "dsy-jobcheck", editable = "packages/jobcheck" },
     { name = "dsy-jobdoc", editable = "packages/jobdoc" },
@@ -635,6 +638,21 @@ requires-dist = [
     { name = "dsy-events", editable = "packages/events" },
     { name = "pydantic" },
     { name = "pyyaml" },
+]
+
+[[package]]
+name = "dsy-exampleflow"
+version = "0.0.0"
+source = { editable = "packages/exampleflow" }
+dependencies = [
+    { name = "dsy-workflow" },
+    { name = "temporalio" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "dsy-workflow", editable = "packages/workflow" },
+    { name = "temporalio" },
 ]
 
 [[package]]

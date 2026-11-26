@@ -23,6 +23,7 @@ dsy-compile = { workspace = true }
 dsy-dispatchapi = { workspace = true }
 dsy-events = { workspace = true }
 dsy-eventstore = { workspace = true }
+dsy-exampleflow = { workspace = true }
 dsy-itest = { workspace = true }
 dsy-jobcheck = { workspace = true }
 dsy-jobdoc = { workspace = true }
@@ -64,6 +65,7 @@ dev = [
     "dsy-dispatchapi",
     "dsy-events",
     "dsy-eventstore",
+    "dsy-exampleflow",
     "dsy-itest",
     "dsy-jobcheck",
     "dsy-jobdoc",
