@@ -90,6 +90,8 @@ def free_port() -> int:
 
 # The service's own entry point, with the service account directory given on the command line in
 # place of the one a pod mounts.
+START_ATTEMPTS = 5
+
 ENTRY = "import sys; from pathlib import Path; from dsy_placement.service import main; " + (
     "sys.exit(main(account=Path(sys.argv[1])))"
 )
@@ -100,8 +102,7 @@ def spawn(api, account, tmp_path):
     """Starts the service in its own process over the fake API, waits for its ready file and returns
     its URL, its process and the file of its stdout; the process is killed after the test."""
 
-    def start(every_s: float = 30) -> tuple[str, subprocess.Popen, Path]:
-        port = free_port()
+    def launch(every_s: float, port: int) -> subprocess.Popen:
         api_host, _, api_port = api.url.removeprefix("https://").rpartition(":")
         env = os.environ | {
             "DSY_PLACEMENT_LISTEN": f"127.0.0.1:{port}",
@@ -120,12 +121,24 @@ def spawn(api, account, tmp_path):
                     stderr=subprocess.STDOUT,
                 )
             )
-        deadline = time.monotonic() + 30
-        while not (ready.exists() and ready.stat().st_size == 0):
-            assert made[-1].poll() is None, stdout.read_text()
-            assert time.monotonic() < deadline, "the service never became ready"
-            time.sleep(0.05)
-        return f"http://127.0.0.1:{port}", made[-1], stdout
+        return made[-1]
+
+    def start(every_s: float = 30) -> tuple[str, subprocess.Popen, Path]:
+        # A port free when chosen can be taken before the service binds it; a start that dies on
+        # that is retried on fresh ports.
+        for attempt in range(START_ATTEMPTS):
+            port = free_port()
+            process = launch(every_s, port)
+            deadline = time.monotonic() + 30
+            while not (ready.exists() and ready.stat().st_size == 0):
+                if process.poll() is not None:
+                    text = stdout.read_text()
+                    assert "Address already in use" in text and attempt + 1 < START_ATTEMPTS, text
+                    break
+                assert time.monotonic() < deadline, "the service never became ready"
+                time.sleep(0.05)
+            else:
+                return f"http://127.0.0.1:{port}", process, stdout
 
     ready, stdout = tmp_path / "ready", tmp_path / "stdout"
     made: list[subprocess.Popen] = []
