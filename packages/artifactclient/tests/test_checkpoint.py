@@ -2,7 +2,6 @@
 
 import hashlib
 import json
-import socket
 from datetime import UTC, datetime
 
 import pytest
@@ -18,7 +17,7 @@ from dsy_artifactclient.errors import CheckpointCorrupt, StoreUnavailable
 from dsy_artifactclient.keys import split_uri
 from dsy_events import build_event, from_bytes, to_bytes
 from dsy_events.models import ProducerRef
-from dsy_storecheck.fixtures import running
+from dsy_servicekit.testing import free_port
 from dsy_storecheck.s3 import client as s3_client
 
 JOB = "123e4567-e89b-42d3-a456-426614174000"
@@ -46,21 +45,13 @@ def naps():
 
 
 @pytest.fixture
-def worker(seaweed, naps):
-    return ArtifactClient(seaweed.endpoint, seaweed.credentials["simulate"], naps.policy)
+def worker(shelf, naps):
+    return ArtifactClient(shelf.endpoint, shelf.credentials["simulate"], naps.policy)
 
 
 @pytest.fixture
-def admin(seaweed):
-    return s3_client(seaweed.endpoint, seaweed.credentials["admin"])
-
-
-@pytest.fixture(scope="module")
-def seaweed(t1, tmp_path_factory):
-    """One SeaweedFS container for this module, which is gone before the next module runs."""
-    with running(t1, "seaweedfs", tmp_path_factory.mktemp("store")) as started:
-        started.store().create_buckets()
-        yield started
+def admin(shelf):
+    return s3_client(shelf.endpoint, shelf.credentials["admin"])
 
 
 @pytest.fixture
@@ -202,14 +193,10 @@ def test_a_reference_that_is_not_the_metadata_object_is_refused(worker, tenant):
         verify_checkpoint(worker, data_ref)
 
 
-def test_store_outage_during_verify_is_store_unavailable_and_retried(worker, tenant, naps, seaweed):
+def test_store_outage_during_verify_is_store_unavailable_and_retried(worker, tenant, naps, shelf):
     reference = write(worker, tenant)
-    with socket.socket() as probe:
-        probe.bind(("127.0.0.1", 0))
-        closed = probe.getsockname()[1]
-    lost = ArtifactClient(
-        f"http://127.0.0.1:{closed}", seaweed.credentials["simulate"], naps.policy
-    )
+    closed = free_port()
+    lost = ArtifactClient(f"http://127.0.0.1:{closed}", shelf.credentials["simulate"], naps.policy)
     with pytest.raises(StoreUnavailable) as raised:
         verify_checkpoint(lost, reference)
     assert raised.value.reason.startswith("STORE_UNAVAILABLE: ")

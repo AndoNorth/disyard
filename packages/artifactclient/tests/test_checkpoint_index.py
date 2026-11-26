@@ -10,7 +10,6 @@ from dsy_artifactclient.errors import CheckpointCorrupt
 from dsy_artifactclient.keys import split_uri
 from dsy_artifactindex import checkpoints_of, index_reference, previous_checkpoint
 from dsy_events.models import CheckpointReference, ProducerRef
-from dsy_storecheck.fixtures import running
 from dsy_storecheck.s3 import client as s3_client
 
 pytestmark = [pytest.mark.integration, pytest.mark.pair]
@@ -19,17 +18,9 @@ JOB = "223e4567-e89b-42d3-a456-426614174000"
 META = {"format_version": 1, "progress": 0, "wasm_sha256": hashlib.sha256(b"c").hexdigest()}
 
 
-@pytest.fixture(scope="module")
-def seaweed(t1, tmp_path_factory):
-    """One SeaweedFS container for this module, which is gone before the next module runs."""
-    with running(t1, "seaweedfs", tmp_path_factory.mktemp("store")) as started:
-        started.store().create_buckets()
-        yield started
-
-
-def test_previous_checkpoint_after_corruption(seaweed, appdb):
-    worker = ArtifactClient(seaweed.endpoint, seaweed.credentials["simulate"])
-    admin = s3_client(seaweed.endpoint, seaweed.credentials["admin"])
+def test_previous_checkpoint_after_corruption(shelf, appdb):
+    worker = ArtifactClient(shelf.endpoint, shelf.credentials["simulate"])
+    admin = s3_client(shelf.endpoint, shelf.credentials["admin"])
     references = [
         write_checkpoint(
             worker,

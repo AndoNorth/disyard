@@ -2,7 +2,6 @@
 every name is served before the first decision."""
 
 import re
-import socket
 import threading
 import urllib.request
 
@@ -10,6 +9,7 @@ import pytest
 from dsy_obs import metrics as obs_metrics
 from dsy_placement import service
 from dsy_placement.metrics import BUCKETS, Metrics
+from dsy_servicekit.testing import free_port
 from dsy_workflow.placement import PlacementRequest, ServicePlacer
 
 SIMULATE = PlacementRequest(task_type="simulate", cpu_milli=250, memory_mib=512, run_timeout_s=900)
@@ -23,16 +23,10 @@ class _Snapshotter:
         return None, 3.0, None
 
 
-def _free_port() -> int:
-    with socket.socket() as probe:
-        probe.bind(("127.0.0.1", 0))
-        return probe.getsockname()[1]
-
-
 @pytest.fixture(scope="module")
 def endpoint():
     """One runtime for the module, since its endpoint stays bound for the life of the process."""
-    port = _free_port()
+    port = free_port()
     runtime = obs_metrics.runtime(f"127.0.0.1:{port}", BUCKETS)
     # The endpoint closes with its runtime, so the runtime lives as long as the fixture.
     yield Metrics(runtime.metric_meter), f"http://127.0.0.1:{port}/metrics"

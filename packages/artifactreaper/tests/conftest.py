@@ -6,7 +6,6 @@ session holds, each for the length of a test module.
 """
 
 import hashlib
-import time
 import uuid
 from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime, timedelta
@@ -23,10 +22,7 @@ from dsy_artifactreaper.content import CONTENT_BUCKETS
 from dsy_artifactreaper.reap import load_windows, reap_once
 from dsy_events.models import ProducerRef
 from dsy_jobstate import JobRow, insert_accepted
-from dsy_storecheck.fixtures import running
 from dsy_storecheck.s3 import client as s3_client
-from psycopg import sql
-from psycopg.conninfo import make_conninfo
 
 NOW = datetime(2026, 11, 20, 12, 0, tzinfo=UTC)
 WINDOWS = load_windows()
@@ -36,50 +32,20 @@ WASM = hashlib.sha256(b"component").hexdigest()
 META = {"format_version": 1, "progress": 0, "wasm_sha256": WASM}
 
 
-@pytest.fixture(scope="module")
-def shelf(t1, tmp_path_factory):
-    """One SeaweedFS container for this module, which is gone before other modules run.
-
-    A session fixture would outlive the package and add a container to the count that the
-    container tests of other packages assert on.
-    """
-    with running(t1, "seaweedfs", tmp_path_factory.mktemp("shelf")) as started:
-        started.store().create_buckets()
-        yield started
-
-
 @pytest.fixture
-def db(appdb):
-    """The superuser, for building the state that the reaper then judges."""
-    with psycopg.connect(appdb, autocommit=True) as connection:
-        yield connection
-
-
-@pytest.fixture
-def login(appdb, db):
-    """Opens an autocommit connection as a fresh login user that is a member of a group role."""
-    users: list[tuple[str, psycopg.Connection]] = []
-
-    def dsn(group: str) -> str:
-        user = f"standin_{group}_{time.time_ns()}"
-        db.execute(
-            sql.SQL("CREATE ROLE {} LOGIN PASSWORD 'standin' IN ROLE {}").format(
-                sql.Identifier(user), sql.Identifier(group)
-            )
-        )
-        return make_conninfo(appdb, user=user, password="standin")
+def login(login):
+    """Opens an autocommit connection as a fresh login of the group role; `login.dsn` is its DSN."""
+    opened: list[psycopg.Connection] = []
 
     def connect(group: str) -> psycopg.Connection:
-        conn = psycopg.connect(dsn(group), autocommit=True)
-        users.append((conn.info.user, conn))
+        conn = psycopg.connect(login(group), autocommit=True)
+        opened.append(conn)
         return conn
 
-    connect.dsn = dsn
+    connect.dsn = login
     yield connect
-    for user, conn in users:
+    for conn in opened:
         conn.close()
-        db.execute(sql.SQL("DROP OWNED BY {}").format(sql.Identifier(user)))
-        db.execute(sql.SQL("DROP ROLE {}").format(sql.Identifier(user)))
 
 
 @pytest.fixture

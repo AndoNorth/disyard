@@ -2,7 +2,6 @@
 buckets."""
 
 import re
-import socket
 import urllib.request
 from pathlib import Path
 
@@ -12,6 +11,7 @@ from dsy_events import Event, to_bytes
 from dsy_events.metrics import registry
 from dsy_events.profile import CONTRACT_DIR
 from dsy_obs import metrics
+from dsy_servicekit.testing import free_port
 
 ROOT = Path(__file__).resolve().parents[4]
 CATALOGUE = yaml.safe_load((ROOT / "contracts/instrumentation/metrics.yaml").read_text())
@@ -19,17 +19,11 @@ EVENT = CONTRACT_DIR / "vectors/accepted/valid/unknown-minor.json"
 OWN = {"dsy_test_wait_seconds": [0.5, 2.0]}
 
 
-def _free_port() -> int:
-    with socket.socket() as probe:
-        probe.bind(("127.0.0.1", 0))
-        return probe.getsockname()[1]
-
-
 @pytest.fixture(scope="module")
 def served():
     """One runtime for the module, since its endpoint stays bound for the life of the process,
     with the bridge removed again so no other test's registry calls reach it."""
-    port = _free_port()
+    port = free_port()
     runtime = metrics.runtime(f"127.0.0.1:{port}", OWN)
     before = list(registry.listeners)
     metrics.export_registry(runtime.metric_meter, "dispatch")

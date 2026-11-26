@@ -5,8 +5,6 @@ activity, and expiry is run by a stand-in member of `dsy_reaper`.
 """
 
 import hashlib
-import socket
-import time
 import uuid
 from datetime import UTC, datetime, timedelta
 
@@ -19,10 +17,8 @@ from dsy_artifactclient.client import ArtifactClient, RetryPolicy
 from dsy_artifactclient.errors import ArtifactLost, StoreUnavailable
 from dsy_artifactclient.keys import split_uri
 from dsy_artifactindex import Invalidated, NoEntry, expired_cache_entries, uses_of
-from dsy_storecheck.fixtures import running
+from dsy_servicekit.testing import free_port
 from dsy_storecheck.s3 import client as s3_client
-from psycopg import sql
-from psycopg.conninfo import make_conninfo
 
 pytestmark = [pytest.mark.integration, pytest.mark.pair]
 
@@ -37,14 +33,6 @@ def key_of(label: str) -> str:
     return hashlib.sha256(f"key {label}".encode()).hexdigest()
 
 
-@pytest.fixture(scope="module")
-def shelf(t1, tmp_path_factory):
-    """One SeaweedFS container for this module, so that it is gone before other modules run."""
-    with running(t1, "seaweedfs", tmp_path_factory.mktemp("shelf")) as started:
-        started.store().create_buckets()
-        yield started
-
-
 @pytest.fixture
 def role(shelf):
     """A client of a role of the contract, with no real waiting between tries."""
@@ -53,28 +41,19 @@ def role(shelf):
 
 
 @pytest.fixture
-def login(appdb):
-    """Opens an autocommit connection as a fresh login user that is a member of the group role."""
-    users: list[tuple[str, psycopg.Connection]] = []
-    with psycopg.connect(appdb, autocommit=True) as admin:
+def login(login):
+    """Opens an autocommit connection as a fresh login of the group role; `login.dsn` is its DSN."""
+    opened: list[psycopg.Connection] = []
 
-        def connect(group: str) -> psycopg.Connection:
-            user = f"standin_{group}_{time.time_ns()}"
-            admin.execute(
-                sql.SQL("CREATE ROLE {} LOGIN PASSWORD 'standin' IN ROLE {}").format(
-                    sql.Identifier(user), sql.Identifier(group)
-                )
-            )
-            conn = psycopg.connect(
-                make_conninfo(appdb, user=user, password="standin"), autocommit=True
-            )
-            users.append((user, conn))
-            return conn
+    def connect(group: str) -> psycopg.Connection:
+        conn = psycopg.connect(login(group), autocommit=True)
+        opened.append(conn)
+        return conn
 
-        yield connect
-        for user, conn in users:
-            conn.close()
-            admin.execute(sql.SQL("DROP ROLE {}").format(sql.Identifier(user)))
+    connect.dsn = login
+    yield connect
+    for conn in opened:
+        conn.close()
 
 
 @pytest.fixture
@@ -193,9 +172,7 @@ def test_lookup_miss_when_the_wasm_is_missing_or_the_wrong_size(
 
 def test_lookup_error_is_raised_and_never_a_miss(shelf, role, artifacts, login, job):
     key, *_ = recorded(role, artifacts, job, "outage")
-    with socket.socket() as probe:
-        probe.bind(("127.0.0.1", 0))
-        closed = probe.getsockname()[1]
+    closed = free_port()
     unreachable = ArtifactClient(
         f"http://127.0.0.1:{closed}",
         shelf.credentials["workflow"],

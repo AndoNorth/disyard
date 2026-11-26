@@ -119,28 +119,19 @@ def reference(n: int) -> dict:
 
 
 @pytest.fixture
-def login(appdb):
-    """Opens a connection as a fresh login user that is a member of the given group role."""
-    users: list[tuple[str, psycopg.Connection]] = []
-    with psycopg.connect(appdb, autocommit=True) as admin:
+def login(login):
+    """Opens an autocommit connection as a fresh login of the group role; `login.dsn` is its DSN."""
+    opened: list[psycopg.Connection] = []
 
-        def connect(group: str) -> psycopg.Connection:
-            user = f"standin_{group}_{time.time_ns()}"
-            admin.execute(
-                sql.SQL("CREATE ROLE {} LOGIN PASSWORD 'standin' IN ROLE {}").format(
-                    sql.Identifier(user), sql.Identifier(group)
-                )
-            )
-            conn = psycopg.connect(
-                make_conninfo(appdb, user=user, password="standin"), autocommit=True
-            )
-            users.append((user, conn))
-            return conn
+    def connect(group: str) -> psycopg.Connection:
+        conn = psycopg.connect(login(group), autocommit=True)
+        opened.append(conn)
+        return conn
 
-        yield connect
-        for user, conn in users:
-            conn.close()
-            admin.execute(sql.SQL("DROP ROLE {}").format(sql.Identifier(user)))
+    connect.dsn = login
+    yield connect
+    for conn in opened:
+        conn.close()
 
 
 @pytest.fixture

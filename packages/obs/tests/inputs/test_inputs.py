@@ -4,7 +4,6 @@ the `dsy_reader` group, a pass served on the Temporal runtime's Prometheus endpo
 import os
 import re
 import signal
-import socket
 import subprocess
 import sys
 import threading
@@ -19,6 +18,7 @@ import yaml
 from dsy_obs import metrics
 from dsy_obs.inputs import Exporter, metric_name
 from dsy_obs.inputs.__main__ import serve
+from dsy_servicekit.testing import free_port
 from dsy_stateops.inputs import load, parse
 
 ROOT = Path(__file__).resolve().parents[4]
@@ -26,12 +26,6 @@ CATALOGUE = yaml.safe_load((ROOT / "contracts/instrumentation/metrics.yaml").rea
 EXPORTED = [i for i in load().inputs if i.source.kind in ("sql", "sql_labelled", "invariants")]
 READER = "t_state_reader"
 UNREACHABLE = "postgresql://nobody@127.0.0.1:1/none"
-
-
-def free_port() -> int:
-    with socket.socket() as probe:
-        probe.bind(("127.0.0.1", 0))
-        return probe.getsockname()[1]
 
 
 def scrape(url: str) -> str:
