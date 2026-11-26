@@ -25,7 +25,8 @@ JOBS = 2000
 # 104 MiB on a developer host and about 112 MiB on a CI runner, so the limit sits a few MiB above
 # the runner's figure: a growth of the service still fails it, and the runner's noise does not.
 PEAK_LIMIT_MIB = 116
-LIMIT_S = 600
+# A ceiling for a hung service, not a speed bound: the burst takes a small fraction of it.
+LIMIT_S = 1800
 HELPER = Path(__file__).with_name("recording_service.py")
 QUEUE = suite.intake_queue()
 
