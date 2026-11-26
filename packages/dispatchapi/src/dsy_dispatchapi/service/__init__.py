@@ -33,12 +33,13 @@ from dsy_events.models import ContentReference
 from dsy_jobdoc.profile import LimitsFile, LimitsProfile, PoolTable, Slot
 from dsy_jobstate.models import CONTRACT as JOBSTATE_CONTRACT
 from dsy_obs.metrics import export_registry
+from dsy_obs.metrics import runtime as metrics_runtime
 from dsy_obs.setup import setup
 from dsy_servicekit.config import exiting_on_config_error, require
 from dsy_servicekit.lifecycle import ThreadStop
 from dsy_storecheck.s3 import load_credentials
 from dsy_workflow.contract import pools
-from temporalio.runtime import PrometheusConfig, Runtime, TelemetryConfig
+from temporalio.runtime import Runtime
 
 from ..gateway import TemporalGateway
 from ..limits import ConfigError, Limits
@@ -178,6 +179,7 @@ class Service:
         gateway: WorkflowGateway,
         connect_broker: Callable[[str, Credentials], Connection],
         scratch: Path | None = None,
+        runtime: Runtime | None = None,
     ):
         self.config, self.tenancy, self.store, self.gateway = config, tenancy, store, gateway
         self.limits = config.limits
@@ -185,13 +187,7 @@ class Service:
         self._in_flight = 0
         self._lock = threading.Condition()
         # The runtime serves the metrics endpoint for as long as it is held.
-        self.runtime = Runtime(
-            telemetry=TelemetryConfig(
-                metrics=PrometheusConfig(
-                    bind_address=config.metrics_address, histogram_bucket_overrides=BUCKETS
-                )
-            )
-        )
+        self.runtime = runtime or metrics_runtime(config.metrics_address, BUCKETS)
         self.metrics = Metrics(self.runtime.metric_meter)
         profile = limits_profile()
         resolver = StoreSourceResolver(store, scratch)
@@ -302,7 +298,9 @@ def build(config: Config, tenancy: TenancyProfile) -> Service:
     """The service over the real store, Temporal and broker of the configuration."""
     credentials = load_credentials(Path(config.store_credentials))[STORE_ROLE]
     store = ArtifactClient(config.store_endpoint, credentials)
-    return Service(config, tenancy, store, TemporalGateway(config.temporal_address), connect)
+    runtime = metrics_runtime(config.metrics_address, BUCKETS)
+    gateway = TemporalGateway(config.temporal_address, runtime=runtime)
+    return Service(config, tenancy, store, gateway, connect, runtime=runtime)
 
 
 def run(service: Service) -> None:
