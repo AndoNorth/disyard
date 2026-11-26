@@ -228,8 +228,10 @@ def check_status(platform: Platform, run: Run) -> None:
     stored = [f.name for f in sorted_facts(platform.events(run.job_id), LIFECYCLE)]
     if tuple(stored) != LIFECYCLE:
         raise Failed(f"lifecycle events {stored}, want {list(LIFECYCLE)}")
-    if not subsequence(("accepted", "admitted", "running", "succeeded"), run.samples):
-        raise Failed(f"statuses seen {run.samples} left out part of the lifecycle")
+    # Polling can miss a state that lasts under a poll, so the stored lifecycle events above prove
+    # each state and the samples only have to follow the lifecycle in order.
+    if not subsequence(tuple(run.samples), ("accepted", "admitted", "running", "succeeded")):
+        raise Failed(f"statuses seen {run.samples} are not in lifecycle order")
     found = platform.executions(run.job_id)
     if found != 1:
         raise Failed(f"{found} workflow executions carry the workflow id of {run.job_id}, want 1")

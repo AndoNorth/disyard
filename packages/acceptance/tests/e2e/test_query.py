@@ -18,7 +18,10 @@ from .conftest import OBS_NAMESPACE
 
 
 @pytest.mark.scenario("H2")
-def test_query_step(acceptance_job: query.Job, client: api.Api) -> None:
+def test_query_step(acceptance_job: dict, client: api.Api) -> None:
+    if "query" not in acceptance_job:
+        pytest.skip("H1 did not produce a job to query")
+    job: query.Job = acceptance_job["query"]
     with ExitStack() as stack:
 
         def address(namespace: str, resource: str, port: int) -> str:
@@ -29,13 +32,13 @@ def test_query_step(acceptance_job: query.Job, client: api.Api) -> None:
         tempo = f"http://{address(OBS_NAMESPACE, 'svc/tempo', 3200)}"
         loki = f"http://{address(OBS_NAMESPACE, 'svc/loki', 3100)}"
         conn = stack.enter_context(postgres.connect(appdb))
-        job_id = acceptance_job.job_id
+        job_id = job.job_id
 
         async def fetch_history() -> list:
             return await temporal.history(await temporal.connect(frontend), job_id)
 
         query.run(
-            acceptance_job,
+            job,
             status=lambda: client.status(job_id),
             rows=lambda: postgres.events(conn, job_id),
             history=lambda: asyncio.run(fetch_history()),

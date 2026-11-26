@@ -13,11 +13,12 @@ aggregate pods' process lists (`kubectl exec`).
 import asyncio
 import contextlib
 import json
+import time
 from collections.abc import Iterator
 
 import pytest
 from dsy_acceptance.clients import api, pod, postgres, store, temporal
-from dsy_acceptance.e2e import CONTEXT, happy
+from dsy_acceptance.e2e import CONTEXT, happy, query
 from dsy_acceptance.smoke import forwarded
 from dsy_clusterkit import INFRA, WORKERS, kubectl
 
@@ -72,15 +73,19 @@ def platform(client: api.Api) -> Iterator[happy.Platform]:
     loop.close()
 
 
-# H1's job, held for the scenarios after it: H2 reads its history and N6 reuses its bundle.
-@pytest.fixture(scope="session")
-def acceptance_job() -> dict[str, happy.Run]:
-    return {}
-
-
 @pytest.mark.scenario("H1")
-def test_acceptance_job(platform, acceptance_job):
-    acceptance_job["h1"] = happy.h1(platform)
+def test_acceptance_job(platform, acceptance_job, baseline):
+    completed = baseline("completed jobs", query.COMPLETED)
+    since = time.time()
+    run = happy.h1(platform)
+    acceptance_job["h1"] = run
+    acceptance_job["query"] = query.Job(
+        job_id=run.job_id,
+        results=("a-sim", "b-sim", "agg"),
+        since=since,
+        compiled=True,
+        completed=completed,
+    )
 
 
 @pytest.mark.scenario("N6")

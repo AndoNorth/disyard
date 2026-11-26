@@ -365,12 +365,20 @@ def test_a_job_that_did_not_succeed_fails(world):
     broken(world, "ended failed", failed)
 
 
-def test_a_status_that_skipped_the_lifecycle_fails(world):
-    def skipped(w):
+def test_a_status_out_of_lifecycle_order_fails(world):
+    def reordered(w):
         seen, results = w.statuses[w.job]
-        w.statuses[w.job] = (["succeeded"], results)
+        w.statuses[w.job] = (["running", "accepted", "succeeded"], results)
 
-    broken(world, "left out part of the lifecycle", skipped)
+    broken(world, "not in lifecycle order", reordered)
+
+
+def test_a_status_poll_that_missed_a_short_state_passes(world):
+    def coarse(w):
+        seen, results = w.statuses[w.job]
+        w.statuses[w.job] = (["accepted", "running", "succeeded"], results)
+
+    happy.h1(after_submit(world, coarse))
 
 
 def test_two_workflows_for_one_job_fail(world):
