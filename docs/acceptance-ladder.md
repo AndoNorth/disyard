@@ -15,6 +15,7 @@ The cluster rules are in the [operator runbook](runbooks/operator.md).
 | 1 Unit | One function or module in isolation, with no network and no containers | Each epic, for its own code | Every change, locally and in CI | `just test` | delivered |
 | 2 Integration | One component against its real dependencies, without the whole cluster: Postgres, RabbitMQ, Temporal, the object store, the real compile toolchain | Each epic, for its own component | Every change in CI, and locally for one domain | `just itest [domain]` | delivered |
 | 3 Smoke | After a deploy every layer answers and one level 0 job produces the known answer | Epic #17 owns the suite, and the cluster epic owns `just cluster-verify` as its infrastructure half | After every `just up` and deploy, and first in every higher level | `just smoke`, 300 s budget | delivered |
+| 3a Seam smoke (tier T1) | Every service boots and drains on the shared start-up code, and a new workflow module is added without a core edit | This epic | After every change to a service entrypoint, to `dsy_servicekit`, to `dsy_workflow.service` or to a module, and before `just smoke` | `just seam`, 5 minutes proposed, containers and no cluster | delivered by this epic |
 | 4 End to end | The platform works on public surfaces: a level 1 job with several result blocks, the native aggregate, observability, and one canonical case of each negative and control behaviour | Epic #17, pass 2 | Nightly or locally, and before the proof of concept is called done | `just e2e`, 600 s budget, measured at 174 s of scenarios on a warm deploy and 319 s on a fresh one, plus the smoke gate | delivered |
 | 5 Failure and recovery | The guarantees hold under injected failures | Epics #15 and #18, with the [failure drills](runbooks/drills/README.md) for the observable half | On demand | The drills and #15's scripts | drills delivered |
 | 6 Load | Behaviour at saturation: caps hold, no job is lost or duplicated | #14 provides the tool and #16 owns the runs | Before the soak, on a host sized for it | `just load-test`, hours | not delivered, exits 3 |
@@ -48,6 +49,15 @@ A time here is a budget, and a measured one lives in the [validation matrix](run
 12. Every run uses unique ids, a batch key of the form `e2e-<12 hex>`, under a tenant of its own, so runs cannot affect each other.
     The tenancy profile of preset `ci` has the tenant `e2e` for the acceptance run, next to `acme`.
 
+## Seams
+
+Level 3a proves the platform stays extensible and its services keep one shape.
+It runs `pytest -m seam` in four groups: boot, contract, example module and layering, and prints one summary line per group that has tests.
+It needs Docker and no cluster, so it takes the T1 lock and not the cluster lock, and `just smoke` is unchanged.
+A failure that only level 3a catches means a missing lower-level test, and the fix adds one (rule 2).
+The gate order becomes `just ci`, `just seam`, then the cluster steps.
+The design is in [the platform seams epic](delivery/epics/19-platform-seams.md#5-the-seam-smoke-level) and the domain map in [the architecture note](architecture/21-domains-and-access.md).
+
 ## Recipes, gates and the lock
 
 | Recipe | Does | Needs | Exit codes |
@@ -55,6 +65,7 @@ A time here is a budget, and a measured one lives in the [validation matrix](run
 | `just test` | Unit tests of the whole tree, or `scripts/test.sh <path>` for one package | the flake | 0 or the failing test run's code |
 | `just itest [domain]` | Integration tests against containers started by `dsy_itest` | Docker | as above, 4 refused: the T1 lock wait ran out |
 | `just ci` | Everything CI's `check` job runs | Docker | as above, 4 refused: the T1 lock wait ran out |
+| `just seam` | Level 3a: the seam tests, one summary line per group, in a 300 s budget | Docker | 0 ok, 1 a group failed or the budget ran out, 4 refused: the T1 lock wait ran out |
 | `just smoke` | The smoke gate, see [the rows](runbooks/validation-matrix.md#the-smoke-rows) | a running `ci` cluster | 0 ok, 1 a row failed or the budget ran out, 2 usage, 4 refused |
 | `just e2e` | Level 4: the smoke gate first, then the scenarios, in a 600 s budget | a running `ci` cluster with the observability stack on | 0 ok, 1 a scenario or smoke failed or the budget ran out, 2 usage, 4 refused: no cluster, the stack off or the lock not taken |
 
@@ -68,7 +79,7 @@ A run of about 10 minutes is under the 900 s wait of a queued lane, and a slow r
 The integration tests of `just itest` and `just ci` queue the same way for the two T1 lock files of `dsy_itest` and wait up to 1800 s.
 A wait that runs out is also a refusal (exit 4, a message beginning `refused:`), see [T1 lock](dev-setup.md#t1-lock).
 
-The gate order is: `just ci` on the change, a cluster from `just up` and the module deploy, `just cluster-verify`, `just smoke`, then `just e2e`.
+The gate order is: `just ci` on the change, `just seam`, a cluster from `just up` and the module deploy, `just cluster-verify`, `just smoke`, then `just e2e`.
 Load, performance and soak need a green smoke on the same deploy.
 
 ### The flake loop

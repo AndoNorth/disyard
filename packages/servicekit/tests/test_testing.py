@@ -41,6 +41,7 @@ IGNORES_SIGTERM = (
 )
 
 
+@pytest.mark.seam
 def test_missing_env_check_fails_on_exit_1_and_passes_on_the_toy(monkeypatch):
     monkeypatch.setenv("PYTHONPATH", str(TOY_DIR.parent))
     with pytest.raises(AssertionError, match="exit 1"):
@@ -48,6 +49,7 @@ def test_missing_env_check_fails_on_exit_1_and_passes_on_the_toy(monkeypatch):
     testing.check_missing_env_exits_2(TOY, ["TOY_NAME"])
 
 
+@pytest.mark.seam
 def test_ready_file_check_fails_on_a_file_left_behind_and_passes_on_the_toy(tmp_path):
     ready = tmp_path / "ready"
     env = _env(tmp_path)
@@ -57,6 +59,7 @@ def test_ready_file_check_fails_on_a_file_left_behind_and_passes_on_the_toy(tmp_
     testing.check_ready_file_lifecycle(TOY, env, ready)
 
 
+@pytest.mark.seam
 def test_sigterm_check_fails_on_an_ignored_signal_and_passes_on_the_toy(tmp_path):
     ready = tmp_path / "ready"
     env = _env(tmp_path)

@@ -6,6 +6,7 @@ import sys
 import time
 from pathlib import Path
 
+import pytest
 from dsy_servicekit.lifecycle import ReadyFile, ThreadStop, stopping
 
 TOY = Path(__file__).parent / "toy"
@@ -81,6 +82,7 @@ def test_toy_without_env_exits_2():
     assert proc.stderr.read() == "toy: missing environment: TOY_NAME\n"
 
 
+@pytest.mark.seam
 def test_toy_ready_then_sigterm_exits_0(tmp_path):
     ready = tmp_path / "ready"
     proc = _toy({"TOY_NAME": "x", "TOY_READY_FILE": str(ready)})

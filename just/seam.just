@@ -1,0 +1,2 @@
+seam:
+    scripts/seam.sh
