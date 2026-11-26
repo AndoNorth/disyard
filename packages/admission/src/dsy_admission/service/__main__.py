@@ -9,26 +9,25 @@ from pathlib import Path
 
 from dsy_broker.tenancy import load
 from dsy_obs.setup import setup
+from dsy_servicekit.config import exiting_on_config_error
+from dsy_servicekit.lifecycle import ReadyFile
 
-from . import READY_ENV, Config, ConfigError, serve
+from . import READY_ENV, Config, serve
 
 
 def main() -> int:
     setup("admission")
-    ready = Path(os.environ[READY_ENV]) if os.environ.get(READY_ENV) else None
-    if ready:
-        ready.unlink(missing_ok=True)
-    try:
+    path = os.environ.get(READY_ENV)
+    ready_path = Path(path) if path else None
+    ReadyFile(ready_path).arm()
+    with exiting_on_config_error("dsy_admission.service"):
         config = Config.from_env(os.environ)
-    except ConfigError as error:
-        print(f"dsy_admission.service: {error}", file=sys.stderr)
-        return 2
     try:
         profile = load(config.profile)
     except KeyError as error:
         print(f"dsy_admission.service: {error.args[0]}", file=sys.stderr)
         return 1
-    asyncio.run(serve(config, profile, ready_file=ready))
+    asyncio.run(serve(config, profile, ready_file=ready_path))
     return 0
 
 

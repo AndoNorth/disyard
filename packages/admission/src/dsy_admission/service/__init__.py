@@ -16,10 +16,10 @@ the cycle like any other.
 import asyncio
 import logging
 import re
-import signal
 import time
 from collections import Counter
 from collections.abc import Callable, Mapping
+from contextlib import nullcontext
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
@@ -29,6 +29,8 @@ from dsy_broker.client import Credentials, Delivery, connect
 from dsy_broker.models import BrokerUnavailable, TenancyProfile
 from dsy_obs import logs
 from dsy_obs.metrics import export_registry
+from dsy_servicekit.config import ConfigError, require
+from dsy_servicekit.lifecycle import ReadyFile, stopping
 from dsy_temporal import event_data_converter, tracing_interceptor
 from dsy_workflow.contract import naming
 from dsy_workflow.models import QUEUE
@@ -71,10 +73,6 @@ DRAIN_S = 15.0
 SCAN_EVERY = 10
 
 
-class ConfigError(Exception):
-    pass
-
-
 @dataclass(frozen=True)
 class Config:
     temporal_address: str
@@ -93,8 +91,7 @@ class Config:
         """The configuration of `environ`, or ConfigError naming every variable that is unset or
         empty, a global cap that is not a positive number, or a prefix that puts a pool queue
         outside the queue names of the activity contract."""
-        if missing := [name for name in ENV.values() if not environ.get(name)]:
-            raise ConfigError(f"missing environment: {', '.join(missing)}")
+        required = require(environ, ENV)
         cap = environ.get(GLOBAL_CAP_ENV) or None
         if cap is not None and not (cap.isdecimal() and int(cap) > 0):
             raise ConfigError(f"{GLOBAL_CAP_ENV} is {cap!r}, not a positive number")
@@ -105,7 +102,7 @@ class Config:
                     f"{PREFIX_ENV} gives the queue {prefix + queue!r}, outside {QUEUE}"
                 )
         return cls(
-            **{key: environ[name] for key, name in ENV.items()},
+            **required,
             global_cap=int(cap) if cap else None,
             prefix=prefix,
         )
@@ -283,13 +280,9 @@ async def serve(
     `connect_broker` opens a broker connection and `start` starts a claimed job's workflow, the
     real ones of the configuration when they are not given. A fatal error of the cycle is raised.
     """
-    if ready_file:
-        ready_file.unlink(missing_ok=True)
-    stop = stop or asyncio.Event()
-    loop = asyncio.get_running_loop()
-    for signum in (signal.SIGTERM, signal.SIGINT):
-        loop.add_signal_handler(signum, stop.set)
-    try:
+    ready = ReadyFile(ready_file)
+    ready.arm()
+    with nullcontext(stop) if stop else stopping() as stop:
         runtime = runtime or prometheus(config.metrics_address)
         client = await Client.connect(
             config.temporal_address,
@@ -330,13 +323,10 @@ async def serve(
             f", pool queues behind {config.prefix}" if config.prefix else "",
         )
         try:
-            await _run(intake, jobs, metrics, held, stop, ready_file)
+            await _run(intake, jobs, metrics, held, stop, ready)
         finally:
             intake.close()
             jobs.close()
-    finally:
-        for signum in (signal.SIGTERM, signal.SIGINT):
-            loop.remove_signal_handler(signum)
 
 
 async def _run(
@@ -345,15 +335,14 @@ async def _run(
     metrics: Metrics,
     held: list[Delivery],
     stop: asyncio.Event,
-    ready_file: Path | None,
+    ready: ReadyFile,
 ) -> None:
     def export() -> None:
         jobs.export()
         metrics.gauge("dsy_admission_breaker_open", intake.breakers.gauge(), "dependency")
 
     stopped = asyncio.create_task(stop.wait())
-    if ready_file:
-        ready_file.touch()
+    ready.set()
     try:
         while True:
             # No message is held between cycles, so only the cycle in progress can hold one.
@@ -368,8 +357,7 @@ async def _run(
             if stop.is_set():
                 break
     finally:
-        if ready_file:
-            ready_file.unlink(missing_ok=True)
+        ready.clear()
         stopped.cancel()
     log.info("draining for at most %s s", DRAIN_S)
     await asyncio.wait([cycle], timeout=DRAIN_S)
