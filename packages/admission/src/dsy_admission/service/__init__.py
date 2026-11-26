@@ -30,6 +30,7 @@ from dsy_broker.models import BrokerUnavailable, TenancyProfile
 from dsy_obs import logs
 from dsy_obs.metrics import export_registry
 from dsy_obs.metrics import runtime as metrics_runtime
+from dsy_servicekit import pg
 from dsy_servicekit.config import ConfigError, require
 from dsy_servicekit.lifecycle import ReadyFile, stopping
 from dsy_temporal.client import connect as connect_temporal
@@ -70,6 +71,9 @@ BROKER_USER = "admission"
 # How long the cycle in progress has to finish after a stop, which a start's RPC timeout meets, so
 # the release and the close still fit the pod's grace period.
 DRAIN_S = 15.0
+# The longest a database connect waits. The breaker probes again after its backoff, so a short bound
+# only makes an outage show sooner.
+CONNECT_TIMEOUT_S = 2
 # The scans of the rows that no message admits run on every this many cycles, the first included.
 SCAN_EVERY = 10
 
@@ -249,6 +253,12 @@ class Jobs:
         return self._db
 
 
+def connect_database(dsn: str) -> psycopg.Connection:
+    """An autocommit connection whose connect gives up after CONNECT_TIMEOUT_S, so an unreachable
+    database reaches the database breaker as an outage instead of blocking the cycle."""
+    return pg.connect(dsn, autocommit=True, connect_timeout=CONNECT_TIMEOUT_S)
+
+
 def _timed(start: Start, metrics: Metrics) -> Start:
     """`start`, observing each started job's wait from its submission, with the job and its trace
     bound to every log line of the start."""
@@ -297,7 +307,7 @@ async def serve(
         held: list[Delivery] = []
 
         def connect_db() -> psycopg.Connection:
-            return psycopg.connect(config.dsn, autocommit=True)
+            return connect_database(config.dsn)
 
         export_registry(runtime.metric_meter, "admission")
         metrics = Metrics(runtime.metric_meter, profile.priority_classes, caps)
