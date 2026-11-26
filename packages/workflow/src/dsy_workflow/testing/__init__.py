@@ -1,12 +1,7 @@
 """Stubs and fakes that stand in for the placement service, the pool workers and the control
 activities, with the conformance tests that the real ones pass."""
 
-import asyncio
-
-from dsy_temporal import event_data_converter
-from temporalio.client import Client
-
-from ..contract import naming
+from .builders import FAN, accepted_event, plan
 from .control import FakeControl, control_activity_contract
 from .placer import placer_contract
 from .pool import (
@@ -21,8 +16,20 @@ from .pool import (
     activity_contract,
     run_task_once,
 )
+from .rig import Rig, control_worker, rig
+from .server import build_id, client, connect, dev_server, register_search_attributes
 
 __all__ = [
+    "FAN",
+    "Rig",
+    "accepted_event",
+    "build_id",
+    "client",
+    "control_worker",
+    "dev_server",
+    "plan",
+    "register_search_attributes",
+    "rig",
     "ContractCases",
     "Die",
     "Fail",
@@ -38,18 +45,3 @@ __all__ = [
     "placer_contract",
     "run_task_once",
 ]
-
-
-async def connect(address: str, attempts: int = 120) -> Client:
-    """A client of the namespace of naming.yaml with the payload converter of dsy_temporal, once
-    the server answers."""
-    for _ in range(attempts - 1):
-        try:
-            return await Client.connect(
-                address, namespace=naming().namespace, data_converter=event_data_converter
-            )
-        except RuntimeError:
-            await asyncio.sleep(0.5)
-    return await Client.connect(
-        address, namespace=naming().namespace, data_converter=event_data_converter
-    )
