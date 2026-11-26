@@ -3,6 +3,7 @@
 # the service logins in the app database before the service starts, the Secret dispatch-logins carries their DSNs, the
 # Secret dispatch-store the submit identity of the store, and the Secret dispatch-broker the password of the broker
 # user dispatch, taken from the broker module's helper.
+load("../tilt/obs.star", "obs_env")
 module = read_yaml("module.yaml")
 name = module["name"]
 namespace = module["namespace"]
@@ -64,11 +65,9 @@ env = {
     "DSY_SUBMIT_CREDENTIALS": credentials,
     "DSY_BROKER_ADDRESS": svc("rabbitmq", 5672),
     "DSY_TENANCY_PROFILE": tenancy["tilt_profiles"][tilt_profile],
-    "DSY_METRICS_ADDRESS": "0.0.0.0:9090",
+    "DSY_METRICS_ADDRESS": "0.0.0.0:9464",
 }
-# Loaded only with the switch on, so a switch-off module never resolves the helper.
-if os.getenv("DSY_OBS") == "on":
-    env.update(load_dynamic("../tilt/obs.star")["obs_env"]())
+env.update(obs_env())
 
 k8s_yaml(encode_yaml({
     "apiVersion": "apps/v1",
@@ -100,7 +99,7 @@ k8s_yaml(encode_yaml({
                     "env": [{"name": k, "value": v} for k, v in sorted(env.items())],
                     "envFrom": [{"secretRef": {"name": "%s-%s" % (name, s)}} for s in ["logins", "broker"]],
                     "ports": [{"name": n, "containerPort": p} for n, p in sorted(listeners.items())] + [
-                        {"name": "metrics", "containerPort": 9090},
+                        {"name": "metrics", "containerPort": 9464},
                     ],
                     # Ready while every login connects, the store answers a head and Temporal answers, each of which
                     # may take its own connect timeout of 5 s.

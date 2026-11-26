@@ -34,6 +34,7 @@ from dsy_jobdoc.profile import LimitsFile, LimitsProfile, PoolTable, Slot
 from dsy_jobstate.models import CONTRACT as JOBSTATE_CONTRACT
 from dsy_obs.metrics import export_registry
 from dsy_obs.setup import setup
+from dsy_servicekit import pg
 from dsy_servicekit.config import exiting_on_config_error, require
 from dsy_servicekit.lifecycle import ThreadStop
 from dsy_storecheck.s3 import load_credentials
@@ -232,7 +233,7 @@ class Service:
                     self._lock.notify_all()
 
     def connect(self, login: str) -> psycopg.Connection:
-        return psycopg.connect(
+        return pg.connect(
             self.config.dsn(login), autocommit=True, connect_timeout=CONNECT_TIMEOUT_S
         )
 

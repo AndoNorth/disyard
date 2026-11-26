@@ -34,10 +34,10 @@ deploy/dispatchapi/image.sh <ref>
 | `control-api` | 8080 | `control-api` | 30080 | `127.0.0.1:18080` |
 
 The NodePorts are those of the rows of the [host access map](../host/ports.yaml).
-The Prometheus metrics are on container port 9090, which has no Service:
+The Prometheus metrics are on container port 9464, which has no Service:
 
 ```sh
-kubectl --context kind-dsy -n dsy-control port-forward --address 127.0.0.1 deploy/dispatch 9090:9090
+kubectl --context kind-dsy -n dsy-control port-forward --address 127.0.0.1 deploy/dispatch 9464:9464
 ```
 
 ## Configuration
@@ -51,7 +51,7 @@ The service reads only its environment.
 | `DSY_SUBMIT_CREDENTIALS` | `/etc/dsy/store/credentials.json`, mounted from the Secret `dispatch-store` |
 | `DSY_BROKER_ADDRESS` | `rabbitmq.dsy-infra.svc.cluster.local:5672` |
 | `DSY_TENANCY_PROFILE` | the tenancy profile that `contracts/tenancy/tenancy.yaml` maps the Tilt profile to |
-| `DSY_METRICS_ADDRESS` | port 9090 of the pod |
+| `DSY_METRICS_ADDRESS` | port 9464 of the pod |
 | `DSY_DISPATCH_DSN`, `DSY_CONTROL_DSN`, `DSY_ARTIFACTS_DSN`, `DSY_READER_DSN` | the Secret `dispatch-logins` |
 | `DSY_BROKER_PASSWORD` | the Secret `dispatch-broker` |
 
