@@ -331,7 +331,22 @@ Risks:
 
 ## 9. Closure (filled at close)
 
-Not run yet.
+Not run yet as a whole.
+Rows 1, 5, 6 and 7 of section 7 were proven on 2026-11-25 and 2026-11-26 by the baseline and exit test runs of epic 17 pass 2, on a clean `git archive` export under the lock with the switch on, and the other rows were not run.
+
+| Row | Result | Evidence |
+| --- | --- | --- |
+| 1 | pass | `just ci` exit 0 in 3,182 s on `main` at `5d6853f` and in 3,143 s on the pass 2 export |
+| 4 | not run | Tilt `SUCCESS` and `just cluster-verify` with 10 `ok` were seen on the fresh cluster, but `python -m dsy_worker.probe` was not run in the pools |
+| 5 | pass | `just smoke` three times, each exit 0 with 11 `ok` rows, `smoke ci:` 75, 27 and 27 s (80, 38 and 38 s wall), the second and third with `build hit the cache (attempt 0)`, and row 11 reading `4 scrape jobs up, logs of 5 services, trace of 3 services, 7 profiles` |
+| 6 | pass | `pytest packages/obs/tests/catalogue -m cluster` with a forward of `svc/prometheus` in `DSY_OBS_PROMETHEUS_URL`: 1 passed. Without the variable the test is skipped, which `-m cluster` alone does not say |
+| 7 | pass | `ALERTS{alertstate="firing"}` on the fresh cluster after the three smoke runs listed only `DsyWatchdog` |
+
+Rows 2, 3, 8 to 14, 15 and 16 were not run.
+
+Closure addenda, one dated line each, added after close when a `revisit` child issue is filed against this epic:
+
+- none yet
 
 Closure addenda, one dated line each, added after close when a `revisit` child issue is filed against this epic:
 
