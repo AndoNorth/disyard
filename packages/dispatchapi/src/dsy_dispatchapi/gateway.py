@@ -18,6 +18,7 @@ from dsy_temporal.client import connect
 from dsy_workflow.contract import naming
 from dsy_workflow.models import ControlSignal, StatusQuery
 from temporalio.client import Client, WorkflowQueryFailedError
+from temporalio.runtime import Runtime
 from temporalio.service import RPCError, RPCStatusCode
 
 from .ports import SIGNALS, NoWorkflow, SignalName, TemporalUnavailable
@@ -38,6 +39,7 @@ class TemporalGateway:
         address: str,
         call_timeout_s: float = CALL_TIMEOUT_S,
         query_timeout_s: float = QUERY_TIMEOUT_S,
+        runtime: Runtime | None = None,
     ):
         self.call_timeout = timedelta(seconds=call_timeout_s)
         self.query_timeout = timedelta(seconds=query_timeout_s)
@@ -47,7 +49,9 @@ class TemporalGateway:
         )
         self._thread.start()
         self._client: Client = self._run(
-            connect(address, naming().namespace, lazy=True),
+            connect(
+                address, naming().namespace, lazy=True, **({"runtime": runtime} if runtime else {})
+            ),
             self.call_timeout,
         )
 

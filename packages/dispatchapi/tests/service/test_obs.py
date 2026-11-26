@@ -5,7 +5,9 @@ accepted job, in the trace of the job, pushed by OTLP HTTP to a receiver of the 
 import gzip
 import json
 import logging
+import re
 import threading
+import urllib.request
 from datetime import UTC, datetime
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from types import SimpleNamespace
@@ -18,6 +20,7 @@ from dsy_dispatchapi import service as service_module
 from dsy_dispatchapi.publish import Publisher, published_event
 from dsy_dispatchapi.service import routes
 from dsy_events import build_event
+from dsy_events.metrics import registry
 from dsy_obs import logs, traces
 from dsy_obs.setup import setup
 from dsy_temporal import new_traceparent, trace_id_of
@@ -186,3 +189,32 @@ def test_main_sets_up_the_component_and_exports_the_registry(monkeypatch):
 
     assert service_module.main({}) == 0
     assert calls == [("setup", ("dispatch",)), "export", "run"]
+
+
+def test_built_service_shares_its_metrics_runtime_with_the_temporal_client(
+    kit, tenancy, monkeypatch
+):
+    logins = dict.fromkeys(
+        ("dispatch", "control", "artifacts", "reader"), "postgresql://x@127.0.0.1:1/x"
+    )
+    monkeypatch.setattr(service_module, "load_credentials", lambda path: {"submit": None})
+    monkeypatch.setattr(service_module, "ArtifactClient", lambda *args: None)
+    temporal = f"127.0.0.1:{kit.free_port()}"
+    config = service_module.Config.from_env(kit.environment(logins, temporal))
+    service = service_module.build(config, tenancy)
+    try:
+        # The SDK client reports its request metrics through the runtime that serves /metrics.
+        assert service.gateway._client.service_client.config.runtime is service.runtime
+        service.runtime.metric_meter.create_histogram_float("dsy_event_bytes").record(1)
+        body = urllib.request.urlopen(f"http://{config.metrics_address}/metrics").read().decode()
+    finally:
+        service.gateway.close()
+        for server in service.servers.values():
+            server.server_close()
+    served = [
+        float(le)
+        for le in re.findall(r'dsy_event_bytes_bucket\{[^}]*le="([^"]+)"', body)
+        if le != "+Inf"
+    ]
+    # The registry loads its bounds from contracts/instrumentation/metrics.yaml.
+    assert served == registry.histograms["dsy_event_bytes"].bounds, body
