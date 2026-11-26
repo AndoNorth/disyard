@@ -26,14 +26,18 @@ def run(body):
     return asyncio.run(asyncio.wait_for(body(), LIMIT_S))
 
 
-async def until(check, every_s: float = 0.2):
-    """The first truthy answer of `check`, a function or a coroutine function."""
+async def until(check, every_s: float = 0.2, timeout_s: float = 60):
+    """The first truthy answer of `check`, a function or a coroutine function, or
+    a `TimeoutError` after `timeout_s`."""
+    deadline = asyncio.get_running_loop().time() + timeout_s
     while True:
         found = check()
         if asyncio.iscoroutine(found):
             found = await found
         if found:
             return found
+        if asyncio.get_running_loop().time() > deadline:
+            raise TimeoutError(f"no answer within {timeout_s:.0f} s")
         await asyncio.sleep(every_s)
 
 
