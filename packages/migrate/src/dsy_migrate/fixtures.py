@@ -1,10 +1,13 @@
-"""The `appdb` fixture, registered as a pytest plugin by the package entry point."""
+"""The `appdb`, `db` and `login` fixtures, a pytest plugin registered by the package entry point."""
 
+import contextlib
 import itertools
 import time
 
 import psycopg
 import pytest
+from psycopg import sql
+from psycopg.conninfo import make_conninfo
 
 from .runner import apply, discover
 
@@ -57,3 +60,43 @@ def appdb(empty_db):
     """A fresh database with every installed migration applied, yielding its DSN."""
     apply(empty_db, discover())
     return empty_db
+
+
+@pytest.fixture
+def db(appdb):
+    """A superuser autocommit connection to the `appdb` database."""
+    with psycopg.connect(appdb, autocommit=True) as connection:
+        yield connection
+
+
+@contextlib.contextmanager
+def logins(db, dsn: str):
+    """A factory of fresh group logins, each dropped on exit despite leaked connections."""
+    users: list[str] = []
+
+    def login(group: str) -> str:
+        user = f"standin_{group}_{time.time_ns()}_{len(users)}"
+        db.execute(
+            sql.SQL("CREATE ROLE {} LOGIN PASSWORD 'standin' IN ROLE {}").format(
+                sql.Identifier(user), sql.Identifier(group)
+            )
+        )
+        users.append(user)
+        return make_conninfo(dsn, user=user, password="standin")
+
+    try:
+        yield login
+    finally:
+        for user in users:
+            db.execute(
+                "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE usename = %s", (user,)
+            )
+            db.execute(sql.SQL("DROP OWNED BY {}").format(sql.Identifier(user)))
+            db.execute(sql.SQL("DROP ROLE {}").format(sql.Identifier(user)))
+
+
+@pytest.fixture
+def login(appdb, db):
+    """`login(group)` returns the DSN of a fresh login in a group role, dropped after the test."""
+    with logins(db, appdb) as factory:
+        yield factory
