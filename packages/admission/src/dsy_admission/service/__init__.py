@@ -29,13 +29,14 @@ from dsy_broker.client import Credentials, Delivery, connect
 from dsy_broker.models import BrokerUnavailable, TenancyProfile
 from dsy_obs import logs
 from dsy_obs.metrics import export_registry
+from dsy_obs.metrics import runtime as metrics_runtime
 from dsy_servicekit.config import ConfigError, require
 from dsy_servicekit.lifecycle import ReadyFile, stopping
 from dsy_temporal.client import connect as connect_temporal
 from dsy_workflow.contract import naming
 from dsy_workflow.models import QUEUE
 from temporalio.client import Client
-from temporalio.runtime import PrometheusConfig, Runtime, TelemetryConfig
+from temporalio.runtime import Runtime
 
 from .. import start as starting
 from ..breaker import dependency_of
@@ -109,8 +110,7 @@ class Config:
 
 
 def prometheus(address: str) -> Runtime:
-    metrics = PrometheusConfig(bind_address=address, histogram_bucket_overrides=BUCKETS)
-    return Runtime(telemetry=TelemetryConfig(metrics=metrics))
+    return metrics_runtime(address, BUCKETS)
 
 
 class _Holding:

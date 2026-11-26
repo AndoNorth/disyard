@@ -11,9 +11,10 @@ from datetime import UTC, datetime
 from types import SimpleNamespace
 
 from dsy_admission.policy import Caps
-from dsy_admission.service import _timed
+from dsy_admission.service import _timed, prometheus
 from dsy_admission.service.metrics import Metrics
 from dsy_broker.tenancy import load
+from dsy_events.metrics import registry
 from dsy_obs import logs
 
 TRACE_ID = "0af7651916cd43dd8448eb211c80319c"
@@ -56,3 +57,17 @@ def test_cap_gauge_by_scope(runtime, metrics_port):
         assert re.search(
             rf'dsy_admission_cap_jobs\{{[^}}]*scope="{scope}"[^}}]*\}} {cap}\b', body
         ), body
+
+
+def test_event_bytes_buckets_are_the_catalogue_bounds(free_port):
+    address = f"127.0.0.1:{free_port()}"
+    runtime = prometheus(address)
+    runtime.metric_meter.create_histogram_float("dsy_event_bytes").record(1)
+    body = urllib.request.urlopen(f"http://{address}/metrics").read().decode()
+    served = [
+        float(le)
+        for le in re.findall(r'dsy_event_bytes_bucket\{[^}]*le="([^"]+)"', body)
+        if le != "+Inf"
+    ]
+    # The registry loads its bounds from contracts/instrumentation/metrics.yaml.
+    assert served == registry.histograms["dsy_event_bytes"].bounds, body
