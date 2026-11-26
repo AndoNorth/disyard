@@ -14,11 +14,13 @@ def _listed():
     }
 
 
-@pytest.mark.parametrize("module", ["config", "lifecycle", "pg"])
+@pytest.mark.parametrize("module", ["config", "lifecycle", "pg", "testing"])
 def test_all_equals_the_readme_list(module):
     name = f"dsy_servicekit.{module}"
     assert sorted(importlib.import_module(name).__all__) == sorted(_listed()[name])
 
 
 def test_readme_lists_only_these_modules():
-    assert set(_listed()) == {f"dsy_servicekit.{m}" for m in ("config", "lifecycle", "pg")}
+    assert set(_listed()) == {
+        f"dsy_servicekit.{m}" for m in ("config", "lifecycle", "pg", "testing")
+    }
