@@ -11,8 +11,7 @@ import os
 import time
 import uuid
 from collections.abc import AsyncIterator, Callable
-from concurrent.futures import ThreadPoolExecutor
-from contextlib import AsyncExitStack, asynccontextmanager
+from contextlib import asynccontextmanager
 from datetime import UTC, datetime
 from types import SimpleNamespace
 
@@ -25,22 +24,17 @@ from dsy_keys import batch_id, job_id, workflow_id
 from dsy_plan import Plan
 from dsy_temporal import new_traceparent
 from dsy_workflow.contract import naming
-from dsy_workflow.placement import StaticPlacer, place_activity
-from dsy_workflow.testing import FakeControl, FakePool, Interruptible
+from dsy_workflow.placement import StaticPlacer
+from dsy_workflow.testing import FakeControl, Interruptible
 from dsy_workflow.testing.control import LoadedPlan
-from psycopg import sql
-from psycopg.conninfo import make_conninfo
+from dsy_workflow.testing.rig import rig as testing_rig
 from temporalio.client import Client, WorkflowHandle
-from temporalio.common import WorkerDeploymentVersion
-from temporalio.worker import Worker, WorkerDeploymentConfig
 
 os.environ.setdefault(naming().workflow.build_id_env, "test-build")
 BUILD_ID = os.environ[naming().workflow.build_id_env]
 
-from dsy_workflow import versioning  # noqa: E402
 from dsy_workflow.activities.emit import Emitter  # noqa: E402
 from dsy_workflow.job import JobWorkflow  # noqa: E402
-from dsy_workflow.taskpath import control_queue  # noqa: E402
 
 TENANT = "acme"
 SHA = "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08"
@@ -79,17 +73,9 @@ WAIT_S = 60
 
 
 @pytest.fixture
-def workflow_dsn(appdb, db):
+def workflow_dsn(login) -> str:
     """The DSN of a fresh login in `dsy_workflow`, which the real emit activity writes as."""
-    user = f"workflow_{time.time_ns()}"
-    db.execute(
-        sql.SQL("CREATE ROLE {} LOGIN PASSWORD 'standin' IN ROLE dsy_workflow").format(
-            sql.Identifier(user)
-        )
-    )
-    yield make_conninfo(appdb, user=user, password="standin")
-    db.execute("SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE usename = %s", (user,))
-    db.execute(sql.SQL("DROP ROLE {}").format(sql.Identifier(user)))
+    return login("dsy_workflow")
 
 
 @pytest.fixture
@@ -190,28 +176,17 @@ async def rig(client: Client, workflow_dsn: str | None = None) -> AsyncIterator[
     """
     control = FakeControl()
     control.plans[MANIFEST["uri"]] = LoadedPlan(plan=PLAN, max_history_events=10_000)
-    emit = Emitter(workflow_dsn).emit if workflow_dsn else control.emit
-    with ThreadPoolExecutor(4) as local:
-        workers = [
-            Worker(
-                client,
-                task_queue=naming().workflow.queue,
-                workflows=[JobWorkflow],
-                activities=[place_activity(StaticPlacer()), emit],
-                activity_executor=local,
-                deployment_config=WorkerDeploymentConfig(
-                    version=WorkerDeploymentVersion(naming().workflow.deployment, BUILD_ID),
-                    use_worker_versioning=True,
-                ),
-            ),
-            Worker(client, task_queue=control_queue(), activities=control.control_activities()),
-            FakePool(client, "simulate", lambda task: Interruptible()),
-        ]
-        async with AsyncExitStack() as stack:
-            for worker in workers:
-                await stack.enter_async_context(worker)
-            await versioning.set_current(client, BUILD_ID)
-            yield control
+    if workflow_dsn:
+        control.emit = Emitter(workflow_dsn).emit
+    async with testing_rig(
+        client,
+        build_id=BUILD_ID,
+        placer=StaticPlacer(),
+        control=control,
+        scripts={"simulate": lambda task: Interruptible()},
+        idle=frozenset(naming().pools) - {"simulate"},
+    ):
+        yield control
 
 
 @pytest.fixture
