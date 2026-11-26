@@ -1,11 +1,11 @@
 """The command line of the script, with no store behind it."""
 
 import json
-import socket
 import subprocess
 import sys
 
 import pytest
+from dsy_servicekit.testing import free_port
 from dsy_storecheck.checks import Report, classify, contract_roles
 from dsy_storecheck.expiry import run_days_check
 from dsy_storecheck.s3 import Creds, dump_credentials, load_credentials
@@ -61,9 +61,7 @@ def test_a_credentials_file_without_the_admin_role_is_a_usage_error(tmp_path):
 
 
 def test_a_closed_port_fails_with_exit_1(credentials_file):
-    with socket.socket() as probe:
-        probe.bind(("127.0.0.1", 0))
-        port = probe.getsockname()[1]
+    port = free_port()
     result = cli(
         "run",
         "--endpoint",

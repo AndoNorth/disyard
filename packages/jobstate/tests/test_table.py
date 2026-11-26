@@ -5,7 +5,6 @@ import re
 import uuid
 from pathlib import Path
 
-import psycopg
 import pytest
 import yaml
 from dsy_jobstate import STUBBED
@@ -47,12 +46,6 @@ def insert(db, **overrides):
     marks = ", ".join(f"%({name})s" for name in row)
     db.execute(f"INSERT INTO accepted_job ({columns}) VALUES ({marks})", row)
     return row["job_id"]
-
-
-@pytest.fixture
-def db(appdb):
-    with psycopg.connect(appdb, autocommit=True) as connection:
-        yield connection
 
 
 def refused(db, error, sql, params=None):

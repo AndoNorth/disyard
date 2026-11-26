@@ -3,17 +3,9 @@
 import psycopg
 import pytest
 from dsy_artifactclient.bench import main
-from dsy_storecheck.fixtures import running
 from dsy_storecheck.s3 import dump_credentials
 
 pytestmark = [pytest.mark.integration, pytest.mark.pair]
-
-
-@pytest.fixture(scope="module")
-def shelf(t1, tmp_path_factory):
-    with running(t1, "seaweedfs", tmp_path_factory.mktemp("shelf")) as started:
-        started.store().create_buckets()
-        yield started
 
 
 def test_jobs_are_seeded_one_succeeded_and_one_running_with_results_and_a_checkpoint(

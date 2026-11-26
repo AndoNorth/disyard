@@ -17,6 +17,7 @@ import yaml
 from dsy_compile import bundle, heavy, limits
 from dsy_itest import image_ref
 from dsy_itest.session import RUN_LABEL
+from dsy_servicekit.testing import free_port
 
 # The project, wheel and served helpers of the build tests, loaded by path as the import mode needs.
 _spec = importlib.util.spec_from_file_location(
@@ -58,9 +59,7 @@ def fetch(capsys, *argv: str) -> tuple[int, str, str]:
 
 
 def closed_port() -> str:
-    with socket.socket() as s:
-        s.bind(("127.0.0.1", 0))
-        return f"http://127.0.0.1:{s.getsockname()[1]}/"
+    return f"http://127.0.0.1:{free_port()}/"
 
 
 def test_build_timeout_on_heavy_bundle(tmp_path, capsys):
@@ -78,9 +77,7 @@ def test_build_timeout_on_heavy_bundle(tmp_path, capsys):
 
 def test_fetch_timeout_on_silent_mirror(locked, tmp_path, capsys):
     path, _ = locked
-    with socket.socket() as silent:
-        silent.bind(("127.0.0.1", 0))
-        silent.listen()
+    with socket.create_server(("127.0.0.1", 0)) as silent:
         url = f"http://127.0.0.1:{silent.getsockname()[1]}/"
         start = time.monotonic()
         code, _, reason = fetch(

@@ -1,7 +1,6 @@
 """The provider `setup` installs from `OTEL_EXPORTER_OTLP_ENDPOINT`, the spans it pushes, and the
 drops it counts when the collector refuses."""
 
-import socket
 import threading
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -10,6 +9,7 @@ import pytest
 from dsy_events.metrics import registry
 from dsy_obs import logs, traces
 from dsy_obs.setup import setup
+from dsy_servicekit.testing import free_port
 from dsy_temporal.trace import current_traceparent, stage_span
 from opentelemetry import trace
 from opentelemetry.proto.collector.trace.v1.trace_service_pb2 import ExportTraceServiceRequest
@@ -20,12 +20,6 @@ SPAN_ID = "00f067aa0ba902b7"
 BLOCKING_CALL_SECONDS = 0.5
 BLOCKING_RUN_SECONDS = 10
 TRACEPARENT = f"00-{TRACE_ID}-{SPAN_ID}-01"
-
-
-def free_port() -> int:
-    with socket.socket() as s:
-        s.bind(("127.0.0.1", 0))
-        return s.getsockname()[1]
 
 
 class Receiver(ThreadingHTTPServer):

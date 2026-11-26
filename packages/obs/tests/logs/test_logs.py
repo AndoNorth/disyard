@@ -3,7 +3,6 @@
 import io
 import json
 import logging
-import socket
 import threading
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -11,6 +10,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import pytest
 from dsy_events.metrics import registry
 from dsy_obs import logs
+from dsy_servicekit.testing import free_port
 from opentelemetry.proto.collector.logs.v1.logs_service_pb2 import ExportLogsServiceRequest
 
 TRACE_ID = "4bf92f3577b34da6a3ce929d0e0e4736"
@@ -26,12 +26,6 @@ def lines(root, monkeypatch):
     out = io.StringIO()
     logs.install("dispatch", stream=out)
     return lambda: [json.loads(line) for line in out.getvalue().splitlines()]
-
-
-def free_port() -> int:
-    with socket.socket() as s:
-        s.bind(("127.0.0.1", 0))
-        return s.getsockname()[1]
 
 
 def otlp_handler(root) -> logs.OtlpHandler | None:

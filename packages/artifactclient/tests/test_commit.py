@@ -5,7 +5,6 @@ of the workflow's record activity, and the purge is run by a stand-in member of 
 """
 
 import hashlib
-import time
 import uuid
 from datetime import UTC, datetime, timedelta
 
@@ -18,10 +17,7 @@ from dsy_artifactclient.errors import ArtifactLost, ArtifactNotFound, OutputUplo
 from dsy_artifactclient.keys import split_uri
 from dsy_artifactindex import Deleted, Purged, index_reference, purge, tombstone, uses_of
 from dsy_events.models import ProducerRef
-from dsy_storecheck.fixtures import running
 from dsy_storecheck.s3 import client as s3_client
-from psycopg import sql
-from psycopg.conninfo import make_conninfo
 
 pytestmark = [pytest.mark.integration, pytest.mark.pair]
 
@@ -37,14 +33,6 @@ def producer(job: str, attempt: str, task: str = "t0") -> ProducerRef:
     return ProducerRef(job=job, task=task, attempt=attempt)
 
 
-@pytest.fixture(scope="module")
-def shelf(t1, tmp_path_factory):
-    """One SeaweedFS container for this module, so that it is gone before other modules run."""
-    with running(t1, "seaweedfs", tmp_path_factory.mktemp("shelf")) as started:
-        started.store().create_buckets()
-        yield started
-
-
 @pytest.fixture
 def role(shelf):
     """A client of a role of the contract, with no real waiting between tries."""
@@ -53,28 +41,19 @@ def role(shelf):
 
 
 @pytest.fixture
-def login(appdb):
-    """Opens an autocommit connection as a fresh login user that is a member of the group role."""
-    users: list[tuple[str, psycopg.Connection]] = []
-    with psycopg.connect(appdb, autocommit=True) as admin:
+def login(login):
+    """Opens an autocommit connection as a fresh login of the group role; `login.dsn` is its DSN."""
+    opened: list[psycopg.Connection] = []
 
-        def connect(group: str) -> psycopg.Connection:
-            user = f"standin_{group}_{time.time_ns()}"
-            admin.execute(
-                sql.SQL("CREATE ROLE {} LOGIN PASSWORD 'standin' IN ROLE {}").format(
-                    sql.Identifier(user), sql.Identifier(group)
-                )
-            )
-            conn = psycopg.connect(
-                make_conninfo(appdb, user=user, password="standin"), autocommit=True
-            )
-            users.append((user, conn))
-            return conn
+    def connect(group: str) -> psycopg.Connection:
+        conn = psycopg.connect(login(group), autocommit=True)
+        opened.append(conn)
+        return conn
 
-        yield connect
-        for user, conn in users:
-            conn.close()
-            admin.execute(sql.SQL("DROP ROLE {}").format(sql.Identifier(user)))
+    connect.dsn = login
+    yield connect
+    for conn in opened:
+        conn.close()
 
 
 @pytest.fixture

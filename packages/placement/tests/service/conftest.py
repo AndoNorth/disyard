@@ -5,7 +5,6 @@ import importlib.util
 import json
 import logging
 import os
-import socket
 import subprocess
 import sys
 import threading
@@ -14,6 +13,7 @@ from pathlib import Path
 
 import pytest
 from dsy_placement import kube, service
+from dsy_servicekit.testing import free_port
 
 TESTS = Path(__file__).parents[1]
 
@@ -80,12 +80,6 @@ def decisions(caplog):
     """The decision log lines written so far, as the service writes them."""
     caplog.set_level(logging.INFO, logger=service.__name__)
     return lambda: [m for m in caplog.messages if m.startswith(("placed ", "unschedulable "))]
-
-
-def free_port() -> int:
-    with socket.socket() as probe:
-        probe.bind(("127.0.0.1", 0))
-        return probe.getsockname()[1]
 
 
 # The service's own entry point, with the service account directory given on the command line in
