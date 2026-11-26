@@ -14,16 +14,15 @@ starts, so a stopped child's temporary files never outlive the next task.
 import asyncio
 import logging
 import os
-import signal
 import tempfile
+from contextlib import nullcontext
 from datetime import timedelta
 
 from dsy_artifactclient.client import ArtifactClient
 from dsy_obs.metrics import export_registry
+from dsy_servicekit.lifecycle import ReadyFile, stopping
 from dsy_storecheck.s3 import load_credentials
-from dsy_temporal import event_data_converter, tracing_interceptor
-from temporalio.api.workflowservice.v1 import DescribeNamespaceRequest
-from temporalio.client import Client
+from dsy_temporal.client import connect
 from temporalio.worker import Worker
 
 from .activity import run_task, serving
@@ -45,26 +44,16 @@ async def serve(config: Config, stop: asyncio.Event | None = None) -> None:
     """Serves `run_task` on the pool's queue until `stop` is set or the process gets SIGTERM or
     SIGINT, then drains. A namespace the server does not know fails before the ready file is
     created."""
-    config.ready_file.unlink(missing_ok=True)
+    ready = ReadyFile(config.ready_file)
+    ready.arm()
     tmp = config.scratch / TMP
     tmp.mkdir(parents=True, exist_ok=True)
     os.environ["TMPDIR"] = tempfile.tempdir = str(tmp)
-    stop = stop or asyncio.Event()
-    loop = asyncio.get_running_loop()
-    for signum in (signal.SIGTERM, signal.SIGINT):
-        loop.add_signal_handler(signum, stop.set)
-    try:
+    with nullcontext(stop) if stop else stopping() as stop:
         runtime = runtime_of(os.environ)
         export_registry(runtime.metric_meter, f"{config.pool}-worker")
-        client = await Client.connect(
-            config.temporal_address,
-            namespace=config.namespace,
-            data_converter=event_data_converter,
-            interceptors=[tracing_interceptor()],
-            runtime=runtime,
-        )
-        await client.workflow_service.describe_namespace(
-            DescribeNamespaceRequest(namespace=config.namespace)
+        client = await connect(
+            config.temporal_address, config.namespace, runtime=runtime, check_namespace=True
         )
         # The store role of each pool is named after the pool.
         credentials = load_credentials(config.store_credentials)[config.pool]
@@ -88,20 +77,17 @@ async def serve(config: Config, stop: asyncio.Event | None = None) -> None:
                 config.namespace,
                 config.pool,
             )
-            await _run_until(worker, stop, config)
-    finally:
-        for signum in (signal.SIGTERM, signal.SIGINT):
-            loop.remove_signal_handler(signum)
+            await _run_until(worker, stop, ready)
 
 
-async def _run_until(worker: Worker, stop: asyncio.Event, config: Config) -> None:
+async def _run_until(worker: Worker, stop: asyncio.Event, ready: ReadyFile) -> None:
     running = asyncio.create_task(worker.run())
     stopped = asyncio.create_task(stop.wait())
-    config.ready_file.touch()
+    ready.set()
     try:
         await asyncio.wait([running, stopped], return_when=asyncio.FIRST_COMPLETED)
     finally:
-        config.ready_file.unlink(missing_ok=True)
+        ready.clear()
     stopped.cancel()
     log.info("draining for at most %s", DRAIN)
     await worker.shutdown()

@@ -106,6 +106,7 @@ def test_activity_contract(worker, temporal, cases, pool):
 
 @pytest.mark.integration
 @pytest.mark.pair
+@pytest.mark.seam
 def test_sigterm_drains(worker, temporal, cases):
     """A task in flight at a SIGTERM runs on to its result, and the worker then exits 0."""
     task = with_params(cases("simulate").succeeds, SHORT)
@@ -190,6 +191,7 @@ def test_cancel_during_drain_withdraws(worker, temporal, cases):
 
 @pytest.mark.integration
 @pytest.mark.pair
+@pytest.mark.seam
 def test_ready_file_while_polling(worker, temporal, tmp_path):
     """The ready file exists once the worker polls and is gone once it stops, and a namespace
     the server does not know fails the start without it, even when a killed process left one."""
@@ -226,6 +228,7 @@ def complete(root: Path) -> dict[str, str]:
     }
 
 
+@pytest.mark.seam
 @pytest.mark.parametrize(
     ("pool", "change", "error"),
     [

@@ -9,6 +9,7 @@ dependencies = [
     "dsy-events",
     "dsy-keys",
     "dsy-obs",
+    "dsy-servicekit",
     "dsy-stages",
     "dsy-temporal",
     "dsy-workflow",
@@ -28,6 +29,7 @@ dsy-events = { workspace = true }
 dsy-keys = { workspace = true }
 dsy-obs = { workspace = true }
 dsy-runtime = { workspace = true }
+dsy-servicekit = { workspace = true }
 dsy-stages = { workspace = true }
 dsy-temporal = { workspace = true }
 dsy-workflow = { workspace = true }
