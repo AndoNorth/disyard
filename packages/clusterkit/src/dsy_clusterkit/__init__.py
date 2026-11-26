@@ -17,6 +17,7 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
+from dsy_servicekit.testing import free_port
 from dsy_storecheck.s3 import Creds, load_credentials
 
 INFRA = "dsy-infra"
@@ -43,12 +44,6 @@ def appdb_password() -> str:
 
 def store_credentials() -> dict[str, Creds]:
     return load_credentials(state_dir() / "objectstore.credentials.json")
-
-
-def free_port() -> int:
-    with socket.socket() as probe:
-        probe.bind(("127.0.0.1", 0))
-        return probe.getsockname()[1]
 
 
 def _listening(port: int) -> bool:

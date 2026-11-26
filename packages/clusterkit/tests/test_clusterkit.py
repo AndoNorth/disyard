@@ -1,12 +1,14 @@
 """The parts of the kit that need no cluster."""
 
 import asyncio
+import inspect
 import itertools
 import json
 import socket
 import time
 
 import dsy_clusterkit
+import dsy_servicekit.testing
 import pytest
 from dsy_clusterkit import (
     UP_S,
@@ -45,6 +47,17 @@ def test_credentials_are_read_from_the_state_dir(monkeypatch, tmp_path):
     assert appdb_password() == "secret"
     submit = store_credentials()["submit"]
     assert (submit.access_key, submit.secret_key) == ("a", "s")
+
+
+def test_free_port_is_the_servicekit_one():
+    assert free_port is dsy_servicekit.testing.free_port
+
+
+def test_until_keeps_its_signature():
+    parameters = inspect.signature(until).parameters
+    assert list(parameters) == ["check", "timeout_s", "what", "every_s"]
+    assert parameters["every_s"].default == 0.5
+    assert inspect.iscoroutinefunction(until)
 
 
 def test_free_port_can_be_bound():
