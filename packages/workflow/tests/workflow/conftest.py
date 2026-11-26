@@ -1,8 +1,6 @@
 """Fixtures that run JobWorkflow on a dev server with StaticPlacer, FakeControl on the control
 queue of the build and a FakePool per pool."""
 
-import asyncio
-import os
 import time
 import uuid
 from collections.abc import Callable
@@ -16,28 +14,19 @@ from dsy_events.models import JobParams
 from dsy_jobdoc.plan_models import Plan
 from dsy_keys import workflow_id
 from dsy_temporal import event_data_converter, tracing_interceptor
+from dsy_workflow import versioning
 from dsy_workflow.contract import naming
 from dsy_workflow.models import TaskInput
 from dsy_workflow.placement import StaticPlacer
-from dsy_workflow.testing import FakeControl, FakePool, Succeed, connect
+from dsy_workflow.testing import FakeControl, FakePool, Succeed, build_id, connect, control_worker
 from dsy_workflow.testing.control import Commit, Emit, Emitted, LoadedPlan
 from temporalio import activity
-from temporalio.api.deployment.v1 import WorkerDeploymentVersion as ProtoVersion
-from temporalio.api.workflowservice.v1 import (
-    DescribeWorkerDeploymentRequest,
-    DescribeWorkerDeploymentVersionRequest,
-    SetWorkerDeploymentCurrentVersionRequest,
-)
 from temporalio.client import Client
 from temporalio.runtime import MetricBuffer, Runtime, TelemetryConfig
-from temporalio.service import RPCError
-from temporalio.worker import Worker
 
-os.environ.setdefault(naming().workflow.build_id_env, "test-build")
-BUILD_ID = os.environ[naming().workflow.build_id_env]
+BUILD_ID = build_id()
 
 from dsy_workflow.job import JobWorkflow  # noqa: E402
-from dsy_workflow.taskpath import control_queue  # noqa: E402
 from dsy_workflow.worker import workflow_worker  # noqa: E402
 
 HASH = "a" * 64
@@ -252,16 +241,13 @@ def _rig(
         this.control.emit,
         interceptors=[tracing_interceptor()],
     )
-    control_worker = Worker(
-        client,
-        task_queue=control_queue(),
-        activities=this.control.control_activities(),
-        interceptors=[tracing_interceptor()],
+    control_side = control_worker(
+        client, this.control, BUILD_ID, interceptors=[tracing_interceptor()]
     )
     pools = {pool: FakePool(client, pool, script) for pool, script in scripts.items()}
     this.pools = {pool: fake for pool, fake in pools.items() if pool not in idle}
     this.idle = {pool: fake for pool, fake in pools.items() if pool in idle}
-    return Running(this, [workflow, control_worker, *this.pools.values()])
+    return Running(this, [workflow, control_side, *this.pools.values()])
 
 
 class Running:
@@ -272,51 +258,13 @@ class Running:
     async def __aenter__(self) -> Rig:
         for worker in self.workers:
             await worker.__aenter__()
-        await make_current(self.this.client)
+        await versioning.set_current(self.this.client, BUILD_ID, 60)
         return self.this
 
     async def __aexit__(self, *exc) -> None:
         served = [p for p in self.this.pools.values() if p not in self.workers]
         for worker in reversed([*self.workers, *served]):
             await worker.__aexit__(*exc)
-
-
-async def make_current(client: Client, timeout_s: float = 60) -> None:
-    """Makes the test build the current version of the workflow deployment, as a deploy does with
-    the raw call, once its pollers are registered, since the SDK has no client method for it."""
-    deployment = naming().workflow.deployment
-    service = client.workflow_service
-    version = DescribeWorkerDeploymentVersionRequest(
-        namespace=client.namespace,
-        deployment_version=ProtoVersion(deployment_name=deployment, build_id=BUILD_ID),
-    )
-    for _ in range(int(timeout_s / 0.5)):
-        try:
-            info = (
-                await service.describe_worker_deployment_version(version)
-            ).worker_deployment_version_info
-            if any(q.name == naming().workflow.queue for q in info.task_queue_infos):
-                break
-        except RPCError:
-            pass
-        await asyncio.sleep(0.5)
-    described = await service.describe_worker_deployment(
-        DescribeWorkerDeploymentRequest(namespace=client.namespace, deployment_name=deployment)
-    )
-    if (
-        described.worker_deployment_info.routing_config.current_deployment_version.build_id
-        == BUILD_ID
-    ):
-        return
-    await service.set_worker_deployment_current_version(
-        SetWorkerDeploymentCurrentVersionRequest(
-            namespace=client.namespace,
-            deployment_name=deployment,
-            build_id=BUILD_ID,
-            conflict_token=described.conflict_token,
-            identity=client.identity,
-        )
-    )
 
 
 async def metered(address: str) -> tuple[Client, MetricBuffer]:

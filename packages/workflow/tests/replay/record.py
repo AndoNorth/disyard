@@ -30,12 +30,18 @@ from dsy_workflow.contract import naming
 from dsy_workflow.job import JobWorkflow
 from dsy_workflow.models import ControlSignal, ResumeSignal
 from dsy_workflow.placement import StaticPlacer
-from dsy_workflow.taskpath import control_queue
-from dsy_workflow.testing import Fail, FakeControl, FakePool, Hang, Succeed
+from dsy_workflow.testing import (
+    Fail,
+    FakeControl,
+    FakePool,
+    Hang,
+    Succeed,
+    control_worker,
+    dev_server,
+)
 from dsy_workflow.testing.control import LoadedPlan
 from dsy_workflow.worker import workflow_worker
 from temporalio.client import Client, WorkflowHandle
-from temporalio.worker import Worker
 
 CORPUS = Path(__file__).resolve().parents[2] / "corpus"
 HASH = "a" * 64
@@ -144,11 +150,7 @@ class Rig:
         self.scripts: dict[str, Callable] = {}
         self.workers = [
             workflow_worker(client, build, StaticPlacer(), self.control.emit),
-            Worker(
-                client,
-                task_queue=control_queue(),
-                activities=self.control.control_activities(),
-            ),
+            control_worker(client, self.control),
             *(FakePool(client, pool, self.run(pool)) for pool in naming().pools),
         ]
 
@@ -319,21 +321,7 @@ def record(release: str, root: Path = CORPUS) -> list[Path]:
     directory = root / release
     directory.mkdir(parents=True)
     with refusing_on_wait(), Session() as t1:
-        with t1.container(
-            "temporalio/temporal",
-            ports={0: 7233},
-            command=(
-                "server",
-                "start-dev",
-                "--ip",
-                "0.0.0.0",
-                "--headless",
-                "--namespace",
-                naming().namespace,
-            ),
-        ) as container:
-            container.wait_ready(0)
-            address = f"127.0.0.1:{container.host_ports[0]}"
+        with dev_server(t1) as address:
             return asyncio.run(_record(address, directory, build))
 
 

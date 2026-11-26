@@ -7,7 +7,6 @@ import io
 import json
 import logging
 import re
-import socket
 import urllib.request
 from datetime import timedelta
 from pathlib import Path
@@ -17,6 +16,7 @@ import yaml
 from dsy_aggregate.run import files
 from dsy_artifactclient.errors import StoreUnavailable
 from dsy_obs.logs import JsonFormatter
+from dsy_servicekit.testing import free_port
 from dsy_worker import metrics
 from dsy_worker.activity import run_task, serving
 from dsy_worker.metrics import ADDRESS_ENV, BUCKETS, Metrics, classes_of, runtime_of
@@ -38,9 +38,7 @@ SAMPLE = re.compile(r"^(?P<name>\w+)(?:\{(?P<labels>[^}]*)\})? (?P<value>\S+)$")
 
 
 def free_address() -> str:
-    with socket.socket() as probe:
-        probe.bind(("127.0.0.1", 0))
-        return f"127.0.0.1:{probe.getsockname()[1]}"
+    return f"127.0.0.1:{free_port()}"
 
 
 def scrape(address: str) -> dict[tuple[str, frozenset], float]:
