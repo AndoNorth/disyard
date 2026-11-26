@@ -98,3 +98,18 @@ def test_a_driver_killed_on_the_budget_fails_with_the_wrapper_summary(bin_dir):
     result, _ = smoke(bin_dir, FAKE_TIMEOUT_EXIT="137")
     assert result.returncode == 1
     assert result.stdout.splitlines() == ["FAIL budget", "smoke ci: budget ran out after 300 s"]
+
+
+@pytest.mark.skipif(shutil.which("flock") is None, reason="needs the real flock")
+def test_a_script_run_under_a_holder_does_not_wait_on_it():
+    inner = f"source {ROOT}/scripts/cluster/lock.sh; cluster_lock 1; echo inner"
+    outer = f"source {ROOT}/scripts/cluster/lock.sh; cluster_lock 1; {BASH} -c '{inner}'"
+    base = {k: v for k, v in os.environ.items() if not k.startswith("DSY_")}
+    result = subprocess.run(
+        [BASH, "-c", outer],
+        capture_output=True,
+        text=True,
+        env={**base, "DSY_CLUSTER_LOCK_TIMEOUT": "5"},
+        timeout=4,
+    )
+    assert (result.returncode, result.stdout.strip()) == (0, "inner")
