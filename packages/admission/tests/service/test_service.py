@@ -66,6 +66,7 @@ def test_config_from_env():
     assert set(FULL) == set(ENV.values())
 
 
+@pytest.mark.seam
 def test_service_missing_env_exit_2(tmp_path):
     env = {**FULL, **stale_ready(tmp_path)}
     del env["DSY_ADMISSION_DSN"], env["DSY_BROKER_PASSWORD"]
