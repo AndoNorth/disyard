@@ -9,152 +9,17 @@ Usage: logins.py render | apply DSN | check DSN
 did, ending with `changed: <n>`, and `check` exits 1 when the login differs or cannot log in.
 """
 
-import json
-import os
-import secrets
 import sys
-from pathlib import Path
-from urllib.parse import urlsplit, urlunsplit
 
-import psycopg
-from psycopg import sql
+from dsy_clusterkit import logins as kit
 
 # Each login and the one group role it is a member of, keyed by the environment variable of its DSN.
 LOGINS = {"DSY_ADMISSION_DSN": ("admission", "dsy_admission")}
 NAMESPACE = "dsy-control"
-DATABASE = "appdb.dsy-infra.svc.cluster.local:5432/postgres"
 
-
-def state_file() -> Path:
-    state = os.environ.get("DSY_STATE_DIR") or str(
-        Path(os.environ.get("XDG_STATE_HOME") or Path.home() / ".local/state") / "disyard"
-    )
-    return Path(state) / "admission.logins.json"
-
-
-def secrets_of_logins() -> dict[str, str]:
-    """The password of each login, generated into the state file on first use."""
-    path = state_file()
-    if not path.exists():
-        path.parent.mkdir(parents=True, exist_ok=True)
-        generated = {login: secrets.token_hex(24) for login, _ in LOGINS.values()}
-        tmp = path.with_suffix(".tmp")
-        tmp.touch(mode=0o600)
-        tmp.write_text(json.dumps(generated, indent=2) + "\n")
-        tmp.replace(path)
-    return json.loads(path.read_text())
-
-
-def secret(name: str, data: dict[str, str]) -> dict:
-    return {
-        "apiVersion": "v1",
-        "kind": "Secret",
-        "metadata": {"name": name, "namespace": NAMESPACE},
-        "type": "Opaque",
-        "stringData": data,
-    }
-
-
-def render() -> list[dict]:
-    known = secrets_of_logins()
-    return [
-        secret(
-            "admission-logins",
-            {
-                env: f"postgresql://{login}:{known[login]}@{DATABASE}"
-                for env, (login, _) in LOGINS.items()
-            },
-        )
-    ]
-
-
-MEMBER_OF = """
-select g.rolname, m.inherit_option, m.set_option, m.admin_option from pg_auth_members m
-join pg_roles g on g.oid = m.roleid
-join pg_roles l on l.oid = m.member
-where l.rolname = %s
-order by 1
-"""
-# A service login logs in, inherits its group's grants and holds no other power or expiry.
-ATTRIBUTES = """
-select rolcanlogin, rolinherit, not (rolsuper or rolcreaterole or rolcreatedb or rolreplication
-    or rolbypassrls), coalesce(rolvaliduntil = 'infinity', true)
-from pg_roles where rolname = %s
-"""
-
-
-def state(conn: psycopg.Connection, login: str, group: str) -> str:
-    row = conn.execute(ATTRIBUTES, (login,)).fetchone()
-    if row is None:
-        return "missing"
-    wrong = [] if all(row) else ["attributes"]
-    groups = conn.execute(MEMBER_OF, (login,)).fetchall()
-    if groups != [(group, True, True, False)]:
-        wrong.append(f"member of {', '.join(g for g, *_ in groups) or 'nothing'}")
-    return f"differs: {'; '.join(wrong)}" if wrong else "unchanged"
-
-
-def converge(conn: psycopg.Connection, login: str, group: str, phrase: str) -> None:
-    """Gives `login` the attributes of ATTRIBUTES, the password `phrase` as a SCRAM verifier, so
-    no statement holds it in clear, and the membership of `group` only."""
-    role = sql.Identifier(login)
-    if conn.execute("select from pg_roles where rolname = %s", (login,)).fetchone() is None:
-        conn.execute(sql.SQL("create role {}").format(role))
-    verifier = conn.pgconn.encrypt_password(phrase.encode(), login.encode(), b"scram-sha-256")
-    conn.execute(
-        sql.SQL(
-            "alter role {} login inherit nosuperuser nocreaterole nocreatedb noreplication"
-            " nobypassrls valid until 'infinity' password {}"
-        ).format(role, sql.Literal(verifier.decode()))
-    )
-    for other, *_ in conn.execute(MEMBER_OF, (login,)).fetchall():
-        conn.execute(sql.SQL("revoke {} from {}").format(sql.Identifier(other), role))
-    conn.execute(
-        sql.SQL("grant {} to {} with inherit true, set true").format(sql.Identifier(group), role)
-    )
-
-
-def logs_in(dsn: str, login: str, phrase: str) -> bool:
-    """Whether `login` reaches the database of the superuser `dsn` with the password `phrase`."""
-    parts = urlsplit(dsn)
-    host = parts.netloc.rsplit("@", 1)[-1]
-    try:
-        psycopg.connect(
-            urlunsplit(parts._replace(netloc=f"{login}:{phrase}@{host}")), connect_timeout=5
-        ).close()
-    except psycopg.OperationalError:
-        return False
-    return True
-
-
-def main(mode: str, dsn: str) -> int:
-    apply = mode == "apply"
-    known = secrets_of_logins()
-    lines = []
-    with psycopg.connect(dsn, autocommit=True) as conn:
-        for login, group in LOGINS.values():
-            current = state(conn, login, group)
-            if current == "unchanged" and not logs_in(dsn, login, known[login]):
-                current = "differs: password"
-            if apply and current != "unchanged":
-                converge(conn, login, group, known[login])
-                current = "created" if current == "missing" else "updated"
-            lines.append((f"login: {login} in {group}", current))
-    for item, current in lines:
-        print(f"{item} {current}")
-    wrong = [item for item, current in lines if current.startswith(("missing", "differs"))]
-    if apply:
-        print(f"changed: {sum(current in ('created', 'updated') for _, current in lines)}")
-    for item in wrong:
-        print(f"differs: {item}", file=sys.stderr)
-    return 1 if wrong else 0
+spec = kit.Spec(LOGINS, NAMESPACE, "admission")
+MEMBER_OF, state_file, render, main = kit.MEMBER_OF, spec.state_file, spec.render, spec.run
 
 
 if __name__ == "__main__":
-    if sys.argv[1:] == ["render"]:
-        print(json.dumps(render()))
-        sys.exit(0)
-    if len(sys.argv) != 3 or sys.argv[1] not in ("apply", "check"):
-        print("usage: logins.py render | apply DSN | check DSN", file=sys.stderr)
-        sys.exit(2)
-    sys.exit(main(*sys.argv[1:]))
+    sys.exit(kit.cli(sys.argv[1:], spec))
