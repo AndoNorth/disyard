@@ -143,7 +143,7 @@ def test_environment_has_no_database_prefix_or_build(rendered, pool):
     assert not [n for n in env if n.startswith("DSY_") and n.endswith("_DSN")]
     assert "DSY_POOL_QUEUE_PREFIX" not in env
     assert not [n for n in env if "BUILD" in n or "DEPLOYMENT" in n]
-    assert env["DSY_NAMESPACE"] == "dsy"
+    assert env["DSY_TEMPORAL_NAMESPACE"] == "dsy"
     assert env["DSY_TEMPORAL_ADDRESS"] == "temporal-frontend.dsy-infra.svc.cluster.local:7233"
     assert env["DSY_STORE_ENDPOINT"] == "http://objectstore.dsy-infra.svc.cluster.local:8333"
     assert env["DSY_STORE_CREDENTIALS"] == "/etc/dsy/store/credentials.json"

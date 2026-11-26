@@ -86,7 +86,7 @@ def pool_worker(pool):
     egress = [_egress(DNS, ["UDP", "TCP"]), _egress(TEMPORAL), _egress(STORE)]
     env = {
         "DSY_TEMPORAL_ADDRESS": _svc("temporal-frontend", TEMPORAL[2]),
-        "DSY_NAMESPACE": naming["namespace"],
+        "DSY_TEMPORAL_NAMESPACE": naming["namespace"],
         "DSY_STORE_ENDPOINT": "http://" + _svc("objectstore", STORE[2]),
         "DSY_STORE_CREDENTIALS": CREDENTIALS,
         "DSY_SCRATCH": SCRATCH,
