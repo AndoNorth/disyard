@@ -37,6 +37,7 @@ members = [
     "dsy-placement",
     "dsy-plan",
     "dsy-runtime",
+    "dsy-servicekit",
     "dsy-stages",
     "dsy-stateops",
     "dsy-storecheck",
@@ -228,6 +229,7 @@ dev = [
     { name = "dsy-placement" },
     { name = "dsy-plan" },
     { name = "dsy-runtime" },
+    { name = "dsy-servicekit" },
     { name = "dsy-stages" },
     { name = "dsy-stateops" },
     { name = "dsy-storecheck" },
@@ -271,6 +273,7 @@ dev = [
     { name = "dsy-placement", editable = "packages/placement" },
     { name = "dsy-plan", editable = "packages/plan" },
     { name = "dsy-runtime", editable = "packages/runtime" },
+    { name = "dsy-servicekit", editable = "packages/servicekit" },
     { name = "dsy-stages", editable = "packages/stages" },
     { name = "dsy-stateops", editable = "packages/stateops" },
     { name = "dsy-storecheck", editable = "packages/storecheck" },
@@ -844,6 +847,17 @@ requires-dist = [
     { name = "pydantic" },
     { name = "pyyaml" },
 ]
+
+[[package]]
+name = "dsy-servicekit"
+version = "0.0.0"
+source = { editable = "packages/servicekit" }
+dependencies = [
+    { name = "psycopg" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "psycopg" }]
 
 [[package]]
 name = "dsy-stages"

@@ -37,6 +37,7 @@ dsy-obs = { workspace = true }
 dsy-placement = { workspace = true }
 dsy-plan = { workspace = true }
 dsy-runtime = { workspace = true }
+dsy-servicekit = { workspace = true }
 dsy-stages = { workspace = true }
 dsy-stateops = { workspace = true }
 dsy-storecheck = { workspace = true }
@@ -77,6 +78,7 @@ dev = [
     "dsy-placement",
     "dsy-plan",
     "dsy-runtime",
+    "dsy-servicekit",
     "dsy-stages",
     "dsy-stateops",
     "dsy-storecheck",
@@ -92,5 +94,6 @@ addopts = "--import-mode=importlib"
 markers = [
     "integration: needs containers started through dsy_itest",
     "e2e: needs the running cluster, run by scripts/e2e.sh and deselected by scripts/test.sh",
+    "seam: the seam smoke level, the toy service and the layering rules, run by `just seam`",
     "slow: large results, deselected by scripts/test.sh and run only when selected",
 ]
