@@ -103,10 +103,12 @@ def failure_classes() -> dict[str, FailureClass]:
     return {row.class_: row for row in table.classes}
 
 
+@cache
 def naming() -> Naming:
     return Naming.model_validate(_read("naming.yaml"))
 
 
+@cache
 def pools() -> Pools:
     return Pools.model_validate(_read("pools.yaml"))
 
