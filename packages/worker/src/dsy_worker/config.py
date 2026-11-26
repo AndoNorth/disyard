@@ -6,6 +6,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
 
+from dsy_servicekit.config import ConfigError, require
 from dsy_workflow.contract import naming
 from dsy_workflow.models import QUEUE
 
@@ -24,10 +25,6 @@ ENV = {
 MIRROR_ENV = "DSY_MIRROR"
 # Optional: put in front of the pool's queue name, so one run can hold queues of its own.
 PREFIX_ENV = "DSY_POOL_QUEUE_PREFIX"
-
-
-class ConfigError(Exception):
-    pass
 
 
 @dataclass(frozen=True)
@@ -53,9 +50,7 @@ class Config:
         that is unset or empty, or the value that is malformed, before anything connects."""
         if pool not in naming().pools:
             raise ConfigError(f"no pool named {pool!r}, one of {', '.join(naming().pools)}")
-        required = [*ENV.values(), *([MIRROR_ENV] if pool == "compile" else [])]
-        if missing := [name for name in required if not environ.get(name)]:
-            raise ConfigError(f"missing environment: {', '.join(missing)}")
+        require(environ, ENV | ({"mirror": MIRROR_ENV} if pool == "compile" else {}))
         memory = environ[ENV["slot_memory_mib"]]
         if not memory.isdigit() or int(memory) == 0:
             raise ConfigError(f"{ENV['slot_memory_mib']} is {memory!r}, not a positive integer")
