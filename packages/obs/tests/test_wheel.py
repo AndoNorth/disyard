@@ -22,6 +22,7 @@ import pyroscope
 import temporalio
 import dsy_events
 import dsy_obs
+import dsy_servicekit
 import yaml
 from dsy_obs import query
 from dsy_obs.targets import JOBS
@@ -74,6 +75,7 @@ def test_wheel_declares_the_dependency_set():
     project = tomllib.loads((ROOT / "packages/obs/pyproject.toml").read_text())["project"]
     assert sorted(project["dependencies"]) == [
         "dsy-events",
+        "dsy-servicekit",
         "opentelemetry-exporter-otlp-proto-http",
         "opentelemetry-sdk",
         "pyroscope-io",

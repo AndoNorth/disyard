@@ -785,6 +785,7 @@ version = "0.0.0"
 source = { editable = "packages/obs" }
 dependencies = [
     { name = "dsy-events" },
+    { name = "dsy-servicekit" },
     { name = "opentelemetry-exporter-otlp-proto-http" },
     { name = "opentelemetry-sdk" },
     { name = "pyroscope-io" },
@@ -800,6 +801,7 @@ stateops = [
 [package.metadata]
 requires-dist = [
     { name = "dsy-events", editable = "packages/events" },
+    { name = "dsy-servicekit", editable = "packages/servicekit" },
     { name = "dsy-stateops", marker = "extra == 'stateops'", editable = "packages/stateops" },
     { name = "opentelemetry-exporter-otlp-proto-http" },
     { name = "opentelemetry-sdk" },

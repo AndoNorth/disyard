@@ -27,7 +27,7 @@ SUFFIXED_UNITS = {"bytes": "_bytes", "seconds": "_seconds"}
 LABELLED = re.compile(r"(?P<name>\w+)\{(?P<label>\w+)=(?P<value>.*)\}")
 CONNECT_SECONDS = 5
 # A slow query ends at the timeout and counts as an error, so one input never holds a pass.
-STATEMENT_TIMEOUT_MS = 30_000
+STATEMENT_TIMEOUT = "30s"
 
 
 def metric_name(item: "Input") -> str:
@@ -50,13 +50,14 @@ class Exporter:
     def run_once(self) -> int:
         """Reads every input and sets its gauges; returns the number of inputs that were read."""
         import psycopg
+        from dsy_servicekit import pg
 
         try:
-            conn = psycopg.connect(
+            conn = pg.connect(
                 self.dsn,
                 autocommit=True,
                 connect_timeout=CONNECT_SECONDS,
-                options=f"-c statement_timeout={STATEMENT_TIMEOUT_MS}",
+                statement_timeout=STATEMENT_TIMEOUT,
             )
         except psycopg.Error as error:
             for item in self.inputs:

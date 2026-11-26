@@ -11,6 +11,7 @@ dependencies = [
     "pyyaml",
     "temporalio",
     "dsy-events",
+    "dsy-servicekit",
 ]
 
 # The state inputs exporter reads the job tables, so only the process that runs it installs this.
@@ -19,6 +20,7 @@ stateops = ["dsy-stateops"]
 
 [tool.uv.sources]
 dsy-events = { workspace = true }
+dsy-servicekit = { workspace = true }
 dsy-stateops = { workspace = true }
 
 [build-system]
