@@ -17,6 +17,8 @@ from opentelemetry.sdk.trace import TracerProvider
 
 TRACE_ID = "4bf92f3577b34da6a3ce929d0e0e4736"
 SPAN_ID = "00f067aa0ba902b7"
+BLOCKING_CALL_SECONDS = 0.5
+BLOCKING_RUN_SECONDS = 10
 TRACEPARENT = f"00-{TRACE_ID}-{SPAN_ID}-01"
 
 
@@ -90,12 +92,18 @@ def test_a_refusing_endpoint_never_blocks_and_counts_the_drops(fresh, monkeypatc
     tracer = trace.get_tracer("dsy")
     before = traces.dropped()
     counted = registry.count("dsy_obs_span_dropped_total", component="dispatch")
+    slowest = 0.0
     started = time.monotonic()
     for _ in range(10_000):
+        call = time.monotonic()
         with stage_span(tracer, "stage", TRACEPARENT):
             pass
+        slowest = max(slowest, time.monotonic() - call)
     elapsed = time.monotonic() - started
-    assert elapsed < 2, f"10,000 spans took {elapsed:.2f}s"
+    # A blocking exporter stalls a call for at least the first OTLP retry delay (1s) and the whole
+    # run for tens of seconds, so these bounds sit far above scheduler noise and far below blocking.
+    assert slowest < BLOCKING_CALL_SECONDS, f"one span call took {slowest:.2f}s"
+    assert elapsed < BLOCKING_RUN_SECONDS, f"10,000 spans took {elapsed:.2f}s"
     assert traces.dropped() - before >= 10_000 - traces.QUEUE_SIZE - traces.BATCH_SIZE
     exported = registry.count("dsy_obs_span_dropped_total", component="dispatch") - counted
     assert exported == traces.dropped() - before
