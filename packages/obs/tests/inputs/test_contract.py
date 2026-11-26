@@ -1,6 +1,5 @@
 """The process contract of the exporter: exit 2 on a missing variable and exit 0 on SIGTERM well
-inside the pod's grace period. The ready file is not part of it, since the exporter leaves it in
-place on stop."""
+inside the pod's grace period, having removed its ready file."""
 
 import os
 import sys
@@ -23,12 +22,13 @@ def test_missing_env_exits_2():
 
 def test_sigterm_exits_0(tmp_path):
     port = free_port()
+    ready = tmp_path / "ready"
     env = {
         **{k: v for k, v in os.environ.items() if not k.startswith(("OTEL_", "DSY_"))},
         # An unreachable database keeps the pass failing, which the process survives.
         DSN_ENV: "postgresql://nobody@127.0.0.1:1/none",
         ADDRESS_ENV: f"127.0.0.1:{port}",
-        READY_ENV: str(tmp_path / "ready"),
+        READY_ENV: str(ready),
     }
     service = spawn(ARGV, env)
     try:
@@ -44,6 +44,9 @@ def test_sigterm_exits_0(tmp_path):
                 return False
 
         until(serving, START_TIMEOUT_S, "the metrics endpoint")
+        # The database is unreachable, so the process never marks itself ready; mark it here.
+        ready.touch()
         assert service.terminate(SIGTERM_BUDGET_S) == 0
+        assert not ready.exists()
     finally:
         service.kill()

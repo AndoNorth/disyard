@@ -2,7 +2,7 @@
 
 Environment: DSY_STATE_INPUTS_DSN (required), DSY_METRICS_ADDRESS (default 0.0.0.0:9464) and
 DSY_READY_FILE, which is written once a pass has reached the database.
-Exit 2 when the DSN is missing, 0 after SIGTERM or SIGINT.
+Exit 2 when the DSN is missing, 0 after SIGTERM or SIGINT, with the ready file removed.
 """
 
 import os
@@ -30,10 +30,13 @@ def serve(exporter: Exporter, stop: threading.Event, ready: Path | None, interva
     """Runs a pass, then another each `interval` seconds, until `stop` is set."""
     mark = ReadyFile(ready)
     mark.arm()
-    while not stop.is_set():
-        if exporter.run_once():
-            mark.set()
-        stop.wait(interval)
+    try:
+        while not stop.is_set():
+            if exporter.run_once():
+                mark.set()
+            stop.wait(interval)
+    finally:
+        mark.clear()
 
 
 def main() -> int:
