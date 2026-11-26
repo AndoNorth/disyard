@@ -30,12 +30,10 @@ from dsy_workflow.contract import naming
 from dsy_workflow.job import JobWorkflow
 from dsy_workflow.models import ControlSignal, ResumeSignal
 from dsy_workflow.placement import StaticPlacer
-from dsy_workflow.taskpath import control_queue
-from dsy_workflow.testing import Fail, FakeControl, FakePool, Hang, Succeed
+from dsy_workflow.testing import Fail, FakeControl, FakePool, Hang, Succeed, control_worker
 from dsy_workflow.testing.control import LoadedPlan
 from dsy_workflow.worker import workflow_worker
 from temporalio.client import Client, WorkflowHandle
-from temporalio.worker import Worker
 
 CORPUS = Path(__file__).resolve().parents[2] / "corpus"
 HASH = "a" * 64
@@ -144,11 +142,7 @@ class Rig:
         self.scripts: dict[str, Callable] = {}
         self.workers = [
             workflow_worker(client, build, StaticPlacer(), self.control.emit),
-            Worker(
-                client,
-                task_queue=control_queue(),
-                activities=self.control.control_activities(),
-            ),
+            control_worker(client, self.control),
             *(FakePool(client, pool, self.run(pool)) for pool in naming().pools),
         ]
 

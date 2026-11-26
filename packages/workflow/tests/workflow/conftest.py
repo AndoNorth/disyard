@@ -19,7 +19,7 @@ from dsy_temporal import event_data_converter, tracing_interceptor
 from dsy_workflow.contract import naming
 from dsy_workflow.models import TaskInput
 from dsy_workflow.placement import StaticPlacer
-from dsy_workflow.testing import FakeControl, FakePool, Succeed, connect
+from dsy_workflow.testing import FakeControl, FakePool, Succeed, connect, control_worker
 from dsy_workflow.testing.control import Commit, Emit, Emitted, LoadedPlan
 from temporalio import activity
 from temporalio.api.deployment.v1 import WorkerDeploymentVersion as ProtoVersion
@@ -31,13 +31,11 @@ from temporalio.api.workflowservice.v1 import (
 from temporalio.client import Client
 from temporalio.runtime import MetricBuffer, Runtime, TelemetryConfig
 from temporalio.service import RPCError
-from temporalio.worker import Worker
 
 os.environ.setdefault(naming().workflow.build_id_env, "test-build")
 BUILD_ID = os.environ[naming().workflow.build_id_env]
 
 from dsy_workflow.job import JobWorkflow  # noqa: E402
-from dsy_workflow.taskpath import control_queue  # noqa: E402
 from dsy_workflow.worker import workflow_worker  # noqa: E402
 
 HASH = "a" * 64
@@ -252,16 +250,11 @@ def _rig(
         this.control.emit,
         interceptors=[tracing_interceptor()],
     )
-    control_worker = Worker(
-        client,
-        task_queue=control_queue(),
-        activities=this.control.control_activities(),
-        interceptors=[tracing_interceptor()],
-    )
+    control = control_worker(client, this.control, interceptors=[tracing_interceptor()])
     pools = {pool: FakePool(client, pool, script) for pool, script in scripts.items()}
     this.pools = {pool: fake for pool, fake in pools.items() if pool not in idle}
     this.idle = {pool: fake for pool, fake in pools.items() if pool in idle}
-    return Running(this, [workflow, control_worker, *this.pools.values()])
+    return Running(this, [workflow, control, *this.pools.values()])
 
 
 class Running:
