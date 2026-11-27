@@ -5,6 +5,7 @@ from contextlib import contextmanager
 
 from dsy_workflow import testing
 from dsy_workflow.contract import naming
+from dsy_workflow.testing import server
 
 
 def test_build_id_keeps_the_one_set(monkeypatch):
@@ -67,21 +68,25 @@ class Session:
         yield Container()
 
 
-def started(**options):
+def started(monkeypatch, **options):
+    async def answers(*args, **kwargs):
+        return None
+
+    monkeypatch.setattr(server, "connect", answers)
     session = Session()
     with testing.dev_server(session, **options) as address:
         pass
     return address, session.commands[0][1]
 
 
-def test_dev_server_starts_the_namespace_of_naming():
-    address, command = started()
+def test_dev_server_starts_the_namespace_of_naming(monkeypatch):
+    address, command = started(monkeypatch)
     assert address == "127.0.0.1:4242"
     assert command[command.index("--namespace") + 1] == naming().namespace
     assert "--db-filename" not in command
 
 
-def test_dev_server_parameters_are_the_flags_of_the_sites():
-    _, command = started(namespace="", db_filename="/tmp/temporal.db")
+def test_dev_server_parameters_are_the_flags_of_the_sites(monkeypatch):
+    _, command = started(monkeypatch, namespace="", db_filename="/tmp/temporal.db")
     assert "--namespace" not in command
     assert command[command.index("--db-filename") + 1] == "/tmp/temporal.db"
