@@ -50,6 +50,8 @@ def dev_server(
     with t1.container("temporalio/temporal", ports={0: 7233}, command=tuple(command)) as container:
         container.wait_ready(0)
         address = f"127.0.0.1:{container.host_ports[0]}"
+        # The port opens before gRPC answers, and a client that connects in between is reset.
+        asyncio.run(connect(address, namespace=space or "default"))
         if search_attributes:
             asyncio.run(register_search_attributes(address, space))
         yield address

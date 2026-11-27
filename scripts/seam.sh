@@ -15,7 +15,7 @@ contract=(packages/*/tests/service/test_contract.py packages/servicekit/tests/te
 example=(packages/exampleflow/tests*)
 layering=(packages/servicekit/tests/test_layering.py)
 
-budget_s=300
+budget_s=120
 start=$SECONDS
 group() {
     local name=$1 ignore=$2 rc=0 begin=$SECONDS
