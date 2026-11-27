@@ -4,13 +4,13 @@ workers of the modules beside the built-in ones."""
 import asyncio
 import importlib.util
 import logging
-import socket
 from datetime import timedelta
 from importlib.metadata import EntryPoint
 from pathlib import Path
 
 import pytest
 from dsy_servicekit.lifecycle import stopping
+from dsy_servicekit.testing import free_port
 from dsy_workflow import modules, service
 from dsy_workflow.contract import naming
 from dsy_workflow.modules import Context
@@ -108,14 +108,11 @@ def test_a_module_that_raises_in_construction_is_skipped(monkeypatch, caplog):
 
 def _config(temporal: str, build_id: str, monkeypatch) -> Config:
     monkeypatch.setenv(naming().workflow.build_id_env, build_id)
-    with socket.socket() as probe:
-        probe.bind(("127.0.0.1", 0))
-        port = probe.getsockname()[1]
     return Config(
         temporal_address=temporal,
         namespace=naming().namespace,
         build_id=build_id,
-        metrics_address=f"127.0.0.1:{port}",
+        metrics_address=f"127.0.0.1:{free_port()}",
         workflow_dsn="postgresql://unused",
         artifacts_dsn="postgresql://unused",
         store_endpoint="http://127.0.0.1:1",

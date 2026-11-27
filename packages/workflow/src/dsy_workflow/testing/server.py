@@ -6,6 +6,7 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 
 from dsy_temporal import event_data_converter, tracing_interceptor
+from dsy_temporal.testing import dev_container
 from temporalio.api.enums.v1 import IndexedValueType
 from temporalio.api.operatorservice.v1 import AddSearchAttributesRequest
 from temporalio.client import Client
@@ -29,12 +30,18 @@ def build_id() -> str:
     return os.environ.setdefault(naming().workflow.build_id_env, TEST_BUILD)
 
 
+class Address(str):
+    """The address of a dev server, which also holds the container that serves it."""
+
+    container: object
+
+
 @contextmanager
 def dev_server(
     t1, *, namespace: str | None = None, db_filename: str | None = None, search_attributes=False
-) -> Iterator[str]:
+) -> Iterator[Address]:
     """Starts a dev server in a container of the T1 session and yields its address, the container
-    being gone afterwards.
+    being gone afterwards and reachable as `.container` of the address.
 
     The namespace is that of naming.yaml, or none for the server's own when `namespace` is "".
     `db_filename` keeps the server's state in that file of the container, which survives a restart
@@ -42,14 +49,9 @@ def dev_server(
     The fixture that wraps it chooses the scope, one server per module or per test.
     """
     space = naming().namespace if namespace is None else namespace
-    command = ["server", "start-dev", "--ip", "0.0.0.0", "--headless"]
-    if space:
-        command += ["--namespace", space]
-    if db_filename:
-        command += ["--db-filename", db_filename]
-    with t1.container("temporalio/temporal", ports={0: 7233}, command=tuple(command)) as container:
-        container.wait_ready(0)
-        address = f"127.0.0.1:{container.host_ports[0]}"
+    with dev_container(t1, namespace=space, db_filename=db_filename) as container:
+        address = Address(f"127.0.0.1:{container.host_ports[0]}")
+        address.container = container
         # The port opens before gRPC answers, and a client that connects in between is reset.
         asyncio.run(connect(address, namespace=space or "default"))
         if search_attributes:

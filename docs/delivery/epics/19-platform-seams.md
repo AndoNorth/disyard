@@ -1107,7 +1107,7 @@ The numbers in "Before" were measured with the same commands on `main` at `ee88f
 | E-6 | unbounded service connects | `grep -rn --include='*.py' 'psycopg.connect(' packages/admission/src packages/dispatchapi/src/dsy_dispatchapi/retrier.py packages/dispatchapi/src/dsy_dispatchapi/reconciler.py packages/artifactreaper/src` | 7 | 0 |
 | E-7 | cluster lock blocks | `grep -rn 'exec 9>' scripts` | 5 | 1 |
 | E-8 | login module lines | `cat deploy/admission/logins.py deploy/dispatchapi/logins.py deploy/workflow/logins.py deploy/obs/state-inputs/logins.py \| wc -l` | 668 | at most 160 |
-| E-9 | hand-started Temporal dev servers | `grep -rln --include='*.py' '"temporalio/temporal"' packages deploy` | 12 | at most 5, each named |
+| E-9 | hand-started Temporal dev servers | `grep -rln --include='*.py' '"temporalio/temporal"' packages deploy` | 12 | 1 (`packages/temporal/src/dsy_temporal/testing.py`) |
 | E-10 | `db` fixtures | `grep -rn --include='*.py' 'def db(' packages/*/tests` | 9 | at most 1 |
 | E-11 | test files that create roles | `grep -rln --include='*.py' 'CREATE ROLE' packages/*/tests` | 11 | at most 2, each named |
 | E-12 | own free-port sockets in tests | `grep -rln --include='*.py' -E 'bind\(\("127.0.0.1", 0\)\)' packages/*/tests deploy` | 16 | 0 |

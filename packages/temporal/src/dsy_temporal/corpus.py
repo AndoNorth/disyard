@@ -165,15 +165,12 @@ def record(release: str, root: Path = CORPUS) -> list[Path]:
     """Records the stand-in runs of the current code into `root/<release>/`, in one T1 container."""
     from dsy_itest import Session, refusing_on_wait
 
+    from .testing import dev_container
+
     directory = root / release
     directory.mkdir(parents=True, exist_ok=True)
     with refusing_on_wait(), Session() as t1:
-        with t1.container(
-            "temporalio/temporal",
-            ports={0: 7233},
-            command=("server", "start-dev", "--ip", "0.0.0.0", "--headless"),
-        ) as container:
-            container.wait_ready(0)
+        with dev_container(t1) as container:
             return asyncio.run(_record(container.host_ports[0], directory))
 
 

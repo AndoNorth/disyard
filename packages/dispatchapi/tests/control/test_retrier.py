@@ -25,9 +25,8 @@ from dsy_itest.session import Container
 from dsy_jobstate import get_job, mark_published, request_action, transition
 from dsy_keys import cloudevent_id, workflow_id
 from dsy_stages.recording import type_name
-from dsy_workflow.contract import naming
 from dsy_workflow.models import ControlSignal
-from dsy_workflow.testing import connect
+from dsy_workflow.testing import connect, dev_server
 from temporalio.api.enums.v1 import EventType
 
 pytestmark = [pytest.mark.integration, pytest.mark.pair]
@@ -56,23 +55,8 @@ class Server:
 
 @pytest.fixture(scope="module")
 def server(t1) -> Server:
-    with t1.container(
-        "temporalio/temporal",
-        ports={0: 7233},
-        command=(
-            "server",
-            "start-dev",
-            "--ip",
-            "0.0.0.0",
-            "--headless",
-            "--namespace",
-            naming().namespace,
-            "--db-filename",
-            "/tmp/temporal.db",
-        ),
-    ) as container:
-        container.wait_ready(0)
-        yield Server(container)
+    with dev_server(t1, db_filename="/tmp/temporal.db") as address:
+        yield Server(address.container)
 
 
 @pytest.fixture

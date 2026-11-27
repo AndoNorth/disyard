@@ -7,11 +7,13 @@ import signal
 import socket
 import subprocess
 import time
-from collections.abc import Callable, Iterable, Mapping
+from collections.abc import Callable, Iterable, Iterator, Mapping
+from contextlib import contextmanager
 from pathlib import Path
 
 __all__ = [
     "ServiceProcess",
+    "blackhole",
     "check_missing_env_exits_2",
     "check_ready_file_lifecycle",
     "check_sigterm_exits_0_within",
@@ -28,6 +30,16 @@ def free_port() -> int:
     with socket.socket() as sock:
         sock.bind(("127.0.0.1", 0))
         return sock.getsockname()[1]
+
+
+@contextmanager
+def blackhole() -> Iterator[int]:
+    """The port of a listener that never answers: the handshake completes and nothing is read, as
+    with a black-holed server. It stops listening on exit."""
+    with socket.socket() as sock:
+        sock.bind(("127.0.0.1", 0))
+        sock.listen(8)
+        yield sock.getsockname()[1]
 
 
 def until(check: Callable[[], object], timeout_s: float, what: str, interval_s: float = 0.1):

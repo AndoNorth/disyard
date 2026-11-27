@@ -16,6 +16,7 @@ from dsy_temporal import (
     tracing_interceptor,
 )
 from dsy_temporal.standin import RUNNER, TASK_QUEUE, StandInJob, run_task
+from dsy_temporal.testing import dev_container
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import SimpleSpanProcessor
 from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
@@ -89,12 +90,7 @@ def test_every_stage_span_is_on_the_submit_trace_and_follows_the_stage_before(t1
     provider = TracerProvider()
     provider.add_span_processor(SimpleSpanProcessor(exporter))
     tracer = provider.get_tracer("dsy")
-    with t1.container(
-        "temporalio/temporal",
-        ports={0: 7233},
-        command=("server", "start-dev", "--ip", "0.0.0.0", "--headless"),
-    ) as container:
-        container.wait_ready(0)
+    with dev_container(t1) as container:
         submitted, accepted, result = asyncio.run(
             run_stages(container.host_ports[0], tracer, tracing_interceptor(tracer))
         )

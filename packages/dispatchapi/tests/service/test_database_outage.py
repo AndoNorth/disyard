@@ -4,24 +4,21 @@ The database is a listening socket that never accepts: the kernel completes the 
 the server never answers, which is what a black-holed Postgres looks like to libpq.
 """
 
-import socket
 import time
-from contextlib import closing
 
 import psycopg
 import pytest
 from dsy_dispatchapi.reconciler import Reconciler
 from dsy_dispatchapi.retrier import Retrier
+from dsy_servicekit.testing import blackhole
 
 LIMIT_S = 4.0
 
 
 @pytest.fixture
 def blackhole_dsn():
-    with closing(socket.socket()) as sock:
-        sock.bind(("127.0.0.1", 0))
-        sock.listen(1)
-        yield f"postgresql://dispatch@127.0.0.1:{sock.getsockname()[1]}/dsy"
+    with blackhole() as port:
+        yield f"postgresql://dispatch@127.0.0.1:{port}/dsy"
 
 
 def _fails_within_the_bound(attempt):
