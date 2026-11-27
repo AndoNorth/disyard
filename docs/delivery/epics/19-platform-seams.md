@@ -1163,7 +1163,44 @@ What is not mechanical: L0-1 and L0-2 (the surface), TS-1's `login` (teardown pe
 
 ## 12. Closure (filled at close)
 
-<commit sha, CI run url, copy ledger result, what was learned, what moved>
+Exit test run on a clean `git archive` export of `origin/main` at `9cbb6c6a` (taken outside any git repository, `DSY_BUILD_ID=exit-a`), by a worker who did not write the lanes.
+The CI `check` job is green on that commit: https://github.com/AndoNorth/disyard/actions/runs/45995942251.
+Evidence files `exit-test/<row>.txt` are pasted in the pull request that records this run.
+
+Per-lane rows (10.1): X-L0, X-L1, X-ADM, X-DIS, X-WFL, X-WRK, X-PLC, X-OBS, X-DB, X-TOOL, X-TS, X-RIG and X-MOD pass.
+`just seam` exits 0: 71 s of the 120 s budget.
+`scripts/ci.sh --checks` exits 0.
+The four `scripts/ci.sh --shard` runs were not repeated: the same suites ran as the per-lane rows above, and the CI `check` job ran them green.
+X-OBS skips 6 tests that read a running stack (`-m cluster`).
+`deploy/artifactreaper` does not exist, so the "same test commands" for that package ran as `packages/artifactreaper` only.
+
+Copy ledger (10.2), measured on the export:
+
+| Row | After | Target | Result |
+| --- | --- | --- | --- |
+| E-1 | 1 | 0 | met by design: the kit is the one copy, `packages/servicekit/src/dsy_servicekit/config.py:17` |
+| E-2 | 1 | 1 | met (the kit's `ConfigError`) |
+| E-3 | 0 | 0 | met |
+| E-4 | 0 | 0 | met |
+| E-5 | 2 | 2 | met (both in `packages/placement/src/dsy_placement/service.py`) |
+| E-6 | 0 | 0 | met |
+| E-7 | 1 | 1 | met (`scripts/cluster/lock.sh`) |
+| E-8 | 116 | at most 160 | met |
+| E-9 | 8 | at most 5 | accepted: `workflow/testing/server.py` (the shared fixture) and `temporal/tests/test_client.py` (tests the client recipe) stay for now; the other 6, baseline dev-server files no lane owned, are tracked in issue 818 |
+| E-10 | 1 | at most 1 | met (`packages/eventstore/tests/conftest.py`) |
+| E-11 | 1 | at most 2 | met (`packages/migrate/tests/test_fixtures.py`) |
+| E-12 | 5 | 0 | accepted: the three blackhole tests (`servicekit/tests/test_pg.py`, `admission` and `dispatchapi` `test_database_outage.py`) need a socket that stays listening, which `free_port` cannot give; the `workflow/tests/test_modules.py` and `temporal/tests/test_client.py` free-port copies are tracked in issue 818 |
+| E-13 | 0 | 0 | met |
+| E-14 | `@cache` on both | `@cache` on both | met |
+
+E-1 is the kit's implementation of the check and has no other copy.
+E-9 and E-12 miss their targets and the captain accepted both, with the reasons in the table; the rest is tracked in issue 818.
+The E-9 and E-12 targets in 10.2 were set wrongly: the E-9 arithmetic gave 8 even with perfect lanes, and the E-12 target ignored the blackhole tests the spec prescribes.
+E-CONTRACTS: fresh hash `8f5b20f80316cdcc...` over 1,221 files; no start-of-L0 value was recorded, so equality with it is not proven here.
+
+Cluster rows C1 to C7 were met by the CP2 session at `9cbb6c6a`, all PASS with no step retried: `just up`, `scripts/tilt/run.sh ci`, `just cluster-verify`, three `just smoke` runs, the `pause-resume`, `cancel-before-start` and `restart` scenarios, `just e2e`, an admission pod delete followed by `just smoke`, `just doctor`, `just down` and `just nuke` twice.
+`just seam` ran 74 s of 120 s there.
+CP2 filed issue 816 (the state-inputs exporter crashes on a negative gauge value).
 
 Closure addenda, one dated line each, added after close when a `revisit` child issue is filed against this epic:
 
