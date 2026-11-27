@@ -9,6 +9,7 @@ from pathlib import Path
 import pytest
 from dsy_artifactreaper.schedule import SCHEDULE_ID
 from dsy_workflow.contract import naming
+from dsy_workflow.testing import dev_server
 from google.protobuf.duration_pb2 import Duration
 from temporalio.api.namespace.v1 import NamespaceConfig
 from temporalio.api.workflowservice.v1 import UpdateNamespaceRequest
@@ -32,26 +33,8 @@ ITEMS = (
 @pytest.fixture(scope="module")
 def temporal(t1):
     """One dev server for this module, with only its default namespace."""
-    with t1.container(
-        "temporalio/temporal",
-        ports={0: 7233},
-        command=("server", "start-dev", "--ip", "0.0.0.0", "--headless"),
-    ) as container:
-        container.wait_ready(0)
-        address = f"127.0.0.1:{container.host_ports[0]}"
-        asyncio.run(answering(address))
+    with dev_server(t1, namespace="") as address:
         yield address
-
-
-async def answering(address: str) -> None:
-    """Waits until the server answers, which comes after its port opens."""
-    for _ in range(120):
-        try:
-            await Client.connect(address)
-            return
-        except RuntimeError:
-            await asyncio.sleep(0.5)
-    raise AssertionError("the Temporal server did not answer")
 
 
 def run(mode, address, capsys) -> tuple[int, list[str], list[str]]:

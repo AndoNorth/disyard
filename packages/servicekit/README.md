@@ -11,7 +11,7 @@ The package depends on `psycopg` only and imports no other `dsy_*` package, whic
 - `dsy_servicekit.config`: `ConfigError`, `exiting_on_config_error`, `host_port`, `positive`, `require`
 - `dsy_servicekit.lifecycle`: `ReadyFile`, `ThreadStop`, `stopping`
 - `dsy_servicekit.pg`: `DEFAULT_CONNECT_TIMEOUT_S`, `MIN_CONNECT_TIMEOUT_S`, `connect`
-- `dsy_servicekit.testing`: `ServiceProcess`, `check_missing_env_exits_2`, `check_ready_file_lifecycle`, `check_sigterm_exits_0_within`, `free_port`, `spawn`, `until`
+- `dsy_servicekit.testing`: `ServiceProcess`, `blackhole`, `check_missing_env_exits_2`, `check_ready_file_lifecycle`, `check_sigterm_exits_0_within`, `free_port`, `spawn`, `until`
 
 ### config
 
@@ -35,6 +35,7 @@ The package depends on `psycopg` only and imports no other `dsy_*` package, whic
 Standard library only, with no pytest import, so a unit-only package can use it.
 
 - `free_port()`: a TCP port that was free on loopback a moment ago.
+- `blackhole()`: a context manager that yields the port of a listener that never answers, which stops listening on exit.
 - `until(check, timeout_s, what, interval_s=0.1)`: the first truthy result of `check`, or `TimeoutError` naming `what`.
 - `spawn(argv, env)`: a `ServiceProcess` started with exactly `env`. `wait_ready(ready_file, timeout_s)` waits for the file and fails if the process exits first. `terminate(timeout_s)` sends SIGTERM and returns the exit code, or kills the process and raises when it outlives the timeout.
 - `check_missing_env_exits_2(argv, names)`: exit 2 and every name on stderr when none is set.

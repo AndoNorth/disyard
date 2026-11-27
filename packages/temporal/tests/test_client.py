@@ -1,21 +1,16 @@
 """`connect` builds the client recipe of the services."""
 
 import asyncio
-import socket
 import urllib.request
 
 import pytest
+from dsy_servicekit.testing import free_port
 from dsy_temporal import event_data_converter
 from dsy_temporal.client import connect
+from dsy_temporal.testing import dev_container
 from temporalio.contrib.opentelemetry import TracingInterceptor
 from temporalio.runtime import PrometheusConfig, Runtime, TelemetryConfig
 from temporalio.service import RPCError
-
-
-def free_port() -> int:
-    with socket.socket() as s:
-        s.bind(("127.0.0.1", 0))
-        return s.getsockname()[1]
 
 
 def test_lazy_returns_without_a_server():
@@ -28,12 +23,7 @@ def test_lazy_returns_without_a_server():
 @pytest.mark.integration
 def test_client_carries_the_recipe_serves_runtime_metrics_and_checks_the_namespace(t1):
     metrics_port = free_port()
-    with t1.container(
-        "temporalio/temporal",
-        ports={0: 7233},
-        command=("server", "start-dev", "--ip", "0.0.0.0", "--headless"),
-    ) as container:
-        container.wait_ready(0)
+    with dev_container(t1) as container:
         address = f"127.0.0.1:{container.host_ports[0]}"
         runtime = Runtime(
             telemetry=TelemetryConfig(

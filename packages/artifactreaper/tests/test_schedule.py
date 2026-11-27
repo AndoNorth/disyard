@@ -8,6 +8,7 @@ from concurrent.futures import ThreadPoolExecutor
 import pytest
 from dsy_artifactreaper import schedule
 from dsy_artifactreaper.__main__ import main
+from dsy_temporal.testing import dev_container
 from temporalio.client import Client, ScheduleOverlapPolicy
 
 pytestmark = pytest.mark.integration
@@ -18,20 +19,7 @@ REPORT = {"results_jobs": 3, "ran": True}
 @pytest.fixture(scope="module")
 def temporal(t1):
     """One dev server for this module, which is gone before other modules run."""
-    with t1.container(
-        "temporalio/temporal",
-        ports={0: 7233},
-        command=(
-            "server",
-            "start-dev",
-            "--ip",
-            "0.0.0.0",
-            "--headless",
-            "--namespace",
-            schedule.NAMESPACE,
-        ),
-    ) as container:
-        container.wait_ready(0)
+    with dev_container(t1, namespace=schedule.NAMESPACE) as container:
         yield f"127.0.0.1:{container.host_ports[0]}"
 
 

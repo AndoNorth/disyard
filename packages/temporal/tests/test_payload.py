@@ -13,6 +13,7 @@ from dsy_events.models import JobParams
 from dsy_itest.session import RUN_LABEL
 from dsy_temporal import ENCODING, event_data_converter
 from dsy_temporal.standin import RUNNER, TASK_QUEUE, StandInJob, run_task
+from dsy_temporal.testing import dev_container
 from temporalio.client import Client
 from temporalio.worker import Replayer, Worker
 
@@ -83,12 +84,7 @@ def test_the_history_holds_the_canonical_event_bytes_and_replays(t1, vector):
     form = declared_form()
     assert form == "converter"
     others = labelled(t1.run_id)
-    with t1.container(
-        "temporalio/temporal",
-        ports={0: 7233},
-        command=("server", "start-dev", "--ip", "0.0.0.0", "--headless"),
-    ) as container:
-        container.wait_ready(0)
+    with dev_container(t1) as container:
         result, history = asyncio.run(run_once(container.host_ports[0], accepted))
         assert sorted(labelled(t1.run_id)) == sorted([*others, container.id[:12]])
 

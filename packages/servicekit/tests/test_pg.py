@@ -1,24 +1,15 @@
-import socket
 import time
 
 import psycopg
 import pytest
 from dsy_servicekit import pg
+from dsy_servicekit.testing import blackhole
 
 
-@pytest.fixture
-def blackhole():
-    """A listener that never answers: the handshake completes, the startup packet is never read."""
-    with socket.socket() as sock:
-        sock.bind(("127.0.0.1", 0))
-        sock.listen(8)
-        yield sock.getsockname()[1]
-
-
-def test_connect_timeout_bounds_a_blackhole(blackhole):
+def test_connect_timeout_bounds_a_blackhole():
     start = time.monotonic()
-    with pytest.raises(psycopg.OperationalError):
-        pg.connect(f"host=127.0.0.1 port={blackhole} dbname=x", connect_timeout=2)
+    with blackhole() as port, pytest.raises(psycopg.OperationalError):
+        pg.connect(f"host=127.0.0.1 port={port} dbname=x", connect_timeout=2)
     assert time.monotonic() - start < 3
 
 
