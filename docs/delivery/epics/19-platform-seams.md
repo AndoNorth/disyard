@@ -1178,7 +1178,7 @@ Copy ledger (10.2), measured on the export:
 
 | Row | After | Target | Result |
 | --- | --- | --- | --- |
-| E-1 | 1 | 0 | miss: the kit's own check, `packages/servicekit/src/dsy_servicekit/config.py:17` |
+| E-1 | 1 | 0 | met by design: the kit is the one copy, `packages/servicekit/src/dsy_servicekit/config.py:17` |
 | E-2 | 1 | 1 | met (the kit's `ConfigError`) |
 | E-3 | 0 | 0 | met |
 | E-4 | 0 | 0 | met |
@@ -1186,18 +1186,20 @@ Copy ledger (10.2), measured on the export:
 | E-6 | 0 | 0 | met |
 | E-7 | 1 | 1 | met (`scripts/cluster/lock.sh`) |
 | E-8 | 116 | at most 160 | met |
-| E-9 | 8 | at most 5 | miss: `workflow/testing/server.py`, `temporal/corpus.py`, `temporal/tests/test_{trace_spans,client,payload}.py`, `dispatchapi/tests/control/test_retrier.py`, `artifactreaper/tests/test_schedule.py`, `deploy/temporal/bootstrap/test_bootstrap.py` |
+| E-9 | 8 | at most 5 | miss, decision pending: `workflow/testing/server.py`, `temporal/corpus.py`, `temporal/tests/test_{trace_spans,client,payload}.py`, `dispatchapi/tests/control/test_retrier.py`, `artifactreaper/tests/test_schedule.py`, `deploy/temporal/bootstrap/test_bootstrap.py` |
 | E-10 | 1 | at most 1 | met (`packages/eventstore/tests/conftest.py`) |
 | E-11 | 1 | at most 2 | met (`packages/migrate/tests/test_fixtures.py`) |
-| E-12 | 5 | 0 | miss: `admission` and `dispatchapi` `test_database_outage.py`, `servicekit/tests/test_pg.py`, `temporal/tests/test_client.py`, `workflow/tests/test_modules.py` |
+| E-12 | 5 | 0 | miss, decision pending: `admission` and `dispatchapi` `test_database_outage.py`, `servicekit/tests/test_pg.py`, `temporal/tests/test_client.py`, `workflow/tests/test_modules.py` |
 | E-13 | 0 | 0 | met |
 | E-14 | `@cache` on both | `@cache` on both | met |
 
 E-1 is the kit's implementation of the check and has no other copy.
-E-9 and E-12 miss their targets and have no recorded reason yet: they need a follow-up decision from the captain.
+E-9 and E-12 miss their targets: decision pending.
 E-CONTRACTS: fresh hash `8f5b20f80316cdcc...` over 1,221 files; no start-of-L0 value was recorded, so equality with it is not proven here.
 
-Not run here, left to the checkpoint worker: cluster rows C1 to C7.
+Cluster rows C1 to C7 were met by the CP2 session at `9cbb6c6a`, all PASS with no step retried: `just up`, `scripts/tilt/run.sh ci`, `just cluster-verify`, three `just smoke` runs, the `pause-resume`, `cancel-before-start` and `restart` scenarios, `just e2e`, an admission pod delete followed by `just smoke`, `just doctor`, `just down` and `just nuke` twice.
+`just seam` ran 74 s of 120 s there.
+CP2 filed issue 816 (the state-inputs exporter crashes on a negative gauge value).
 
 Closure addenda, one dated line each, added after close when a `revisit` child issue is filed against this epic:
 
