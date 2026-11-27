@@ -1,11 +1,11 @@
-# Platform seams: domains, a shared access library and a seam smoke level - breakdown (draft)
+# Platform seams: domains, a shared access library and a seam smoke level - breakdown
 
-Status: draft, awaiting the captain's spec review
-Epic: not filed, the URL is filled in when the epic is filed
+Status: closed, the exit test passed and Closure is in section 12
+Epic: https://github.com/AndoNorth/disyard/issues/694
 Architecture note: `docs/architecture/21-domains-and-access.md` (new, written in lane L0)
 Depends on (closed epics): the runtime epics whose code it touches (#3 to #12, #24) and #17 pass 1 (the smoke gate)
-Gate for every lane except L0: issue #682 (the `just e2e` wrapper of #17 pass 2, in flight) delivers a passing `just e2e`, decision Q5.
-The fixtures of pass 2 merged in pull request https://github.com/AndoNorth/disyard/pull/679 (issue #674), but `scripts/e2e.sh` still exits 3.
+Gate for every lane except L0: issue #682 (the `just e2e` wrapper of #17 pass 2, closed) delivered a passing `just e2e`, decision Q5.
+The fixtures of pass 2 merged in pull request https://github.com/AndoNorth/disyard/pull/679 (issue #674), and the wrapper of issue #682 later made `scripts/e2e.sh` run a real suite.
 Pass 2 edits `packages/acceptance`, `packages/workloads` and `docs/acceptance-ladder.md`, so section 6 gives the shared-file rules.
 
 Citations were checked on `main` at `ee88fc7` on 2026-11-24, and every path is relative to the repository root.
@@ -119,7 +119,7 @@ The Prometheus forward `19090:9090` in the runbooks is another service and does 
 
 #### Q5. Start before the e2e suite exists?
 
-`just e2e` still exits 3 (`scripts/e2e.sh`): the fixtures of #17 pass 2 merged in pull request #679 (issue #674), and the wrapper that makes it run is issue #682, in flight.
+When this was decided, `just e2e` still exited 3 (`scripts/e2e.sh`): the fixtures of #17 pass 2 had merged in pull request #679 (issue #674), and the wrapper that makes it run was issue #682, then in flight.
 A refactor of all six services would otherwise rest on the unit and integration tiers, the seam smoke added here, `just smoke` and the API scenarios of `python -m dsy_dispatchapi.smoke` (`pause-resume`, `cancel-before-start`, `restart`).
 Options were: start now with two cluster checkpoints, or hold the service lanes until pass 2 delivers the e2e.
 Decision: wait for the e2e of issue #682 before the service lanes.
