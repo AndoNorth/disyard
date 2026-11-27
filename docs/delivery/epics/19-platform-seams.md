@@ -1163,7 +1163,41 @@ What is not mechanical: L0-1 and L0-2 (the surface), TS-1's `login` (teardown pe
 
 ## 12. Closure (filled at close)
 
-<commit sha, CI run url, copy ledger result, what was learned, what moved>
+Exit test run on a clean `git archive` export of `origin/main` at `9cbb6c6a` (taken outside any git repository, `DSY_BUILD_ID=exit-a`), by a worker who did not write the lanes.
+The CI `check` job is green on that commit: https://github.com/AndoNorth/disyard/actions/runs/45995942251.
+Evidence files `exit-test/<row>.txt` are pasted in the pull request that records this run.
+
+Per-lane rows (10.1): X-L0, X-L1, X-ADM, X-DIS, X-WFL, X-WRK, X-PLC, X-OBS, X-DB, X-TOOL, X-TS, X-RIG and X-MOD pass.
+`just seam` exits 0: 71 s of the 120 s budget.
+`scripts/ci.sh --checks` exits 0.
+The four `scripts/ci.sh --shard` runs were not repeated: the same suites ran as the per-lane rows above, and the CI `check` job ran them green.
+X-OBS skips 6 tests that read a running stack (`-m cluster`).
+`deploy/artifactreaper` does not exist, so the "same test commands" for that package ran as `packages/artifactreaper` only.
+
+Copy ledger (10.2), measured on the export:
+
+| Row | After | Target | Result |
+| --- | --- | --- | --- |
+| E-1 | 1 | 0 | miss: the kit's own check, `packages/servicekit/src/dsy_servicekit/config.py:17` |
+| E-2 | 1 | 1 | met (the kit's `ConfigError`) |
+| E-3 | 0 | 0 | met |
+| E-4 | 0 | 0 | met |
+| E-5 | 2 | 2 | met (both in `packages/placement/src/dsy_placement/service.py`) |
+| E-6 | 0 | 0 | met |
+| E-7 | 1 | 1 | met (`scripts/cluster/lock.sh`) |
+| E-8 | 116 | at most 160 | met |
+| E-9 | 8 | at most 5 | miss: `workflow/testing/server.py`, `temporal/corpus.py`, `temporal/tests/test_{trace_spans,client,payload}.py`, `dispatchapi/tests/control/test_retrier.py`, `artifactreaper/tests/test_schedule.py`, `deploy/temporal/bootstrap/test_bootstrap.py` |
+| E-10 | 1 | at most 1 | met (`packages/eventstore/tests/conftest.py`) |
+| E-11 | 1 | at most 2 | met (`packages/migrate/tests/test_fixtures.py`) |
+| E-12 | 5 | 0 | miss: `admission` and `dispatchapi` `test_database_outage.py`, `servicekit/tests/test_pg.py`, `temporal/tests/test_client.py`, `workflow/tests/test_modules.py` |
+| E-13 | 0 | 0 | met |
+| E-14 | `@cache` on both | `@cache` on both | met |
+
+E-1 is the kit's implementation of the check and has no other copy.
+E-9 and E-12 miss their targets and have no recorded reason yet: they need a follow-up decision from the captain.
+E-CONTRACTS: fresh hash `8f5b20f80316cdcc...` over 1,221 files; no start-of-L0 value was recorded, so equality with it is not proven here.
+
+Not run here, left to the checkpoint worker: cluster rows C1 to C7.
 
 Closure addenda, one dated line each, added after close when a `revisit` child issue is filed against this epic:
 
